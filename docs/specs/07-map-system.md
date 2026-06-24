@@ -1,7 +1,9 @@
 # Spec 7 — Map System (preview snapshots + live map)
 
-**Status:** awaiting review
+**Status:** DONE — merged to `main`; 20 new map tests (139 total) green, analyze clean. Live-map rotation/follow feel + FMTC caching verified/tuned on-device later.
 **Phase:** 7 of 15
+
+> **Implementation note:** FMTC was deferred — the live map uses `flutter_map`'s standard `TileLayer` (8.2+ has built-in caching) for now; FMTC can be added during on-device tuning if needed. Heading-up rotation is a simple camera-follow stub here (full rotation tuning is device work). The preview snapshot pipeline (A1–A6) is complete and fully unit-tested.
 **Depends on:** Spec 2 (tokens), Spec 4 (none directly), Spec 5A (`ConnectivityObserver` for offline fallback)
 
 ## Goal

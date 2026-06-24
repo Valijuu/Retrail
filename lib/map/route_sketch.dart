@@ -1,0 +1,78 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+import '../core/theme/app_colors.dart';
+import 'preview_projection.dart';
+
+/// Proportionally scales [points] into a [w] × [h] box, centered. Tile-free
+/// fallback geometry (offline preview / no route data). Y is inverted so north
+/// is up. Mirrors the original `RouteSketch` scaling.
+List<PreviewOffset> sketchOffsets(List<RoutePoint> points, double w, double h) {
+  if (points.isEmpty) return const [];
+  final lats = points.map((p) => p.lat);
+  final lngs = points.map((p) => p.lng);
+  final minLat = lats.reduce(math.min);
+  final maxLat = lats.reduce(math.max);
+  final minLng = lngs.reduce(math.min);
+  final maxLng = lngs.reduce(math.max);
+  final latRange = math.max(maxLat - minLat, 0.0001);
+  final lngRange = math.max(maxLng - minLng, 0.0001);
+  final scale = math.min(w / lngRange, h / latRange);
+  final padX = (w - lngRange * scale) / 2;
+  final padY = (h - latRange * scale) / 2;
+  return [
+    for (final p in points)
+      (x: padX + (p.lng - minLng) * scale, y: padY + (maxLat - p.lat) * scale),
+  ];
+}
+
+/// Pure-canvas route preview over a flat [AppColors.mapTerrain] background — no
+/// tiles, no network. Used as the offline preview fallback and the live-map
+/// empty state.
+class RouteSketch extends StatelessWidget {
+  const RouteSketch({super.key, required this.points});
+
+  final List<RoutePoint> points;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    return CustomPaint(painter: _RouteSketchPainter(points, colors), size: Size.infinite);
+  }
+}
+
+class _RouteSketchPainter extends CustomPainter {
+  _RouteSketchPainter(this.points, this.colors);
+
+  final List<RoutePoint> points;
+  final AppColors colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = colors.mapTerrain);
+    if (points.length < 2) return;
+    final offsets = sketchOffsets(points, size.width, size.height);
+    final path = Path()..moveTo(offsets.first.x, offsets.first.y);
+    for (final o in offsets.skip(1)) {
+      path.lineTo(o.x, o.y);
+    }
+    canvas.drawPath(path, _stroke(colors.routeLineHalo, 6));
+    canvas.drawPath(path, _stroke(colors.routeLineBlue, 3.5));
+    canvas.drawCircle(Offset(offsets.first.x, offsets.first.y), 4,
+        Paint()..color = colors.markerStartGreen);
+    canvas.drawCircle(Offset(offsets.last.x, offsets.last.y), 4,
+        Paint()..color = colors.markerEndRed);
+  }
+
+  Paint _stroke(Color color, double width) => Paint()
+    ..color = color
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = width
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+
+  @override
+  bool shouldRepaint(_RouteSketchPainter old) =>
+      old.points != points || old.colors != colors;
+}
