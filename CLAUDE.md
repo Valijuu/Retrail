@@ -82,6 +82,21 @@ lib/
 
 ---
 
+## Code quality conventions
+
+- **Single responsibility:** one provider/repository/widget = one job. If a file grows past ~300 lines or mixes concerns, split it.
+- **Depend on abstractions:** features depend on repository / `*Repository` APIs, never on Drift / SharedPreferences directly. Inject collaborators (DAO, `Clock`) via constructors / providers — no globally-reached singletons.
+- **No logic in widgets:** widgets read state + send intents; computation lives in providers or `domain/`.
+- **Pure & testable:** domain math (Haversine, stats, projection) is pure Dart with no Flutter imports, fully unit-tested.
+- **Small, named things:** intent-named constants over magic numbers (e.g. `AppShapes.card`); no dead code (the original's dead code was intentionally dropped).
+- **Immutability:** state classes are immutable (`copyWith`); prefer `const`.
+
+### Interfaces (Dart-idiomatic, not Java-style)
+Every Dart class already exposes an implicit interface, and `mocktail` mocks concrete classes — so don't create interfaces just for testing or just to "depend on an abstraction."
+- **Introduce an explicit `abstract interface class` only at real seams** — a boundary with a genuine alternate/fake implementation or a platform dependency (e.g. `DistanceCalculator`, `ConnectivityObserver`, location source, notifications).
+- **Keep single-implementation repositories concrete** (`RideRepository`, `TrackpointRepository`) — no `…Impl` ceremony; test with `mocktail` or a real in-memory Drift DB.
+- **Use a `typedef` function for tiny strategy seams** (e.g. the injected `Clock`/`NowMs`), not a one-method interface.
+
 ## Map & previews (the key improvement)
 
 - **Live/active-ride map:** `flutter_map`, route drawn as halo (white, wider) + blue line on top; heading-up rotation when moving > 1.5 m/s; smooth follow; activity/start/end markers.

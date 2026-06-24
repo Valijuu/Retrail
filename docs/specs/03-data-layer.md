@@ -1,6 +1,6 @@
 # Spec 3 — Data Layer (Drift + Preferences)
 
-**Status:** awaiting review
+**Status:** DONE — merged to `main`; 45 tests green, analyze clean
 **Phase:** 3 of 15
 **Depends on:** Spec 1 (deps incl. Drift)
 
