@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/shell/app_router.dart';
+import 'features/shell/theme_mode_provider.dart';
 import 'l10n/app_localizations.dart';
 
-/// Root widget for Retrail. Wires up Material 3 theming (light/dark following
-/// the system), localization (English default + German), and — for now — a
-/// placeholder home. The real navigation shell replaces [_PlaceholderHome] in
-/// the app-shell phase (Spec 8).
-class RetrailApp extends StatelessWidget {
+/// Root widget for Retrail: Material 3 theming (mode from the user's preference),
+/// localization (English default + German), and `go_router` navigation.
+class RetrailApp extends ConsumerWidget {
   const RetrailApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(goRouterProvider);
+    final themeMode = ref.watch(themeModeProvider).asData?.value ?? ThemeMode.system;
+
+    return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
+      routerConfig: router,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -26,24 +31,6 @@ class RetrailApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const _PlaceholderHome(),
-    );
-  }
-}
-
-class _PlaceholderHome extends StatelessWidget {
-  const _PlaceholderHome();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      body: Center(
-        child: Text(
-          l10n.appTitle,
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-      ),
     );
   }
 }

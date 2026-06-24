@@ -3,5 +3,11 @@
   "appTitle": "Retrail",
   "@appTitle": {
     "description": "The application title shown in the app bar and task switcher."
-  }
+  },
+  "navHome": "Home",
+  "@navHome": { "description": "Bottom navigation label for the home tab." },
+  "navHistory": "History",
+  "@navHistory": { "description": "Bottom navigation label for the ride history tab." },
+  "navSettings": "Settings",
+  "@navSettings": { "description": "Bottom navigation label for the settings tab." }
 }

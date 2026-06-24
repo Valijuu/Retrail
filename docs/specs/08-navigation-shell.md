@@ -1,7 +1,9 @@
 # Spec 8 — Navigation & App Shell
 
-**Status:** awaiting review
+**Status:** DONE — merged to `main`; 12 new shell tests (151 total) green, analyze clean.
 **Phase:** 8 of 15
+
+> **Note (Riverpod 3):** `StateProvider` lives in `package:flutter_riverpod/legacy.dart`; `AsyncValue` uses `.asData?.value` (not `valueOrNull`).
 **Depends on:** Spec 1 (l10n, app entry), Spec 2 (theme), Spec 3 (`PreferencesRepository`)
 
 ## Goal

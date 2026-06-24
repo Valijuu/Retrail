@@ -1,4 +1,7 @@
 {
   "@@locale": "de",
-  "appTitle": "Retrail"
+  "appTitle": "Retrail",
+  "navHome": "Start",
+  "navHistory": "Verlauf",
+  "navSettings": "Einstellungen"
 }
