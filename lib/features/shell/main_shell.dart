@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../home/home_screen.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
 /// the History tab and the History screen scrolls to it, then clears this.
@@ -61,7 +62,13 @@ class _MainShellState extends ConsumerState<MainShell> {
         controller: _controller,
         onPageChanged: _onPageChanged,
         children: [
-          _PlaceholderTab(label: 'home:$_homeVisits'),
+          HomeScreen(
+            greetingKey: _homeVisits,
+            onOpenRide: (rideId) {
+              ref.read(historyTargetRideProvider.notifier).state = rideId;
+              _goToTab(1);
+            },
+          ),
           const _PlaceholderTab(label: 'history'),
           const _PlaceholderTab(label: 'settings'),
         ],

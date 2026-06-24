@@ -1,6 +1,6 @@
 # Spec 10 — Home screen
 
-**Status:** awaiting review
+**Status:** DONE — merged to `main`; 177 total tests green, analyze clean
 **Phase:** 10 of 15
 **Depends on:** Spec 3 (repos), Spec 4 (`aggregateStats`, `time_bounds`, formatters, `rideDisplayTitle`), Spec 5A (`RideTracker`), Spec 8 (shell/greetingKey), Spec 9 (`ProfileAvatar`)
 

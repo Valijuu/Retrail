@@ -14,9 +14,7 @@
   "actionContinue": "Weiter",
 
   "profilePictureGreetingNamed": "Sieht gut aus, {name}!",
-  "@profilePictureGreetingNamed": {
-    "placeholders": { "name": { "type": "String" } }
-  },
+  "@profilePictureGreetingNamed": { "placeholders": { "name": { "type": "String" } } },
   "profilePictureGreetingAnon": "Profilbild hinzufügen",
   "profilePictureSubtitle": "Wähle ein Foto oder lass es leer.",
   "profilePictureUploadCd": "Foto hochladen",
@@ -30,5 +28,40 @@
   "activityRollerskates": "Rollschuhe",
   "activityMountainboard": "Mountainboard",
   "activityScooter": "Roller",
-  "activityOther": "Andere"
+  "activityOther": "Andere",
+
+  "homeDefaultName": "Skater",
+  "sectionRecentRides": "Letzte Fahrten",
+  "sectionRecentFavorites": "Favoriten",
+  "homeEmptyNoRides": "Noch keine Fahrten — Zeit loszurollen.",
+  "homeEmptyNoFavorites": "Noch keine Favoriten.",
+  "homeWeekSection": "Diese Woche",
+  "homeDaySection": "Heute",
+  "homeYearSection": "Dieses Jahr",
+  "statTempoKmh": "km/h",
+  "statRides": "Fahrten",
+  "statDurationLabel": "Dauer",
+  "homeStartTracking": "Tracking starten",
+  "offlineTrackingTitle": "Du bist offline",
+  "offlineTrackingBody": "Die Karte lädt keine Kacheln, aber deine Fahrt wird trotzdem aufgezeichnet. Trotzdem starten?",
+  "offlineTrackingConfirm": "Trotzdem starten",
+  "permissionLocationTitle": "Standort benötigt",
+  "permissionLocationBody": "Retrail braucht Standortzugriff, um deine Fahrten aufzuzeichnen.",
+  "a11yNavigateToStart": "Zum Start navigieren",
+
+  "skaterGreeting1": "Session-Zeit, %s",
+  "skaterGreeting2": "Fahrtzeit, %s!",
+  "skaterGreeting3": "Cruise-Zeit, %s",
+  "skaterGreeting4": "Flow-Zeit, %s",
+  "skaterGreeting5": "Mach dich bereit, %s!",
+  "skaterGreeting6": "Push, %s!",
+  "skaterGreeting7": "Easy rollen, %s",
+  "skaterGreeting8": "Street-Vibes, %s",
+  "skaterGreeting9": "Auf geht's, %s!",
+  "skaterGreeting10": "Lass die Rollen rollen, %s",
+  "skaterGreeting11": "Bereit zum Rollen, %s?",
+  "skaterGreeting12": "Räder an, %s!",
+  "skaterGreeting13": "Ab auf die Strecke, %s!",
+  "skaterGreeting14": "Die Straßen rufen, %s",
+  "skaterGreeting15": "Fang die Brise, %s"
 }

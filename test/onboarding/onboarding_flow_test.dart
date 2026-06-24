@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/app.dart';
+import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../home/home_test_helpers.dart';
 
 void main() {
   testWidgets('walks name → photo → activity → main and persists choices',
@@ -16,8 +19,12 @@ void main() {
 
     SharedPreferences.setMockInitialValues({});
     final prefs = PreferencesRepository(await SharedPreferences.getInstance());
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
     final container = ProviderContainer(overrides: [
+      appDatabaseProvider.overrideWithValue(db),
       preferencesRepositoryProvider.overrideWithValue(prefs),
+      ...homeStreamStubs(),
     ]);
     addTearDown(container.dispose);
 

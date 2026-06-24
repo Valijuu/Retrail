@@ -1,15 +1,10 @@
 {
   "@@locale": "en",
   "appTitle": "Retrail",
-  "@appTitle": {
-    "description": "The application title shown in the app bar and task switcher."
-  },
+  "@appTitle": { "description": "App title." },
   "navHome": "Home",
-  "@navHome": { "description": "Bottom navigation label for the home tab." },
   "navHistory": "History",
-  "@navHistory": { "description": "Bottom navigation label for the ride history tab." },
   "navSettings": "Settings",
-  "@navSettings": { "description": "Bottom navigation label for the settings tab." },
 
   "initWelcomeTitle": "Welcome to Retrail",
   "initNameQuestion": "What should we call you?",
@@ -20,9 +15,7 @@
   "actionContinue": "Continue",
 
   "profilePictureGreetingNamed": "Looking good, {name}!",
-  "@profilePictureGreetingNamed": {
-    "placeholders": { "name": { "type": "String" } }
-  },
+  "@profilePictureGreetingNamed": { "placeholders": { "name": { "type": "String" } } },
   "profilePictureGreetingAnon": "Add a profile picture",
   "profilePictureSubtitle": "Choose a photo, or keep it blank.",
   "profilePictureUploadCd": "Upload a photo",
@@ -36,5 +29,40 @@
   "activityRollerskates": "Roller skates",
   "activityMountainboard": "Mountainboard",
   "activityScooter": "Scooter",
-  "activityOther": "Other"
+  "activityOther": "Other",
+
+  "homeDefaultName": "Skater",
+  "sectionRecentRides": "Recent rides",
+  "sectionRecentFavorites": "Favorites",
+  "homeEmptyNoRides": "No rides yet — time to roll.",
+  "homeEmptyNoFavorites": "No favorites yet.",
+  "homeWeekSection": "This week",
+  "homeDaySection": "Today",
+  "homeYearSection": "This year",
+  "statTempoKmh": "km/h",
+  "statRides": "Rides",
+  "statDurationLabel": "Duration",
+  "homeStartTracking": "Start tracking",
+  "offlineTrackingTitle": "You're offline",
+  "offlineTrackingBody": "The map won't load tiles, but your ride still records. Start anyway?",
+  "offlineTrackingConfirm": "Start anyway",
+  "permissionLocationTitle": "Location needed",
+  "permissionLocationBody": "Retrail needs location access to record your rides.",
+  "a11yNavigateToStart": "Navigate to start",
+
+  "skaterGreeting1": "Session time, %s",
+  "skaterGreeting2": "Ride time, %s!",
+  "skaterGreeting3": "Cruise time, %s",
+  "skaterGreeting4": "Flow time, %s",
+  "skaterGreeting5": "Gear up, %s!",
+  "skaterGreeting6": "Push it, %s!",
+  "skaterGreeting7": "Easy rollin', %s",
+  "skaterGreeting8": "Street vibes, %s",
+  "skaterGreeting9": "Hop on, %s!",
+  "skaterGreeting10": "Let those wheels roll, %s",
+  "skaterGreeting11": "Ready to roll, %s?",
+  "skaterGreeting12": "Wheels up, %s!",
+  "skaterGreeting13": "Hit the trail, %s!",
+  "skaterGreeting14": "Streets are calling, %s",
+  "skaterGreeting15": "Catch the breeze, %s"
 }
