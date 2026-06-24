@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/app_database.dart';
+import '../db/database_connection.dart';
 import '../db/ride_dao.dart';
 import '../db/trackpoint_dao.dart';
 import 'preferences_repository.dart';
@@ -9,7 +10,7 @@ import 'trackpoint_repository.dart';
 
 /// Singleton Drift database for the app's lifetime.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase.open();
+  final db = openAppDatabase();
   ref.onDispose(db.close);
   return db;
 });

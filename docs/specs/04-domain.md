@@ -1,6 +1,6 @@
 # Spec 4 — Domain / Helpers (pure Dart, TDD core)
 
-**Status:** awaiting review
+**Status:** DONE — merged to `main`; 74 tests green, analyze clean
 **Phase:** 4 of 15
 **Depends on:** Spec 3 (`RideWithTrackpoints`, `Ride`, `Trackpoint`)
 

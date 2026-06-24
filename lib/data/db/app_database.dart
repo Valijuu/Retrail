@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import 'ride_dao.dart';
 import 'tables.dart';
@@ -21,9 +17,6 @@ class AppDatabase extends _$AppDatabase {
   /// In-memory database for tests.
   AppDatabase.memory() : super(NativeDatabase.memory());
 
-  /// On-device database backed by a file in the app documents directory.
-  factory AppDatabase.open() => AppDatabase(_openConnection());
-
   @override
   int get schemaVersion => 1;
 
@@ -35,12 +28,4 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
-}
-
-QueryExecutor _openConnection() {
-  return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'retrail.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
 }
