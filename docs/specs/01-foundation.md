@@ -1,6 +1,6 @@
 # Spec 1 — Project Bootstrap & Foundation
 
-**Status:** awaiting review
+**Status:** DONE — merged to `main` (commit `e27736d`); 7 smoke tests green, analyze clean
 **Phase:** 1 of 15
 **Depends on:** none
 
