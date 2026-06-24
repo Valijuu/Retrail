@@ -1,6 +1,6 @@
 # Spec 5 — GPS Tracking Engine (HIGH RISK)
 
-**Status:** awaiting review
+**Status:** Part A DONE — merged to `main` (39 ported RideTracker tests + 6 connectivity tests green, analyze clean). Part B (platform plumbing) pending the device spike.
 **Phase:** 5 of 15
 **Depends on:** Spec 3 (repositories), Spec 4 (`DistanceCalculator`, `ActivityType`)
 
