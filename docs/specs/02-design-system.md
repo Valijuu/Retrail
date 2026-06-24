@@ -1,8 +1,22 @@
 # Spec 2 — Design System (typography, shapes, component themes)
 
-**Status:** awaiting review
+**Status:** DONE — merged to `main`; 17 tests green, analyze clean
 **Phase:** 2 of 15
 **Depends on:** Spec 1 (AppColors ThemeExtension already exists)
+
+> **Implementation note (adjustment from the written plan):** Reading the
+> original `Theme.kt`/`Type.kt` showed it applies **only** a `colorScheme` +
+> default M3 typography, with **no global component/shape themes** — shapes are
+> set per-widget (e.g. hero cards r14 vs recent-ride cards r12, which a single
+> global card theme can't represent). To match the original exactly, this phase
+> therefore: maps the `colorScheme` precisely (incl. `surfaceVariant →
+> surfaceContainerHighest`), uses stock M3 typography, and exposes **`AppShapes`
+> constants + `context.colors`** for per-widget use in the screen phases —
+> instead of imposing broad component themes the original never had. The only
+> global component tweak is a seamless app bar (surface bg, 0 elevation). The
+> golden "sampler" was dropped: without global component themes a sampler of
+> default widgets wouldn't represent the app's real per-widget look — meaningful
+> goldens come with the actual screens in later phases.
 
 ## Goal
 Complete the visual foundation so every later screen pulls type, shape, and component styling from one source — matching the original app exactly. Spec 1 added the color tokens and a minimal `buildTheme`; this phase fills in **typography**, **shapes**, and the **Material 3 component themes**, all driven by the tokens.
