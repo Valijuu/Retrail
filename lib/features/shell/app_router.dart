@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../onboarding/activity_init_screen.dart';
 import '../onboarding/init_screen.dart';
 import '../onboarding/profile_picture_screen.dart';
+import '../timer/countdown_screen.dart';
 import 'main_shell.dart';
 import 'placeholders.dart';
 import 'routes.dart';
@@ -61,7 +62,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           pageBuilder: (c, s) => _fade(const MainShell(), s)),
       GoRoute(
           path: AppRoutes.timer,
-          pageBuilder: (c, s) => _fade(const RoutePlaceholder('timer'), s)),
+          pageBuilder: (c, s) => _fade(const CountdownScreen(), s)),
       GoRoute(
           path: AppRoutes.ride,
           pageBuilder: (c, s) => _fade(const RidePlaceholder(), s)),

@@ -50,6 +50,13 @@
   "permissionLocationBody": "Retrail needs location access to record your rides.",
   "a11yNavigateToStart": "Navigate to start",
 
+  "timerGetReady": "GET READY",
+  "timerTagline": "Ride starts soon.\nStay balanced.",
+  "timerStartNow": "Start now",
+  "timerAddFiveSec": "+5 sec.",
+  "gpsStatusLabel": "GPS signal",
+  "gpsStatusReady": "ready",
+
   "skaterGreeting1": "Session time, %s",
   "skaterGreeting2": "Ride time, %s!",
   "skaterGreeting3": "Cruise time, %s",

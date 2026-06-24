@@ -49,6 +49,13 @@
   "permissionLocationBody": "Retrail braucht Standortzugriff, um deine Fahrten aufzuzeichnen.",
   "a11yNavigateToStart": "Zum Start navigieren",
 
+  "timerGetReady": "FERTIG MACHEN",
+  "timerTagline": "Fahrt beginnt gleich.\nBleib in Balance.",
+  "timerStartNow": "Jetzt starten",
+  "timerAddFiveSec": "+5 Sek.",
+  "gpsStatusLabel": "GPS-Signal",
+  "gpsStatusReady": "bereit",
+
   "skaterGreeting1": "Session-Zeit, %s",
   "skaterGreeting2": "Fahrtzeit, %s!",
   "skaterGreeting3": "Cruise-Zeit, %s",

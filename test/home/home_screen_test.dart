@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/app.dart';
@@ -24,6 +25,10 @@ void main() {
     List<RecentRideUi> favorites = const [],
     WeeklyStats weekly = const WeeklyStats.zero(),
   }) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final env = await buildHomeEnv(initialPrefs: {'onboarding_done': true});
     addTearDown(env.db.close);
     await tester.pumpWidget(ProviderScope(
@@ -73,11 +78,11 @@ void main() {
     expect(find.text('12.5 km'), findsOneWidget); // weekly hero distance
   });
 
-  testWidgets('Start tracking routes to the timer', (tester) async {
+  testWidgets('Start tracking routes to the countdown timer', (tester) async {
     await pumpHome(tester);
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
-    expect(find.text('timer'), findsOneWidget);
+    expect(find.text('GET READY'), findsOneWidget);
   });
 
   testWidgets('reopens the active ride when already tracking', (tester) async {
