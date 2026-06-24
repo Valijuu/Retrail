@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "appTitle": "Retrail",
+  "@appTitle": {
+    "description": "The application title shown in the app bar and task switcher."
+  }
+}
