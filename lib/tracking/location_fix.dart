@@ -1,9 +1,11 @@
 /// A platform-agnostic GPS fix consumed by [RideTracker]'s filter. Decouples the
 /// recording pipeline from `geolocator`.
 ///
-/// [elapsedRealtimeNanos] is a **monotonic** clock reading (like Android's
-/// `Location.getElapsedRealtimeNanos`), synthesized at ingestion in the platform
-/// layer — used only for relative timing in the freshness/outlier filters.
+/// [elapsedRealtimeNanos] is the fix's **real capture time** in nanoseconds
+/// (from geolocator's `Position.timestamp`), NOT a clock read at ingestion.
+/// This is essential: the freshness filter compares it against "now", so a
+/// minutes-old cached fix must carry its old capture time to be rejected.
+/// Used for the freshness check and inter-fix timing (outlier / min-speed).
 class LocationFix {
   const LocationFix({
     required this.latitude,

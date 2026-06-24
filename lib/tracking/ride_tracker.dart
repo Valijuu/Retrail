@@ -82,7 +82,8 @@ class RideTracker {
         activityType: _activityType,
       );
 
-  /// Emits on every state change (for the UI / Riverpod).
+  /// Emits on every state change (for the UI / Riverpod). Broadcast and does NOT
+  /// replay — a new subscriber should seed from [state] then append [changes].
   Stream<RideTrackingState> get changes => _states.stream;
 
   void _emit() => _states.add(state);
@@ -263,6 +264,9 @@ class RideTracker {
 
   static int _defaultNowMs() => DateTime.now().millisecondsSinceEpoch;
 
-  static final Stopwatch _processClock = Stopwatch()..start();
-  static int _defaultNowNanos() => _processClock.elapsedMicroseconds * 1000;
+  // Wall-clock "now" in nanoseconds. Must share the same time source as the
+  // fixes' [LocationFix.elapsedRealtimeNanos] (geolocator's real capture
+  // timestamp) so the freshness filter compares like-for-like and still catches
+  // a minutes-old cached fix.
+  static int _defaultNowNanos() => DateTime.now().microsecondsSinceEpoch * 1000;
 }
