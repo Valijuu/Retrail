@@ -9,5 +9,32 @@
   "navHistory": "History",
   "@navHistory": { "description": "Bottom navigation label for the ride history tab." },
   "navSettings": "Settings",
-  "@navSettings": { "description": "Bottom navigation label for the settings tab." }
+  "@navSettings": { "description": "Bottom navigation label for the settings tab." },
+
+  "initWelcomeTitle": "Welcome to Retrail",
+  "initNameQuestion": "What should we call you?",
+  "initNameLabel": "Name",
+  "initNamePlaceholder": "Your name",
+  "actionLetsGo": "Let's go",
+  "actionSkip": "Skip",
+  "actionContinue": "Continue",
+
+  "profilePictureGreetingNamed": "Looking good, {name}!",
+  "@profilePictureGreetingNamed": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "profilePictureGreetingAnon": "Add a profile picture",
+  "profilePictureSubtitle": "Choose a photo, or keep it blank.",
+  "profilePictureUploadCd": "Upload a photo",
+  "profilePictureDeleteCd": "Delete photo",
+
+  "activityPickerTitle": "How do you roll?",
+  "initActivityHint": "Pick your usual ride. You can change it anytime.",
+  "activityLongboard": "Longboard",
+  "activitySkateboard": "Skateboard",
+  "activityRollerblades": "Rollerblades",
+  "activityRollerskates": "Roller skates",
+  "activityMountainboard": "Mountainboard",
+  "activityScooter": "Scooter",
+  "activityOther": "Other"
 }

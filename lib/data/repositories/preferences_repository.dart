@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,18 +12,19 @@ class PreferencesRepository {
   final SharedPreferences _prefs;
   final StreamController<void> _changes = StreamController<void>.broadcast();
 
-  // Keys & defaults — identical to the original UserPreferencesRepository.
   static const _kUserName = 'user_name';
-  static const _kAvatarIndex = 'avatar_index';
   static const _kOnboardingDone = 'onboarding_done';
-  static const _kCustomPhotoPath = 'custom_photo_path';
   static const _kThemeMode = 'theme_mode';
   static const _kLastActivityType = 'last_activity_type';
+  static const _kCurrentPhoto = 'current_profile_photo';
+  static const _kRecentPhotos = 'profile_photos';
 
   static const defaultUserName = 'Retrailer';
-  static const defaultAvatarIndex = 0;
   static const defaultThemeMode = 'system';
   static const defaultActivityType = 'LONGBOARD';
+
+  /// Max number of recent profile photos kept.
+  static const maxRecentPhotos = 5;
 
   Stream<T> _watch<T>(T Function() read) async* {
     yield read();
@@ -32,16 +34,8 @@ class PreferencesRepository {
   Stream<String> get userName =>
       _watch(() => _prefs.getString(_kUserName) ?? defaultUserName);
 
-  Stream<int> get avatarIndex =>
-      _watch(() => _prefs.getInt(_kAvatarIndex) ?? defaultAvatarIndex);
-
   Stream<bool> get onboardingDone =>
       _watch(() => _prefs.getBool(_kOnboardingDone) ?? false);
-
-  Stream<String?> get customPhotoPath => _watch(() {
-        final path = _prefs.getString(_kCustomPhotoPath);
-        return (path != null && path.isNotEmpty) ? path : null;
-      });
 
   Stream<String> get themeMode =>
       _watch(() => _prefs.getString(_kThemeMode) ?? defaultThemeMode);
@@ -50,23 +44,49 @@ class PreferencesRepository {
   Stream<String> get lastActivityType =>
       _watch(() => _prefs.getString(_kLastActivityType) ?? defaultActivityType);
 
+  // ── Profile photo ────────────────────────────────────────────────────────
+
+  String? _readCurrentPhoto() {
+    final path = _prefs.getString(_kCurrentPhoto);
+    return (path != null && path.isNotEmpty) ? path : null;
+  }
+
+  List<String> _readRecentPhotos() {
+    final raw = _prefs.getString(_kRecentPhotos);
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      return (jsonDecode(raw) as List).cast<String>();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// The selected profile photo path, or null when blank.
+  Stream<String?> get currentProfilePhoto => _watch(_readCurrentPhoto);
+  String? get currentProfilePhotoNow => _readCurrentPhoto();
+
+  /// Up to [maxRecentPhotos] recent photo paths, newest first.
+  Stream<List<String>> get recentProfilePhotos => _watch(_readRecentPhotos);
+  List<String> get recentProfilePhotosNow => _readRecentPhotos();
+
+  Future<void> setCurrentProfilePhoto(String? path) async {
+    if (path == null || path.isEmpty) {
+      await _prefs.remove(_kCurrentPhoto);
+    } else {
+      await _prefs.setString(_kCurrentPhoto, path);
+    }
+    _notify();
+  }
+
+  Future<void> setRecentProfilePhotos(List<String> paths) async {
+    await _prefs.setString(_kRecentPhotos, jsonEncode(paths));
+    _notify();
+  }
+
+  // ── Writers ──────────────────────────────────────────────────────────────
+
   Future<void> saveUserName(String name) async {
     await _prefs.setString(_kUserName, name);
-    _notify();
-  }
-
-  Future<void> saveCustomPhotoPath(String path) async {
-    await _prefs.setString(_kCustomPhotoPath, path);
-    _notify();
-  }
-
-  Future<void> clearCustomPhoto() async {
-    await _prefs.remove(_kCustomPhotoPath);
-    _notify();
-  }
-
-  Future<void> saveAvatarIndex(int index) async {
-    await _prefs.setInt(_kAvatarIndex, index);
     _notify();
   }
 

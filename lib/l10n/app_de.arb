@@ -3,5 +3,32 @@
   "appTitle": "Retrail",
   "navHome": "Start",
   "navHistory": "Verlauf",
-  "navSettings": "Einstellungen"
+  "navSettings": "Einstellungen",
+
+  "initWelcomeTitle": "Willkommen bei Retrail",
+  "initNameQuestion": "Wie sollen wir dich nennen?",
+  "initNameLabel": "Name",
+  "initNamePlaceholder": "Dein Name",
+  "actionLetsGo": "Los geht's",
+  "actionSkip": "Überspringen",
+  "actionContinue": "Weiter",
+
+  "profilePictureGreetingNamed": "Sieht gut aus, {name}!",
+  "@profilePictureGreetingNamed": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "profilePictureGreetingAnon": "Profilbild hinzufügen",
+  "profilePictureSubtitle": "Wähle ein Foto oder lass es leer.",
+  "profilePictureUploadCd": "Foto hochladen",
+  "profilePictureDeleteCd": "Foto löschen",
+
+  "activityPickerTitle": "Wie fährst du?",
+  "initActivityHint": "Wähle dein übliches Board. Du kannst es jederzeit ändern.",
+  "activityLongboard": "Longboard",
+  "activitySkateboard": "Skateboard",
+  "activityRollerblades": "Inline-Skates",
+  "activityRollerskates": "Rollschuhe",
+  "activityMountainboard": "Mountainboard",
+  "activityScooter": "Roller",
+  "activityOther": "Andere"
 }

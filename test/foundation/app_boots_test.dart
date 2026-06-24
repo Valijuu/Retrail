@@ -21,8 +21,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Boots without error and mounts the router. First run (onboarding not
-    // done) lands on the init flow.
+    // done) lands on the init screen.
     expect(find.byType(MaterialApp), findsOneWidget);
-    expect(find.text('init'), findsOneWidget);
+    expect(find.text('Welcome to Retrail'), findsOneWidget);
   });
 }

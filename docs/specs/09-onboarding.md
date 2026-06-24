@@ -1,6 +1,6 @@
 # Spec 9 — Onboarding (name → photo → activity)
 
-**Status:** awaiting review (revised per feedback)
+**Status:** DONE — merged to `main`; 162 total tests green, analyze clean.
 **Phase:** 9 of 15
 **Depends on:** Spec 3 (`PreferencesRepository`), Spec 4 (`ActivityType`), Spec 8 (routes/shell)
 

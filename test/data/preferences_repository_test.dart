@@ -13,34 +13,24 @@ void main() {
   test('exposes the original defaults when unset', () async {
     final prefs = await build();
     expect(await prefs.userName.first, 'Retrailer');
-    expect(await prefs.avatarIndex.first, 0);
     expect(await prefs.onboardingDone.first, false);
-    expect(await prefs.customPhotoPath.first, isNull);
     expect(await prefs.themeMode.first, 'system');
     expect(await prefs.lastActivityType.first, 'LONGBOARD');
+    expect(await prefs.currentProfilePhoto.first, isNull);
+    expect(await prefs.recentProfilePhotos.first, isEmpty);
   });
 
   test('persists written values', () async {
     final prefs = await build();
     await prefs.saveUserName('Vali');
-    await prefs.saveAvatarIndex(4);
     await prefs.setOnboardingDone();
     await prefs.setThemeMode('dark');
     await prefs.saveLastActivityType('SKATEBOARD');
 
     expect(await prefs.userName.first, 'Vali');
-    expect(await prefs.avatarIndex.first, 4);
     expect(await prefs.onboardingDone.first, true);
     expect(await prefs.themeMode.first, 'dark');
     expect(await prefs.lastActivityType.first, 'SKATEBOARD');
-  });
-
-  test('blank custom photo path reads back as null; clear removes it', () async {
-    final prefs = await build();
-    await prefs.saveCustomPhotoPath('/photos/me.jpg');
-    expect(await prefs.customPhotoPath.first, '/photos/me.jpg');
-    await prefs.clearCustomPhoto();
-    expect(await prefs.customPhotoPath.first, isNull);
   });
 
   test('streams re-emit on write', () async {

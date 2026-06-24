@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../onboarding/activity_init_screen.dart';
+import '../onboarding/init_screen.dart';
+import '../onboarding/profile_picture_screen.dart';
 import 'main_shell.dart';
 import 'placeholders.dart';
 import 'routes.dart';
@@ -46,13 +49,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           pageBuilder: (c, s) => _fade(const RoutePlaceholder('Retrail'), s)),
       GoRoute(
           path: AppRoutes.init,
-          pageBuilder: (c, s) => _fade(const RoutePlaceholder('init'), s)),
+          pageBuilder: (c, s) => _fade(const InitScreen(), s)),
       GoRoute(
           path: AppRoutes.profilePicture,
-          pageBuilder: (c, s) => _fade(const RoutePlaceholder('photo'), s)),
+          pageBuilder: (c, s) => _fade(const ProfilePictureScreen(), s)),
       GoRoute(
           path: AppRoutes.activityPicker,
-          pageBuilder: (c, s) => _fade(const RoutePlaceholder('activity'), s)),
+          pageBuilder: (c, s) => _fade(const ActivityInitScreen(), s)),
       GoRoute(
           path: AppRoutes.main,
           pageBuilder: (c, s) => _fade(const MainShell(), s)),
