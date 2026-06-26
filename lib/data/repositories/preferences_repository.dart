@@ -15,12 +15,14 @@ class PreferencesRepository {
   static const _kUserName = 'user_name';
   static const _kOnboardingDone = 'onboarding_done';
   static const _kThemeMode = 'theme_mode';
+  static const _kLanguage = 'app_language';
   static const _kLastActivityType = 'last_activity_type';
   static const _kCurrentPhoto = 'current_profile_photo';
   static const _kRecentPhotos = 'profile_photos';
 
   static const defaultUserName = 'Retrailer';
   static const defaultThemeMode = 'system';
+  static const defaultLanguage = 'system';
   static const defaultActivityType = 'LONGBOARD';
 
   /// Max number of recent profile photos kept.
@@ -39,6 +41,13 @@ class PreferencesRepository {
 
   Stream<String> get themeMode =>
       _watch(() => _prefs.getString(_kThemeMode) ?? defaultThemeMode);
+
+  /// App-interface language: `system` | `en` | `de`.
+  Stream<String> get language =>
+      _watch(() => _prefs.getString(_kLanguage) ?? defaultLanguage);
+
+  /// Current user name synchronously (for seeding edit fields). Empty → blank.
+  String get userNameNow => _prefs.getString(_kUserName) ?? '';
 
   /// Last activity type chosen in the picker — preselection for the next ride.
   Stream<String> get lastActivityType =>
@@ -97,6 +106,11 @@ class PreferencesRepository {
 
   Future<void> setThemeMode(String mode) async {
     await _prefs.setString(_kThemeMode, mode);
+    _notify();
+  }
+
+  Future<void> setLanguage(String tag) async {
+    await _prefs.setString(_kLanguage, tag);
     _notify();
   }
 

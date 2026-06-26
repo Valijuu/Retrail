@@ -7,6 +7,9 @@ import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
+import 'package:retrail/features/profile/profile_avatar.dart';
+import 'package:retrail/features/profile/profile_edit_sheet.dart';
+import 'package:retrail/features/profile/profile_providers.dart';
 import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +26,8 @@ Future<Widget> _app(WidgetTester tester) async {
       appDatabaseProvider.overrideWithValue(db),
       preferencesRepositoryProvider.overrideWithValue(prefs),
       isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+      currentProfilePhotoProvider.overrideWith((ref) => Stream.value(null)),
+      recentProfilePhotosProvider.overrideWith((ref) => Stream.value(const [])),
       ...homeStreamStubs(),
     ],
     child: MaterialApp(
@@ -62,6 +67,25 @@ void main() {
     await tester.tap(find.text('Settings'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('settings'), findsOneWidget);
+    // The real settings screen renders its sections (e.g. the THEME header).
+    expect(find.text('THEME'), findsOneWidget);
+  });
+
+  testWidgets('tapping the Home avatar opens the profile edit sheet',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // The sheet is not present until the avatar is tapped.
+    expect(find.byType(ProfileEditSheet), findsNothing);
+
+    // The Home top-header avatar is the only ProfileAvatar on screen.
+    await tester.tap(find.byType(ProfileAvatar));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(ProfileEditSheet), findsOneWidget);
+    expect(find.text('Edit profile'), findsOneWidget);
   });
 }

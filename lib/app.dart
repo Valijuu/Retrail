@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/settings/settings_providers.dart';
 import 'features/shell/app_router.dart';
 import 'features/shell/theme_mode_provider.dart';
 import 'l10n/app_localizations.dart';
@@ -16,6 +17,7 @@ class RetrailApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
     final themeMode = ref.watch(themeModeProvider).asData?.value ?? ThemeMode.system;
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
@@ -23,6 +25,7 @@ class RetrailApp extends ConsumerWidget {
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: themeMode,
+      locale: locale,
       routerConfig: router,
       localizationsDelegates: const [
         AppLocalizations.delegate,

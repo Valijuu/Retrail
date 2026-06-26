@@ -6,6 +6,8 @@ import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../history/history_screen.dart';
 import '../home/home_screen.dart';
+import '../profile/profile_edit_sheet.dart';
+import '../settings/settings_screen.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
 /// the History tab and the History screen scrolls to it, then clears this.
@@ -69,9 +71,15 @@ class _MainShellState extends ConsumerState<MainShell> {
               ref.read(historyTargetRideProvider.notifier).state = rideId;
               _goToTab(1);
             },
+            onAvatarTap: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: colors.surface,
+              builder: (_) => const ProfileEditSheet(),
+            ),
           ),
           const HistoryScreen(),
-          const _PlaceholderTab(label: 'settings'),
+          const SettingsScreen(),
         ],
       ),
       bottomNavigationBar:
@@ -84,13 +92,6 @@ class _TabSpec {
   const _TabSpec(this.icon, this.label);
   final IconData icon;
   final String label;
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({required this.label});
-  final String label;
-  @override
-  Widget build(BuildContext context) => Center(child: Text(label));
 }
 
 /// Custom bottom bar matching the original: a selected icon sits in a
@@ -168,6 +169,9 @@ class _NavItem extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(spec.label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tint)),
         ],
       ),
