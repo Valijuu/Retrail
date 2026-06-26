@@ -26,6 +26,14 @@ Bounds weekBounds({int? nowMs}) {
   return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
 }
 
+/// First of the current month 00:00:00.000 → last day 23:59:59.999 (local).
+Bounds monthBounds({int? nowMs}) {
+  final now = DateTime.fromMillisecondsSinceEpoch(_nowMs(nowMs));
+  final start = DateTime(now.year, now.month, 1);
+  final endExclusive = DateTime(now.year, now.month + 1, 1);
+  return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
+}
+
 /// Jan 1 00:00:00.000 of the current year → [maxBoundMs] (local start).
 Bounds yearBounds({int? nowMs}) {
   final now = DateTime.fromMillisecondsSinceEpoch(_nowMs(nowMs));

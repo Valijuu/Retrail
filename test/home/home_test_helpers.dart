@@ -12,6 +12,7 @@ import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/domain/stats_aggregation.dart';
 import 'package:retrail/features/active_ride/active_ride_controller.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
+import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/home/home_providers.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
 import 'package:retrail/map/route_preview_cache.dart';
@@ -75,6 +76,9 @@ homeStreamStubs({
       weeklyStatsProvider.overrideWith((ref) => Stream.value(weekly)),
       dailyStatsProvider.overrideWith((ref) => Stream.value(daily)),
       yearlyStatsProvider.overrideWith((ref) => Stream.value(yearly)),
+      // The History tab is a PageView neighbor of Home, so any shell-mounting
+      // test builds it; keep it off the never-closing Drift `.watch()` stream.
+      historyItemsProvider.overrideWith((ref) => Stream.value(const [])),
     ];
 
 class HomeEnv {

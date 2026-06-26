@@ -1,0 +1,367 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_shapes.dart';
+import '../../domain/activity_type.dart';
+import '../../domain/formatters.dart';
+import '../../domain/ride_title.dart';
+import '../../l10n/app_localizations.dart';
+import '../../map/preview_projection.dart';
+import '../../map/route_preview.dart';
+import '../active_ride/active_ride_providers.dart';
+import '../home/navigation_launcher.dart';
+import '../onboarding/activity_type_ui.dart';
+import 'history_items.dart';
+
+/// One ride row: cached-PNG thumbnail (no per-scroll tiles), navigate-to-start,
+/// favorite toggle (with pulse), title/distance/meta, chips and a 3-dot
+/// edit/delete menu. Ports `RideHistoryListItem`.
+class HistoryRideCard extends ConsumerStatefulWidget {
+  const HistoryRideCard({
+    super.key,
+    required this.entry,
+    required this.selectionMode,
+    required this.selected,
+    required this.highlighted,
+    required this.onTap,
+    required this.onLongPress,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleFavorite,
+  });
+
+  final RideEntryItem entry;
+  final bool selectionMode;
+  final bool selected;
+  final bool highlighted;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleFavorite;
+
+  @override
+  ConsumerState<HistoryRideCard> createState() => _HistoryRideCardState();
+}
+
+class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 130),
+    lowerBound: 1.0,
+    upperBound: 1.3,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.entry.rwt.ride.isFavorite) {
+      // already favorited on first build — no pulse
+    }
+  }
+
+  @override
+  void didUpdateWidget(HistoryRideCard old) {
+    super.didUpdateWidget(old);
+    final was = old.entry.rwt.ride.isFavorite;
+    final now = widget.entry.rwt.ride.isFavorite;
+    if (now && !was) {
+      _pulse.forward(from: 1.0).then((_) => _pulse.reverse());
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final text = Theme.of(context).textTheme;
+    final ride = widget.entry.rwt.ride;
+    final stats = widget.entry.stats;
+    final points = <RoutePoint>[
+      for (final tp in widget.entry.rwt.trackpoints)
+        (lat: tp.latitude, lng: tp.longitude),
+    ];
+    final hasRoute = points.isNotEmpty;
+    final km = stats.distanceMetres / 1000;
+    final distanceStr = km < 10 ? km.toStringAsFixed(1) : km.toStringAsFixed(0);
+    final title = rideDisplayTitle(ride);
+    final meta = '${formatRideTime(ride.date)} · '
+        '${formatDuration(stats.durationMs)} · '
+        'Ø ${stats.avgSpeedKmh.round()} km/h';
+    final activity = ActivityType.fromId(ride.typ);
+
+    return InkWell(
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      borderRadius: AppShapes.heroCard,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.surfaceContainer,
+          borderRadius: AppShapes.heroCard,
+          border: (widget.selected || widget.highlighted)
+              ? Border.all(color: colors.primary, width: 2)
+              : null,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _Thumbnail(
+              rideId: ride.rideId,
+              points: points,
+              hasRoute: hasRoute,
+              title: title,
+              selectionMode: widget.selectionMode,
+              selected: widget.selected,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.bodyMedium
+                                ?.copyWith(color: colors.onSurface)),
+                      ),
+                      const SizedBox(width: 8),
+                      ScaleTransition(
+                        scale: _pulse,
+                        child: InkResponse(
+                          onTap: widget.onToggleFavorite,
+                          radius: 20,
+                          child: Icon(
+                            ride.isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            size: 22,
+                            color: ride.isFavorite
+                                ? colors.primary
+                                : colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('$distanceStr km',
+                          style: text.bodyMedium?.copyWith(
+                              color: colors.primary,
+                              fontWeight: FontWeight.w500)),
+                      if (!widget.selectionMode) ...[
+                        const SizedBox(width: 4),
+                        _OverflowMenu(
+                          onEdit: widget.onEdit,
+                          onDelete: widget.onDelete,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(meta,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelSmall
+                          ?.copyWith(color: colors.onSurfaceVariant)),
+                  if (activity != null || stats.avgSpeedKmh > 10 || !hasRoute) ...[
+                    const SizedBox(height: 5),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      children: [
+                        if (activity != null)
+                          _Chip(
+                            label: activity.label(l10n),
+                            icon: activity.icon,
+                            bg: colors.chipSecondary,
+                            fg: colors.chipSecondaryText,
+                          ),
+                        if (stats.avgSpeedKmh > 10)
+                          _Chip(
+                            label: l10n.chipGreatPace,
+                            bg: colors.primaryContainer,
+                            fg: colors.onPrimaryContainer,
+                          ),
+                        if (!hasRoute)
+                          _Chip(
+                            label: l10n.chipNoRoute,
+                            bg: colors.surfaceContainer,
+                            fg: colors.onSurfaceVariant,
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Thumbnail extends ConsumerWidget {
+  const _Thumbnail({
+    required this.rideId,
+    required this.points,
+    required this.hasRoute,
+    required this.title,
+    required this.selectionMode,
+    required this.selected,
+  });
+
+  final int rideId;
+  final List<RoutePoint> points;
+  final bool hasRoute;
+  final String title;
+  final bool selectionMode;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).extension<AppColors>()!;
+    return SizedBox(
+      height: 125,
+      width: double.infinity,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ColoredBox(
+              color: hasRoute ? colors.mapTerrain : colors.mapTerrainGrid,
+              child: hasRoute
+                  ? RoutePreview(
+                      rideId: rideId,
+                      points: points,
+                      cache: ref.watch(routePreviewCacheProvider),
+                      cacheWidth: 640,
+                    )
+                  : null,
+            ),
+          ),
+          if (selectionMode)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected
+                      ? colors.primary
+                      : colors.surface.withValues(alpha: 0.85),
+                  border: selected
+                      ? null
+                      : Border.all(color: colors.onSurfaceVariant, width: 1.5),
+                ),
+                child: selected
+                    ? Icon(Icons.check, size: 16, color: colors.onPrimary)
+                    : null,
+              ),
+            ),
+          if (hasRoute && !selectionMode)
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: Material(
+                color: colors.surface.withValues(alpha: 0.92),
+                shape: const CircleBorder(),
+                child: IconButton(
+                  iconSize: 20,
+                  onPressed: () => ref
+                      .read(navigationLauncherProvider)
+                      .launchTo(points.first.lat, points.first.lng, title),
+                  icon: Icon(Icons.directions, color: colors.primary),
+                  tooltip: l10n.a11yNavigateToStartPoint,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverflowMenu extends StatelessWidget {
+  const _OverflowMenu({required this.onEdit, required this.onDelete});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).extension<AppColors>()!;
+    return PopupMenuButton<int>(
+      tooltip: l10n.a11yMoreOptions,
+      icon: Icon(Icons.more_vert, size: 20, color: colors.onSurfaceVariant),
+      onSelected: (v) => v == 0 ? onEdit() : onDelete(),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 0,
+          child: Row(
+            children: [
+              Icon(Icons.edit, color: colors.onSurface, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.actionEdit),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 1,
+          child: Row(
+            children: [
+              Icon(Icons.delete, color: colors.deleteActionText, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.actionDelete,
+                  style: TextStyle(color: colors.deleteActionText)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip(
+      {required this.label, required this.bg, required this.fg, this.icon});
+  final String label;
+  final Color bg;
+  final Color fg;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          color: bg, borderRadius: const BorderRadius.all(Radius.circular(20))),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: fg),
+            const SizedBox(width: 4),
+          ],
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: fg)),
+        ],
+      ),
+    );
+  }
+}

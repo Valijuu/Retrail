@@ -35,6 +35,15 @@ void main() {
     expect(e - s, const Duration(days: 1).inMilliseconds - 1);
   });
 
+  test('monthBounds: first of month 00:00 → last day 23:59:59.999', () {
+    final now = DateTime(2026, 6, 17, 8, 15);
+    final (s, e) = monthBounds(nowMs: now.millisecondsSinceEpoch);
+    expect(DateTime.fromMillisecondsSinceEpoch(s), DateTime(2026, 6, 1));
+    expect(DateTime.fromMillisecondsSinceEpoch(e + 1), DateTime(2026, 7, 1));
+    expect(s <= now.millisecondsSinceEpoch, isTrue);
+    expect(now.millisecondsSinceEpoch <= e, isTrue);
+  });
+
   test('yearBounds: Jan 1 → max sentinel', () {
     final now = DateTime(2026, 6, 17);
     final (s, e) = yearBounds(nowMs: now.millisecondsSinceEpoch);

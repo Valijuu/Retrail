@@ -1,0 +1,97 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/core/theme/app_theme.dart';
+import 'package:retrail/data/db/app_database.dart';
+import 'package:retrail/data/db/ride_with_trackpoints.dart';
+import 'package:retrail/domain/activity_type.dart';
+import 'package:retrail/domain/ride_stats.dart';
+import 'package:retrail/features/history/edit_ride_dialog.dart';
+import 'package:retrail/features/history/ride_detail_dialog.dart';
+import 'package:retrail/l10n/app_localizations.dart';
+
+Widget _host(Widget child) => MaterialApp(
+      theme: buildTheme(Brightness.light),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: child),
+    );
+
+Ride _ride() => const Ride(
+      rideId: 1,
+      description: 'Morning roll',
+      typ: 'LONGBOARD',
+      startTime: 0,
+      endTime: 600000,
+      date: 1718193600000,
+      comment: 'felt great',
+      isFavorite: false,
+      favoritedAt: null,
+    );
+
+void main() {
+  group('EditRideDialog', () {
+    testWidgets('renders and Save fires with entered values', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      String? savedTitle;
+      ActivityType? savedType;
+      await tester.pumpWidget(_host(EditRideDialog(
+        initialDescription: 'Old title',
+        initialType: ActivityType.longboard,
+        onDismiss: () {},
+        onSave: (t, c, type) {
+          savedTitle = t;
+          savedType = type;
+        },
+      )));
+      expect(find.text('Edit ride'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, 'New title');
+      // Toggle the longboard chip off (selected → null).
+      await tester.tap(find.text('Longboard'));
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      expect(savedTitle, 'New title');
+      expect(savedType, isNull);
+    });
+  });
+
+  group('RideDetailDialog', () {
+    testWidgets('shows stats and the no-route placeholder when empty',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      var dismissed = false;
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+        stats: const RideStats(
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15),
+        onDismiss: () => dismissed = true,
+      )));
+
+      expect(find.text('No route'), findsOneWidget); // empty trackpoints
+      expect(find.text('4.20 km'), findsOneWidget);
+      expect(find.text('22.0 km/h'), findsOneWidget); // top speed
+      expect(find.text('15.0 km/h'), findsOneWidget); // avg speed
+      expect(find.text('felt great'), findsOneWidget);
+
+      await tester.tap(find.text('Close'));
+      expect(dismissed, isTrue);
+    });
+  });
+}

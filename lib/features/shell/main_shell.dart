@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../history/history_screen.dart';
 import '../home/home_screen.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
@@ -69,7 +70,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               _goToTab(1);
             },
           ),
-          const _PlaceholderTab(label: 'history'),
+          const HistoryScreen(),
           const _PlaceholderTab(label: 'settings'),
         ],
       ),

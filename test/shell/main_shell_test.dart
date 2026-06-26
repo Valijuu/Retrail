@@ -56,7 +56,8 @@ void main() {
     await tester.tap(find.text('History'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('history'), findsOneWidget);
+    // The real history screen renders its title (History tab body).
+    expect(find.text('Ride history'), findsOneWidget);
 
     await tester.tap(find.text('Settings'));
     await tester.pump();
