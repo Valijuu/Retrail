@@ -86,6 +86,10 @@ class RideTracker {
   /// replay — a new subscriber should seed from [state] then append [changes].
   Stream<RideTrackingState> get changes => _states.stream;
 
+  /// The id of the most recently stopped ride (until it is saved or discarded).
+  /// Read-only; lets the active-ride screen generate its preview after save.
+  int? get lastCompletedRideId => _lastCompletedRideId;
+
   void _emit() => _states.add(state);
 
   /// Sets the activity type for the next ride started.

@@ -20,6 +20,9 @@ abstract final class AppShapes {
   /// Small icon containers.
   static const BorderRadius iconContainer = BorderRadius.all(Radius.circular(8));
 
+  /// Ride dialogs (stop / discard / post-ride summary).
+  static const BorderRadius dialog = BorderRadius.all(Radius.circular(20));
+
   static const RoundedRectangleBorder heroCardBorder =
       RoundedRectangleBorder(borderRadius: heroCard);
   static const RoundedRectangleBorder cardBorder =

@@ -37,6 +37,7 @@ void main() {
         preferencesRepositoryProvider.overrideWithValue(env.prefs),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         if (tracking) isTrackingProvider.overrideWithValue(true),
+        ...activeRideTestOverrides(env.db),
         ...homeStreamStubs(
             recent: recent, favorites: favorites, weekly: weekly),
       ],
@@ -89,6 +90,6 @@ void main() {
     await pumpHome(tester, tracking: true);
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
-    expect(find.text('ride'), findsOneWidget);
+    expect(find.text('Retrail ride'), findsOneWidget);
   });
 }

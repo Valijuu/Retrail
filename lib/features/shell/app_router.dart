@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../active_ride/active_ride_screen.dart';
 import '../onboarding/activity_init_screen.dart';
 import '../onboarding/init_screen.dart';
 import '../onboarding/profile_picture_screen.dart';
@@ -65,7 +66,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           pageBuilder: (c, s) => _fade(const CountdownScreen(), s)),
       GoRoute(
           path: AppRoutes.ride,
-          pageBuilder: (c, s) => _fade(const RidePlaceholder(), s)),
+          pageBuilder: (c, s) => _fade(const ActiveRideScreen(), s)),
     ],
   );
 });

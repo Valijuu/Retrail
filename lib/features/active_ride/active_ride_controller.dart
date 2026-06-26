@@ -1,0 +1,45 @@
+import '../../map/route_preview_cache.dart';
+import '../../tracking/ride_tracker.dart';
+
+/// Thin, testable seam over [RideTracker] + [RoutePreviewCache] for the
+/// active-ride screen. Owns the save→generate-preview sequence so the widget
+/// stays declarative and the orchestration can be unit-tested without pumping
+/// the screen. Adds no new tracker state; delegates intents 1:1.
+class ActiveRideController {
+  ActiveRideController(this._tracker, this._cache);
+
+  final RideTracker _tracker;
+  final RoutePreviewCache _cache;
+
+  /// Starts a ride unless one is already active. The guard mirrors the
+  /// original `MapViewModel.onPermissionResult` (`if (isTracking) return`) and
+  /// prevents the notification/deep-link reopen from orphaning the in-progress
+  /// ride and starting a second one.
+  void startRide() {
+    if (_tracker.state.isTracking) return;
+    _tracker.startTracking();
+  }
+
+  void stopRide() => _tracker.stopTracking();
+  void discardRide() => _tracker.discardRide();
+
+  /// Pause when running, resume when paused — given the current [isPaused].
+  void pauseOrResume(bool isPaused) =>
+      isPaused ? _tracker.resume() : _tracker.pause();
+
+  /// Persists ride details, then generates the preview PNG once for the
+  /// just-stopped ride (online snapshot or offline flat sketch — the cache's
+  /// renderer decides). No-op preview when there is no completed ride or route.
+  Future<void> saveRide({
+    String? title,
+    String? comment,
+    bool favorite = false,
+  }) async {
+    final rideId = _tracker.lastCompletedRideId;
+    final points = _tracker.state.trackPoints;
+    _tracker.saveRideDetails(title, comment, isFavorite: favorite);
+    if (rideId != null && points.isNotEmpty) {
+      await _cache.ensurePreview(rideId, points);
+    }
+  }
+}

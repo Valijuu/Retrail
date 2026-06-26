@@ -18,11 +18,17 @@ class LiveMap extends StatefulWidget {
     required this.points,
     this.current,
     this.initialZoom = 16.5,
+    this.onGesture,
   });
 
   final List<RoutePoint> points;
   final RoutePoint? current;
   final double initialZoom;
+
+  /// Fired when the user pans/zooms the map by hand, so the screen can drop
+  /// camera-follow (and show the recenter control). Mirrors the original's
+  /// `onGestureDetected`.
+  final VoidCallback? onGesture;
 
   @override
   State<LiveMap> createState() => _LiveMapState();
@@ -53,7 +59,13 @@ class _LiveMapState extends State<LiveMap> {
 
     return FlutterMap(
       mapController: _controller,
-      options: MapOptions(initialCenter: _center, initialZoom: widget.initialZoom),
+      options: MapOptions(
+        initialCenter: _center,
+        initialZoom: widget.initialZoom,
+        onPositionChanged: (camera, hasGesture) {
+          if (hasGesture) widget.onGesture?.call();
+        },
+      ),
       children: [
         TileLayer(
           urlTemplate: MapConfig.rasterUrlTemplate(dark),

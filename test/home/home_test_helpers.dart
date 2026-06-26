@@ -1,10 +1,56 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:retrail/data/db/app_database.dart';
+import 'package:retrail/data/db/ride_dao.dart';
+import 'package:retrail/data/db/trackpoint_dao.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
+import 'package:retrail/data/repositories/ride_repository.dart';
+import 'package:retrail/data/repositories/trackpoint_repository.dart';
+import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/domain/stats_aggregation.dart';
+import 'package:retrail/features/active_ride/active_ride_controller.dart';
+import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/home/home_providers.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
+import 'package:retrail/map/route_preview_cache.dart';
+import 'package:retrail/tracking/ride_tracker.dart';
+import 'package:retrail/tracking/ride_tracking_state.dart';
+import 'package:retrail/tracking/tracking_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// A controller whose `startRide` is a no-op, for tests that mount `/ride` but
+/// don't drive recording — avoids the real ride's periodic elapsed timer.
+class NoopActiveRideController extends ActiveRideController {
+  NoopActiveRideController(super.tracker, super.cache);
+  @override
+  void startRide() {}
+}
+
+/// Overrides needed for any test that may navigate to the real `/ride` screen
+/// without exercising live recording: a no-op controller (no ride timer), a
+/// finite tracking-state stream (the real one never closes), and an existing
+/// preview dir (never written). Avoids real file IO, which never completes
+/// under `testWidgets`' fake-async.
+///
+/// Return type is inferred as `List<Override>` (the `Override` type isn't
+/// publicly nameable from `flutter_riverpod`).
+// ignore: strict_top_level_inference
+activeRideTestOverrides(AppDatabase db) {
+  final dir = Directory.systemTemp;
+  return [
+    previewCacheDirProvider.overrideWithValue(dir),
+    rideTrackingStateProvider
+        .overrideWith((ref) => Stream.value(const RideTrackingState())),
+    activeRideControllerProvider.overrideWithValue(NoopActiveRideController(
+      RideTracker(RideRepository(RideDao(db)),
+          TrackpointRepository(TrackpointDao(db)),
+          const HaversineDistanceCalculator()),
+      RoutePreviewCache(baseDir: dir, render: (_) async => Uint8List(0)),
+    )),
+  ];
+}
 
 /// Overrides the Drift `.watch()`-backed Home providers with finite
 /// `Stream.value` streams. Drift's broadcast `.watch()` stream never closes,
