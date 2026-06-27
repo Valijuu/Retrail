@@ -165,5 +165,16 @@
   "skaterGreeting12": "Räder an, %s!",
   "skaterGreeting13": "Ab auf die Strecke, %s!",
   "skaterGreeting14": "Die Straßen rufen, %s",
-  "skaterGreeting15": "Fang die Brise, %s"
+  "skaterGreeting15": "Fang die Brise, %s",
+  "notifChannelName": "Fahrtenaufzeichnung",
+  "notifRecordingTitle": "Fahrt wird aufgezeichnet",
+  "notifRecordingPausedTitle": "Fahrt pausiert",
+  "notifActionPause": "Pause",
+  "notifActionResume": "Fortsetzen",
+  "notifActionStop": "Beenden",
+  "permissionLocationTitle": "Standort erforderlich",
+  "permissionLocationBody": "Retrail benötigt Standortzugriff, um deine Strecke aufzuzeichnen.",
+  "permissionOpenSettings": "Einstellungen öffnen",
+  "permissionEnableLocationTitle": "Standort aktivieren",
+  "permissionEnableLocationBody": "Aktiviere den Standort, um die Aufzeichnung zu starten."
 }

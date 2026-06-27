@@ -9,6 +9,8 @@ import '../../domain/activity_type.dart';
 import '../../domain/formatters.dart';
 import '../../l10n/app_localizations.dart';
 import '../../map/live_map.dart';
+import '../../tracking/location_permission.dart';
+import '../../tracking/ride_recording_controller.dart';
 import '../../tracking/ride_tracking_state.dart';
 import '../../tracking/tracking_providers.dart';
 import '../onboarding/activity_type_ui.dart';
@@ -42,9 +44,10 @@ class ActiveRideScreen extends ConsumerStatefulWidget {
 class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   // Captured once so dispose() (and callbacks) never call `ref.read` after the
   // element is defunct.
-  late final ActiveRideController _controller =
-      ref.read(activeRideControllerProvider);
+  late final ActiveRideController _controller;
+  late final RideRecordingController _recording;
   bool _hasInitiatedStart = false;
+  LocationStartAction? _gateBlock; // non-proceed gate outcome → show a prompt
   bool _rideWasActive = false;
   bool _isFollowing = true;
   double _maxSpeedKmh = 0;
@@ -59,23 +62,35 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   @override
   void initState() {
     super.initState();
+    // Capture both controllers eagerly so dispose() never calls ref.read after
+    // the element is unmounted.
+    _controller = ref.read(activeRideControllerProvider);
+    _recording = ref.read(rideRecordingControllerProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // A pending deep-link is now consumed (mirrors the old RidePlaceholder).
       ref.read(pendingRideDeepLinkProvider.notifier).state = false;
-      // Start the ride once per screen session. startRide() also guards against
-      // an already-active ride (reopen), so no double rides. The permission /
-      // GPS-settings gate that wraps this in the original is Spec 5 Part B.
+      // Start the ride once per screen session, gated on location permission +
+      // services (Spec 5B). A non-proceed outcome surfaces a prompt instead of a
+      // silent no-GPS ride. The gate guards an already-active ride (reopen).
       if (!_hasInitiatedStart) {
         _hasInitiatedStart = true;
-        _controller.startRide();
+        _startGated();
       }
     });
+  }
+
+  Future<void> _startGated() async {
+    final action = await _recording.start();
+    if (!mounted || action == LocationStartAction.proceed) return;
+    setState(() => _gateBlock = action);
   }
 
   @override
   void dispose() {
     if (_discardOnDispose) {
-      _controller.stopRide();
+      // Tear down the source + foreground service (single owner) before the
+      // ride is discarded, so no zombie notification / background GPS lingers.
+      _recording.stop();
       _controller.discardRide();
     }
     super.dispose();
@@ -173,7 +188,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     _showConfirmStop = false;
                     _showSummary = true;
                   });
-                  _controller.stopRide();
+                  _recording.stop();
                 },
               ),
             if (_showDiscardConfirm)
@@ -208,9 +223,60 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   _goHome();
                 },
               ),
+            if (_gateBlock != null)
+              _PermissionGateDialog(
+                action: _gateBlock!,
+                onOpenSettings: () {
+                  final block = _gateBlock!;
+                  setState(() => _gateBlock = null);
+                  block == LocationStartAction.openLocationSettings
+                      ? _recording.openLocationSettings()
+                      : _recording.openAppSettings();
+                  _goHome();
+                },
+                onDismiss: () {
+                  setState(() => _gateBlock = null);
+                  _goHome();
+                },
+              ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Shown when the location gate blocks recording (permanently denied, or device
+/// location services off). Offers the matching settings path, else returns home.
+class _PermissionGateDialog extends StatelessWidget {
+  const _PermissionGateDialog({
+    required this.action,
+    required this.onOpenSettings,
+    required this.onDismiss,
+  });
+
+  final LocationStartAction action;
+  final VoidCallback onOpenSettings;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final enableLocation = action == LocationStartAction.openLocationSettings;
+    return AlertDialog(
+      title: Text(enableLocation
+          ? l10n.permissionEnableLocationTitle
+          : l10n.permissionLocationTitle),
+      content: Text(enableLocation
+          ? l10n.permissionEnableLocationBody
+          : l10n.permissionLocationBody),
+      actions: [
+        TextButton(onPressed: onDismiss, child: Text(l10n.actionCancel)),
+        FilledButton(
+          onPressed: onOpenSettings,
+          child: Text(l10n.permissionOpenSettings),
+        ),
+      ],
     );
   }
 }

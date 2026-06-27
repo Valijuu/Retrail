@@ -1,7 +1,15 @@
+import 'dart:ui' show Locale;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/data_providers.dart';
 import '../domain/distance_calculator.dart';
+import '../features/settings/settings_providers.dart';
+import '../l10n/app_localizations.dart';
+import 'foreground_task_service.dart';
+import 'geolocator_permission_service.dart';
+import 'location_source.dart';
+import 'ride_recording_controller.dart';
 import 'ride_tracker.dart';
 import 'ride_tracking_state.dart';
 
@@ -30,4 +38,45 @@ final rideTrackingStateProvider = StreamProvider<RideTrackingState>((ref) async*
 /// Whether a ride is currently being recorded.
 final isTrackingProvider = Provider<bool>(
   (ref) => ref.watch(rideTrackingStateProvider).asData?.value.isTracking ?? false,
+);
+
+// ─── Spec 5B: platform GPS plumbing ──────────────────────────────────────────
+
+/// Production GPS source (geolocator). Faked in recording-controller tests.
+final locationSourceProvider =
+    Provider<LocationSource>((ref) => const GeolocatorLocationSource());
+
+/// Production permission/location-services seam (geolocator).
+final locationPermissionServiceProvider = Provider<LocationPermissionService>(
+    (ref) => const GeolocatorPermissionService());
+
+/// Current-locale copy for the recording notification (the service has no
+/// BuildContext). Falls back to English for unsupported/system locales.
+final rideNotificationCopyProvider = Provider<RideNotificationCopy>((ref) {
+  final locale = ref.watch(localeProvider);
+  final l = lookupAppLocalizations(
+      Locale(locale?.languageCode == 'de' ? 'de' : 'en'));
+  return RideNotificationCopy(
+    channelName: l.notifChannelName,
+    recordingTitle: l.notifRecordingTitle,
+    pausedTitle: l.notifRecordingPausedTitle,
+    pause: l.notifActionPause,
+    resume: l.notifActionResume,
+    stop: l.notifActionStop,
+  );
+});
+
+/// Foreground service (keep-alive + ongoing notification).
+final rideForegroundServiceProvider = Provider<RideForegroundService>(
+  (ref) => ForegroundTaskService(() => ref.read(rideNotificationCopyProvider)),
+);
+
+/// Orchestrates permission gate → location source → tracker → foreground service.
+final rideRecordingControllerProvider = Provider<RideRecordingController>(
+  (ref) => RideRecordingController(
+    tracker: ref.watch(rideTrackerProvider),
+    source: ref.watch(locationSourceProvider),
+    permissions: ref.watch(locationPermissionServiceProvider),
+    service: ref.watch(rideForegroundServiceProvider),
+  ),
 );

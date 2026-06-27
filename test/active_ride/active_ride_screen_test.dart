@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart' show LocationPermission;
 import 'package:go_router/go_router.dart';
 import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/core/theme/app_theme.dart';
@@ -21,11 +22,80 @@ import 'package:retrail/features/active_ride/active_ride_screen.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/route_preview_cache.dart';
+import 'package:retrail/tracking/location_fix.dart';
+import 'package:retrail/tracking/location_permission.dart';
+import 'package:retrail/tracking/location_source.dart';
+import 'package:retrail/tracking/ride_recording_controller.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
 import 'package:retrail/tracking/ride_tracking_state.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
 
 typedef SaveArgs = ({String? title, String? comment, bool favorite});
+
+// Minimal seams so a real RideRecordingController can be constructed; the fake
+// overrides start/stop so none are actually exercised.
+class _NoopSource implements LocationSource {
+  @override
+  Stream<LocationFix> get fixes => const Stream.empty();
+  @override
+  Future<LocationFix?> lastKnown() async => null;
+}
+
+class _NoopService implements RideForegroundService {
+  @override
+  Future<void> start() async {}
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> update({
+    required bool isPaused,
+    required int elapsedSeconds,
+    required double distanceMetres,
+  }) async {}
+  @override
+  Future<bool> ensureNotificationPermission() async => true;
+}
+
+class _GrantedPerms implements LocationPermissionService {
+  @override
+  Future<bool> isLocationServiceEnabled() async => true;
+  @override
+  Future<LocationPermission> checkPermission() async =>
+      LocationPermission.whileInUse;
+  @override
+  Future<LocationPermission> requestPermission() async =>
+      LocationPermission.whileInUse;
+  @override
+  Future<void> ensureBackgroundPermission() async {}
+  @override
+  Future<void> openLocationSettings() async {}
+  @override
+  Future<void> openAppSettings() async {}
+}
+
+/// Records the platform-lifecycle calls without touching geolocator / the
+/// foreground service.
+class FakeRecording extends RideRecordingController {
+  FakeRecording(RideTracker tracker)
+      : super(
+          tracker: tracker,
+          source: _NoopSource(),
+          permissions: _GrantedPerms(),
+          service: _NoopService(),
+        );
+
+  final calls = <String>[];
+  LocationStartAction next = LocationStartAction.proceed;
+
+  @override
+  Future<LocationStartAction> start() async {
+    calls.add('start');
+    return next;
+  }
+
+  @override
+  Future<void> stop() async => calls.add('stop');
+}
 
 /// Records intent calls without touching the DB / preview pipeline.
 class RecordingController extends ActiveRideController {
@@ -52,15 +122,20 @@ class RecordingController extends ActiveRideController {
 void main() {
   late AppDatabase db;
   late RecordingController controller;
+  late FakeRecording recording;
 
   setUp(() {
     db = AppDatabase.memory();
+    final tracker = RideTracker(
+        RideRepository(RideDao(db)),
+        TrackpointRepository(TrackpointDao(db)),
+        const HaversineDistanceCalculator());
     controller = RecordingController(
-      RideTracker(RideRepository(RideDao(db)), TrackpointRepository(TrackpointDao(db)),
-          const HaversineDistanceCalculator()),
+      tracker,
       RoutePreviewCache(
           baseDir: Directory.systemTemp, render: (_) async => Uint8List(0)),
     );
+    recording = FakeRecording(tracker);
   });
 
   tearDown(() => db.close());
@@ -87,6 +162,7 @@ void main() {
         rideTrackingStateProvider.overrideWith((ref) => Stream.value(state)),
         isOnlineProvider.overrideWith((ref) => Stream.value(online)),
         activeRideControllerProvider.overrideWithValue(controller),
+        rideRecordingControllerProvider.overrideWithValue(recording),
       ],
       child: MaterialApp.router(
         theme: buildTheme(Brightness.light),
@@ -123,7 +199,7 @@ void main() {
     expect(find.text('01:05'), findsOneWidget);
     expect(find.text('Stop ride'), findsOneWidget);
     expect(find.text('Pause'), findsOneWidget);
-    expect(controller.calls, contains('start'));
+    expect(recording.calls, contains('start'));
   });
 
   testWidgets('paused state shows Paused badge and Resume', (tester) async {
@@ -148,7 +224,7 @@ void main() {
     expect(find.text('Stop ride?'), findsOneWidget);
     await tester.tap(find.text('Stop')); // confirm
     await tester.pump();
-    expect(controller.calls, contains('stop'));
+    expect(recording.calls, contains('stop'));
     expect(find.text('How was your ride?'), findsOneWidget);
   });
 
@@ -189,8 +265,8 @@ void main() {
     await tester.tap(find.text('Discard')); // confirm → go home → dispose
     await tester.pumpAndSettle();
     expect(find.text('home'), findsOneWidget);
-    // dispose() ran without throwing on the captured controller.
-    expect(controller.calls, contains('stop'));
+    // dispose() tears down the platform layer (recording) then discards.
+    expect(recording.calls, contains('stop'));
     expect(controller.calls, contains('discard'));
   });
 

@@ -166,5 +166,16 @@
   "skaterGreeting12": "Wheels up, %s!",
   "skaterGreeting13": "Hit the trail, %s!",
   "skaterGreeting14": "Streets are calling, %s",
-  "skaterGreeting15": "Catch the breeze, %s"
+  "skaterGreeting15": "Catch the breeze, %s",
+  "notifChannelName": "Ride tracking",
+  "notifRecordingTitle": "Recording ride",
+  "notifRecordingPausedTitle": "Ride paused",
+  "notifActionPause": "Pause",
+  "notifActionResume": "Resume",
+  "notifActionStop": "Stop",
+  "permissionLocationTitle": "Location needed",
+  "permissionLocationBody": "Retrail needs location access to record your route.",
+  "permissionOpenSettings": "Open settings",
+  "permissionEnableLocationTitle": "Turn on location",
+  "permissionEnableLocationBody": "Turn on location to start recording your ride."
 }

@@ -74,6 +74,10 @@ Reactive `Stream<bool>`/`ValueNotifier<bool>` `isOnline`. **VPN-aware:** never t
 
 ## Part B — Platform plumbing (spike first, then device-validated)
 
+> **Expanded into its own detailed spec: [`05b-gps-platform.md`](05b-gps-platform.md)** — the
+> implementable version (main-isolate tracking + service keep-alive, location source, permission
+> gate, foreground notification, iOS background). The B0–B4 sketch below is the original outline.
+
 > **Advisor guidance:** background location is the only piece that does NOT port cleanly and differs fundamentally on iOS. **Spike before full build-out.**
 
 ### B0. Spike (throwaway, before B1–B4)
