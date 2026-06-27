@@ -7,6 +7,34 @@ import '../core/theme/app_colors.dart';
 import 'map_config.dart';
 import 'preview_projection.dart';
 
+/// What the camera should do on a [LiveMap] update. Pure, so the follow /
+/// recenter rules are unit-tested without pumping the map.
+class CameraFollow {
+  const CameraFollow({required this.resetZoom});
+
+  /// True when the move should also restore the ride zoom (an explicit recenter
+  /// tap), false to keep the user's current zoom (passive follow on a new fix).
+  final bool resetZoom;
+}
+
+/// Decides whether to move the camera to the current position on a widget update:
+/// - **Recenter just pressed** (follow off→on): move now and restore zoom, even
+///   without a new fix — this is what makes the recenter button responsive.
+/// - **Following + a new fix**: keep the rider centered at the current zoom.
+/// - **Not following**: never move (respect the user's pan/zoom).
+CameraFollow? followCameraUpdate({
+  required bool wasFollowing,
+  required bool isFollowing,
+  required bool hasCurrent,
+  required bool currentChanged,
+}) {
+  if (!hasCurrent) return null;
+  final justRecentered = isFollowing && !wasFollowing;
+  if (justRecentered) return const CameraFollow(resetZoom: true);
+  if (isFollowing && currentChanged) return const CameraFollow(resetZoom: false);
+  return null;
+}
+
 /// Live/active-ride map (`flutter_map`): MapTiler raster basemap with the
 /// halo + blue route polyline drawn on Flutter's canvas, plus start/end and
 /// current-position markers. Camera follows the current position.
@@ -18,12 +46,17 @@ class LiveMap extends StatefulWidget {
     super.key,
     required this.points,
     this.current,
+    this.isFollowing = true,
     this.initialZoom = 16.5,
     this.onGesture,
   });
 
   final List<RoutePoint> points;
   final RoutePoint? current;
+
+  /// Whether the camera tracks the rider. Tapping recenter flips this true,
+  /// which snaps the camera back to the current position (see [didUpdateWidget]).
+  final bool isFollowing;
   final double initialZoom;
 
   /// Fired when the user pans/zooms the map by hand, so the screen can drop
@@ -47,8 +80,17 @@ class _LiveMapState extends State<LiveMap> {
   @override
   void didUpdateWidget(LiveMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.current != null && widget.current != oldWidget.current) {
-      _controller.move(_center, _controller.camera.zoom);
+    final decision = followCameraUpdate(
+      wasFollowing: oldWidget.isFollowing,
+      isFollowing: widget.isFollowing,
+      hasCurrent: widget.current != null,
+      currentChanged: widget.current != oldWidget.current,
+    );
+    if (decision != null) {
+      _controller.move(
+        _center,
+        decision.resetZoom ? widget.initialZoom : _controller.camera.zoom,
+      );
     }
   }
 

@@ -399,6 +399,7 @@ class _MapArea extends StatelessWidget {
           child: LiveMap(
             points: state.trackPoints,
             current: current,
+            isFollowing: isFollowing,
             onGesture: onGesture,
           ),
         ),
