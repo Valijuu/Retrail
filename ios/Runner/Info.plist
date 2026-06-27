@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>retrail</string>
+	<string>Retrail</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -66,5 +66,24 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Location: foreground GPS recording now; background recording lit up in
+	     Spec 5B. Default (EN) copy here; DE copy in de.lproj/InfoPlist.strings. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Retrail records your route while you ride.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Retrail keeps recording your route when the screen is off.</string>
+	<!-- Profile photo (image_picker / image_cropper). -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a profile photo from your library.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a profile photo.</string>
+	<!-- Background location stream (Spec 5B) + Live Activity scaffold (Spec 6).
+	     Declarations only; the extension/stream light them up later. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 </dict>
 </plist>

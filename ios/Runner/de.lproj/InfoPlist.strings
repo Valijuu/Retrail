@@ -1,0 +1,7 @@
+/* Standortzugriff – Aufzeichnung im Vordergrund (Hintergrund folgt in Spec 5B). */
+"NSLocationWhenInUseUsageDescription" = "Retrail zeichnet deine Strecke während der Fahrt auf.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Retrail zeichnet deine Strecke weiter auf, auch wenn der Bildschirm aus ist.";
+
+/* Profilfoto (image_picker / image_cropper). */
+"NSPhotoLibraryUsageDescription" = "Wähle ein Profilfoto aus deiner Mediathek.";
+"NSCameraUsageDescription" = "Nimm ein Profilfoto auf.";

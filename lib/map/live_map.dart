@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme/app_colors.dart';
 import 'map_config.dart';
@@ -86,6 +87,25 @@ class _LiveMapState extends State<LiveMap> {
               _dot(widget.points.last, colors.markerEndRed),
             if (widget.current != null)
               _dot(widget.current!, colors.routeLineBlue, ring: true),
+          ],
+        ),
+        // Required basemap attribution (MapTiler tiles over OpenStreetMap data).
+        // The original relied on MapLibre's built-in bottom-end attribution;
+        // flutter_map has none, so it is rendered explicitly here.
+        RichAttributionWidget(
+          attributions: [
+            TextSourceAttribution(
+              '© MapTiler',
+              onTap: () => launchUrl(
+                Uri.parse('https://www.maptiler.com/copyright/'),
+              ),
+            ),
+            TextSourceAttribution(
+              '© OpenStreetMap contributors',
+              onTap: () => launchUrl(
+                Uri.parse('https://www.openstreetmap.org/copyright'),
+              ),
+            ),
           ],
         ),
       ],
