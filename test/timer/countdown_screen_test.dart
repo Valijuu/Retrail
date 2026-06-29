@@ -53,6 +53,14 @@ void main() {
     expect(find.text('ready'), findsOneWidget);
   });
 
+  testWidgets('the countdown block is horizontally centred', (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    // 400-wide screen → centre at x≈200. The bug pinned the block to the left
+    // (Stack topStart + a shrink-wrapped column), landing the digit near x≈114.
+    expect(tester.getCenter(find.text('5')).dx, moreOrLessEquals(200, epsilon: 1));
+  });
+
   testWidgets('+5 sec. extends the countdown', (tester) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();

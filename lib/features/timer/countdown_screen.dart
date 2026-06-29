@@ -78,28 +78,37 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
         padding: const EdgeInsets.symmetric(vertical: 32),
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 180, left: 24, right: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(l10n.timerGetReady,
-                      style: text.labelMedium
-                          ?.copyWith(color: _accent.onSurfaceVariant)),
-                  const SizedBox(height: 16),
-                  _ActivityChip(activity: activity),
-                  const SizedBox(height: 32),
-                  _CountdownRing(progress: progress, value: _timer.value),
-                  const SizedBox(height: 20),
-                  _AddTimeChip(
-                      label: l10n.timerAddFiveSec,
-                      onTap: () => _timer.addTime(5)),
-                  const SizedBox(height: 28),
-                  Text(l10n.timerTagline,
-                      textAlign: TextAlign.center,
-                      style: text.bodyMedium?.copyWith(
-                          color: _accent.onSurfaceVariant, height: 1.5)),
-                ],
+            // Fill the width (so the column centres on screen, not just within
+            // its own shrink-wrapped width) and reserve the bottom 180 for the
+            // GPS row + Start button, centring the countdown in what's left.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 180,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(l10n.timerGetReady,
+                        style: text.labelMedium
+                            ?.copyWith(color: _accent.onSurfaceVariant)),
+                    const SizedBox(height: 16),
+                    _ActivityChip(activity: activity),
+                    const SizedBox(height: 32),
+                    _CountdownRing(progress: progress, value: _timer.value),
+                    const SizedBox(height: 20),
+                    _AddTimeChip(
+                        label: l10n.timerAddFiveSec,
+                        onTap: () => _timer.addTime(5)),
+                    const SizedBox(height: 28),
+                    Text(l10n.timerTagline,
+                        textAlign: TextAlign.center,
+                        style: text.bodyMedium?.copyWith(
+                            color: _accent.onSurfaceVariant, height: 1.5)),
+                  ],
+                ),
               ),
             ),
             Align(
@@ -235,9 +244,13 @@ class _CountdownRing extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // End-only tween: the builder remembers the previous value and sweeps
+          // to the new `progress` linearly over the 1 s tick, so the arc glides
+          // instead of snapping each second (begin == end never interpolates).
           TweenAnimationBuilder<double>(
-            tween: Tween(begin: progress, end: progress),
+            tween: Tween<double>(end: progress),
             duration: const Duration(milliseconds: 1000),
+            curve: Curves.linear,
             builder: (context, animated, _) => CustomPaint(
               size: const Size.square(180),
               painter: _RingPainter(

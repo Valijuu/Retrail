@@ -22,6 +22,7 @@ import 'package:retrail/features/history/history_screen.dart';
 import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/features/home/navigation_launcher.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/map/preview_projection.dart';
 import 'package:retrail/map/route_preview.dart';
 import 'package:retrail/map/route_preview_cache.dart';
 
@@ -100,7 +101,7 @@ void main() {
     controller = FakeHistoryController(
       RideRepository(RideDao(db)),
       RoutePreviewCache(
-          baseDir: Directory.systemTemp, render: (_) async => Uint8List(0)),
+          baseDir: Directory.systemTemp, render: (_, _) async => Uint8List(0)),
     );
   });
   tearDown(() {
@@ -112,6 +113,7 @@ void main() {
     WidgetTester tester,
     List<HistoryItem> items, {
     NavigationLauncher? navLauncher,
+    int? presetTarget,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -125,6 +127,11 @@ void main() {
       if (navLauncher != null)
         navigationLauncherProvider.overrideWithValue(navLauncher),
     ]);
+    // Simulate Home parking a jump target *before* the History screen mounts
+    // (the PageView builds it lazily on navigation).
+    if (presetTarget != null) {
+      container.read(historyTargetRideProvider.notifier).state = presetTarget;
+    }
 
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
@@ -156,6 +163,19 @@ void main() {
   testWidgets('empty state when there are no rides', (tester) async {
     await pump(tester, const []);
     expect(find.text('No rides yet'), findsOneWidget);
+  });
+
+  testWidgets('thumbnail top corners are clipped to the card radius '
+      '(so the highlight border fits the corners)', (tester) async {
+    await pump(tester, [_entry(1, desc: 'Morning roll')]);
+    expect(
+      find.byWidgetPredicate((w) =>
+          w is ClipRRect &&
+          w.borderRadius is BorderRadius &&
+          (w.borderRadius as BorderRadius).topLeft == const Radius.circular(14) &&
+          (w.borderRadius as BorderRadius).bottomLeft == Radius.zero),
+      findsOneWidget,
+    );
   });
 
   testWidgets('search toggle reveals the field and drives the query filter',
@@ -240,6 +260,14 @@ void main() {
     expect(preview.rideId, 5);
     expect(preview.points.length, 2);
 
+    // The preview slot is pinned to the render aspect so BoxFit.cover shows the
+    // whole route (no top/bottom crop). Same constant the renderer uses.
+    expect(
+      find.byWidgetPredicate(
+          (w) => w is AspectRatio && w.aspectRatio == previewAspectRatio),
+      findsOneWidget,
+    );
+
     await tester.tap(find.byIcon(Icons.directions));
     await tester.pump();
     expect(launcher.launches, isNotEmpty);
@@ -265,6 +293,24 @@ void main() {
       (tester) async {
     await pump(tester, [_entry(1, desc: 'A'), _entry(2, desc: 'B')]);
     container.read(historyTargetRideProvider.notifier).state = 2;
+    await tester.pump();
+    await tester.pump();
+
+    expect(container.read(historyTargetRideProvider), isNull);
+    final target = tester
+        .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
+        .firstWhere((c) => c.entry.rwt.ride.rideId == 2);
+    expect(target.highlighted, isTrue);
+    await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
+  });
+
+  testWidgets('honours a jump target parked before the screen mounts',
+      (tester) async {
+    // Home sets the target, then the PageView lazily builds History — so the
+    // target is already non-null on first mount and the change-only ref.listen
+    // would miss it. The card must still highlight.
+    await pump(tester, [_entry(1, desc: 'A'), _entry(2, desc: 'B')],
+        presetTarget: 2);
     await tester.pump();
     await tester.pump();
 

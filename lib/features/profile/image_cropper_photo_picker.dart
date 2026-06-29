@@ -21,6 +21,21 @@ class ImageCropperPhotoPicker implements ProfilePhotoPicker {
       maxWidth: 512,
       maxHeight: 512,
       compressQuality: 85,
+      // Circular crop overlay (locked 1:1) so the picked photo matches the round
+      // avatar shown on Home; the saved file is still a 512² square the avatar
+      // clips to a circle.
+      uiSettings: [
+        AndroidUiSettings(
+          cropStyle: CropStyle.circle,
+          lockAspectRatio: true,
+          hideBottomControls: true,
+        ),
+        IOSUiSettings(
+          cropStyle: CropStyle.circle,
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+        ),
+      ],
     );
     if (cropped == null) return null;
 

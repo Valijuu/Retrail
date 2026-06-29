@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' show Brightness;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,7 +90,7 @@ void main() {
       List<RoutePoint>? capturedRoute;
       final cache = RoutePreviewCache(
         baseDir: tmp,
-        render: (points) async {
+        render: (points, _) async {
           renders++;
           capturedRoute = points;
           return Uint8List.fromList([0x89, 0x50, 0x4e, 0x47]); // PNG magic stub
@@ -107,7 +108,7 @@ void main() {
       // Preview rendered exactly once, with the recorded route, to disk by rideId.
       expect(renders, 1);
       expect(capturedRoute, hasLength(2));
-      final previewFile = cache.fileFor(rideId);
+      final previewFile = cache.fileFor(rideId, brightness: Brightness.light);
       expect(await previewFile.exists(), isTrue);
 
       // ── 3. History: the REAL pipeline over the REAL DB surfaces the ride ────
@@ -148,7 +149,8 @@ void main() {
         for (final t in entry.rwt.trackpoints)
           (lat: t.latitude, lng: t.longitude),
       ];
-      final servedAgain = await cache.ensurePreview(rideId, route);
+      final servedAgain =
+          await cache.ensurePreview(rideId, route, brightness: Brightness.light);
       expect(servedAgain.path, previewFile.path);
       expect(renders, 1, reason: 'cached PNG reused — no per-scroll render');
     },

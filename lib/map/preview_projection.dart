@@ -12,6 +12,15 @@ typedef PreviewOffset = ({double x, double y});
 /// for the degenerate single-point ride. Ported from the original `StaticRouteMap`.
 const double maxPreviewZoom = 16.0;
 
+/// Cached-preview render size (history-card thumbnail) — short & wide like the
+/// original's 90dp card. The snapshot is rendered at this size AND the history
+/// card pins its slot to [previewAspectRatio], so `BoxFit.cover` shows the whole
+/// route with no crop (render aspect == display aspect). Single source of truth
+/// so the two can't drift apart.
+const int previewRenderWidthDp = 320;
+const int previewRenderHeightDp = 112;
+const double previewAspectRatio = previewRenderWidthDp / previewRenderHeightDp;
+
 /// Web-Mercator framing for a preview slot.
 class StaticFraming {
   const StaticFraming({

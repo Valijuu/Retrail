@@ -181,4 +181,29 @@ void main() {
     expect(tracker.state.isTracking, isFalse);
     expect(service.starts, 0);
   });
+
+  test('prepare() resolves the gate WITHOUT starting recording', () async {
+    // The Start-tracking press prompts up front, before the countdown — the gate
+    // runs (request once when undecided) but no source/service/ride starts yet.
+    final perms = _FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.denied,
+      afterRequest: LocationPermission.whileInUse,
+    );
+    final action = await controller(perms).prepare();
+    expect(action, LocationStartAction.proceed);
+    expect(perms.requestCount, 1);
+    expect(tracker.state.isTracking, isFalse); // recording deferred to start()
+    expect(service.starts, 0);
+  });
+
+  test('prepare() blocked → reports the action, starts nothing', () async {
+    final action = await controller(_FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.deniedForever,
+    )).prepare();
+    expect(action, LocationStartAction.showRationale);
+    expect(tracker.state.isTracking, isFalse);
+    expect(service.starts, 0);
+  });
 }

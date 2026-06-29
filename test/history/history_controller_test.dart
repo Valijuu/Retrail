@@ -69,7 +69,7 @@ void main() {
 
 class _SpyCache extends RoutePreviewCache {
   _SpyCache(Directory dir, this.evicted)
-      : super(baseDir: dir, render: (_) async => Uint8List(0));
+      : super(baseDir: dir, render: (_, _) async => Uint8List(0));
   final List<int> evicted;
 
   @override

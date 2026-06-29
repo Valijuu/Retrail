@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' show Brightness;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/features/active_ride/preview_renderer.dart';
@@ -11,16 +12,16 @@ void main() {
     String? which;
     final render = buildPreviewRenderer(
       isOnline: () => true,
-      online: (p) async {
+      online: (p, b) async {
         which = 'online';
         return Uint8List(0);
       },
-      offline: (p) async {
+      offline: (p, b) async {
         which = 'offline';
         return Uint8List(0);
       },
     );
-    await render(points);
+    await render(points, Brightness.light);
     expect(which, 'online');
   });
 
@@ -28,16 +29,16 @@ void main() {
     String? which;
     final render = buildPreviewRenderer(
       isOnline: () => false,
-      online: (p) async {
+      online: (p, b) async {
         which = 'online';
         return Uint8List(0);
       },
-      offline: (p) async {
+      offline: (p, b) async {
         which = 'offline';
         return Uint8List(0);
       },
     );
-    await render(points);
+    await render(points, Brightness.light);
     expect(which, 'offline');
   });
 
@@ -45,13 +46,27 @@ void main() {
     List<RoutePoint>? seen;
     final render = buildPreviewRenderer(
       isOnline: () => true,
-      online: (p) async {
+      online: (p, b) async {
         seen = p;
         return Uint8List(0);
       },
-      offline: (p) async => Uint8List(0),
+      offline: (p, b) async => Uint8List(0),
     );
-    await render(points);
+    await render(points, Brightness.light);
     expect(seen, points);
+  });
+
+  test('passes the requested brightness through to the renderer', () async {
+    Brightness? seen;
+    final render = buildPreviewRenderer(
+      isOnline: () => true,
+      online: (p, b) async {
+        seen = b;
+        return Uint8List(0);
+      },
+      offline: (p, b) async => Uint8List(0),
+    );
+    await render(points, Brightness.dark);
+    expect(seen, Brightness.dark); // dark mode → dark snapshot
   });
 }

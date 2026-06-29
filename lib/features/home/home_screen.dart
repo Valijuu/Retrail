@@ -8,6 +8,8 @@ import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
 import '../../domain/stats_aggregation.dart';
 import '../../l10n/app_localizations.dart';
+import '../../tracking/location_permission.dart';
+import '../../tracking/permission_gate_dialog.dart';
 import '../../tracking/tracking_providers.dart';
 import '../profile/profile_providers.dart';
 import '../shell/routes.dart';
@@ -17,7 +19,6 @@ import 'home_providers.dart';
 import 'navigation_launcher.dart';
 import 'recent_ride_ui.dart';
 import 'ride_row_card.dart';
-import 'ride_start_gate.dart';
 import 'top_header.dart';
 import 'weekly_hero_card.dart';
 
@@ -66,9 +67,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  /// Resolves location (and notification) permission up front — at the
+  /// Start-tracking press, before the countdown — mirroring the original
+  /// `HomePage`. Only a granted gate continues to the timer; a blocked gate
+  /// surfaces the rationale / enable-location prompt and stays on home.
   Future<void> _proceed() async {
-    final ok = await ref.read(rideStartGateProvider).ensureReady();
-    if (ok && mounted) context.go(AppRoutes.timer);
+    final action = await ref.read(rideRecordingControllerProvider).prepare();
+    if (!mounted) return;
+    if (action == LocationStartAction.proceed) {
+      context.go(AppRoutes.timer);
+    } else {
+      await _showGateBlocked(action);
+    }
+  }
+
+  Future<void> _showGateBlocked(LocationStartAction action) async {
+    final recording = ref.read(rideRecordingControllerProvider);
+    await showDialog<void>(
+      context: context,
+      builder: (c) => PermissionGateDialog(
+        action: action,
+        onOpenSettings: () {
+          Navigator.pop(c);
+          action == LocationStartAction.openLocationSettings
+              ? recording.openLocationSettings()
+              : recording.openAppSettings();
+        },
+        onDismiss: () => Navigator.pop(c),
+      ),
+    );
   }
 
   Future<void> _confirmOffline() async {

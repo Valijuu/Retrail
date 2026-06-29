@@ -232,9 +232,19 @@ class _Thumbnail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).extension<AppColors>()!;
-    return SizedBox(
-      height: 125,
-      width: double.infinity,
+    return ClipRRect(
+      // Independently round the thumbnail's top corners (as the original did),
+      // so the full-bleed preview image can't bleed past the card's rounded
+      // corners — which is what made the highlight border look broken at the
+      // top-left/top-right corners.
+      borderRadius: BorderRadius.only(
+        topLeft: AppShapes.heroCard.topLeft,
+        topRight: AppShapes.heroCard.topRight,
+      ),
+      child: AspectRatio(
+      // Pin the slot to the render aspect so BoxFit.cover shows the whole route
+      // (render aspect == display aspect → no crop). Single source of truth.
+      aspectRatio: previewAspectRatio,
       child: Stack(
         children: [
           Positioned.fill(
@@ -289,6 +299,7 @@ class _Thumbnail extends ConsumerWidget {
               ),
             ),
         ],
+      ),
       ),
     );
   }

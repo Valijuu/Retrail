@@ -35,6 +35,22 @@ CameraFollow? followCameraUpdate({
   return null;
 }
 
+/// Bounding box enclosing every point of [points], or null when empty. Used to
+/// frame the whole route (read-only detail / fullscreen) instead of centring on
+/// the last point. Pure, so the framing is unit-tested without pumping the map.
+LatLngBounds? routeBounds(List<RoutePoint> points) {
+  if (points.isEmpty) return null;
+  return LatLngBounds.fromPoints(
+      [for (final p in points) LatLng(p.lat, p.lng)]);
+}
+
+/// Interactive-map zoom bounds. Without a floor, flutter_map lets you pinch out
+/// without limit to a tiny repeated-world speck that janks the frame and makes
+/// the ride controls hard to hit; the ceiling caps it at useful street detail.
+/// Low enough that [LiveMap.fitBounds] still frames any realistic ride.
+const double kLiveMapMinZoom = 3.0;
+const double kLiveMapMaxZoom = 19.0;
+
 /// Live/active-ride map (`flutter_map`): MapTiler raster basemap with the
 /// halo + blue route polyline drawn on Flutter's canvas, plus start/end and
 /// current-position markers. Camera follows the current position.
@@ -48,6 +64,7 @@ class LiveMap extends StatefulWidget {
     this.current,
     this.isFollowing = true,
     this.initialZoom = 16.5,
+    this.fitBounds = false,
     this.onGesture,
   });
 
@@ -58,6 +75,11 @@ class LiveMap extends StatefulWidget {
   /// which snaps the camera back to the current position (see [didUpdateWidget]).
   final bool isFollowing;
   final double initialZoom;
+
+  /// Frame the whole route (read-only detail / fullscreen) instead of centring
+  /// on the last point at [initialZoom]. The active-ride map leaves this false
+  /// so it keeps its follow / recenter behaviour.
+  final bool fitBounds;
 
   /// Fired when the user pans/zooms the map by hand, so the screen can drop
   /// camera-follow (and show the recenter control). Mirrors the original's
@@ -70,6 +92,20 @@ class LiveMap extends StatefulWidget {
 
 class _LiveMapState extends State<LiveMap> {
   final MapController _controller = MapController();
+
+  // One provider for the widget's lifetime (not rebuilt per GPS fix): disk-cached
+  // + cancels obsolete requests, so revisited / zoomed-out tiles load from disk
+  // instead of refetching. flutter_map disposes it with the TileLayer.
+  final TileProvider _tileProvider = NetworkTileProvider(
+    cachingProvider: BuiltInMapCachingProvider.getOrCreateInstance(
+      maxCacheSize: 256 * 1024 * 1024, // 256 MB on-device tile cache
+      // Treat cached tiles as fresh for a week so a ride that loses signal still
+      // renders any street tiles already viewed (served from disk, no network):
+      // without this, a stale tile is refetched and falls back to a blank tile
+      // when offline instead of using the bytes already on disk.
+      overrideFreshAge: const Duration(days: 7),
+    ),
+  );
 
   LatLng get _center {
     final c = widget.current ??
@@ -105,6 +141,20 @@ class _LiveMapState extends State<LiveMap> {
       options: MapOptions(
         initialCenter: _center,
         initialZoom: widget.initialZoom,
+        minZoom: kLiveMapMinZoom,
+        maxZoom: kLiveMapMaxZoom,
+        // Fill not-yet-loaded tiles with the map terrain colour instead of
+        // flutter_map's default grey, so zoom-out / fast-pan gaps blend in.
+        backgroundColor: colors.mapTerrain,
+        // Frame the whole route when requested; takes precedence over
+        // initialCenter/zoom in flutter_map, so the active-ride map (fitBounds
+        // false) is unaffected. 24dp padding mirrors the original.
+        initialCameraFit: widget.fitBounds && widget.points.isNotEmpty
+            ? CameraFit.bounds(
+                bounds: routeBounds(widget.points)!,
+                padding: const EdgeInsets.all(24),
+              )
+            : null,
         onPositionChanged: (camera, hasGesture) {
           if (hasGesture) widget.onGesture?.call();
         },
@@ -113,6 +163,10 @@ class _LiveMapState extends State<LiveMap> {
         TileLayer(
           urlTemplate: MapConfig.rasterUrlTemplate(dark),
           userAgentPackageName: 'com.retrail.retrail',
+          tileProvider: _tileProvider,
+          // Preload a one-tile ring around the viewport so a zoom-out/pan
+          // reveals already-loaded tiles rather than momentary blanks.
+          panBuffer: 2,
         ),
         if (route.length >= 2)
           PolylineLayer(

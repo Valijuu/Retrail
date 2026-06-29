@@ -133,7 +133,7 @@ void main() {
     controller = RecordingController(
       tracker,
       RoutePreviewCache(
-          baseDir: Directory.systemTemp, render: (_) async => Uint8List(0)),
+          baseDir: Directory.systemTemp, render: (_, _) async => Uint8List(0)),
     );
     recording = FakeRecording(tracker);
   });

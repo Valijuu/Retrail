@@ -10,6 +10,7 @@ import '../../domain/formatters.dart';
 import '../../l10n/app_localizations.dart';
 import '../../map/live_map.dart';
 import '../../tracking/location_permission.dart';
+import '../../tracking/permission_gate_dialog.dart';
 import '../../tracking/ride_recording_controller.dart';
 import '../../tracking/ride_tracking_state.dart';
 import '../../tracking/tracking_providers.dart';
@@ -96,7 +97,16 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     super.dispose();
   }
 
-  void _goHome() => context.go(AppRoutes.main);
+  void _goHome() {
+    // Consume any pending-ride deep-link latch before leaving. It is set when
+    // the ride notification body is tapped and only cleared on a *fresh* mount
+    // (initState); if it was (re)set while we were already on this screen, the
+    // router's `pendingRide → /ride` redirect would bounce us straight back here
+    // (starting a new ride → stuck on the ride screen). Clearing it first lets
+    // the navigation home actually take.
+    ref.read(pendingRideDeepLinkProvider.notifier).state = false;
+    context.go(AppRoutes.main);
+  }
 
   void _onBack() {
     final tracking =
@@ -224,7 +234,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 },
               ),
             if (_gateBlock != null)
-              _PermissionGateDialog(
+              PermissionGateDialog(
                 action: _gateBlock!,
                 onOpenSettings: () {
                   final block = _gateBlock!;
@@ -242,41 +252,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Shown when the location gate blocks recording (permanently denied, or device
-/// location services off). Offers the matching settings path, else returns home.
-class _PermissionGateDialog extends StatelessWidget {
-  const _PermissionGateDialog({
-    required this.action,
-    required this.onOpenSettings,
-    required this.onDismiss,
-  });
-
-  final LocationStartAction action;
-  final VoidCallback onOpenSettings;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final enableLocation = action == LocationStartAction.openLocationSettings;
-    return AlertDialog(
-      title: Text(enableLocation
-          ? l10n.permissionEnableLocationTitle
-          : l10n.permissionLocationTitle),
-      content: Text(enableLocation
-          ? l10n.permissionEnableLocationBody
-          : l10n.permissionLocationBody),
-      actions: [
-        TextButton(onPressed: onDismiss, child: Text(l10n.actionCancel)),
-        FilledButton(
-          onPressed: onOpenSettings,
-          child: Text(l10n.permissionOpenSettings),
-        ),
-      ],
     );
   }
 }

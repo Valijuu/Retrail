@@ -9,6 +9,7 @@ import 'package:retrail/domain/ride_stats.dart';
 import 'package:retrail/features/history/edit_ride_dialog.dart';
 import 'package:retrail/features/history/ride_detail_dialog.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/map/live_map.dart';
 
 Widget _host(Widget child) => MaterialApp(
       theme: buildTheme(Brightness.light),
@@ -92,6 +93,40 @@ void main() {
 
       await tester.tap(find.text('Close'));
       expect(dismissed, isTrue);
+    });
+
+    testWidgets('frames the whole route (fitBounds) instead of the endpoint',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+          Trackpoint(
+              trackpointId: 0,
+              rideId: 1,
+              latitude: 52.0,
+              longitude: 13.0,
+              timestamp: 0),
+          Trackpoint(
+              trackpointId: 1,
+              rideId: 1,
+              latitude: 52.02,
+              longitude: 13.0,
+              timestamp: 1),
+        ]),
+        stats: const RideStats(
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15),
+        onDismiss: () {},
+      )));
+
+      final map = tester.widget<LiveMap>(find.byType(LiveMap));
+      expect(map.fitBounds, isTrue); // whole route, not centred on the last point
     });
   });
 }

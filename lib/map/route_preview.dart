@@ -29,11 +29,18 @@ class RoutePreview extends StatefulWidget {
 
 class _RoutePreviewState extends State<RoutePreview> {
   Future<File>? _file;
+  Brightness? _brightness;
 
   @override
-  void initState() {
-    super.initState();
-    _maybeGenerate();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Resolve here (not initState) so the cached variant follows the current
+    // theme; toggling light/dark re-runs this and regenerates the matching PNG.
+    final brightness = Theme.of(context).brightness;
+    if (brightness != _brightness) {
+      _brightness = brightness;
+      _maybeGenerate();
+    }
   }
 
   @override
@@ -43,9 +50,10 @@ class _RoutePreviewState extends State<RoutePreview> {
   }
 
   void _maybeGenerate() {
-    _file = widget.points.isEmpty
+    _file = widget.points.isEmpty || _brightness == null
         ? null
-        : widget.cache.ensurePreview(widget.rideId, widget.points);
+        : widget.cache.ensurePreview(widget.rideId, widget.points,
+            brightness: _brightness!);
   }
 
   @override

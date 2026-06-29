@@ -50,7 +50,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
         backgroundColor: Colors.black,
         child: Stack(
           children: [
-            Positioned.fill(child: LiveMap(points: points)),
+            Positioned.fill(child: LiveMap(points: points, fitBounds: true)),
             Positioned(
               top: 16,
               right: 16,
@@ -87,7 +87,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                               child: Text(l10n.chipNoRoute,
                                   style: text.bodyMedium
                                       ?.copyWith(color: colors.onSurfaceVariant)))
-                          : LiveMap(points: points),
+                          : LiveMap(points: points, fitBounds: true),
                     ),
                   ),
                   if (points.isNotEmpty)

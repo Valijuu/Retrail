@@ -1,3 +1,5 @@
+import 'dart:ui' show Brightness;
+
 import '../../map/route_preview_cache.dart';
 import '../../tracking/ride_tracker.dart';
 
@@ -6,10 +8,16 @@ import '../../tracking/ride_tracker.dart';
 /// stays declarative and the orchestration can be unit-tested without pumping
 /// the screen. Adds no new tracker state; delegates intents 1:1.
 class ActiveRideController {
-  ActiveRideController(this._tracker, this._cache);
+  ActiveRideController(this._tracker, this._cache,
+      {Brightness Function()? currentBrightness})
+      : _currentBrightness = currentBrightness ?? (() => Brightness.light);
 
   final RideTracker _tracker;
   final RoutePreviewCache _cache;
+
+  /// The app's current display brightness, so the save-time preview is
+  /// pre-generated in the theme the user is in. Defaults to light when unset.
+  final Brightness Function() _currentBrightness;
 
   /// Starts a ride unless one is already active. The guard mirrors the
   /// original `MapViewModel.onPermissionResult` (`if (isTracking) return`) and
@@ -39,7 +47,8 @@ class ActiveRideController {
     final points = _tracker.state.trackPoints;
     _tracker.saveRideDetails(title, comment, isFavorite: favorite);
     if (rideId != null && points.isNotEmpty) {
-      await _cache.ensurePreview(rideId, points);
+      await _cache.ensurePreview(rideId, points,
+          brightness: _currentBrightness());
     }
   }
 }

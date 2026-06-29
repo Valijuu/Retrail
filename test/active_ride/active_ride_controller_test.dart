@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' show Brightness;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
@@ -64,7 +65,7 @@ void main() {
     List<RoutePoint>? captured;
     final cache = RoutePreviewCache(
       baseDir: tmp,
-      render: (points) async {
+      render: (points, _) async {
         captured = points;
         return Uint8List.fromList([1, 2, 3]);
       },
@@ -77,7 +78,9 @@ void main() {
     // Preview generated with the recorded route.
     expect(captured, isNotNull);
     expect(captured!.length, 2);
-    expect(await cache.fileFor(rideId).exists(), isTrue);
+    expect(
+        await cache.fileFor(rideId, brightness: Brightness.light).exists(),
+        isTrue);
 
     // Details persisted to the DB.
     await pumpEventQueue();
@@ -85,6 +88,31 @@ void main() {
     expect(ride!.description, 'Sunset');
     expect(ride.comment, 'nice');
     expect(ride.isFavorite, isTrue);
+  });
+
+  test('saveRide in dark mode pre-generates the dark preview variant',
+      () async {
+    await recordShortRide();
+    final tmp = await Directory.systemTemp.createTemp('preview_test');
+    addTearDown(() => tmp.delete(recursive: true));
+
+    Brightness? renderedWith;
+    final cache = RoutePreviewCache(
+      baseDir: tmp,
+      render: (points, b) async {
+        renderedWith = b;
+        return Uint8List.fromList([1]);
+      },
+    );
+    final controller = ActiveRideController(tracker, cache,
+        currentBrightness: () => Brightness.dark);
+    final rideId = tracker.lastCompletedRideId!;
+
+    await controller.saveRide();
+
+    expect(renderedWith, Brightness.dark); // rendered for the active theme
+    expect(await cache.fileFor(rideId, brightness: Brightness.dark).exists(),
+        isTrue);
   });
 
   test('saveRide skips preview generation when the ride has no route', () async {
@@ -99,7 +127,7 @@ void main() {
     var rendered = false;
     final cache = RoutePreviewCache(
       baseDir: tmp,
-      render: (points) async {
+      render: (points, _) async {
         rendered = true;
         return Uint8List(0);
       },
@@ -116,7 +144,7 @@ void main() {
     addTearDown(() => tmp.delete(recursive: true));
     final controller = ActiveRideController(
       tracker,
-      RoutePreviewCache(baseDir: tmp, render: (_) async => Uint8List(0)),
+      RoutePreviewCache(baseDir: tmp, render: (_, _) async => Uint8List(0)),
     );
 
     controller.startRide();
@@ -138,7 +166,7 @@ void main() {
     addTearDown(() => tmp.delete(recursive: true));
     final controller = ActiveRideController(
       tracker,
-      RoutePreviewCache(baseDir: tmp, render: (_) async => Uint8List(0)),
+      RoutePreviewCache(baseDir: tmp, render: (_, _) async => Uint8List(0)),
     );
 
     controller.discardRide();

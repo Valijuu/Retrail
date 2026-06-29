@@ -62,12 +62,20 @@ class RideRecordingController {
   StreamSubscription<void>? _fixSub;
   StreamSubscription<void>? _stateSub;
 
-  /// Resolves permission (requesting once if undecided), and on success starts
-  /// the source + service + tracker. Returns the gate outcome so the UI can show
-  /// the rationale / enable-location prompt when not [LocationStartAction.proceed].
-  Future<LocationStartAction> start() async {
-    if (_tracker.state.isTracking) return LocationStartAction.proceed;
+  /// Runs the permission gate **without** starting recording: notification +
+  /// location permission (requesting once if undecided) and, on success, the
+  /// background escalation. Returns the outcome so the Start-tracking press can
+  /// prompt up front and only continue to the countdown when granted — mirroring
+  /// the original `HomePage` flow, where permission is resolved before navigating
+  /// to the timer. Idempotent with [start]'s own gate (a granted re-check is a
+  /// no-op prompt-wise), so [start] stays correct as a defense-in-depth fallback.
+  Future<LocationStartAction> prepare() => _runGate();
 
+  /// Notification permission + location-services + location permission, returning
+  /// the gate outcome. On [LocationStartAction.proceed] it also escalates to
+  /// background ("Always") auth where the platform needs it for screen-off
+  /// recording (iOS); no-op on Android. Shared by [prepare] and [start].
+  Future<LocationStartAction> _runGate() async {
     await _service.ensureNotificationPermission();
 
     final serviceEnabled = await _permissions.isLocationServiceEnabled();
@@ -82,10 +90,19 @@ class RideRecordingController {
     }
     if (action != LocationStartAction.proceed) return action;
 
-    // Escalate to background ("Always") auth where the platform needs it for
-    // screen-off recording (iOS); no-op on Android. Best-effort — foreground
-    // recording proceeds regardless.
+    // Best-effort — foreground recording proceeds regardless.
     await _permissions.ensureBackgroundPermission();
+    return action;
+  }
+
+  /// Resolves permission (requesting once if undecided), and on success starts
+  /// the source + service + tracker. Returns the gate outcome so the UI can show
+  /// the rationale / enable-location prompt when not [LocationStartAction.proceed].
+  Future<LocationStartAction> start() async {
+    if (_tracker.state.isTracking) return LocationStartAction.proceed;
+
+    final action = await _runGate();
+    if (action != LocationStartAction.proceed) return action;
 
     // Seed an immediate marker so the map isn't blank, then stream fixes.
     final seed = await _source.lastKnown();

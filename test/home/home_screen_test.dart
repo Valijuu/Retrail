@@ -6,6 +6,7 @@ import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/domain/stats_aggregation.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
+import 'package:retrail/tracking/location_permission.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
 
 import 'home_test_helpers.dart';
@@ -21,6 +22,8 @@ void main() {
   Future<void> pumpHome(
     WidgetTester tester, {
     bool tracking = false,
+    bool online = true,
+    FakeRecordingController? recording,
     List<RecentRideUi> recent = const [],
     List<RecentRideUi> favorites = const [],
     WeeklyStats weekly = const WeeklyStats.zero(),
@@ -35,9 +38,12 @@ void main() {
       overrides: [
         appDatabaseProvider.overrideWithValue(env.db),
         preferencesRepositoryProvider.overrideWithValue(env.prefs),
-        isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+        // Home only reads connectivity on the Start tap (never watches it), so a
+        // Stream override would still be AsyncLoading then; present data
+        // synchronously so the offline branch is exercised deterministically.
+        isOnlineProvider.overrideWithValue(AsyncData(online)),
         if (tracking) isTrackingProvider.overrideWithValue(true),
-        ...activeRideTestOverrides(env.db),
+        ...activeRideTestOverrides(env.db, recording: recording),
         ...homeStreamStubs(
             recent: recent, favorites: favorites, weekly: weekly),
       ],
@@ -83,6 +89,44 @@ void main() {
     await pumpHome(tester);
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
+    expect(find.text('GET READY'), findsOneWidget);
+  });
+
+  testWidgets('Start tracking requests permission before the countdown',
+      (tester) async {
+    final recording = makeFakeRecording();
+    await pumpHome(tester, recording: recording);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    // The gate ran at the button press (not after the countdown screen).
+    expect(recording.calls, contains('prepare'));
+    expect(find.text('GET READY'), findsOneWidget);
+  });
+
+  testWidgets('blocked permission shows the rationale and does not navigate',
+      (tester) async {
+    final recording = makeFakeRecording()
+      ..prepareResult = LocationStartAction.showRationale;
+    await pumpHome(tester, recording: recording);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    expect(recording.calls, contains('prepare'));
+    expect(find.text('Location needed'), findsOneWidget); // rationale dialog
+    expect(find.text('GET READY'), findsNothing); // never reached the countdown
+  });
+
+  testWidgets('offline Start still gates permission before the countdown',
+      (tester) async {
+    // Offline funnels through the same gate (recording needs location even with
+    // no tiles); the offline confirm must not skip the prompt.
+    final recording = makeFakeRecording();
+    await pumpHome(tester, online: false, recording: recording);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    expect(find.text("You're offline"), findsOneWidget); // offline confirm first
+    await tester.tap(find.text('Start anyway'));
+    await _settle(tester);
+    expect(recording.calls, contains('prepare'));
     expect(find.text('GET READY'), findsOneWidget);
   });
 

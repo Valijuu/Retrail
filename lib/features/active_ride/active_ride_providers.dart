@@ -1,23 +1,33 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/material.dart' show ThemeMode, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../map/map_config.dart';
 import '../../map/maptiler_tile_provider.dart';
+import '../../map/preview_projection.dart';
 import '../../map/preview_snapshot.dart';
 import '../../map/route_preview_cache.dart';
 import '../../tracking/tracking_providers.dart';
+import '../shell/theme_mode_provider.dart';
 import 'active_ride_controller.dart';
 import 'preview_renderer.dart';
 
-// Render target for cached preview PNGs (history/home card size). Cached once
-// per ride, so a fixed size is fine; History (Spec 13) renders at this aspect.
-const _previewWidthDp = 320;
-const _previewHeightDp = 200;
+// Render target for cached preview PNGs. Size + aspect live in preview_projection
+// (previewRenderWidthDp/HeightDp) so the history card pins the same aspect and
+// BoxFit.cover never crops the route. Brightness is rendered on demand.
 const _previewPixelRatio = 2.0;
-const _previewBrightness = ui.Brightness.light;
+
+/// Resolves the brightness the app is *currently* showing, so a ride saved in
+/// dark mode pre-generates the dark preview (system mode reads the platform).
+ui.Brightness _resolveBrightness(ThemeMode mode) => switch (mode) {
+      ThemeMode.light => ui.Brightness.light,
+      ThemeMode.dark => ui.Brightness.dark,
+      ThemeMode.system =>
+        WidgetsBinding.instance.platformDispatcher.platformBrightness,
+    };
 
 /// App documents directory holding cached preview PNGs. Overridden in `main()`
 /// with the awaited `getApplicationDocumentsDirectory()` (same pattern as
@@ -36,20 +46,20 @@ final routePreviewCacheProvider = Provider<RoutePreviewCache>((ref) {
     baseDir: dir,
     render: buildPreviewRenderer(
       isOnline: () => ref.read(isOnlineProvider).asData?.value ?? true,
-      online: (points) => renderPreviewPng(
+      online: (points, brightness) => renderPreviewPng(
         points: points,
-        widthDp: _previewWidthDp,
-        heightDp: _previewHeightDp,
+        widthDp: previewRenderWidthDp,
+        heightDp: previewRenderHeightDp,
         pixelRatio: _previewPixelRatio,
         tiles: tiles,
-        brightness: _previewBrightness,
+        brightness: brightness,
       ),
-      offline: (points) => renderSketchPng(
+      offline: (points, brightness) => renderSketchPng(
         points: points,
-        widthDp: _previewWidthDp,
-        heightDp: _previewHeightDp,
+        widthDp: previewRenderWidthDp,
+        heightDp: previewRenderHeightDp,
         pixelRatio: _previewPixelRatio,
-        brightness: _previewBrightness,
+        brightness: brightness,
       ),
     ),
   );
@@ -60,5 +70,7 @@ final activeRideControllerProvider = Provider<ActiveRideController>(
   (ref) => ActiveRideController(
     ref.watch(rideTrackerProvider),
     ref.watch(routePreviewCacheProvider),
+    currentBrightness: () => _resolveBrightness(
+        ref.read(themeModeProvider).asData?.value ?? ThemeMode.system),
   ),
 );
