@@ -57,13 +57,19 @@ class _ActivityInitScreenState extends ConsumerState<ActivityInitScreen> {
                         style: text.bodyLarge
                             ?.copyWith(color: colors.onSurfaceVariant)),
                     const SizedBox(height: 32),
-                    GridView.count(
-                      crossAxisCount: 2,
+                    GridView(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 2.6,
+                      // Fixed tile height (not aspect ratio) so every tile is the
+                      // same size and fits the longest EN/DE label, regardless of
+                      // tile width.
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        mainAxisExtent: 94,
+                      ),
                       children: [
                         for (final type in types)
                           ActivityTile(

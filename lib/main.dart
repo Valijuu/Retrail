@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:maplibre/maplibre.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +17,17 @@ import 'tracking/tracking_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Match the removed 256 MB raster tile cache so revisited basemap tiles
+  // render offline mid-ride. Never block app start on cache config — the call
+  // throws UnimplementedError on non-Android (same as the map widget).
+  try {
+    final offline = await OfflineManager.createInstance();
+    await offline.setMaximumAmbientCacheSize(bytes: 256 * 1024 * 1024);
+    offline.dispose();
+  } catch (_) {
+    // Cache config is best-effort; continue startup regardless.
+  }
 
   // Foreground-service ↔ main-isolate channel must be opened before runApp so
   // notification-button taps relayed via sendDataToMain are received.

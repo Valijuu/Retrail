@@ -11,6 +11,8 @@ import 'package:retrail/features/history/ride_detail_dialog.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/live_map.dart';
 
+import '../support/live_map_stub.dart';
+
 Widget _host(Widget child) => MaterialApp(
       theme: buildTheme(Brightness.light),
       localizationsDelegates: const [
@@ -36,6 +38,8 @@ Ride _ride() => const Ride(
     );
 
 void main() {
+  useStubLiveMap();
+
   group('EditRideDialog', () {
     testWidgets('renders and Save fires with entered values', (tester) async {
       tester.view.physicalSize = const Size(400, 900);

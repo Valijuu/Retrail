@@ -38,10 +38,15 @@
         </activity>
         <!-- flutter_foreground_task recording service. Android 14+ requires the
              foregroundServiceType to be declared here; we record GPS, so it is
-             `location` (the runtime serviceTypes passed to startService match). -->
+             `location` (the runtime serviceTypes passed to startService match).
+             stopWithTask=true: when the user swipes the app away, the plugin's
+             onTaskRemoved calls stopSelf() (instead of scheduling a restart),
+             so the recording notification dies with the app — no orphaned
+             "dead" notification that reopens to a ride whose state was killed. -->
         <service
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:foregroundServiceType="location"
+            android:stopWithTask="true"
             android:exported="false" />
         <!-- image_cropper (uCrop) crop screen. Required by the package; without it
              cropImage() throws ActivityNotFoundException and the profile-photo

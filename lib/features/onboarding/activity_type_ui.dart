@@ -1,20 +1,32 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 
-/// UI mapping for [ActivityType]: a Material-icon stand-in and a localized label.
-/// (Exact custom icons can be recreated as SVGs in the polish phase.)
+/// UI mapping for [ActivityType]: the exact custom SVG glyph and a localized
+/// label. The glyphs live in `assets/icons/activity/` (one per enum value,
+/// filename = the lowercase enum [name]).
 extension ActivityTypeUi on ActivityType {
-  IconData get icon => switch (this) {
-        ActivityType.longboard => Icons.skateboarding,
-        ActivityType.skateboard => Icons.skateboarding,
-        ActivityType.rollerblades => Icons.roller_skating,
-        ActivityType.rollerskates => Icons.roller_skating,
-        ActivityType.mountainboard => Icons.downhill_skiing,
-        ActivityType.scooter => Icons.electric_scooter,
-        ActivityType.other => Icons.more_horiz,
-      };
+  /// Bundled SVG asset path for this activity's glyph.
+  String get iconAsset => 'assets/icons/activity/$name.svg';
+
+  /// The activity's custom glyph, tinted [color] — or, when null, the ambient
+  /// [IconTheme] colour, mirroring how a Material `Icon` adapts to light/dark.
+  /// Single-colour SVG, so a srcIn tint recolours the whole glyph.
+  Widget glyph({double size = 24, Color? color}) => Builder(
+        builder: (context) {
+          final tint = color ?? IconTheme.of(context).color;
+          return SvgPicture.asset(
+            iconAsset,
+            width: size,
+            height: size,
+            colorFilter: tint == null
+                ? null
+                : ColorFilter.mode(tint, BlendMode.srcIn),
+          );
+        },
+      );
 
   String label(AppLocalizations l10n) => switch (this) {
         ActivityType.longboard => l10n.activityLongboard,

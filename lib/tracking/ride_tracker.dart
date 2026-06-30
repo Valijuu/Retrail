@@ -92,8 +92,14 @@ class RideTracker {
 
   void _emit() => _states.add(state);
 
-  /// Sets the activity type for the next ride started.
-  void setPendingActivityType(String? typeId) => _pendingActivityType = typeId;
+  /// Sets the activity type for the next ride started. Commits [_activityType]
+  /// immediately (not only in [startTracking]) so the active-ride map renders
+  /// the chosen activity's marker from the first frame — the ride screen builds
+  /// before [startTracking] runs, so a late commit shows the previous activity.
+  void setPendingActivityType(String? typeId) {
+    _pendingActivityType = typeId;
+    _activityType = ActivityType.fromId(typeId);
+  }
 
   void startTracking() {
     _isTracking = true;
@@ -178,6 +184,18 @@ class RideTracker {
     unawaited(_rideRepository.deleteById(rideId));
   }
 
+  /// Seeds the live marker / camera position from the device's last-known fix
+  /// when a ride starts, so the map centres on the rider's area immediately
+  /// instead of null island (0,0) while the first fresh GPS fix is acquired
+  /// (slow on a cold start). Display only — it bypasses the freshness/accuracy
+  /// filters and is never recorded as a trackpoint. No-op once a real fix has
+  /// already set the location, so it can't regress a fresher position.
+  void seedLocation(LocationFix fix) {
+    if (_location != null) return;
+    _location = fix;
+    _emit();
+  }
+
   void onLocationReceived(LocationFix fix) {
     // 0. Freshness: drop stale cached fixes before any state update.
     if (nowNanos() - fix.elapsedRealtimeNanos > _maxFixAgeNanos) return;
@@ -196,31 +214,43 @@ class RideTracker {
     // 1. Discard low-accuracy fixes.
     if (fix.accuracy > _accuracyThresholdM) return;
 
+    final last = _lastRecordedLocation;
+    // First point: record the start location immediately, even standing still.
+    // The stationary / displacement / speed guards below only make sense against
+    // a previous point — applying them here would drop the start fix of a ride
+    // begun at rest, leaving a no-movement ride with zero points ("No route").
+    if (last == null) {
+      _recordPoint(rideId, fix);
+      return;
+    }
+
     // 1b. Stationary guard: trustworthy near-zero provider speed → skip.
     if (fix.hasSpeed && fix.speed < _stationarySpeedMs) return;
 
-    final last = _lastRecordedLocation;
-    if (last != null) {
-      final distance = _calc.distanceBetween(
-          last.latitude, last.longitude, fix.latitude, fix.longitude);
-      final elapsedS =
-          (fix.elapsedRealtimeNanos - last.elapsedRealtimeNanos) / 1000000000.0;
+    final distance = _calc.distanceBetween(
+        last.latitude, last.longitude, fix.latitude, fix.longitude);
+    final elapsedS =
+        (fix.elapsedRealtimeNanos - last.elapsedRealtimeNanos) / 1000000000.0;
 
-      // 2. Outlier guard: physically impossible implied speed → drop, keep last.
-      if (elapsedS > 0.0 && distance / elapsedS > _maxSpeedMs) return;
+    // 2. Outlier guard: physically impossible implied speed → drop, keep last.
+    if (elapsedS > 0.0 && distance / elapsedS > _maxSpeedMs) return;
 
-      // 3. Displacement must exceed the accuracy margin of both readings.
-      final requiredDisplacement =
-          math.max(_minDistanceM, math.max(last.accuracy, fix.accuracy));
-      if (distance < requiredDisplacement) return;
+    // 3. Displacement must exceed the accuracy margin of both readings.
+    final requiredDisplacement =
+        math.max(_minDistanceM, math.max(last.accuracy, fix.accuracy));
+    if (distance < requiredDisplacement) return;
 
-      // 4. Implied speed must indicate real movement (catches slow drift).
-      if (elapsedS > 0.0 && distance / elapsedS < _minSpeedMs) return;
+    // 4. Implied speed must indicate real movement (catches slow drift).
+    if (elapsedS > 0.0 && distance / elapsedS < _minSpeedMs) return;
 
-      _distanceMetres += distance;
-    }
+    _distanceMetres += distance;
+    _recordPoint(rideId, fix);
+  }
 
-    // Passed — record the point.
+  /// Appends [fix] to the recorded route and persists it. Callers have already
+  /// run the filter stages appropriate to the fix (the first point bypasses the
+  /// stationary/displacement guards — see [onLocationReceived]).
+  void _recordPoint(int rideId, LocationFix fix) {
     _lastRecordedLocation = fix;
     _trackPoints = [..._trackPoints, (lat: fix.latitude, lng: fix.longitude)];
     _emit();

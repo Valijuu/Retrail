@@ -280,7 +280,7 @@ class _AppBar extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 6),
-            child: Icon(activity.icon, size: 20, color: _chromeAccent.hintText),
+            child: activity.glyph(size: 20, color: _chromeAccent.hintText),
           ),
           Expanded(
             child: Text(l10n.mapActiveRideTitle,
@@ -375,6 +375,7 @@ class _MapArea extends StatelessWidget {
             points: state.trackPoints,
             current: current,
             isFollowing: isFollowing,
+            activityType: state.activityType,
             onGesture: onGesture,
           ),
         ),

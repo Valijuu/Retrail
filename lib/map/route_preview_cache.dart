@@ -23,9 +23,10 @@ class RoutePreviewCache {
 
   File fileFor(int rideId, {required Brightness brightness}) {
     final suffix = brightness == Brightness.dark ? '_dark' : '';
-    // `_v2`: the render aspect changed (whole-route framing) — a new directory
-    // forces regeneration so existing rides don't keep their cropped PNG.
-    return File('${baseDir.path}/ride_previews_v2/$rideId$suffix.png');
+    // `_v3`: the basemap now matches the live map (topo-v2) and the start/end
+    // dots gained a white halo — a new directory forces existing rides to
+    // re-render in the new style instead of serving the old streets-v2 PNG.
+    return File('${baseDir.path}/ride_previews_v3/$rideId$suffix.png');
   }
 
   /// Returns the cached preview file for [brightness], rendering + writing it

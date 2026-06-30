@@ -103,7 +103,7 @@ class HistoryFilterSheet extends ConsumerWidget {
                   FilterChip(
                     selected: filter.activity == type,
                     onSelected: (_) => notifier.setActivity(type),
-                    avatar: Icon(type.icon, size: 18),
+                    avatar: type.glyph(size: 18),
                     label: Text(type.label(l10n)),
                   ),
               ],

@@ -2,15 +2,15 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/preview_projection.dart';
 import 'package:retrail/map/route_preview.dart';
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/map/route_sketch.dart';
+
+import '../support/live_map_stub.dart';
 
 Widget _wrap(Widget child, {Brightness brightness = Brightness.light}) =>
     MaterialApp(theme: buildTheme(brightness), home: Scaffold(body: child));
@@ -32,6 +32,8 @@ class _RecordingCache extends RoutePreviewCache {
 }
 
 void main() {
+  useStubLiveMap();
+
   testWidgets('RoutePreview requests the variant matching the current theme',
       (tester) async {
     final cache = _RecordingCache();
@@ -65,18 +67,7 @@ void main() {
     expect(find.byType(RouteSketch), findsOneWidget);
   });
 
-  testWidgets('LiveMap builds with a route', (tester) async {
-    const route = <RoutePoint>[
-      (lat: 49.44, lng: 11.08),
-      (lat: 49.45, lng: 11.10),
-    ];
-    await tester.pumpWidget(_wrap(
-      const SizedBox(width: 300, height: 300, child: LiveMap(points: route)),
-    ));
-    expect(find.byType(FlutterMap), findsOneWidget);
-  });
-
-  testWidgets('LiveMap fills gaps with terrain (not grey) and caches tiles',
+  testWidgets('LiveMap builds (native map stubbed via static override)',
       (tester) async {
     const route = <RoutePoint>[
       (lat: 49.44, lng: 11.08),
@@ -85,30 +76,13 @@ void main() {
     await tester.pumpWidget(_wrap(
       const SizedBox(width: 300, height: 300, child: LiveMap(points: route)),
     ));
-
-    // Un-loaded area shows the map's terrain colour, not flutter_map's grey.
-    final options = tester.widget<FlutterMap>(find.byType(FlutterMap)).options;
-    expect(options.backgroundColor, AppColors.light.mapTerrain);
-
-    final tiles = tester.widget<TileLayer>(find.byType(TileLayer));
-    expect(tiles.panBuffer, 2); // preload a ring so zoom-out reveals loaded tiles
-    final provider = tiles.tileProvider;
-    expect(provider, isA<NetworkTileProvider>());
-    // Disk caching on → revisited tiles are served locally (faster, no refetch).
-    expect((provider as NetworkTileProvider).cachingProvider, isNotNull);
+    expect(find.byKey(const ValueKey('stub-map')), findsOneWidget);
   });
 
-  testWidgets('LiveMap constrains zoom so you cannot pinch out indefinitely',
-      (tester) async {
-    const route = <RoutePoint>[
-      (lat: 49.44, lng: 11.08),
-      (lat: 49.45, lng: 11.10),
-    ];
-    await tester.pumpWidget(_wrap(
-      const SizedBox(width: 300, height: 300, child: LiveMap(points: route)),
-    ));
-    final options = tester.widget<FlutterMap>(find.byType(FlutterMap)).options;
-    expect(options.minZoom, kLiveMapMinZoom); // floor → no world-speck zoom-out
-    expect(options.maxZoom, kLiveMapMaxZoom);
+  // The zoom envelope is now a native MapOptions concern; assert the consts the
+  // map is built from directly (no rendered map needed).
+  test('live map zoom envelope', () {
+    expect(kLiveMapMinZoom, 3.0);
+    expect(kLiveMapMaxZoom, 19.0);
   });
 }

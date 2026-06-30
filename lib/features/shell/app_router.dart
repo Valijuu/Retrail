@@ -66,7 +66,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           pageBuilder: (c, s) => _fade(const CountdownScreen(), s)),
       GoRoute(
           path: AppRoutes.ride,
-          pageBuilder: (c, s) => _fade(const ActiveRideScreen(), s)),
+          pageBuilder: (c, s) => _rideEnter(const ActiveRideScreen(), s)),
     ],
   );
 });
@@ -79,6 +79,30 @@ CustomTransitionPage<void> _fade(Widget child, GoRouterState state) =>
       reverseTransitionDuration: const Duration(milliseconds: 180),
       transitionsBuilder: (context, animation, secondary, child) =>
           FadeTransition(opacity: animation, child: child),
+    );
+
+/// A softer entrance for the ride screen: a longer, eased fade with a subtle
+/// scale-up so the map+stats layout glides in instead of cutting in abruptly.
+/// During this animation the live map is still masked by its terrain
+/// placeholder, so only plain widgets transform (no native-view quirks); the
+/// map then fades in once its style loads.
+CustomTransitionPage<void> _rideEnter(Widget child, GoRouterState state) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 340),
+      reverseTransitionDuration: const Duration(milliseconds: 220),
+      transitionsBuilder: (context, animation, secondary, child) {
+        final eased =
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        return FadeTransition(
+          opacity: eased,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.97, end: 1.0).animate(eased),
+            child: child,
+          ),
+        );
+      },
     );
 
 /// Re-runs the router's redirect when onboarding state or the deep-link changes.

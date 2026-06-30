@@ -30,6 +30,8 @@ import 'package:retrail/tracking/ride_tracker.dart';
 import 'package:retrail/tracking/ride_tracking_state.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
 
+import '../support/live_map_stub.dart';
+
 typedef SaveArgs = ({String? title, String? comment, bool favorite});
 
 // Minimal seams so a real RideRecordingController can be constructed; the fake
@@ -120,6 +122,8 @@ class RecordingController extends ActiveRideController {
 }
 
 void main() {
+  useStubLiveMap();
+
   late AppDatabase db;
   late RecordingController controller;
   late FakeRecording recording;

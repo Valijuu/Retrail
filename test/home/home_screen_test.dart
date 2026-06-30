@@ -9,6 +9,7 @@ import 'package:retrail/features/home/recent_ride_ui.dart';
 import 'package:retrail/tracking/location_permission.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
 
+import '../support/live_map_stub.dart';
 import 'home_test_helpers.dart';
 
 /// Bounded settle — HomeScreen's stream providers stay subscribed, so
@@ -19,6 +20,8 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 void main() {
+  useStubLiveMap();
+
   Future<void> pumpHome(
     WidgetTester tester, {
     bool tracking = false,

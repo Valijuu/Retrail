@@ -104,9 +104,11 @@ class RideRecordingController {
     final action = await _runGate();
     if (action != LocationStartAction.proceed) return action;
 
-    // Seed an immediate marker so the map isn't blank, then stream fixes.
+    // Centre the map on the last-known fix immediately (display only — it may be
+    // stale on a cold start, which the recording path would drop), then stream
+    // fresh fixes. seedLocation no-ops once a real fix has set the position.
     final seed = await _source.lastKnown();
-    if (seed != null) _tracker.onLocationReceived(seed);
+    if (seed != null) _tracker.seedLocation(seed);
     _fixSub = _source.fixes.listen(_tracker.onLocationReceived);
     // Keep the ongoing notification's live stats in sync.
     _stateSub = _tracker.changes.listen((s) => _service.update(

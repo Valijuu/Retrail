@@ -162,7 +162,7 @@ class _ActivityChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(activity.icon, size: 18, color: _accent.primaryContainer),
+          activity.glyph(size: 18, color: _accent.primaryContainer),
           const SizedBox(width: 8),
           Text(activity.label(l10n),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(

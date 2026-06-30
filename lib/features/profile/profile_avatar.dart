@@ -21,18 +21,36 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: colors.surfaceContainer,
-        border: ring ? Border.all(color: colors.primary, width: 3) : null,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Clip the photo to a circle with a dedicated ClipOval — more reliable
+          // than Container.clipBehavior + BoxShape.circle, which can fail to clip
+          // the image (square corners poke past the ring) under Impeller.
+          ClipOval(
+            child: photoPath != null
+                ? Image.file(File(photoPath!),
+                    fit: BoxFit.cover, width: size, height: size)
+                : Container(
+                    color: colors.surfaceContainer,
+                    alignment: Alignment.center,
+                    child: Icon(Icons.person,
+                        size: size * 0.5, color: colors.subtleText),
+                  ),
+          ),
+          // Ring drawn on top so it never insets/shrinks the photo.
+          if (ring)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.primary, width: 3),
+              ),
+            ),
+        ],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: photoPath != null
-          ? Image.file(File(photoPath!), fit: BoxFit.cover)
-          : Icon(Icons.person, size: size * 0.5, color: colors.subtleText),
     );
   }
 }

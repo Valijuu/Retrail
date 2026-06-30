@@ -182,7 +182,8 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                         if (activity != null)
                           _Chip(
                             label: activity.label(l10n),
-                            icon: activity.icon,
+                            leading: activity.glyph(
+                                size: 13, color: colors.chipSecondaryText),
                             bg: colors.chipSecondary,
                             fg: colors.chipSecondaryText,
                           ),
@@ -347,26 +348,29 @@ class _OverflowMenu extends StatelessWidget {
 
 class _Chip extends StatelessWidget {
   const _Chip(
-      {required this.label, required this.bg, required this.fg, this.icon});
+      {required this.label, required this.bg, required this.fg, this.leading});
   final String label;
   final Color bg;
   final Color fg;
-  final IconData? icon;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
           color: bg, borderRadius: const BorderRadius.all(Radius.circular(20))),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 13, color: fg),
+          if (leading != null) ...[
+            leading!,
             const SizedBox(width: 4),
           ],
           Text(label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
               style: Theme.of(context)
                   .textTheme
                   .labelSmall

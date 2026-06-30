@@ -162,7 +162,7 @@ class _ActivitySummaryRow extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(activity.icon, size: 24, color: colors.primary),
+                  activity.glyph(size: 24, color: colors.primary),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(activity.label(l10n),
@@ -256,13 +256,17 @@ class _ActivityPickerDialogState extends State<_ActivityPickerDialog> {
             Text(l10n.settingsActivityDialogTitle,
                 style: text.titleLarge?.copyWith(color: colors.onSurface)),
             const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
+            GridView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 2.6,
+              // Fixed tile height (not aspect ratio) so every tile is the same
+              // size and fits the longest EN/DE label, regardless of width.
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                mainAxisExtent: 94,
+              ),
               children: [
                 for (final type in ActivityType.values)
                   ActivityTile(

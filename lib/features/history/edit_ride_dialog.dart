@@ -91,7 +91,7 @@ class _EditRideDialogState extends State<EditRideDialog> {
                     selected: _type == option,
                     onSelected: (_) => setState(
                         () => _type = _type == option ? null : option),
-                    avatar: Icon(option.icon, size: 18),
+                    avatar: option.glyph(size: 18),
                     label: Text(option.label(l10n)),
                   ),
               ],

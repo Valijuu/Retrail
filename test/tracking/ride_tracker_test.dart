@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/data/repositories/trackpoint_repository.dart';
+import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
@@ -120,6 +121,44 @@ void main() {
         t.onLocationReceived(fix(52, 13, accuracy: 80));
         expect(t.state.trackPoints, isEmpty);
         verifyNever(() => tpRepo.insert(any()));
+      });
+    });
+
+    test('seedLocation centers the map from a stale fix recording would drop', () {
+      // On a cold start the last-known fix is often older than the 5 s freshness
+      // window, so the recording path (onLocationReceived) drops it and the map
+      // is stranded at (0,0). seedLocation shows it anyway (display only) so the
+      // map centres on the rider's area immediately.
+      runTracker((fa, t) {
+        t.nowNanos = () => 10000000000; // 10 s → a nanos:0 fix is "10 s old"
+        final stale = fix(52, 13);
+        t.onLocationReceived(stale);
+        expect(t.state.location, isNull,
+            reason: 'recording path drops the stale fix');
+        t.seedLocation(stale);
+        expect(t.state.location, stale);
+        expect(t.state.trackPoints, isEmpty,
+            reason: 'a seed is for display only — never recorded');
+      });
+    });
+
+    test('seedLocation does not overwrite a fix that already arrived', () {
+      runTracker((fa, t) {
+        final fresh = fix(52, 13);
+        t.onLocationReceived(fresh);
+        t.seedLocation(fix(10, 10));
+        expect(t.state.location, fresh);
+      });
+    });
+
+    test('setPendingActivityType reflects in state before startTracking', () {
+      // The active-ride map reads state.activityType to pick its marker. The
+      // chosen activity must be visible as soon as it is set (on the Start
+      // press), not only after startTracking commits it — otherwise the first
+      // ride's map renders the previous activity's marker.
+      runTracker((fa, t) {
+        t.setPendingActivityType(ActivityType.mountainboard.id);
+        expect(t.state.activityType, ActivityType.mountainboard);
       });
     });
   });
@@ -438,13 +477,28 @@ void main() {
       });
     });
 
-    test('near-zero provider speed is not recorded', () {
+    test('near-zero provider speed is not recorded after the first point', () {
       runTracker((fa, t) {
         t.startTracking();
         fa.flushMicrotasks();
-        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 0.5)); // < 0.8
-        expect(t.state.trackPoints, isEmpty);
-        verifyNever(() => tpRepo.insert(any()));
+        t.onLocationReceived(fix(52, 13, nanos: 0)); // first point recorded
+        // A later stationary fix is dropped by the stationary guard.
+        t.onLocationReceived(fix(52.001, 13.001,
+            hasSpeed: true, speed: 0.5, nanos: 2000000000)); // < 0.8
+        expect(t.state.trackPoints, hasLength(1));
+      });
+    });
+
+    test('first fix is recorded even standing still (no-move ride has a point)',
+        () {
+      // The start location must always be captured so a ride begun (and ended)
+      // at rest still has a point — a dot in the preview, not "No route".
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 0.0)); // at rest
+        expect(t.state.trackPoints, hasLength(1));
+        verify(() => tpRepo.insert(any())).called(1);
       });
     });
 

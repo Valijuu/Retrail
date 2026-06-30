@@ -10,4 +10,12 @@ abstract final class MapConfig {
   static String rasterUrlTemplate(bool dark) =>
       'https://api.maptiler.com/maps/${dark ? 'streets-v2-dark' : 'streets-v2'}'
       '/{z}/{x}/{y}.png?key=$mapTilerKey';
+
+  /// Vector style id for the live map. topo-v2 has no dark twin, so dark mode
+  /// pairs with the lighter basic-v2-dark (both verified smooth on-device).
+  static String vectorStyleId(bool dark) => dark ? 'basic-v2-dark' : 'topo-v2';
+
+  /// MapLibre vector style document URL for the live map.
+  static String vectorStyleUrl(bool dark) =>
+      'https://api.maptiler.com/maps/${vectorStyleId(dark)}/style.json?key=$mapTilerKey';
 }

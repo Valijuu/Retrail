@@ -37,15 +37,22 @@ Future<Uint8List> renderPreviewPng({
     ui.Paint()..color = colors.mapTerrain,
   );
 
-  for (final t in grid) {
-    final image = await tiles.tile(t.z, t.x, t.y, brightness);
+  // Fetch the whole grid concurrently — sequential per-tile awaits made the
+  // render as slow as the sum of every tile's network round-trip.
+  final images = await Future.wait(
+    [for (final t in grid) tiles.tile(t.z, t.x, t.y, brightness)],
+  );
+  for (var i = 0; i < grid.length; i++) {
+    final image = images[i];
     if (image == null) continue;
+    final t = grid[i];
     final src = ui.Rect.fromLTWH(
         0, 0, image.width.toDouble(), image.height.toDouble());
     final dst = ui.Rect.fromLTWH(
         t.offsetXDp, t.offsetYDp, tileSize.toDouble(), tileSize.toDouble());
     canvas.drawImageRect(
         image, src, dst, ui.Paint()..filterQuality = ui.FilterQuality.medium);
+    image.dispose();
   }
 
   if (points.length >= 2) {
@@ -62,13 +69,19 @@ Future<Uint8List> renderPreviewPng({
     canvas.drawPath(path, _stroke(colors.routeLineBlue, 3.5));
   }
 
+  // Start/end dots, matching the live detail map: a green start dot whenever
+  // there is a point (so a single-point / standstill ride still shows where it
+  // was), and a red end dot only once there are two — each styled with a white
+  // halo like the live map's markers.
   if (points.isNotEmpty) {
     final start = projectPoint(points.first, framing);
+    _styledDot(canvas, ui.Offset(start.x, start.y), colors.markerStartGreen,
+        colors.routeLineHalo);
+  }
+  if (points.length >= 2) {
     final end = projectPoint(points.last, framing);
-    canvas.drawCircle(
-        ui.Offset(start.x, start.y), 4, ui.Paint()..color = colors.markerStartGreen);
-    canvas.drawCircle(
-        ui.Offset(end.x, end.y), 4, ui.Paint()..color = colors.markerEndRed);
+    _styledDot(canvas, ui.Offset(end.x, end.y), colors.markerEndRed,
+        colors.routeLineHalo);
   }
 
   final picture = recorder.endRecording();
@@ -78,6 +91,13 @@ Future<Uint8List> renderPreviewPng({
   picture.dispose();
   image.dispose();
   return bytes!.buffer.asUint8List();
+}
+
+/// A start/end dot styled like the live map's markers: a [color] disc on a white
+/// [halo] ring.
+void _styledDot(ui.Canvas canvas, ui.Offset c, ui.Color color, ui.Color halo) {
+  canvas.drawCircle(c, 6.5, ui.Paint()..color = halo);
+  canvas.drawCircle(c, 4.5, ui.Paint()..color = color);
 }
 
 ui.Paint _stroke(ui.Color color, double width) => ui.Paint()
@@ -118,10 +138,12 @@ Future<Uint8List> renderSketchPng({
     canvas.drawPath(path, _stroke(colors.routeLineBlue, 3.5));
   }
   if (offsets.isNotEmpty) {
-    canvas.drawCircle(ui.Offset(offsets.first.x, offsets.first.y), 4,
-        ui.Paint()..color = colors.markerStartGreen);
-    canvas.drawCircle(ui.Offset(offsets.last.x, offsets.last.y), 4,
-        ui.Paint()..color = colors.markerEndRed);
+    _styledDot(canvas, ui.Offset(offsets.first.x, offsets.first.y),
+        colors.markerStartGreen, colors.routeLineHalo);
+  }
+  if (offsets.length >= 2) {
+    _styledDot(canvas, ui.Offset(offsets.last.x, offsets.last.y),
+        colors.markerEndRed, colors.routeLineHalo);
   }
 
   final picture = recorder.endRecording();

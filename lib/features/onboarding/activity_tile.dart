@@ -33,7 +33,7 @@ class ActivityTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppShapes.card,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
           decoration: BoxDecoration(
             borderRadius: AppShapes.card,
             border: Border.all(
@@ -41,16 +41,26 @@ class ActivityTile extends StatelessWidget {
               width: 1.5,
             ),
           ),
-          child: Row(
+          // Vertical: glyph centred on top, label centred below (matches the
+          // original picker). The label gets the full tile width, so the longest
+          // EN/DE label fits on one line; FittedBox shrinks it to fit on very
+          // narrow tiles, keeping every tile the same size.
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(type.icon, color: tint),
-              const SizedBox(width: 12),
-              Expanded(
+              type.glyph(size: 32, color: tint),
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Text(
                   type.label(l10n),
+                  maxLines: 1,
+                  softWrap: false,
+                  textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
-                      .bodyMedium
+                      .labelLarge
                       ?.copyWith(color: tint, fontWeight: FontWeight.w500),
                 ),
               ),

@@ -86,20 +86,31 @@ class _RecentPhoto extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: onSelect,
-            child: Container(
+            child: SizedBox(
               width: 64,
               height: 64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected
-                      ? colors.primary
-                      : colors.onSurfaceVariant.withValues(alpha: 0.2),
-                  width: selected ? 3 : 1,
-                ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Dedicated ClipOval (not Container.clipBehavior, which can
+                  // leave square corners under Impeller); ring drawn on top.
+                  ClipOval(
+                    child: Image.file(File(path),
+                        fit: BoxFit.cover, width: 64, height: 64),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: selected
+                            ? colors.primary
+                            : colors.onSurfaceVariant.withValues(alpha: 0.2),
+                        width: selected ? 3 : 1,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.file(File(path), fit: BoxFit.cover),
             ),
           ),
           Positioned(

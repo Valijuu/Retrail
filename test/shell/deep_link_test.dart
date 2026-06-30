@@ -10,6 +10,7 @@ import 'package:retrail/features/shell/startup_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../home/home_test_helpers.dart';
+import '../support/live_map_stub.dart';
 
 Future<ProviderContainer> _pumpApp(WidgetTester tester, AppDatabase db) async {
   tester.view.physicalSize = const Size(400, 900);
@@ -39,6 +40,8 @@ Future<ProviderContainer> _pumpApp(WidgetTester tester, AppDatabase db) async {
 }
 
 void main() {
+  useStubLiveMap();
+
   testWidgets('a pending ride deep-link routes to /ride and clears the flag',
       (tester) async {
     final db = AppDatabase.memory();
