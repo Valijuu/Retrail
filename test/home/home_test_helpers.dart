@@ -16,6 +16,7 @@ import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/home/home_providers.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
+import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_permission.dart';
@@ -101,7 +102,8 @@ class FakeRecordingController extends RideRecordingController {
   }
 
   @override
-  Future<void> stop() async => calls.add('stop');
+  Future<void> stop({bool discard = false}) async =>
+      calls.add(discard ? 'stop:discard' : 'stop');
 
   @override
   Future<void> openLocationSettings() async => calls.add('openLocationSettings');
@@ -110,10 +112,10 @@ class FakeRecordingController extends RideRecordingController {
   Future<void> openAppSettings() async => calls.add('openAppSettings');
 }
 
-/// A standalone [FakeRecordingController] (its own throwaway tracker) for tests
-/// that assert on the Start-tracking gate without wiring up the rest.
-FakeRecordingController makeFakeRecording() {
-  final db = AppDatabase.memory();
+/// A [FakeRecordingController] backed by [db] for tests that assert on the
+/// Start-tracking gate. Sharing the caller's db avoids creating a second
+/// AppDatabase instance (which Drift warns about).
+FakeRecordingController makeFakeRecording(AppDatabase db) {
   return FakeRecordingController(RideTracker(
     RideRepository(RideDao(db)),
     TrackpointRepository(TrackpointDao(db)),
@@ -140,7 +142,9 @@ activeRideTestOverrides(AppDatabase db, {FakeRecordingController? recording}) {
         .overrideWith((ref) => Stream.value(const RideTrackingState())),
     activeRideControllerProvider.overrideWithValue(NoopActiveRideController(
       tracker,
-      RoutePreviewCache(baseDir: dir, render: (_, _) async => Uint8List(0)),
+      RoutePreviewCache(
+          baseDir: dir,
+          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
     )),
     // The Start-tracking gate (and the active-ride fallback gate) read the real
     // recording controller, which calls geolocator — unavailable under

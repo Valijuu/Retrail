@@ -69,7 +69,11 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
+      // Wider than the M3 default (40dp side margins): the map + stats deserve
+      // most of the screen width.
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
+        width: double.infinity,
         clipBehavior: Clip.antiAlias,
         decoration:
             BoxDecoration(color: colors.surface, borderRadius: AppShapes.dialog),

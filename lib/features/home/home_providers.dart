@@ -29,10 +29,13 @@ final weeklyStatsProvider = _statsFor((now) => weekBounds(nowMs: now));
 final dailyStatsProvider = _statsFor((now) => dayBounds(nowMs: now));
 final yearlyStatsProvider = _statsFor((now) => yearBounds(nowMs: now));
 
-/// Newest 2 rides by date → UI models.
+/// Newest 2 FINISHED rides by date → UI models. Rides without an endTime are
+/// in progress (the row is inserted at ride start) or mid-discard — neither
+/// belongs in "last rides", and showing them made a discarded ride flash on
+/// home until its delete landed.
 List<RecentRideUi> toRecentRides(
     List<RideWithTrackpoints> list, DistanceCalculator calc) {
-  final sorted = [...list]
+  final sorted = list.where((rwt) => rwt.ride.endTime != null).toList()
     ..sort((a, b) => (b.ride.date ?? 0).compareTo(a.ride.date ?? 0));
   return sorted.take(2).map((rwt) => RecentRideUi.from(rwt, calc)).toList();
 }

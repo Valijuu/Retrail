@@ -35,9 +35,18 @@ class ActiveRideController {
   void pauseOrResume(bool isPaused) =>
       isPaused ? _tracker.resume() : _tracker.pause();
 
+  /// How long the preview render waits after save. Saving navigates home with
+  /// a 220 ms exit transition; the render's tile decodes + PNG encode run on
+  /// the UI isolate and janked those frames (visible as a stutter/blink).
+  /// Deferring past the transition costs nothing — the history card falls back
+  /// to the cache-warm path on first view anyway.
+  static const previewDelay = Duration(milliseconds: 450);
+
   /// Persists ride details, then generates the preview PNG once for the
   /// just-stopped ride (online snapshot or offline flat sketch — the cache's
-  /// renderer decides). No-op preview when there is no completed ride or route.
+  /// renderer decides), deferred by [previewDelay] so the render never
+  /// competes with the exit transition. No-op preview when there is no
+  /// completed ride or route.
   Future<void> saveRide({
     String? title,
     String? comment,
@@ -47,6 +56,7 @@ class ActiveRideController {
     final points = _tracker.state.trackPoints;
     _tracker.saveRideDetails(title, comment, isFavorite: favorite);
     if (rideId != null && points.isNotEmpty) {
+      await Future<void>.delayed(previewDelay);
       await _cache.ensurePreview(rideId, points,
           brightness: _currentBrightness());
     }

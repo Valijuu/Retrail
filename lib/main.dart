@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -17,6 +18,11 @@ import 'tracking/tracking_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Portrait-only on every platform (backs up the Android manifest's
+  // screenOrientation="portrait" and the iOS Info.plist orientation list).
+  await SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp]);
 
   // Match the removed 256 MB raster tile cache so revisited basemap tiles
   // render offline mid-ride. Never block app start on cache config — the call

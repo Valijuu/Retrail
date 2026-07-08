@@ -64,8 +64,17 @@ class _FakeService implements RideForegroundService {
   int starts = 0;
   int stops = 0;
   bool notificationGranted = true;
+
+  /// When set, [start] waits for it — simulates the slow platform binder call
+  /// that opens the start/stop race window.
+  Future<void>? startDelay;
+
   @override
-  Future<void> start() async => starts++;
+  Future<void> start() async {
+    final delay = startDelay;
+    if (delay != null) await delay;
+    starts++;
+  }
   @override
   Future<void> stop() async => stops++;
   @override
@@ -145,6 +154,70 @@ void main() {
     source.emit(_fix(52.001, 13.0, 9500000000));
     await pumpEventQueue();
     expect(tracker.state.trackPoints.length, 2);
+  });
+
+  test('stop() finalizes the ride SYNCHRONOUSLY — isTracking false and the '
+      'completed ride id set before any async teardown', () async {
+    final perms = _FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+    );
+    final c = controller(perms);
+    await c.start();
+    await pumpEventQueue(); // _beginRide insert → activeRideId
+
+    // Call stop WITHOUT awaiting: the discard-on-dispose path reads the
+    // tracker state right after the call — it must already be committed.
+    final pending = c.stop();
+    expect(tracker.state.isTracking, isFalse);
+    expect(tracker.lastCompletedRideId, isNotNull);
+    await pending;
+    expect(service.stops, 1);
+  });
+
+  test('stop() during an in-flight start() wins — the tracker never starts '
+      'and the service ends stopped (no zombie tracking after a fast discard)',
+      () async {
+    final perms = _FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+    );
+    // The platform service start is slow (binder call) — the discard window.
+    final serviceStarted = Completer<void>();
+    service.startDelay = serviceStarted.future;
+    final c = controller(perms);
+
+    final starting = c.start(); // ride screen mount
+    await pumpEventQueue(); // start() is now awaiting _service.start()
+    await c.stop(discard: true); // user backed out + discarded meanwhile
+    serviceStarted.complete(); // the slow platform call finally returns
+    await starting;
+    await pumpEventQueue();
+
+    expect(tracker.state.isTracking, isFalse); // start() must NOT resurrect
+    expect(service.stops, greaterThanOrEqualTo(service.starts));
+    final rides = await db.rideDao.getAll().first;
+    expect(rides, isEmpty); // no zombie ride row
+  });
+
+  test('stop(discard: true) deletes the active ride immediately — no endTime '
+      'write, nothing left for home\'s recents to flash', () async {
+    final perms = _FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+    );
+    final c = controller(perms);
+    await c.start();
+    await pumpEventQueue(); // _beginRide insert → active ride row exists
+    expect(await db.rideDao.getAll().first, hasLength(1));
+
+    await c.stop(discard: true);
+    await pumpEventQueue();
+
+    expect(tracker.state.isTracking, isFalse);
+    expect(tracker.lastCompletedRideId, isNull); // fully reset
+    expect(tracker.state.distanceMetres, 0);
+    expect(await db.rideDao.getAll().first, isEmpty); // row gone
   });
 
   test('denied then granted on request → proceeds and requests once', () async {

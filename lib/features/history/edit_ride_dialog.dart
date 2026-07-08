@@ -51,7 +51,11 @@ class _EditRideDialogState extends State<EditRideDialog> {
     final text = Theme.of(context).textTheme;
     return Dialog(
       backgroundColor: Colors.transparent,
+      // Wider than the M3 default (40dp side margins) so the activity chips
+      // and inputs get room.
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
+        width: double.infinity,
         decoration:
             BoxDecoration(color: colors.surface, borderRadius: AppShapes.dialog),
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),

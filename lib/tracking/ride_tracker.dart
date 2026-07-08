@@ -62,6 +62,15 @@ class RideTracker {
 
   int? _activeRideId;
   int? _lastCompletedRideId;
+
+  /// True while [_beginRide]'s DB insert is in flight — a stop/discard can
+  /// arrive in that window (instant back → discard) and must not be lost.
+  bool _beginInFlight = false;
+
+  /// Set when [discardRide] runs before the ride id exists (insert still in
+  /// flight): [_beginRide] then deletes the row on completion instead of
+  /// orphaning it in the history.
+  bool _discardPendingRide = false;
   String? _pendingActivityType;
   LocationFix? _lastRecordedLocation;
   LocationFix? _lastSpeedLocation;
@@ -106,6 +115,7 @@ class RideTracker {
     _isPaused = false;
     _activityType = ActivityType.fromId(_pendingActivityType);
     _emit();
+    _beginInFlight = true;
     unawaited(_beginRide());
   }
 
@@ -116,6 +126,20 @@ class RideTracker {
       startTime: Value(now),
       date: Value(now),
     ));
+    _beginInFlight = false;
+    // A stop (and possibly discard) arrived while the insert was in flight —
+    // don't resurrect the ride. Honour the latched discard, else finalize it
+    // as the last completed ride so a later save/discard can still act on it.
+    if (!_isTracking) {
+      if (_discardPendingRide) {
+        _discardPendingRide = false;
+        await _rideRepository.deleteById(rideId);
+        return;
+      }
+      _lastCompletedRideId = rideId;
+      await _rideRepository.updateEndTime(rideId, nowMs());
+      return;
+    }
     _activeRideId = rideId;
     _lastRecordedLocation = null;
     _trackPoints = const [];
@@ -126,20 +150,27 @@ class RideTracker {
     _emit();
   }
 
+  /// Stops the ride. The live state flips **synchronously** — callers (the
+  /// discard-on-dispose path, the home screen's isTracking guard) read the
+  /// tracker right after calling this; flipping it only after the async
+  /// end-time write raced them (a discard no-oped, and a stalled teardown left
+  /// the tracker "tracking" forever). Only the DB write stays async.
   void stopTracking() {
+    // Idempotent: nothing to do when not tracking and no ride is in flight.
+    if (!_isTracking && _activeRideId == null) return;
     final rideId = _activeRideId;
-    if (rideId == null) return;
-    _lastCompletedRideId = rideId;
     _cancelElapsedTimer();
-    unawaited(_endRide(rideId));
-  }
-
-  Future<void> _endRide(int rideId) async {
-    await _rideRepository.updateEndTime(rideId, nowMs());
     _activeRideId = null;
     _isTracking = false;
     _isPaused = false;
     _emit();
+    // rideId can be null when the begin-insert is still in flight (instant
+    // back → discard). The isTracking=false flip above makes [_beginRide]
+    // finalize/delete the ride on completion instead of resurrecting it.
+    if (rideId != null) {
+      _lastCompletedRideId = rideId;
+      unawaited(_rideRepository.updateEndTime(rideId, nowMs()));
+    }
   }
 
   /// Pauses recording: freezes the timer and stops recording without ending the
@@ -171,16 +202,49 @@ class RideTracker {
     }());
   }
 
-  /// Discards the last stopped ride entirely (CASCADE removes its trackpoints)
-  /// and resets live state.
-  void discardRide() {
-    final rideId = _lastCompletedRideId;
-    if (rideId == null) return;
+  /// Stops AND discards the ride that is still active, in one synchronous
+  /// step (the back → discard flow). Unlike stop-then-discard it never writes
+  /// an endTime and enqueues the row delete immediately — so the doomed ride
+  /// cannot flash into home's "last rides" while a deferred teardown runs.
+  /// Fully resets the live state; safe to call when nothing is active.
+  void discardActiveRide() {
+    final rideId = _activeRideId;
+    _cancelElapsedTimer();
+    _activeRideId = null;
+    _isTracking = false;
+    _isPaused = false;
     _lastCompletedRideId = null;
     _trackPoints = const [];
     _distanceMetres = 0.0;
     _elapsedSeconds = 0;
     _emit();
+    if (rideId != null) {
+      unawaited(_rideRepository.deleteById(rideId));
+    } else if (_beginInFlight) {
+      // Insert still in flight — [_beginRide] deletes the row when it lands.
+      _discardPendingRide = true;
+    }
+  }
+
+  /// Discards the last stopped ride entirely (CASCADE removes its trackpoints)
+  /// and resets live state.
+  void discardRide() {
+    final rideId = _lastCompletedRideId;
+    if (rideId == null) {
+      // The ride's insert may still be in flight (instant back → discard):
+      // latch the discard so [_beginRide] deletes the row when it lands.
+      if (_beginInFlight) _discardPendingRide = true;
+      return;
+    }
+    _lastCompletedRideId = null;
+    // Only reset the live counters when no NEW ride has started meanwhile — a
+    // deferred discard of the previous ride must not clobber an active one.
+    if (!_isTracking) {
+      _trackPoints = const [];
+      _distanceMetres = 0.0;
+      _elapsedSeconds = 0;
+      _emit();
+    }
     unawaited(_rideRepository.deleteById(rideId));
   }
 

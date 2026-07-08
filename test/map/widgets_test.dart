@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/preview_projection.dart';
+import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview.dart';
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/map/route_sketch.dart';
@@ -21,7 +22,8 @@ class _RecordingCache extends RoutePreviewCache {
   _RecordingCache()
       : super(
             baseDir: Directory.systemTemp,
-            render: (_, _) async => Uint8List(0));
+            render: (_, _) async =>
+                PreviewResult(Uint8List(0), complete: true));
   Brightness? requested;
   @override
   Future<File> ensurePreview(int rideId, List<RoutePoint> points,
@@ -29,6 +31,20 @@ class _RecordingCache extends RoutePreviewCache {
     requested = brightness;
     return File('${Directory.systemTemp.path}/never_read.png');
   }
+}
+
+/// A cache whose preview is already resolved (as after ride-save / first view),
+/// without real file IO — which never settles under `testWidgets`.
+class _WarmCache extends RoutePreviewCache {
+  _WarmCache()
+      : super(
+            baseDir: Directory.systemTemp,
+            render: (_, _) async =>
+                PreviewResult(Uint8List(0), complete: true));
+
+  @override
+  File? resolvedFileFor(int rideId, {required Brightness brightness}) =>
+      File('${Directory.systemTemp.path}/warm_$rideId.png');
 }
 
 void main() {
@@ -55,7 +71,7 @@ void main() {
       (tester) async {
     final cache = RoutePreviewCache(
       baseDir: Directory.systemTemp,
-      render: (_, _) async => Uint8List(0),
+      render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
     );
     await tester.pumpWidget(_wrap(
       SizedBox(
@@ -65,6 +81,25 @@ void main() {
       ),
     ));
     expect(find.byType(RouteSketch), findsOneWidget);
+  });
+
+  testWidgets(
+      'RoutePreview shows the image on the FIRST frame once the cache has '
+      'resolved it (no sketch flash while scrolling)', (tester) async {
+    const points = <RoutePoint>[(lat: 1, lng: 2), (lat: 3, lng: 4)];
+    final cache = _WarmCache();
+
+    await tester.pumpWidget(_wrap(
+      SizedBox(
+        width: 200,
+        height: 100,
+        child: RoutePreview(rideId: 1, points: points, cache: cache),
+      ),
+    ));
+    // First build, no pump: the sync fast path must already show the image —
+    // no RouteSketch flash, no FutureBuilder round-trip.
+    expect(find.byType(RouteSketch), findsNothing);
+    expect(find.byType(Image), findsOneWidget);
   });
 
   testWidgets('LiveMap builds (native map stubbed via static override)',

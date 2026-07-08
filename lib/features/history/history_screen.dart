@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +18,8 @@ import 'history_ride_card.dart';
 import 'ride_detail_dialog.dart';
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../domain/activity_type.dart';
+import '../../map/preview_projection.dart';
+import '../active_ride/active_ride_providers.dart';
 
 /// The history tab: filtered/sorted/date-grouped list of ride cards with search,
 /// a filter sheet, multi-select + batch delete, per-row edit/delete, a detail
@@ -36,8 +39,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Set<int> _selectedIds = {};
   int? _highlightRideId;
   Timer? _highlightTimer;
+  bool _warmedInitialItems = false;
 
   bool get _selectionMode => _selectedIds.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    // Consume a jump target parked BEFORE this screen mounted. Home sets the
+    // target and then switches tabs; the PageView builds this screen fresh on
+    // most visits, so the `ref.listen`s in build never see that change — they
+    // only fire on LATER emissions (which is why the jump used to work once,
+    // then only after something re-emitted the items, e.g. a favorite toggle).
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _maybeJumpToTarget();
+    });
+  }
 
   @override
   void dispose() {
@@ -69,14 +86,68 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     ref.read(historyTargetRideProvider.notifier).state = null;
     _targetKey = GlobalKey();
     setState(() => _highlightRideId = target);
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      final ctx = _targetKey.currentContext;
-      if (ctx != null) Scrollable.ensureVisible(ctx, alignment: 0.2);
-    });
+    SchedulerBinding.instance
+        .addPostFrameCallback((_) => _revealTarget(items, target));
     _highlightTimer?.cancel();
     _highlightTimer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) setState(() => _highlightRideId = null);
     });
+  }
+
+  /// Scrolls the target card into view. `ensureVisible` only works when the
+  /// card is BUILT (viewport + cache extent) — for rides further down the
+  /// list its key has no context and the jump used to silently no-op. Jump
+  /// near the card's estimated offset first so the lazy list builds it, then
+  /// fine-tune; bounded retries cover estimate error.
+  void _revealTarget(List<HistoryItem> items, int target, {int attempt = 0}) {
+    if (!mounted) return;
+    final ctx = _targetKey.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(ctx, alignment: 0.2);
+      return;
+    }
+    if (attempt >= 3 || !_scrollController.hasClients) return;
+    final estimate = estimatedOffsetOf(items, target)
+        .clamp(0.0, _scrollController.position.maxScrollExtent);
+    _scrollController.jumpTo(estimate);
+    SchedulerBinding.instance.addPostFrameCallback(
+        (_) => _revealTarget(items, target, attempt: attempt + 1));
+  }
+
+  /// Pre-warms ride previews as soon as the list data arrives, instead of when
+  /// each card scrolls into view: ensures the PNG exists on disk + fills the
+  /// cache's sync memo (so cards build their image on the first frame), and
+  /// pre-decodes the first [_precacheDecodes] into the framework [ImageCache].
+  /// Scrolling then never waits on file checks, renders, or decodes.
+  /// Re-running on every items emission is cheap — warmed rides hit the memo.
+  /// 60 decoded thumbnails ≈ 34 MB — comfortably inside the framework
+  /// ImageCache's 100 MB default; beyond that the enlarged cache extent
+  /// decode-ahead covers it.
+  static const _precacheDecodes = 60;
+
+  void _warmPreviews(List<HistoryItem> items) {
+    final cache = ref.read(routePreviewCacheProvider);
+    final brightness = Theme.of(context).brightness;
+    var decodesLeft = _precacheDecodes;
+    for (final item in items) {
+      if (item is! RideEntryItem) continue;
+      final tps = item.rwt.trackpoints;
+      if (tps.isEmpty) continue;
+      final points = <RoutePoint>[
+        for (final tp in tps) (lat: tp.latitude, lng: tp.longitude),
+      ];
+      final precache = decodesLeft-- > 0;
+      unawaited(cache
+          .ensurePreview(item.rwt.ride.rideId, points, brightness: brightness)
+          .then((file) {
+        if (!mounted || !precache) return;
+        // Same provider shape as the card's Image.file(cacheWidth: ...) so the
+        // decoded frame is an exact ImageCache hit when the card builds.
+        precacheImage(
+            ResizeImage(FileImage(file), width: previewImageCacheWidth),
+            context);
+      }).catchError((Object _) {}));
+    }
   }
 
   Future<void> _openFilters() => showModalBottomSheet<void>(
@@ -136,12 +207,26 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen(historyTargetRideProvider, (_, _) => _maybeJumpToTarget());
-    ref.listen(historyItemsProvider, (_, _) => _maybeJumpToTarget());
+    ref.listen(historyItemsProvider, (_, next) {
+      _maybeJumpToTarget();
+      final items = next.asData?.value;
+      if (items != null) _warmPreviews(items);
+    });
 
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).extension<AppColors>()!;
     final items = ref.watch(historyItemsProvider).asData?.value ?? const [];
     final hasRides = items.any((i) => i is RideEntryItem);
+
+    // The listen above only fires on *changes* — when the tab mounts with data
+    // already loaded, warm the previews once from here (post-frame, so the
+    // first layout isn't delayed).
+    if (!_warmedInitialItems && hasRides) {
+      _warmedInitialItems = true;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _warmPreviews(items);
+      });
+    }
 
     // Keep the search field in sync with the filter (e.g. Reset clears query).
     final query = ref.watch(historyFilterProvider).query;
@@ -183,6 +268,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 child: hasRides
                     ? ListView.separated(
                         controller: _scrollController,
+                        // Build ~4-5 cards ahead of the viewport so preview
+                        // PNGs resolve/decode + upload well before their card
+                        // scrolls in — at slow scroll speeds nothing is ever
+                        // built at the viewport edge (visible as a hitch).
+                        scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         itemCount: items.length,

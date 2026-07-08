@@ -23,6 +23,7 @@ import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/features/home/navigation_launcher.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/preview_projection.dart';
+import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview.dart';
 import 'package:retrail/map/route_preview_cache.dart';
 
@@ -41,6 +42,24 @@ class FakeHistoryController extends HistoryController {
   @override
   Future<void> toggleFavorite(Ride ride) async =>
       calls.add('fav:${ride.rideId}');
+}
+
+/// Records which rides the screen pre-warms previews for (no real IO).
+class WarmSpyCache extends RoutePreviewCache {
+  WarmSpyCache()
+      : super(
+            baseDir: Directory.systemTemp,
+            render: (_, _) async =>
+                PreviewResult(Uint8List(0), complete: true));
+
+  final warmed = <int>[];
+
+  @override
+  Future<File> ensurePreview(int rideId, List<RoutePoint> points,
+      {required Brightness brightness}) async {
+    warmed.add(rideId);
+    return File('${Directory.systemTemp.path}/warm_$rideId.png');
+  }
 }
 
 class FakeNavigationLauncher implements NavigationLauncher {
@@ -101,7 +120,8 @@ void main() {
     controller = FakeHistoryController(
       RideRepository(RideDao(db)),
       RoutePreviewCache(
-          baseDir: Directory.systemTemp, render: (_, _) async => Uint8List(0)),
+          baseDir: Directory.systemTemp,
+          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
     );
   });
   tearDown(() {
@@ -114,6 +134,7 @@ void main() {
     List<HistoryItem> items, {
     NavigationLauncher? navLauncher,
     int? presetTarget,
+    RoutePreviewCache? previewCache,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -124,6 +145,8 @@ void main() {
       previewCacheDirProvider.overrideWithValue(Directory.systemTemp),
       historyItemsProvider.overrideWith((ref) => Stream.value(items)),
       historyControllerProvider.overrideWithValue(controller),
+      if (previewCache != null)
+        routePreviewCacheProvider.overrideWithValue(previewCache),
       if (navLauncher != null)
         navigationLauncherProvider.overrideWithValue(navLauncher),
     ]);
@@ -163,6 +186,20 @@ void main() {
   testWidgets('empty state when there are no rides', (tester) async {
     await pump(tester, const []);
     expect(find.text('No rides yet'), findsOneWidget);
+  });
+
+  testWidgets(
+      'pre-warms previews for listed rides as soon as items load — '
+      'not only when their card scrolls into view', (tester) async {
+    final spy = WarmSpyCache();
+    await pump(
+      tester,
+      [_routedEntry(1), _routedEntry(2), _entry(3)], // 3 has no route
+      previewCache: spy,
+    );
+    await tester.pump(); // post-frame warm pass
+    expect(spy.warmed, containsAll([1, 2]));
+    expect(spy.warmed, isNot(contains(3))); // nothing to render for no-route
   });
 
   testWidgets('thumbnail top corners are clipped to the card radius '
@@ -319,6 +356,35 @@ void main() {
         .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
         .firstWhere((c) => c.entry.rwt.ride.rideId == 2);
     expect(target.highlighted, isTrue);
+    await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
+  });
+
+  testWidgets(
+      'jumps to a target far DOWN the list — beyond the built window, where '
+      'ensureVisible alone cannot reach (the "jump sometimes does nothing" bug)',
+      (tester) async {
+    // 25 cards ≈ 5750px of list in a 900px viewport: the last ride is far
+    // outside viewport + cacheExtent, so its card is not built at mount.
+    final items = [for (var i = 1; i <= 25; i++) _entry(i, desc: 'Ride $i')];
+    await pump(tester, items, presetTarget: 25);
+    await tester.pump(); // initState post-frame → estimate jump
+    await tester.pump(); // card built → ensureVisible fine-tune
+    await tester.pump(); // settle
+
+    expect(container.read(historyTargetRideProvider), isNull); // consumed
+    // The list actually scrolled…
+    final scrollable =
+        tester.state<ScrollableState>(find.byType(Scrollable).first);
+    expect(scrollable.position.pixels, greaterThan(0));
+    // …and the target card is built + highlighted + on screen.
+    final target = tester
+        .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
+        .firstWhere((c) => c.entry.rwt.ride.rideId == 25);
+    expect(target.highlighted, isTrue);
+    expect(find.text('Ride 25'), findsOneWidget);
+    final rect = tester.getRect(find.text('Ride 25'));
+    expect(rect.top, greaterThanOrEqualTo(0));
+    expect(rect.bottom, lessThanOrEqualTo(900));
     await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
   });
 }

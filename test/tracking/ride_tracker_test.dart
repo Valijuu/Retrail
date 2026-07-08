@@ -164,6 +164,107 @@ void main() {
   });
 
   // ─── trackPoints accumulation ────────────────────────────────────────────
+  group('discardActiveRide', () {
+    test('one-shot: deletes the row, never writes an endTime, fully resets',
+        () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        fa.elapse(const Duration(seconds: 3));
+        expect(t.state.elapsedSeconds, 3);
+
+        t.discardActiveRide();
+        expect(t.state.isTracking, isFalse); // synchronous
+        expect(t.lastCompletedRideId, isNull);
+        expect(t.state.elapsedSeconds, 0);
+        expect(t.state.distanceMetres, 0);
+        expect(t.state.trackPoints, isEmpty);
+        fa.flushMicrotasks();
+        verify(() => rideRepo.deleteById(1)).called(1);
+        verifyNever(() => rideRepo.updateEndTime(any(), any()));
+        fa.elapse(const Duration(seconds: 5));
+        expect(t.state.elapsedSeconds, 0); // timer cancelled, not leaked
+      });
+    });
+
+    test('latches when the begin-insert is still in flight', () {
+      when(() => rideRepo.insert(any())).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        return 7;
+      });
+      runTracker((fa, t) {
+        t.startTracking();
+        t.discardActiveRide(); // ride id not known yet
+        expect(t.state.isTracking, isFalse);
+        fa.elapse(const Duration(milliseconds: 200));
+        verify(() => rideRepo.deleteById(7)).called(1);
+        verifyNever(() => rideRepo.updateEndTime(any(), any()));
+      });
+    });
+  });
+
+  // Back → discard immediately after starting can stop/discard while
+  // _beginRide's insert is still in flight. The tracker must not end up
+  // half-tracking (leaked elapsed timer, isTracking stuck true) or orphan the
+  // ride row — that broken state compounded on repeats and crashed the app.
+  group('stop/discard racing the begin insert', () {
+    test('stop while the insert is in flight flips state immediately and '
+        'finalizes the ride once inserted (no leaked timer)', () {
+      when(() => rideRepo.insert(any())).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        return 7;
+      });
+      runTracker((fa, t) {
+        t.startTracking();
+        t.stopTracking(); // insert not landed yet
+        expect(t.state.isTracking, isFalse); // stop always takes effect
+        fa.elapse(const Duration(milliseconds: 200));
+        expect(t.lastCompletedRideId, 7); // late insert → completed, not live
+        verify(() => rideRepo.updateEndTime(7, any())).called(1);
+        fa.elapse(const Duration(seconds: 5));
+        expect(t.state.elapsedSeconds, 0); // elapsed timer never leaked
+        expect(t.state.isTracking, isFalse);
+      });
+    });
+
+    test('discard while the insert is in flight deletes the row when it lands',
+        () {
+      when(() => rideRepo.insert(any())).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        return 7;
+      });
+      runTracker((fa, t) {
+        t.startTracking();
+        t.stopTracking();
+        t.discardRide(); // completed ride id not known yet — must latch
+        fa.elapse(const Duration(milliseconds: 200));
+        verify(() => rideRepo.deleteById(7)).called(1);
+        verifyNever(() => rideRepo.updateEndTime(any(), any()));
+        expect(t.lastCompletedRideId, isNull);
+      });
+    });
+
+    test('discarding the previous ride does not clobber a NEW active ride',
+        () {
+      var nextId = 0;
+      when(() => rideRepo.insert(any())).thenAnswer((_) async => ++nextId);
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.stopTracking(); // ride 1 completed, awaiting save/discard
+        t.startTracking(); // new ride begins before the deferred discard runs
+        fa.flushMicrotasks();
+        fa.elapse(const Duration(seconds: 3));
+        expect(t.state.elapsedSeconds, 3);
+
+        t.discardRide(); // deletes ride 1 only
+        expect(t.state.isTracking, isTrue);
+        expect(t.state.elapsedSeconds, 3); // live state untouched
+        verify(() => rideRepo.deleteById(1)).called(1);
+      });
+    });
+  });
+
   group('trackPoints', () {
     test('initially empty', () {
       runTracker((fa, t) => expect(t.state.trackPoints, isEmpty));

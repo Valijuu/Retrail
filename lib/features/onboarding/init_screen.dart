@@ -33,8 +33,11 @@ class InitScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              Icon(Icons.skateboarding, size: 96, color: colors.primary),
-              const SizedBox(height: 32),
+              // The app icon (transparent-background variant) — branding the
+              // welcome step for every activity, not just boarders.
+              Image.asset('assets/branding/app_icon_foreground.png',
+                  width: 132, height: 132),
+              const SizedBox(height: 24),
               Text(l10n.initWelcomeTitle,
                   textAlign: TextAlign.center,
                   style: text.headlineMedium

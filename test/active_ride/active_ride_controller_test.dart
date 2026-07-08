@@ -11,6 +11,7 @@ import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/features/active_ride/active_ride_controller.dart';
 import 'package:retrail/map/preview_projection.dart';
+import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
@@ -67,7 +68,7 @@ void main() {
       baseDir: tmp,
       render: (points, _) async {
         captured = points;
-        return Uint8List.fromList([1, 2, 3]);
+        return PreviewResult(Uint8List.fromList([1, 2, 3]), complete: true);
       },
     );
     final controller = ActiveRideController(tracker, cache);
@@ -101,7 +102,7 @@ void main() {
       baseDir: tmp,
       render: (points, b) async {
         renderedWith = b;
-        return Uint8List.fromList([1]);
+        return PreviewResult(Uint8List.fromList([1]), complete: true);
       },
     );
     final controller = ActiveRideController(tracker, cache,
@@ -129,7 +130,7 @@ void main() {
       baseDir: tmp,
       render: (points, _) async {
         rendered = true;
-        return Uint8List(0);
+        return PreviewResult(Uint8List(0), complete: true);
       },
     );
     final controller = ActiveRideController(tracker, cache);
@@ -144,7 +145,9 @@ void main() {
     addTearDown(() => tmp.delete(recursive: true));
     final controller = ActiveRideController(
       tracker,
-      RoutePreviewCache(baseDir: tmp, render: (_, _) async => Uint8List(0)),
+      RoutePreviewCache(
+          baseDir: tmp,
+          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
     );
 
     controller.startRide();
@@ -166,7 +169,9 @@ void main() {
     addTearDown(() => tmp.delete(recursive: true));
     final controller = ActiveRideController(
       tracker,
-      RoutePreviewCache(baseDir: tmp, render: (_, _) async => Uint8List(0)),
+      RoutePreviewCache(
+          baseDir: tmp,
+          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
     );
 
     controller.discardRide();

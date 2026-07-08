@@ -33,7 +33,14 @@ class ProfileAvatar extends StatelessWidget {
           ClipOval(
             child: photoPath != null
                 ? Image.file(File(photoPath!),
-                    fit: BoxFit.cover, width: size, height: size)
+                    fit: BoxFit.cover,
+                    width: size,
+                    height: size,
+                    // Decode at display size — the cropped photo can be far
+                    // larger than this avatar, and a full-resolution decode +
+                    // GPU upload visibly janks the first Home build.
+                    cacheWidth:
+                        (size * MediaQuery.devicePixelRatioOf(context)).round())
                 : Container(
                     color: colors.surfaceContainer,
                     alignment: Alignment.center,

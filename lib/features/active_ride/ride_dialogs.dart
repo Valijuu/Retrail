@@ -165,7 +165,11 @@ class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
       child: Container(
         decoration: BoxDecoration(color: colors.surface, borderRadius: AppShapes.dialog),
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-        child: Column(
+        // Scroll INSIDE the card (same structure as EditRideDialog): when the
+        // keyboard shrinks the space, the card compresses and its content
+        // scrolls — no overflow stripe, dialog stays fully usable.
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -234,12 +238,18 @@ class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
               ],
             ),
             const SizedBox(height: 4),
-            TextButton(
-              onPressed: widget.onDiscard,
-              child: Text(l10n.summaryDiscard,
-                  style: text.labelLarge?.copyWith(color: colors.deleteActionText)),
+            // Centered under the Skip/Save row (the column is start-aligned,
+            // which left the destructive action stuck to the left edge).
+            Center(
+              child: TextButton(
+                onPressed: widget.onDiscard,
+                child: Text(l10n.summaryDiscard,
+                    style: text.labelLarge
+                        ?.copyWith(color: colors.deleteActionText)),
+              ),
             ),
           ],
+          ),
         ),
       ),
     );

@@ -8,6 +8,7 @@ import 'package:retrail/data/db/ride_dao.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/features/history/history_controller.dart';
+import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 
 void main() {
@@ -69,7 +70,10 @@ void main() {
 
 class _SpyCache extends RoutePreviewCache {
   _SpyCache(Directory dir, this.evicted)
-      : super(baseDir: dir, render: (_, _) async => Uint8List(0));
+      : super(
+            baseDir: dir,
+            render: (_, _) async =>
+                PreviewResult(Uint8List(0), complete: true));
   final List<int> evicted;
 
   @override

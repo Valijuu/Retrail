@@ -34,6 +34,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  collection: ^1.19.0 # Set equality for the multi-select history filter
   flutter_riverpod: ^3.3.2
   riverpod_annotation: ^4.0.3
   drift: ^2.34.0
@@ -101,6 +102,7 @@ flutter:
 
   assets:
     - assets/icons/activity/
+    - assets/branding/app_icon_foreground.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -256,7 +256,7 @@ class _Thumbnail extends ConsumerWidget {
                       rideId: rideId,
                       points: points,
                       cache: ref.watch(routePreviewCacheProvider),
-                      cacheWidth: 640,
+                      cacheWidth: previewImageCacheWidth,
                     )
                   : null,
             ),

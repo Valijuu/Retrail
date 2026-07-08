@@ -21,7 +21,7 @@
   "profilePictureDeleteCd": "Foto löschen",
 
   "activityPickerTitle": "Wie fährst du?",
-  "initActivityHint": "Wähle dein übliches Board. Du kannst es jederzeit ändern.",
+  "initActivityHint": "Wähle deine übliche Aktivität. Du kannst sie jederzeit ändern.",
   "activityLongboard": "Longboard",
   "activitySkateboard": "Skateboard",
   "activityRollerblades": "Inline-Skates",
@@ -30,9 +30,9 @@
   "activityScooter": "Roller",
   "activityOther": "Andere",
 
-  "homeDefaultName": "Skater",
+  "homeDefaultName": "Rider",
   "sectionRecentRides": "Letzte Fahrten",
-  "sectionRecentFavorites": "Favoriten",
+  "sectionRecentFavorites": "Letzte Favoriten",
   "homeEmptyNoRides": "Noch keine Fahrten — Zeit loszurollen.",
   "homeEmptyNoFavorites": "Noch keine Favoriten.",
   "homeWeekSection": "Diese Woche",

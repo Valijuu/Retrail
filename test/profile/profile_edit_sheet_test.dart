@@ -39,7 +39,11 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(body: ProfileEditSheet()),
+        // resizeToAvoidBottomInset: false so the Scaffold does NOT consume the
+        // keyboard insets — matching showModalBottomSheet, where the sheet
+        // sees MediaQuery.viewInsets itself (the behavior under test).
+        home: const Scaffold(
+            resizeToAvoidBottomInset: false, body: ProfileEditSheet()),
       ),
     ));
     await tester.pump();
@@ -58,6 +62,20 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pump();
     expect(await prefs.userName.first, 'Robin');
+  });
+
+  testWidgets('lifts its content above the keyboard so the name field '
+      'stays visible while typing', (tester) async {
+    await pump(tester);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 500);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pump();
+
+    final scroll = tester.widget<SingleChildScrollView>(
+        find.byType(SingleChildScrollView).first);
+    final padding = scroll.padding!.resolve(TextDirection.ltr);
+    expect(padding.bottom, 500); // viewInsets applied → sheet rises
+    expect(tester.takeException(), isNull); // and nothing overflows
   });
 
   testWidgets('Cancel does not change the name', (tester) async {

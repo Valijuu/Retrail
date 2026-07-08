@@ -26,7 +26,6 @@ class HistoryFilterSheet extends ConsumerWidget {
       (l10n.periodThisWeek, TimePeriod.thisWeek),
       (l10n.periodThisMonth, TimePeriod.thisMonth),
       (l10n.periodThisYear, TimePeriod.thisYear),
-      (l10n.periodAll, TimePeriod.all),
     ];
     final sorts = <(String, SortOrder)>[
       (l10n.sortNewest, SortOrder.date),
@@ -64,10 +63,16 @@ class HistoryFilterSheet extends ConsumerWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
+                // Multi-select: chips toggle and combine (union); "All" clears.
+                FilterChip(
+                  selected: filter.periods.isEmpty,
+                  onSelected: (_) => notifier.clearPeriods(),
+                  label: Text(l10n.periodAll),
+                ),
                 for (final (label, value) in periods)
                   FilterChip(
-                    selected: filter.period == value,
-                    onSelected: (_) => notifier.setPeriod(value),
+                    selected: filter.periods.contains(value),
+                    onSelected: (_) => notifier.togglePeriod(value),
                     label: Text(label),
                   ),
               ],
@@ -94,15 +99,16 @@ class HistoryFilterSheet extends ConsumerWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
+                // Multi-select: pick any combination of activities; "All" clears.
                 FilterChip(
-                  selected: filter.activity == null,
-                  onSelected: (_) => notifier.setActivity(null),
+                  selected: filter.activities.isEmpty,
+                  onSelected: (_) => notifier.clearActivities(),
                   label: Text(l10n.activityAll),
                 ),
                 for (final type in ActivityType.values)
                   FilterChip(
-                    selected: filter.activity == type,
-                    onSelected: (_) => notifier.setActivity(type),
+                    selected: filter.activities.contains(type),
+                    onSelected: (_) => notifier.toggleActivity(type),
                     avatar: type.glyph(size: 18),
                     label: Text(type.label(l10n)),
                   ),

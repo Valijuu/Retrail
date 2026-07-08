@@ -14,12 +14,30 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   @override
   HistoryFilter build() => const HistoryFilter();
 
-  void setPeriod(TimePeriod p) => state = state.copyWith(period: p);
+  /// Adds/removes [p] from the multi-select period set (union semantics).
+  void togglePeriod(TimePeriod p) {
+    final s = {...state.periods};
+    if (!s.remove(p)) s.add(p);
+    state = state.copyWith(periods: s);
+  }
+
+  /// The "All" period chip: clears the selection (= no time restriction).
+  void clearPeriods() => state = state.copyWith(periods: const {});
+
   void setSort(SortOrder s) => state = state.copyWith(sort: s);
   void setQuery(String q) => state = state.copyWith(query: q);
   void setFavoritesOnly(bool v) => state = state.copyWith(favoritesOnly: v);
-  void setActivity(ActivityType? a) =>
-      state = state.copyWith(activity: a, clearActivity: a == null);
+
+  /// Adds/removes [a] from the multi-select activity set (any-of semantics).
+  void toggleActivity(ActivityType a) {
+    final s = {...state.activities};
+    if (!s.remove(a)) s.add(a);
+    state = state.copyWith(activities: s);
+  }
+
+  /// The "All" activity chip: clears the selection (= every activity).
+  void clearActivities() => state = state.copyWith(activities: const {});
+
   void reset() => state = const HistoryFilter();
 }
 

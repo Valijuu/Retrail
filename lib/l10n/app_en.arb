@@ -22,7 +22,7 @@
   "profilePictureDeleteCd": "Delete photo",
 
   "activityPickerTitle": "How do you roll?",
-  "initActivityHint": "Pick your usual ride. You can change it anytime.",
+  "initActivityHint": "Pick your usual activity. You can change it anytime.",
   "activityLongboard": "Longboard",
   "activitySkateboard": "Skateboard",
   "activityRollerblades": "Rollerblades",
@@ -31,9 +31,9 @@
   "activityScooter": "Scooter",
   "activityOther": "Other",
 
-  "homeDefaultName": "Skater",
+  "homeDefaultName": "Rider",
   "sectionRecentRides": "Recent rides",
-  "sectionRecentFavorites": "Favorites",
+  "sectionRecentFavorites": "Recent favorites",
   "homeEmptyNoRides": "No rides yet — time to roll.",
   "homeEmptyNoFavorites": "No favorites yet.",
   "homeWeekSection": "This week",

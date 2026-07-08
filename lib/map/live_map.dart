@@ -8,6 +8,7 @@ import 'package:maplibre/maplibre.dart';
 
 import '../core/theme/app_colors.dart';
 import '../domain/activity_type.dart';
+import '../domain/distance_calculator.dart';
 import '../features/onboarding/activity_type_ui.dart';
 import 'map_config.dart';
 import 'preview_projection.dart';
@@ -74,6 +75,23 @@ String routeLineGeoJson(List<RoutePoint> points) {
     'properties': <String, Object?>{},
   });
 }
+
+/// Linear interpolation between two coordinates. Safe for the short per-fix
+/// distances the marker glide covers (metres — curvature is irrelevant).
+RoutePoint lerpPoint(RoutePoint a, RoutePoint b, double t) =>
+    (lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t);
+
+/// Above this jump the current-position marker snaps instead of gliding: a GPS
+/// recovery / teleport animated over 600 ms would be a distracting slow slide
+/// across the screen. Normal 1 Hz fixes move a few metres.
+const double _markerSnapThresholdM = 150;
+
+/// Whether the marker should snap straight to [to] (true) or glide from [from]
+/// (false). Pure, so the decision is unit-tested without pumping the map.
+bool markerShouldSnap(RoutePoint from, RoutePoint to) =>
+    const HaversineDistanceCalculator()
+        .distanceBetween(from.lat, from.lng, to.lat, to.lng) >
+    _markerSnapThresholdM;
 
 String _pointGeoJson(RoutePoint p) => jsonEncode({
       'type': 'Feature',
@@ -188,9 +206,36 @@ class LiveMap extends StatefulWidget {
   State<LiveMap> createState() => _LiveMapState();
 }
 
-class _LiveMapState extends State<LiveMap> {
+class _LiveMapState extends State<LiveMap>
+    with SingleTickerProviderStateMixin {
   MapController? _controller;
   StyleController? _style;
+
+  /// Glides the current-position marker between fixes (600 ms — matching the
+  /// camera's animateCamera — and linear, so constant motion between ~1 Hz
+  /// fixes doesn't pulse). Without it the dot teleports while the camera glides.
+  /// Created in [initState]: a lazy `late final` would first run in [dispose],
+  /// where the TickerMode ancestor lookup throws on the deactivated element.
+  late final AnimationController _glide;
+
+  /// Where the marker is currently drawn (the glide's moving position), so a
+  /// fix arriving mid-glide restarts from here — no lag buildup, no jump back.
+  RoutePoint? _renderedCurrent;
+  RoutePoint? _glideFrom;
+  RoutePoint? _glideTo;
+
+  /// Last time a glide frame was pushed to the source, for throttling the
+  /// platform-channel updates to ~25 fps instead of display rate.
+  int _lastGlidePushMs = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _glide = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..addListener(_onGlideTick);
+  }
 
   /// Badge images already registered on the style (`addImage` would throw on a
   /// duplicate id), so a live activity swap only rasterizes each type once.
@@ -224,9 +269,10 @@ class _LiveMapState extends State<LiveMap> {
       _style?.updateGeoJsonSource(
           id: 'route', data: routeLineGeoJson(widget.points));
     }
-    if (widget.current != oldWidget.current && widget.current != null) {
-      _style?.updateGeoJsonSource(
-          id: 'current', data: _pointGeoJson(widget.current!));
+    if (!widget.fitBounds &&
+        widget.current != oldWidget.current &&
+        widget.current != null) {
+      _glideMarkerTo(widget.current!);
     }
     // The ride's activity is committed in RideTracker.startTracking() — which
     // runs after this map's style has already loaded — so activityType arrives
@@ -254,6 +300,38 @@ class _LiveMapState extends State<LiveMap> {
     }
   }
 
+  /// Moves the `current` marker to [next]: a glide from where it is drawn now,
+  /// or a direct snap when there is no previous position, or the jump is big
+  /// enough (GPS recovery) that a 600 ms slide would look wrong.
+  void _glideMarkerTo(RoutePoint next) {
+    final from = _renderedCurrent;
+    if (from == null || markerShouldSnap(from, next)) {
+      _glide.stop();
+      _renderedCurrent = next;
+      _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(next));
+      return;
+    }
+    _glideFrom = from; // mid-glide restart begins at the interpolated position
+    _glideTo = next;
+    _glide
+      ..stop()
+      ..forward(from: 0);
+  }
+
+  /// Per-frame glide tick: pushes the interpolated position into the `current`
+  /// source, throttled to ≥40 ms between pushes (~25 fps) so the platform
+  /// channel isn't spammed at display rate. The final frame always lands.
+  void _onGlideTick() {
+    final from = _glideFrom, to = _glideTo;
+    if (from == null || to == null) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (!_glide.isCompleted && now - _lastGlidePushMs < 40) return;
+    _lastGlidePushMs = now;
+    final p = lerpPoint(from, to, _glide.value);
+    _renderedCurrent = p;
+    _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(p));
+  }
+
   /// A camera move can be superseded by the next one (every fix recenters),
   /// which completes the in-flight future with `Exception: Animation cancelled`.
   /// That's expected — attach a handler so it isn't an unhandled exception.
@@ -264,7 +342,12 @@ class _LiveMapState extends State<LiveMap> {
   Future<void> _onStyleLoaded(StyleController style) async {
     _style = style;
     // A fresh style (e.g. a brightness rebuild) carries none of the previously
-    // registered images/layers, so re-rasterize badges from scratch.
+    // registered images/layers, so re-rasterize badges from scratch — and stop
+    // any in-flight marker glide so its ticks can't touch the `current` source
+    // before this load recreates it.
+    _glide.stop();
+    _glideFrom = null;
+    _glideTo = null;
     _markerReady = false;
     _markerImages.clear();
     final colors = Theme.of(context).extension<AppColors>()!;
@@ -326,6 +409,7 @@ class _LiveMapState extends State<LiveMap> {
       // Current-position marker, updated per fix via updateGeoJsonSource (see
       // didUpdateWidget). Seeded empty until there is a fix.
       final cur = widget.current;
+      _renderedCurrent = cur; // glide baseline = the seeded marker position
       await style.addSource(GeoJsonSource(
         id: 'current',
         data: cur != null ? _pointGeoJson(cur) : _emptyGeoJson,
@@ -409,6 +493,12 @@ class _LiveMapState extends State<LiveMap> {
     final blue = _hex(Theme.of(context).extension<AppColors>()!.routeLineBlue);
     await style.removeLayer('current-dot');
     await _addCurrentMarker(style, widget.activityType, blue);
+  }
+
+  @override
+  void dispose() {
+    _glide.dispose();
+    super.dispose();
   }
 
   @override

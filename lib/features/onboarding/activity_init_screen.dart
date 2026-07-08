@@ -79,18 +79,23 @@ class _ActivityInitScreenState extends ConsumerState<ActivityInitScreen> {
                           ),
                       ],
                     ),
+                    // Inside the scroll content, right under the grid — same
+                    // placement as the welcome step's button (which sits under
+                    // its input), instead of pinned to the screen bottom.
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: _finish,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        shape:
+                            RoundedRectangleBorder(borderRadius: AppShapes.pill),
+                      ),
+                      child: Text(l10n.actionContinue),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-              FilledButton(
-                onPressed: _finish,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: AppShapes.pill),
-                ),
-                child: Text(l10n.actionContinue),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),

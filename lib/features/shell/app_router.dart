@@ -59,14 +59,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.activityPicker,
           pageBuilder: (c, s) => _fade(const ActivityInitScreen(), s)),
       GoRoute(
-          path: AppRoutes.main,
-          pageBuilder: (c, s) => _fade(const MainShell(), s)),
-      GoRoute(
-          path: AppRoutes.timer,
-          pageBuilder: (c, s) => _fade(const CountdownScreen(), s)),
-      GoRoute(
-          path: AppRoutes.ride,
-          pageBuilder: (c, s) => _rideEnter(const ActiveRideScreen(), s)),
+        path: AppRoutes.main,
+        pageBuilder: (c, s) => _fade(const MainShell(), s),
+        // Timer + ride are CHILD routes so the shell stays alive underneath:
+        // leaving the ride pops back to the still-mounted MainShell instead of
+        // cold-rebuilding it (which flashed a dark half-built frame that looked
+        // like the timer page) — and the timer is never in the stack while on
+        // /ride, so it cannot reappear during the exit transition.
+        routes: [
+          GoRoute(
+              path: 'timer',
+              pageBuilder: (c, s) => _fade(const CountdownScreen(), s)),
+          GoRoute(
+              path: 'ride',
+              pageBuilder: (c, s) => _rideEnter(const ActiveRideScreen(), s)),
+        ],
+      ),
     ],
   );
 });

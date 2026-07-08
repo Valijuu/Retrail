@@ -68,16 +68,36 @@ void main() {
       final items = _build([
         _rwt(_ride(1, typ: 'SCOOTER')),
         _rwt(_ride(2, typ: 'LONGBOARD')),
-      ], const HistoryFilter(activity: ActivityType.scooter));
+      ], const HistoryFilter(activities: {ActivityType.scooter}));
       expect(_rideIds(items), [1]);
+    });
+
+    test('multiple activities combine as any-of', () {
+      final items = _build([
+        _rwt(_ride(1, typ: 'SCOOTER')),
+        _rwt(_ride(2, typ: 'LONGBOARD')),
+        _rwt(_ride(3, typ: 'SKATEBOARD')),
+      ], const HistoryFilter(
+          activities: {ActivityType.scooter, ActivityType.longboard}));
+      expect(_rideIds(items), unorderedEquals([1, 2]));
     });
 
     test('period THIS_WEEK excludes older rides', () {
       final items = _build([
         _rwt(_ride(1, date: _now)), // this week
         _rwt(_ride(2, date: _now - 30 * _day)), // last month
-      ], const HistoryFilter(period: TimePeriod.thisWeek));
+      ], const HistoryFilter(periods: {TimePeriod.thisWeek}));
       expect(_rideIds(items), [1]);
+    });
+
+    test('multiple periods combine as a union (earliest start wins)', () {
+      final items = _build([
+        _rwt(_ride(1, date: _now)), // this week
+        _rwt(_ride(2, date: _now - 30 * _day)), // ~last month → in this year
+        _rwt(_ride(3, date: _now - 400 * _day)), // before this year
+      ], const HistoryFilter(
+          periods: {TimePeriod.thisWeek, TimePeriod.thisYear}));
+      expect(_rideIds(items), unorderedEquals([1, 2]));
     });
 
     test('search matches title or comment, case-insensitive', () {
@@ -142,13 +162,37 @@ void main() {
     });
   });
 
+  group('estimatedOffsetOf', () {
+    test('first card after the first header is one header down', () {
+      final items = _build([_rwt(_ride(1, date: _now))], const HistoryFilter());
+      // items = [header, ride 1]
+      expect(estimatedOffsetOf(items, 1, headerExtent: 30, cardExtent: 240), 30);
+    });
+
+    test('sums headers and cards up to a deep target', () {
+      final items = _build([
+        _rwt(_ride(1, date: _now)),
+        _rwt(_ride(2, date: _now - _day)),
+        _rwt(_ride(3, date: _now - 2 * _day)),
+      ], const HistoryFilter());
+      // [h, 1, h, 2, h, 3] → offset of 3 = 2 headers + 2 cards + 1 header.
+      expect(estimatedOffsetOf(items, 3, headerExtent: 30, cardExtent: 240),
+          3 * 30 + 2 * 240);
+    });
+
+    test('unknown ride id yields 0 (top of list)', () {
+      final items = _build([_rwt(_ride(1, date: _now))], const HistoryFilter());
+      expect(estimatedOffsetOf(items, 99), 0);
+    });
+  });
+
   group('filter badges', () {
     test('activeFilterCount excludes the search query', () {
       const f = HistoryFilter(
-        period: TimePeriod.thisWeek,
+        periods: {TimePeriod.thisWeek},
         sort: SortOrder.distance,
         favoritesOnly: true,
-        activity: ActivityType.scooter,
+        activities: {ActivityType.scooter},
         query: 'x',
       );
       expect(activeFilterCount(f), 4);

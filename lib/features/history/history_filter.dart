@@ -1,73 +1,85 @@
+import 'package:collection/collection.dart';
+
 import '../../domain/activity_type.dart';
 
-/// Time-window chips for the history filter. Mirrors the original `TimePeriod`.
-enum TimePeriod { thisWeek, thisMonth, thisYear, all }
+/// Time-window chips for the history filter. Mirrors the original `TimePeriod`;
+/// "all time" is no longer an enum member — it is the **empty selection** (see
+/// [HistoryFilter.periods]).
+enum TimePeriod { thisWeek, thisMonth, thisYear }
 
 /// Sort-order chips for the history filter. Mirrors the original `SortOrder`.
 enum SortOrder { date, distance, speed, duration }
 
-/// Immutable bundle of the history filter state (period, sort, search, favorites
-/// and activity type). Mirrors `RideHistoryViewModel`'s five filter flows.
+const _setEq = SetEquality<Object>();
+
+/// Immutable bundle of the history filter state (periods, sort, search,
+/// favorites and activities). Periods and activities are **multi-select** sets:
+/// a ride matches when it falls in ANY selected period and has ANY selected
+/// activity; an empty set means "no restriction" (the "All" chip).
 class HistoryFilter {
   const HistoryFilter({
-    this.period = TimePeriod.all,
+    this.periods = const {},
     this.sort = SortOrder.date,
     this.query = '',
     this.favoritesOnly = false,
-    this.activity,
+    this.activities = const {},
   });
 
-  final TimePeriod period;
+  /// Selected time windows, combined as a union. Empty = all time.
+  final Set<TimePeriod> periods;
   final SortOrder sort;
   final String query;
   final bool favoritesOnly;
-  final ActivityType? activity;
+
+  /// Selected activity types (any-of). Empty = all activities.
+  final Set<ActivityType> activities;
 
   HistoryFilter copyWith({
-    TimePeriod? period,
+    Set<TimePeriod>? periods,
     SortOrder? sort,
     String? query,
     bool? favoritesOnly,
-    ActivityType? activity,
-    bool clearActivity = false,
+    Set<ActivityType>? activities,
   }) =>
       HistoryFilter(
-        period: period ?? this.period,
+        periods: periods ?? this.periods,
         sort: sort ?? this.sort,
         query: query ?? this.query,
         favoritesOnly: favoritesOnly ?? this.favoritesOnly,
-        activity: clearActivity ? null : (activity ?? this.activity),
+        activities: activities ?? this.activities,
       );
 
   @override
   bool operator ==(Object other) =>
       other is HistoryFilter &&
-      other.period == period &&
+      _setEq.equals(other.periods, periods) &&
       other.sort == sort &&
       other.query == query &&
       other.favoritesOnly == favoritesOnly &&
-      other.activity == activity;
+      _setEq.equals(other.activities, activities);
 
   @override
-  int get hashCode => Object.hash(period, sort, query, favoritesOnly, activity);
+  int get hashCode => Object.hash(_setEq.hash(periods), sort, query,
+      favoritesOnly, _setEq.hash(activities));
 }
 
-/// Count of active, non-default filters for the filter-icon badge. The search
-/// query is excluded (it has its own visible bar). Mirrors `activeFilterCount`.
+/// Count of active, non-default filter sections for the filter-icon badge. The
+/// search query is excluded (it has its own visible bar). Mirrors
+/// `activeFilterCount`.
 int activeFilterCount(HistoryFilter f) {
   var count = 0;
-  if (f.period != TimePeriod.all) count++;
+  if (f.periods.isNotEmpty) count++;
   if (f.sort != SortOrder.date) count++;
   if (f.favoritesOnly) count++;
-  if (f.activity != null) count++;
+  if (f.activities.isNotEmpty) count++;
   return count;
 }
 
 /// Whether any non-default filter (search included) is active. Mirrors
 /// `isFilterActive`.
 bool isFilterActive(HistoryFilter f) =>
-    f.period != TimePeriod.all ||
+    f.periods.isNotEmpty ||
     f.sort != SortOrder.date ||
     f.query.isNotEmpty ||
     f.favoritesOnly ||
-    f.activity != null;
+    f.activities.isNotEmpty;

@@ -21,6 +21,11 @@ const int previewRenderWidthDp = 320;
 const int previewRenderHeightDp = 112;
 const double previewAspectRatio = previewRenderWidthDp / previewRenderHeightDp;
 
+/// Decode width (px) for displaying a cached preview PNG — the PNG's own pixel
+/// width (320dp × 2.0 pixel ratio). Shared by the history card's `cacheWidth`
+/// and the scroll pre-warmer so their [ImageCache] entries are the same key.
+const int previewImageCacheWidth = previewRenderWidthDp * 2;
+
 /// Web-Mercator framing for a preview slot.
 class StaticFraming {
   const StaticFraming({

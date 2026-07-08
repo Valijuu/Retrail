@@ -22,11 +22,10 @@ Future<void> _settle(WidgetTester tester) async {
 void main() {
   useStubLiveMap();
 
-  Future<void> pumpHome(
+  Future<FakeRecordingController> pumpHome(
     WidgetTester tester, {
     bool tracking = false,
     bool online = true,
-    FakeRecordingController? recording,
     List<RecentRideUi> recent = const [],
     List<RecentRideUi> favorites = const [],
     WeeklyStats weekly = const WeeklyStats.zero(),
@@ -37,6 +36,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final env = await buildHomeEnv(initialPrefs: {'onboarding_done': true});
     addTearDown(env.db.close);
+    // Build the recording controller from env.db so only one AppDatabase
+    // instance exists per test (avoids Drift's multiple-database warning).
+    final recording = makeFakeRecording(env.db);
     await tester.pumpWidget(ProviderScope(
       overrides: [
         appDatabaseProvider.overrideWithValue(env.db),
@@ -53,13 +55,14 @@ void main() {
       child: const RetrailApp(),
     ));
     await _settle(tester);
+    return recording;
   }
 
   testWidgets('renders sections with empty placeholders', (tester) async {
     await pumpHome(tester);
     expect(find.text('Recent rides'), findsOneWidget);
     expect(find.text('No rides yet — time to roll.'), findsOneWidget);
-    expect(find.text('Favorites'), findsOneWidget);
+    expect(find.text('Recent favorites'), findsOneWidget);
     expect(find.text('No favorites yet.'), findsOneWidget);
   });
 
@@ -97,8 +100,7 @@ void main() {
 
   testWidgets('Start tracking requests permission before the countdown',
       (tester) async {
-    final recording = makeFakeRecording();
-    await pumpHome(tester, recording: recording);
+    final recording = await pumpHome(tester);
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
     // The gate ran at the button press (not after the countdown screen).
@@ -108,9 +110,8 @@ void main() {
 
   testWidgets('blocked permission shows the rationale and does not navigate',
       (tester) async {
-    final recording = makeFakeRecording()
-      ..prepareResult = LocationStartAction.showRationale;
-    await pumpHome(tester, recording: recording);
+    final recording = await pumpHome(tester);
+    recording.prepareResult = LocationStartAction.showRationale;
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
     expect(recording.calls, contains('prepare'));
@@ -122,8 +123,7 @@ void main() {
       (tester) async {
     // Offline funnels through the same gate (recording needs location even with
     // no tiles); the offline confirm must not skip the prompt.
-    final recording = makeFakeRecording();
-    await pumpHome(tester, online: false, recording: recording);
+    final recording = await pumpHome(tester, online: false);
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
     expect(find.text("You're offline"), findsOneWidget); // offline confirm first

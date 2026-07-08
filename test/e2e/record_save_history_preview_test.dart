@@ -15,6 +15,7 @@ import 'package:retrail/features/active_ride/active_ride_controller.dart';
 import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/map/preview_projection.dart';
+import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
@@ -93,7 +94,9 @@ void main() {
         render: (points, _) async {
           renders++;
           capturedRoute = points;
-          return Uint8List.fromList([0x89, 0x50, 0x4e, 0x47]); // PNG magic stub
+          return PreviewResult(
+              Uint8List.fromList([0x89, 0x50, 0x4e, 0x47]), // PNG magic stub
+              complete: true);
         },
       );
       final controller = ActiveRideController(tracker, cache);

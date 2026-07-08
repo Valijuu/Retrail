@@ -12,10 +12,21 @@ abstract interface class PreviewTileProvider {
   Future<ui.Image?> tile(int z, int x, int y, ui.Brightness brightness);
 }
 
+/// A rendered preview PNG plus whether it is the final quality. [complete] is
+/// false for a degraded fallback — the offline sketch, or a snapshot with one
+/// or more failed tiles — telling the cache to serve it now but mark it stale
+/// and regenerate it opportunistically instead of baking the hole in forever.
+class PreviewResult {
+  const PreviewResult(this.bytes, {required this.complete});
+
+  final Uint8List bytes;
+  final bool complete;
+}
+
 /// Renders a route preview **once** into a PNG: composites basemap tiles, draws
 /// the halo + blue polyline and start/end dots, and exports. Designed to run at
 /// ride-save and be cached to disk — history/home then just show the image.
-Future<Uint8List> renderPreviewPng({
+Future<PreviewResult> renderPreviewPng({
   required List<RoutePoint> points,
   required int widthDp,
   required int heightDp,
@@ -42,9 +53,15 @@ Future<Uint8List> renderPreviewPng({
   final images = await Future.wait(
     [for (final t in grid) tiles.tile(t.z, t.x, t.y, brightness)],
   );
+  // Any failed tile leaves a terrain-colored hole — usable right now, but the
+  // result must not be cached as final (see [PreviewResult.complete]).
+  var missingTile = false;
   for (var i = 0; i < grid.length; i++) {
     final image = images[i];
-    if (image == null) continue;
+    if (image == null) {
+      missingTile = true;
+      continue;
+    }
     final t = grid[i];
     final src = ui.Rect.fromLTWH(
         0, 0, image.width.toDouble(), image.height.toDouble());
@@ -90,7 +107,7 @@ Future<Uint8List> renderPreviewPng({
   final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
   picture.dispose();
   image.dispose();
-  return bytes!.buffer.asUint8List();
+  return PreviewResult(bytes!.buffer.asUint8List(), complete: !missingTile);
 }
 
 /// A start/end dot styled like the live map's markers: a [color] disc on a white
@@ -110,8 +127,9 @@ ui.Paint _stroke(ui.Color color, double width) => ui.Paint()
 /// Offline preview: renders the flat route sketch (polyline over the
 /// [AppColors] terrain colour, no tiles, no network) to a PNG. Mirrors
 /// [RouteSketch]'s geometry. Used by the preview cache when offline at
-/// generation time (Spec 12 wiring); regenerated to full tiles when back online.
-Future<Uint8List> renderSketchPng({
+/// generation time (Spec 12 wiring); always `complete: false` so the cache
+/// marks it stale and regenerates the full-tile snapshot when back online.
+Future<PreviewResult> renderSketchPng({
   required List<RoutePoint> points,
   required int widthDp,
   required int heightDp,
@@ -152,5 +170,5 @@ Future<Uint8List> renderSketchPng({
   final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
   picture.dispose();
   image.dispose();
-  return bytes!.buffer.asUint8List();
+  return PreviewResult(bytes!.buffer.asUint8List(), complete: false);
 }

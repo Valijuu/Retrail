@@ -25,10 +25,18 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   final PageController _controller = PageController();
-  int _current = 0;
+
+  // Notifiers instead of setState: a shell setState mid-swipe rebuilds the
+  // whole PageView (all three pages) during the page animation and visibly
+  // stutters. With notifiers, a page change repaints ONLY the bottom bar, and
+  // the greeting re-roll ONLY the Home subtree — after the swipe has settled.
+  final ValueNotifier<int> _current = ValueNotifier(0);
+
   // Counts each landing on Home so the greeting re-rolls per visit; the first
-  // view counts as visit 1.
-  int _homeVisits = 1;
+  // view counts as visit 1. Bumped on scroll-settle (not onPageChanged, which
+  // fires mid-animation) so Home rebuilds after the swipe finishes, not during.
+  final ValueNotifier<int> _homeVisits = ValueNotifier(1);
+  int _lastSettledPage = 0;
 
   void _goToTab(int index) => _controller.animateToPage(
         index,
@@ -36,16 +44,21 @@ class _MainShellState extends ConsumerState<MainShell> {
         curve: Curves.easeOut,
       );
 
-  void _onPageChanged(int index) {
-    setState(() {
-      _current = index;
-      if (index == 0) _homeVisits++;
-    });
+  void _onPageChanged(int index) => _current.value = index;
+
+  /// Fired when the PageView's own scroll settles (depth 0 — inner list
+  /// scrolling doesn't bubble in as a page change).
+  void _onPageSettled() {
+    final page = _controller.page?.round() ?? 0;
+    if (page == 0 && _lastSettledPage != 0) _homeVisits.value++;
+    _lastSettledPage = page;
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _current.dispose();
+    _homeVisits.dispose();
     super.dispose();
   }
 
@@ -61,29 +74,41 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       backgroundColor: colors.surface,
-      body: PageView(
-        controller: _controller,
-        onPageChanged: _onPageChanged,
-        children: [
-          HomeScreen(
-            greetingKey: _homeVisits,
-            onOpenRide: (rideId) {
-              ref.read(historyTargetRideProvider.notifier).state = rideId;
-              _goToTab(1);
-            },
-            onAvatarTap: () => showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: colors.surface,
-              builder: (_) => const ProfileEditSheet(),
+      body: NotificationListener<ScrollEndNotification>(
+        onNotification: (n) {
+          if (n.depth == 0) _onPageSettled();
+          return false;
+        },
+        child: PageView(
+          controller: _controller,
+          onPageChanged: _onPageChanged,
+          children: [
+            ValueListenableBuilder<int>(
+              valueListenable: _homeVisits,
+              builder: (_, visits, _) => HomeScreen(
+                greetingKey: visits,
+                onOpenRide: (rideId) {
+                  ref.read(historyTargetRideProvider.notifier).state = rideId;
+                  _goToTab(1);
+                },
+                onAvatarTap: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: colors.surface,
+                  builder: (_) => const ProfileEditSheet(),
+                ),
+              ),
             ),
-          ),
-          const HistoryScreen(),
-          const SettingsScreen(),
-        ],
+            const HistoryScreen(),
+            const SettingsScreen(),
+          ],
+        ),
       ),
-      bottomNavigationBar:
-          _BottomNav(tabs: tabs, current: _current, onTap: _goToTab, colors: colors),
+      bottomNavigationBar: ValueListenableBuilder<int>(
+        valueListenable: _current,
+        builder: (_, current, _) => _BottomNav(
+            tabs: tabs, current: current, onTap: _goToTab, colors: colors),
+      ),
     );
   }
 }

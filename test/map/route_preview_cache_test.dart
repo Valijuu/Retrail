@@ -4,7 +4,11 @@ import 'dart:ui' show Brightness;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/map/preview_projection.dart';
+import 'package:retrail/map/preview_snapshot.dart';
 import 'package:retrail/map/route_preview_cache.dart';
+
+PreviewResult _png(List<int> bytes, {bool complete = true}) =>
+    PreviewResult(Uint8List.fromList(bytes), complete: complete);
 
 void main() {
   late Directory tempDir;
@@ -20,7 +24,7 @@ void main() {
       baseDir: tempDir,
       render: (_, _) async {
         renders++;
-        return Uint8List.fromList([1, 2, 3]);
+        return _png([1, 2, 3]);
       },
     );
 
@@ -39,8 +43,7 @@ void main() {
     final cache = RoutePreviewCache(
       baseDir: tempDir,
       // Render brightness-dependent bytes so the variants are distinguishable.
-      render: (_, b) async =>
-          Uint8List.fromList([b == Brightness.dark ? 1 : 0]),
+      render: (_, b) async => _png([b == Brightness.dark ? 1 : 0]),
     );
 
     final light =
@@ -58,7 +61,7 @@ void main() {
   test('evict deletes BOTH the light and dark cached files', () async {
     final cache = RoutePreviewCache(
       baseDir: tempDir,
-      render: (_, _) async => Uint8List.fromList([9]),
+      render: (_, _) async => _png([9]),
     );
     final light =
         await cache.ensurePreview(3, points, brightness: Brightness.light);
@@ -70,5 +73,132 @@ void main() {
     await cache.evict(3);
     expect(await light.exists(), isFalse);
     expect(await dark.exists(), isFalse);
+  });
+
+  test('an incomplete render is served but marked stale and re-rendered '
+      'next time; a complete re-render clears the mark', () async {
+    var renders = 0;
+    var completeNow = false; // first render offline/holey, then online
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async {
+        renders++;
+        return _png([renders], complete: completeNow);
+      },
+    );
+
+    // 1st call: incomplete (e.g. offline sketch) → written + stale-marked.
+    final file =
+        await cache.ensurePreview(7, points, brightness: Brightness.light);
+    expect(await file.exists(), isTrue);
+    expect(renders, 1);
+    expect(
+        await cache.staleMarkerFor(7, brightness: Brightness.light).exists(),
+        isTrue);
+
+    // 2nd call, now "online": re-renders, upgrades the PNG, clears the marker.
+    completeNow = true;
+    await cache.ensurePreview(7, points, brightness: Brightness.light);
+    expect(renders, 2);
+    expect(await file.readAsBytes(), [2]); // upgraded bytes
+    expect(
+        await cache.staleMarkerFor(7, brightness: Brightness.light).exists(),
+        isFalse);
+
+    // 3rd call: complete + unmarked → cached fast path, no re-render.
+    await cache.ensurePreview(7, points, brightness: Brightness.light);
+    expect(renders, 2);
+  });
+
+  test('a stale preview that re-renders incomplete stays stale and keeps '
+      'its existing bytes (no pointless rewrite)', () async {
+    var renders = 0;
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async {
+        renders++;
+        return _png([renders], complete: false);
+      },
+    );
+
+    final file =
+        await cache.ensurePreview(4, points, brightness: Brightness.dark);
+    await cache.ensurePreview(4, points, brightness: Brightness.dark);
+    expect(renders, 2); // stale → retried
+    expect(await file.readAsBytes(), [1]); // same sketch — first write kept
+    expect(
+        await cache.staleMarkerFor(4, brightness: Brightness.dark).exists(),
+        isTrue);
+  });
+
+  test('resolvedFileFor is null until a complete render, then synchronous',
+      () async {
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1]),
+    );
+    expect(cache.resolvedFileFor(7, brightness: Brightness.light), isNull);
+
+    final file =
+        await cache.ensurePreview(7, points, brightness: Brightness.light);
+    expect(cache.resolvedFileFor(7, brightness: Brightness.light)?.path,
+        file.path); // known synchronously → jank-free list builds
+    // Other variant still unknown.
+    expect(cache.resolvedFileFor(7, brightness: Brightness.dark), isNull);
+  });
+
+  test('an incomplete (stale) render is never memoized as resolved', () async {
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1], complete: false),
+    );
+    await cache.ensurePreview(7, points, brightness: Brightness.light);
+    expect(cache.resolvedFileFor(7, brightness: Brightness.light), isNull);
+  });
+
+  test('evict clears the resolved memo', () async {
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1]),
+    );
+    await cache.ensurePreview(7, points, brightness: Brightness.light);
+    await cache.evict(7);
+    expect(cache.resolvedFileFor(7, brightness: Brightness.light), isNull);
+  });
+
+  test('renders are serialized — never more than one at a time', () async {
+    var active = 0, maxActive = 0;
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async {
+        active++;
+        maxActive = active > maxActive ? active : maxActive;
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        active--;
+        return _png([1]);
+      },
+    );
+    // A fast scroll kicks off many previews at once.
+    await Future.wait([
+      for (var id = 1; id <= 5; id++)
+        cache.ensurePreview(id, points, brightness: Brightness.light),
+    ]);
+    expect(maxActive, 1); // queued, not fanned out on the UI isolate
+  });
+
+  test('evict removes stale markers too', () async {
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1], complete: false),
+    );
+    await cache.ensurePreview(9, points, brightness: Brightness.light);
+    expect(
+        await cache.staleMarkerFor(9, brightness: Brightness.light).exists(),
+        isTrue);
+
+    await cache.evict(9);
+    expect(
+        await cache.staleMarkerFor(9, brightness: Brightness.light).exists(),
+        isFalse);
   });
 }

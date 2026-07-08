@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -21,6 +22,7 @@ import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/active_ride/active_ride_screen.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/live_map.dart';
+import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_permission.dart';
@@ -96,7 +98,8 @@ class FakeRecording extends RideRecordingController {
   }
 
   @override
-  Future<void> stop() async => calls.add('stop');
+  Future<void> stop({bool discard = false}) async =>
+      calls.add(discard ? 'stop:discard' : 'stop');
 }
 
 /// Records intent calls without touching the DB / preview pipeline.
@@ -137,7 +140,8 @@ void main() {
     controller = RecordingController(
       tracker,
       RoutePreviewCache(
-          baseDir: Directory.systemTemp, render: (_, _) async => Uint8List(0)),
+          baseDir: Directory.systemTemp,
+          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
     );
     recording = FakeRecording(tracker);
   });
@@ -147,6 +151,7 @@ void main() {
   Future<void> pumpScreen(
     WidgetTester tester, {
     RideTrackingState state = const RideTrackingState(isTracking: true),
+    Stream<RideTrackingState>? stateStream,
     bool online = true,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
@@ -163,7 +168,8 @@ void main() {
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        rideTrackingStateProvider.overrideWith((ref) => Stream.value(state)),
+        rideTrackingStateProvider
+            .overrideWith((ref) => stateStream ?? Stream.value(state)),
         isOnlineProvider.overrideWith((ref) => Stream.value(online)),
         activeRideControllerProvider.overrideWithValue(controller),
         rideRecordingControllerProvider.overrideWithValue(recording),
@@ -206,6 +212,18 @@ void main() {
     expect(recording.calls, contains('start'));
   });
 
+  testWidgets(
+      'stats panel shows from the FIRST frame, before tracking has started '
+      '(instant blend-in after the timer, even while the map loads)',
+      (tester) async {
+    await pumpScreen(tester, state: const RideTrackingState()); // not tracking
+    expect(find.text('-- km/h'), findsWidgets); // speed + top speed
+    expect(find.text('0.00 km'), findsOneWidget);
+    expect(find.text('00:00'), findsOneWidget);
+    expect(find.text('Stop ride'), findsOneWidget);
+    expect(find.text('Live'), findsNothing); // badge waits for real tracking
+  });
+
   testWidgets('paused state shows Paused badge and Resume', (tester) async {
     await pumpScreen(
       tester,
@@ -230,6 +248,86 @@ void main() {
     await tester.pump();
     expect(recording.calls, contains('stop'));
     expect(find.text('How was your ride?'), findsOneWidget);
+  });
+
+  testWidgets(
+      'summary dialog freezes the ride chrome (stats panel + Live badge stay) '
+      'and a barrier blocks the screen behind it', (tester) async {
+    final states = StreamController<RideTrackingState>();
+    addTearDown(states.close);
+    await pumpScreen(tester, stateStream: states.stream);
+    states.add(const RideTrackingState(isTracking: true, speedKmh: 12));
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(find.text('Stop ride'));
+    await tester.pump();
+    await tester.tap(find.text('Stop')); // confirm
+    await tester.pump();
+    // The tracker reports the stop (isTracking flips false) while the summary
+    // is open — nothing behind the dialog may change.
+    states.add(const RideTrackingState(isTracking: false, speedKmh: 12));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('How was your ride?'), findsOneWidget);
+    expect(find.text('Stop ride'), findsOneWidget); // stats panel frozen
+    expect(find.text('Live'), findsOneWidget); // badge frozen
+    // A modal scrim swallows taps on everything behind the dialog.
+    expect(
+      find.byWidgetPredicate(
+          (w) => w is ModalBarrier && w.color == Colors.black54),
+      findsOneWidget,
+    );
+
+    // Saving closes the dialog but the chrome must STAY frozen (panel, badge,
+    // scrim) while the exit transition to home plays — no flicker frame.
+    await tester.enterText(find.byType(TextField).first, 'Ride');
+    await tester.tap(find.text('Save'));
+    await tester.pump(); // dialog closed, navigation started — mid-transition
+    expect(find.text('How was your ride?'), findsNothing);
+    expect(find.text('Stop ride'), findsOneWidget); // panel still there
+    expect(find.text('Live'), findsOneWidget); // badge still there
+    expect(
+      find.byWidgetPredicate(
+          (w) => w is ModalBarrier && w.color == Colors.black54),
+      findsOneWidget, // scrim kept up through the exit
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('home'), findsOneWidget);
+  });
+
+  testWidgets(
+      'summary dialog rises above the keyboard without overflowing, while '
+      'the ride layout behind stays untouched', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.text('Stop ride'));
+    await tester.pump();
+    await tester.tap(find.text('Stop'));
+    await tester.pump();
+    expect(find.text('How was your ride?'), findsOneWidget);
+
+    // Keyboard opens for the title/comment inputs. Dialog avoids the insets
+    // itself via an AnimatedPadding — pump past its animation.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 500);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull); // no "bottom overflowed" banner
+    // The dialog content is lifted above the keyboard (900 - 500 = 400)…
+    expect(tester.getRect(find.text('How was your ride?')).bottom,
+        lessThanOrEqualTo(400));
+    // resizeToAvoidBottomInset: false — the map area behind keeps its size.
+    expect(find.text('Stop ride'), findsOneWidget); // panel not squeezed away
+
+    // …and stays fully usable: content scrolls inside the card, Save is
+    // reachable and completes the flow (regression: double inset padding once
+    // shoved the dialog off-screen and made it untappable).
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('home'), findsOneWidget);
   });
 
   testWidgets('summary Save persists details and navigates home',
@@ -259,6 +357,27 @@ void main() {
     expect(find.text('home'), findsOneWidget);
   });
 
+  testWidgets(
+      'back with the stop dialog open dismisses it instead of stacking the '
+      'discard dialog on top', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.text('Stop ride'));
+    await tester.pump();
+    expect(find.text('Stop ride?'), findsOneWidget);
+
+    // System back: closes the stop dialog, does NOT add another (the app-bar
+    // arrow is behind the modal barrier, so only system back reaches here).
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.text('Stop ride?'), findsNothing);
+    expect(find.text('Discard ride?'), findsNothing);
+
+    // Back again, with no dialog open → discard confirmation as usual.
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.text('Discard ride?'), findsOneWidget);
+  });
+
   testWidgets('back → confirm discard → dispose stops and discards the ride',
       (tester) async {
     await pumpScreen(tester);
@@ -266,12 +385,14 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pump();
     expect(find.text('Discard ride?'), findsOneWidget);
-    await tester.tap(find.text('Discard')); // confirm → go home → dispose
+    await tester.tap(find.text('Discard')); // confirm → stop:discard → go home
     await tester.pumpAndSettle();
     expect(find.text('home'), findsOneWidget);
-    // dispose() tears down the platform layer (recording) then discards.
-    expect(recording.calls, contains('stop'));
-    expect(controller.calls, contains('discard'));
+    // stop:discard fires eagerly in onConfirm (before navigation) so that
+    // isTrackingProvider is false before the home screen is interactive —
+    // deferring it to dispose() left a window during GoRouter's exit animation
+    // where "Start Tracking" could skip the timer.
+    expect(recording.calls, contains('stop:discard'));
   });
 
   testWidgets('Pause button calls pauseOrResume', (tester) async {

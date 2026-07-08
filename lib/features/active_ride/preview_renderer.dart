@@ -1,7 +1,7 @@
-import 'dart:typed_data';
 import 'dart:ui' show Brightness;
 
 import '../../map/preview_projection.dart';
+import '../../map/preview_snapshot.dart' show PreviewResult;
 import '../../map/route_preview_cache.dart';
 
 /// Builds the [PreviewRenderer] used by the preview cache, choosing the renderer
@@ -10,9 +10,9 @@ import '../../map/route_preview_cache.dart';
 /// selection is unit-testable without touching the network. See Spec 12 wiring.
 PreviewRenderer buildPreviewRenderer({
   required bool Function() isOnline,
-  required Future<Uint8List> Function(List<RoutePoint> points, Brightness b)
+  required Future<PreviewResult> Function(List<RoutePoint> points, Brightness b)
       online,
-  required Future<Uint8List> Function(List<RoutePoint> points, Brightness b)
+  required Future<PreviewResult> Function(List<RoutePoint> points, Brightness b)
       offline,
 }) =>
     (points, brightness) =>

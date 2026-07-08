@@ -29,6 +29,11 @@ class RoutePreview extends StatefulWidget {
 
 class _RoutePreviewState extends State<RoutePreview> {
   Future<File>? _file;
+
+  /// Set when the cache already knows the final PNG (synchronous fast path):
+  /// the image builds on the FIRST frame — no sketch flash, no FutureBuilder
+  /// rebuild — which is what keeps list scrolling smooth.
+  File? _ready;
   Brightness? _brightness;
 
   @override
@@ -50,26 +55,35 @@ class _RoutePreviewState extends State<RoutePreview> {
   }
 
   void _maybeGenerate() {
-    _file = widget.points.isEmpty || _brightness == null
+    if (widget.points.isEmpty || _brightness == null) {
+      _ready = null;
+      _file = null;
+      return;
+    }
+    _ready =
+        widget.cache.resolvedFileFor(widget.rideId, brightness: _brightness!);
+    _file = _ready != null
         ? null
         : widget.cache.ensurePreview(widget.rideId, widget.points,
             brightness: _brightness!);
   }
 
+  Widget _image(File file) => Image.file(
+        file,
+        fit: BoxFit.cover,
+        cacheWidth: widget.cacheWidth,
+        gaplessPlayback: true,
+      );
+
   @override
   Widget build(BuildContext context) {
     if (widget.points.isEmpty) return const RouteSketch(points: []);
+    final ready = _ready;
+    if (ready != null) return _image(ready);
     return FutureBuilder<File>(
       future: _file,
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          return Image.file(
-            snapshot.data!,
-            fit: BoxFit.cover,
-            cacheWidth: widget.cacheWidth,
-            gaplessPlayback: true,
-          );
-        }
+        if (snapshot.hasData) return _image(snapshot.data!);
         return RouteSketch(points: widget.points);
       },
     );

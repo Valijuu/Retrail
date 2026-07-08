@@ -62,6 +62,12 @@ class RideRecordingController {
   StreamSubscription<void>? _fixSub;
   StreamSubscription<void>? _stateSub;
 
+  /// Bumped by [stop]. [start] snapshots it and re-checks after every await:
+  /// a stop that lands while start's slow platform calls are in flight must
+  /// WIN — the stale start must not resurrect the subscription/service/tracker
+  /// (which left a zombie "tracking" state after a fast back → discard).
+  int _epoch = 0;
+
   /// Runs the permission gate **without** starting recording: notification +
   /// location permission (requesting once if undecided) and, on success, the
   /// background escalation. Returns the outcome so the Start-tracking press can
@@ -100,14 +106,17 @@ class RideRecordingController {
   /// the rationale / enable-location prompt when not [LocationStartAction.proceed].
   Future<LocationStartAction> start() async {
     if (_tracker.state.isTracking) return LocationStartAction.proceed;
+    final epoch = _epoch;
 
     final action = await _runGate();
     if (action != LocationStartAction.proceed) return action;
+    if (epoch != _epoch) return LocationStartAction.proceed; // stopped meanwhile
 
     // Centre the map on the last-known fix immediately (display only — it may be
     // stale on a cold start, which the recording path would drop), then stream
     // fresh fixes. seedLocation no-ops once a real fix has set the position.
     final seed = await _source.lastKnown();
+    if (epoch != _epoch) return LocationStartAction.proceed;
     if (seed != null) _tracker.seedLocation(seed);
     _fixSub = _source.fixes.listen(_tracker.onLocationReceived);
     // Keep the ongoing notification's live stats in sync.
@@ -118,6 +127,16 @@ class RideRecordingController {
         ));
 
     await _service.start();
+    if (epoch != _epoch) {
+      // A stop won the race after the service came up: undo this start
+      // instead of resurrecting a ride the user already left/discarded.
+      await _fixSub?.cancel();
+      _fixSub = null;
+      await _stateSub?.cancel();
+      _stateSub = null;
+      await _service.stop();
+      return LocationStartAction.proceed;
+    }
     _tracker.startTracking();
     return LocationStartAction.proceed;
   }
@@ -125,14 +144,32 @@ class RideRecordingController {
   void pauseOrResume(bool isPaused) =>
       isPaused ? _tracker.resume() : _tracker.pause();
 
-  /// Stops recording: cancels the subscriptions, finalizes the ride, and tears
+  /// Stops recording: finalizes the ride, cancels the subscriptions, and tears
   /// down the service. Idempotent with the in-app/notification stop paths.
-  Future<void> stop() async {
+  ///
+  /// The tracker flip runs FIRST — synchronously, before any await — so the
+  /// tracker state is committed the moment this is called. Callers like the
+  /// discard-on-dispose path read the tracker right after calling this; with
+  /// the flip behind the cancel awaits, the discard raced it, no-oped, and
+  /// left the ride saved and (if the teardown stalled) the tracker stuck
+  /// "tracking" forever. The few fixes that may still stream in before the
+  /// cancel land with no active ride id and are ignored.
+  ///
+  /// [discard] (back → discard): stop and DELETE the active ride in one shot
+  /// — no endTime write, delete enqueued immediately — instead of finalizing
+  /// it first and deleting later (which flashed the doomed ride into home's
+  /// "last rides" while the service teardown ran).
+  Future<void> stop({bool discard = false}) async {
+    _epoch++; // an in-flight start() must not resurrect the ride (see above)
+    if (discard) {
+      _tracker.discardActiveRide();
+    } else {
+      _tracker.stopTracking();
+    }
     await _fixSub?.cancel();
     _fixSub = null;
     await _stateSub?.cancel();
     _stateSub = null;
-    _tracker.stopTracking();
     await _service.stop();
   }
 

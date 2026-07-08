@@ -37,17 +37,25 @@ List<HistoryItem> buildHistoryItems(
   int? nowMs,
   String? locale,
 }) {
-  final periodStart = switch (f.period) {
-    TimePeriod.thisWeek => weekBounds(nowMs: nowMs).$1,
-    TimePeriod.thisMonth => monthBounds(nowMs: nowMs).$1,
-    TimePeriod.thisYear => yearBounds(nowMs: nowMs).$1,
-    TimePeriod.all => 0,
-  };
+  // Multi-select periods combine as a union — with the windows all ending
+  // "now" and nesting into each other, that is simply the EARLIEST selected
+  // start. Empty selection = all time.
+  int startOf(TimePeriod p) => switch (p) {
+        TimePeriod.thisWeek => weekBounds(nowMs: nowMs).$1,
+        TimePeriod.thisMonth => monthBounds(nowMs: nowMs).$1,
+        TimePeriod.thisYear => yearBounds(nowMs: nowMs).$1,
+      };
+  final periodStart = f.periods.isEmpty
+      ? 0
+      : f.periods.map(startOf).reduce((a, b) => a < b ? a : b);
+  // Multi-select activities: a ride matches ANY selected type; empty = all.
+  final activityIds = {for (final a in f.activities) a.id};
   final trimmedQuery = f.query.trim();
 
   final entries = rides
       .where((rwt) => !f.favoritesOnly || rwt.ride.isFavorite)
-      .where((rwt) => f.activity == null || rwt.ride.typ == f.activity!.id)
+      .where(
+          (rwt) => activityIds.isEmpty || activityIds.contains(rwt.ride.typ))
       .where((rwt) {
         final ts = rwt.ride.date ?? rwt.ride.startTime ?? 0;
         return periodStart == 0 || ts >= periodStart;
@@ -76,6 +84,25 @@ List<HistoryItem> buildHistoryItems(
       entries.sort((a, b) => a.stats.durationMs.compareTo(b.stats.durationMs));
       return entries;
   }
+}
+
+/// Estimated scroll offset of [rideId]'s card in the rendered history list.
+/// Rough per-item extents are fine — the estimate only needs to land within
+/// the list's cache extent so the target card gets BUILT; the jump-to-ride
+/// flow then fine-tunes with `Scrollable.ensureVisible`. Returns 0 when the
+/// ride isn't in [items].
+double estimatedOffsetOf(
+  List<HistoryItem> items,
+  int rideId, {
+  double headerExtent = 30,
+  double cardExtent = 240,
+}) {
+  var offset = 0.0;
+  for (final item in items) {
+    if (item is RideEntryItem && item.rwt.ride.rideId == rideId) return offset;
+    offset += item is DateHeaderItem ? headerExtent : cardExtent;
+  }
+  return 0;
 }
 
 /// Groups entries by day (newest day first), each preceded by a date header;
