@@ -503,8 +503,6 @@ class _RideStatsPanel extends StatelessWidget {
   final VoidCallback onPauseResume;
   final VoidCallback onStop;
 
-  String _kmh(double? v) => v == null ? '-- km/h' : '${v.toStringAsFixed(1)} km/h';
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -530,7 +528,7 @@ class _RideStatsPanel extends StatelessWidget {
                 Expanded(
                   child: _StatCell(
                     label: l10n.mapStatSpeed,
-                    value: _kmh(speed),
+                    value: formatSpeedKmh(speed),
                     valueColor: (speed ?? 0) > 0 ? colors.primary : colors.onSurface,
                   ),
                 ),
@@ -558,7 +556,7 @@ class _RideStatsPanel extends StatelessWidget {
                 Expanded(
                   child: _StatCell(
                     label: l10n.mapStatMaxSpeed,
-                    value: _kmh(maxSpeedKmh),
+                    value: formatSpeedKmh(maxSpeedKmh),
                   ),
                 ),
               ],

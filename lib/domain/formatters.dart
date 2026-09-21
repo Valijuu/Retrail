@@ -63,3 +63,15 @@ String formatDateLabel(
     return dayKey;
   }
 }
+
+const int _speedDecimalPlaces = 1;
+const String _speedPlaceholder = '--';
+const String _kmhUnit = 'km/h';
+
+/// `X.X km/h`, or `-- km/h` when [kmh] is null.
+String formatSpeedKmh(double? kmh) {
+  final value = kmh == null
+      ? _speedPlaceholder
+      : kmh.toStringAsFixed(_speedDecimalPlaces);
+  return '$value $_kmhUnit';
+}

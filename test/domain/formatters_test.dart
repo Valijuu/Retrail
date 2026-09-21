@@ -34,4 +34,16 @@ void main() {
       expect(formatRideDayKey(ms), '2026-06-17');
     });
   });
+
+  group('formatSpeedKmh', () {
+    test('null renders the placeholder — null -> "-- km/h"', () {
+      expect(formatSpeedKmh(null), '-- km/h');
+    });
+    test('zero renders with one decimal — 0.0 -> "0.0 km/h"', () {
+      expect(formatSpeedKmh(0.0), '0.0 km/h');
+    });
+    test('rounds to one decimal place — 23.456 -> "23.5 km/h"', () {
+      expect(formatSpeedKmh(23.456), '23.5 km/h');
+    });
+  });
 }
