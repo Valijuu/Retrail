@@ -8,6 +8,7 @@ import '../data/repositories/ride_repository.dart';
 import '../data/repositories/trackpoint_repository.dart';
 import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
+import '../domain/max_speed.dart';
 import 'location_fix.dart';
 import 'ride_tracking_state.dart';
 
@@ -56,6 +57,7 @@ class RideTracker {
   List<RoutePoint> _trackPoints = const [];
   double _distanceMetres = 0.0;
   double? _speedKmh;
+  double _maxSpeedKmh = 0.0;
   int _elapsedSeconds = 0;
   bool _isPaused = false;
   ActivityType? _activityType;
@@ -79,6 +81,9 @@ class RideTracker {
   final StreamController<RideTrackingState> _states =
       StreamController<RideTrackingState>.broadcast();
 
+  /// Set by [dispose]; guards emissions from async work still in flight.
+  bool _disposed = false;
+
   /// Current immutable snapshot.
   RideTrackingState get state => RideTrackingState(
         location: _location,
@@ -86,6 +91,7 @@ class RideTracker {
         trackPoints: List.unmodifiable(_trackPoints),
         distanceMetres: _distanceMetres,
         speedKmh: _speedKmh,
+        maxSpeedKmh: _maxSpeedKmh,
         elapsedSeconds: _elapsedSeconds,
         isPaused: _isPaused,
         activityType: _activityType,
@@ -99,7 +105,25 @@ class RideTracker {
   /// Read-only; lets the active-ride screen generate its preview after save.
   int? get lastCompletedRideId => _lastCompletedRideId;
 
-  void _emit() => _states.add(state);
+  /// Folds the current snapshot into the running top speed, then publishes it.
+  ///
+  /// Recomputing here — on every state change — mirrors the original app, where
+  /// the map screen ran the same fold in a `LaunchedEffect` on each emission.
+  /// Doing it in the tracker instead of the screen is what makes the value
+  /// survive a screen teardown/rebuild mid-ride.
+  void _emit() {
+    // startTracking() leaves the ride-insert in flight; if the tracker is
+    // disposed before it lands (app shutdown / provider container torn down
+    // mid-ride), that continuation must not publish onto a closed controller.
+    if (_disposed) return;
+    _maxSpeedKmh = nextMaxSpeed(
+      current: _maxSpeedKmh,
+      speedKmh: _speedKmh,
+      isTracking: _isTracking,
+      isPaused: _isPaused,
+    );
+    _states.add(state);
+  }
 
   /// Sets the activity type for the next ride started. Commits [_activityType]
   /// immediately (not only in [startTracking]) so the active-ride map renders
@@ -356,6 +380,7 @@ class RideTracker {
   }
 
   void dispose() {
+    _disposed = true;
     _cancelElapsedTimer();
     _states.close();
   }

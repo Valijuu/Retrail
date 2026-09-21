@@ -612,4 +612,81 @@ void main() {
       });
     });
   });
+
+  test('dispose during an in-flight begin does not emit on a closed stream',
+      () {
+    // App shutdown / provider-container teardown right after the ride starts:
+    // startTracking() leaves the ride-insert in flight, and its continuation
+    // used to call _emit() on the already-closed controller ("Bad state:
+    // Cannot add new events after calling close").
+    fakeAsync((fa) {
+      final t = RideTracker(rideRepo, tpRepo, const _FixedCalc(100));
+      t.nowNanos = () => 0;
+      t.startTracking(); // insert in flight
+      t.dispose(); // container torn down before it lands
+      expect(() => fa.flushMicrotasks(), returnsNormally);
+    });
+  });
+
+  // ─── Max speed (issue #1) ────────────────────────────────────────────────
+  //
+  // Max speed used to be accumulated in the active-ride screen's widget State,
+  // so it reset to 0 whenever the screen was disposed and recreated mid-ride
+  // (backgrounding + notification tap, deep-link reopen, navigation replace).
+  // It belongs to the process-lifetime tracker, which outlives the screen.
+  group('max speed', () {
+    test('grows with the fastest fix seen while tracking', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 5.0)); // 18 km/h
+        expect(t.state.maxSpeedKmh, closeTo(18.0, 0.001));
+      });
+    });
+
+    test('never shrinks when a slower fix arrives', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 10.0)); // 36 km/h
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 2.0)); // 7.2 km/h
+        expect(t.state.maxSpeedKmh, closeTo(36.0, 0.001));
+      });
+    });
+
+    test('survives across many fixes — the tracker outlives the screen', () {
+      // The regression this guards: the value lives in the tracker, so a
+      // screen teardown/rebuild mid-ride cannot reset it.
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 12.0)); // 43.2
+        for (var i = 0; i < 5; i++) {
+          t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 1.0));
+        }
+        expect(t.state.maxSpeedKmh, closeTo(43.2, 0.001));
+      });
+    });
+
+    test('is frozen while paused', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 5.0)); // 18 km/h
+        t.pause();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 20.0)); // 72 km/h
+        expect(t.state.maxSpeedKmh, closeTo(18.0, 0.001));
+      });
+    });
+
+    test('resets to 0 when the ride stops', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 5.0));
+        t.stopTracking();
+        expect(t.state.maxSpeedKmh, 0.0);
+      });
+    });
+  });
 }

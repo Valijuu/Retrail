@@ -21,7 +21,7 @@ import '../shell/routes.dart';
 import '../shell/startup_provider.dart';
 import 'active_ride_controller.dart';
 import 'active_ride_providers.dart';
-import 'max_speed.dart';
+import 'navigation_rules.dart';
 import 'ride_dialogs.dart';
 
 // Chrome (app bar + map backdrop) uses the original's fixed dark palette,
@@ -53,7 +53,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   LocationStartAction? _gateBlock; // non-proceed gate outcome → show a prompt
   bool _rideWasActive = false;
   bool _isFollowing = true;
-  double _maxSpeedKmh = 0;
   bool _showConfirmStop = false;
   bool _showDiscardConfirm = false;
   bool _showSummary = false;
@@ -141,13 +140,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   }
 
   void _onStateChange(RideTrackingState state) {
-    final m = nextMaxSpeed(
-      current: _maxSpeedKmh,
-      speedKmh: state.speedKmh,
-      isTracking: state.isTracking,
-      isPaused: state.isPaused,
-    );
-    if (m != _maxSpeedKmh) setState(() => _maxSpeedKmh = m);
     if (state.isTracking && !_rideWasActive) _rideWasActive = true;
     if (shouldNavigateHomeOnStop(
       rideWasActive: _rideWasActive,
@@ -243,7 +235,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     flex: 35,
                     child: _RideStatsPanel(
                       state: state,
-                      maxSpeedKmh: _maxSpeedKmh,
+                      maxSpeedKmh: state.maxSpeedKmh,
                       onPauseResume: () =>
                           _controller.pauseOrResume(state.isPaused),
                       onStop: () => setState(() => _showConfirmStop = true),

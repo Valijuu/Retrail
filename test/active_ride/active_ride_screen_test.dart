@@ -213,6 +213,26 @@ void main() {
   });
 
   testWidgets(
+      'a freshly mounted screen renders the max speed carried in the tracking '
+      'state (issue #1: it used to live in widget State and reset on rebuild)',
+      (tester) async {
+    // Simulates reopening the ride screen mid-ride (backgrounding + notification
+    // tap, deep-link, navigation replace): the screen is brand new, the ride is
+    // not. The top speed must come from the process-lifetime tracker's state,
+    // not from a counter the fresh widget starts at 0.
+    await pumpScreen(
+      tester,
+      state: const RideTrackingState(
+        isTracking: true,
+        speedKmh: 5.0, // currently crawling
+        maxSpeedKmh: 42.0, // but the ride already hit 42 before the rebuild
+      ),
+    );
+    expect(find.text('42.0 km/h'), findsOneWidget); // top speed preserved
+    expect(find.text('5.0 km/h'), findsOneWidget); // current speed
+  });
+
+  testWidgets(
       'stats panel shows from the FIRST frame, before tracking has started '
       '(instant blend-in after the timer, even while the map loads)',
       (tester) async {

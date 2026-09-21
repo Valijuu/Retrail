@@ -72,11 +72,16 @@ final rideForegroundServiceProvider = Provider<RideForegroundService>(
 );
 
 /// Orchestrates permission gate → location source → tracker → foreground service.
-final rideRecordingControllerProvider = Provider<RideRecordingController>(
-  (ref) => RideRecordingController(
+final rideRecordingControllerProvider = Provider<RideRecordingController>((ref) {
+  final controller = RideRecordingController(
     tracker: ref.watch(rideTrackerProvider),
     source: ref.watch(locationSourceProvider),
     permissions: ref.watch(locationPermissionServiceProvider),
     service: ref.watch(rideForegroundServiceProvider),
-  ),
-);
+  );
+  // Without this, a container torn down mid-ride (no stop() ever runs) leaked
+  // the GPS subscription into a disposed tracker — same contract as
+  // [rideTrackerProvider] above.
+  ref.onDispose(controller.dispose);
+  return controller;
+});

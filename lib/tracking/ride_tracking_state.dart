@@ -13,6 +13,7 @@ class RideTrackingState {
     this.trackPoints = const [],
     this.distanceMetres = 0.0,
     this.speedKmh,
+    this.maxSpeedKmh = 0.0,
     this.elapsedSeconds = 0,
     this.isPaused = false,
     this.activityType,
@@ -23,6 +24,11 @@ class RideTrackingState {
   final List<RoutePoint> trackPoints;
   final double distanceMetres;
   final double? speedKmh;
+
+  /// Top speed reached during the current ride. Owned by the tracker (not the
+  /// screen) so it survives the active-ride screen being disposed and recreated
+  /// mid-ride.
+  final double maxSpeedKmh;
   final int elapsedSeconds;
   final bool isPaused;
   final ActivityType? activityType;

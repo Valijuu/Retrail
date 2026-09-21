@@ -175,4 +175,19 @@ class RideRecordingController {
 
   Future<void> openLocationSettings() => _permissions.openLocationSettings();
   Future<void> openAppSettings() => _permissions.openAppSettings();
+
+  /// Releases the platform subscriptions without touching the ride or the DB.
+  ///
+  /// [stop] is the normal teardown; this is the safety net for when the provider
+  /// container goes away while a ride is still recording (app shutdown mid-ride,
+  /// a disposed provider scope, a fresh container in a test). Without it the
+  /// fix subscription kept feeding a torn-down tracker. Deliberately NOT a
+  /// stop: disposing a container must not write an endTime or finalize a ride.
+  void dispose() {
+    _epoch++; // an in-flight start() must not resurrect the subscriptions
+    unawaited(_fixSub?.cancel());
+    _fixSub = null;
+    unawaited(_stateSub?.cancel());
+    _stateSub = null;
+  }
 }
