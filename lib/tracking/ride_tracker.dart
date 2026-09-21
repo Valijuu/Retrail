@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import '../data/repositories/ride_repository.dart';
 import '../data/repositories/trackpoint_repository.dart';
 import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
 import '../domain/max_speed.dart';
+import 'gps_fix_filter.dart';
 import 'location_fix.dart';
 import 'ride_tracking_state.dart';
 
@@ -17,9 +17,10 @@ import 'ride_tracking_state.dart';
 ///
 /// Pure Dart — no Flutter imports, and no Drift: persistence goes through the
 /// repositories' intent-revealing methods ([RideRepository.startRide],
-/// [TrackpointRepository.addTrackpoint]), never their companion types. Ported
-/// 1:1 from the original Kotlin `RideTracker`, including the 9-stage GPS filter
-/// and its constants.
+/// [TrackpointRepository.addTrackpoint]), never their companion types. The
+/// GPS filter maths lives in [GpsFixFilter]; this class owns the state it
+/// operates on and the orchestration around it. Ported 1:1 from the original
+/// Kotlin `RideTracker`.
 class RideTracker {
   RideTracker(
     this._rideRepository,
@@ -35,14 +36,6 @@ class RideTracker {
   final RideRepository _rideRepository;
   final TrackpointRepository _trackpointRepository;
   final DistanceCalculator _calc;
-
-  // ─── Filter constants (unchanged from the original) ──────────────────────
-  static const double _accuracyThresholdM = 35;
-  static const double _minDistanceM = 8.0;
-  static const double _minSpeedMs = 0.5;
-  static const double _stationarySpeedMs = 0.8;
-  static const int _maxFixAgeNanos = 5000000000; // 5 s
-  static const double _maxSpeedMs = 50.0; // ~180 km/h
 
   /// Monotonic clock matching [LocationFix.elapsedRealtimeNanos]. Overridable in
   /// tests; production uses a process [Stopwatch]. Used by the freshness filter.
@@ -282,8 +275,8 @@ class RideTracker {
   }
 
   void onLocationReceived(LocationFix fix) {
-    // 0. Freshness: drop stale cached fixes before any state update.
-    if (nowNanos() - fix.elapsedRealtimeNanos > _maxFixAgeNanos) return;
+    // Stage 0 — freshness: drop stale cached fixes before any state update.
+    if (!GpsFixFilter.isFresh(fix, nowNanos())) return;
 
     // Always update the live marker + speed (shown regardless of recording state).
     _location = fix;
@@ -296,39 +289,14 @@ class RideTracker {
     final rideId = _activeRideId;
     if (rideId == null) return;
 
-    // 1. Discard low-accuracy fixes.
-    if (fix.accuracy > _accuracyThresholdM) return;
+    final decision = GpsFixFilter.evaluate(
+      fix: fix,
+      last: _lastRecordedLocation,
+      calc: _calc,
+    );
+    if (!decision.record) return;
 
-    final last = _lastRecordedLocation;
-    // First point: record the start location immediately, even standing still.
-    // The stationary / displacement / speed guards below only make sense against
-    // a previous point — applying them here would drop the start fix of a ride
-    // begun at rest, leaving a no-movement ride with zero points ("No route").
-    if (last == null) {
-      _recordPoint(rideId, fix);
-      return;
-    }
-
-    // 1b. Stationary guard: trustworthy near-zero provider speed → skip.
-    if (fix.hasSpeed && fix.speed < _stationarySpeedMs) return;
-
-    final distance = _calc.distanceBetween(
-        last.latitude, last.longitude, fix.latitude, fix.longitude);
-    final elapsedS =
-        (fix.elapsedRealtimeNanos - last.elapsedRealtimeNanos) / 1000000000.0;
-
-    // 2. Outlier guard: physically impossible implied speed → drop, keep last.
-    if (elapsedS > 0.0 && distance / elapsedS > _maxSpeedMs) return;
-
-    // 3. Displacement must exceed the accuracy margin of both readings.
-    final requiredDisplacement =
-        math.max(_minDistanceM, math.max(last.accuracy, fix.accuracy));
-    if (distance < requiredDisplacement) return;
-
-    // 4. Implied speed must indicate real movement (catches slow drift).
-    if (elapsedS > 0.0 && distance / elapsedS < _minSpeedMs) return;
-
-    _distanceMetres += distance;
+    _distanceMetres += decision.distanceMetres;
     _recordPoint(rideId, fix);
   }
 
