@@ -21,10 +21,24 @@ const int previewRenderWidthDp = 320;
 const int previewRenderHeightDp = 112;
 const double previewAspectRatio = previewRenderWidthDp / previewRenderHeightDp;
 
+/// Output pixel density for a rendered preview PNG. History shows the preview
+/// full-bleed across the card, which is wider than [previewRenderWidthDp] on
+/// most screens — real device pixel ratios commonly run 2.5–4.0, above the
+/// MapTiler raster tiles' own resolution ceiling of `@2x`. 3.0 makes the
+/// vector-drawn route line, halo and start/end dots crisp at typical display
+/// density; the basemap tiles (already at their native max) get a mild,
+/// much less noticeable stretch — the trade the live map's own vector
+/// rendering doesn't need to make. Baked into the cached PNG at render time,
+/// so raising this only helps previews rendered from here on (existing ones
+/// are marked stale by the cache-directory version bump alongside it).
+const double previewPixelRatio = 3.0;
+
 /// Decode width (px) for displaying a cached preview PNG — the PNG's own pixel
-/// width (320dp × 2.0 pixel ratio). Shared by the history card's `cacheWidth`
-/// and the scroll pre-warmer so their [ImageCache] entries are the same key.
-const int previewImageCacheWidth = previewRenderWidthDp * 2;
+/// width ([previewRenderWidthDp] × [previewPixelRatio]). Shared by the history
+/// card's `cacheWidth` and the scroll pre-warmer so their [ImageCache] entries
+/// are the same key.
+final int previewImageCacheWidth =
+    (previewRenderWidthDp * previewPixelRatio).round();
 
 /// Web-Mercator framing for a preview slot.
 class StaticFraming {

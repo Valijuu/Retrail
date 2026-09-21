@@ -42,10 +42,10 @@ class RoutePreviewCache {
 
   File fileFor(int rideId, {required Brightness brightness}) {
     final suffix = brightness == Brightness.dark ? '_dark' : '';
-    // `_v4`: tiles are now fetched @2x (512px), matching the 2.0 pixel-ratio
-    // canvas — a new directory forces existing rides to re-render crisp
-    // instead of serving the old upscaled-1x PNG.
-    return File('${baseDir.path}/ride_previews_v4/$rideId$suffix.png');
+    // `_v5`: previewPixelRatio raised 2.0 -> 3.0 (see preview_projection.dart)
+    // — a new directory forces existing rides to re-render at the sharper
+    // resolution instead of serving the old, now visibly blurry PNG.
+    return File('${baseDir.path}/ride_previews_v5/$rideId$suffix.png');
   }
 
   /// Sidecar flagging the cached PNG as a degraded fallback to be re-rendered.

@@ -89,4 +89,36 @@ void main() {
     expect(latYAtZoom(0.0, 0.0), closeTo(128.0, 1e-9));
     expect(latYAtZoom(45.0, 0.0), lessThan(128.0));
   });
+
+  group('preview resolution', () {
+    // Regression coverage for the blurry-preview fix: the history card shows
+    // the preview full-bleed at up to ~411dp (see the constant at the top of
+    // this file) on a display whose pixel ratio commonly runs 2.5-4.0 — well
+    // above the render width's old 2.0 pixel ratio (640 physical px). A future
+    // drop back toward 2.0 would silently reintroduce the visible upscaling
+    // blur, so pin a real floor here rather than leaving it to eyeballing.
+    test('pixel ratio covers common high-density displays, not just @2x', () {
+      expect(previewPixelRatio, greaterThanOrEqualTo(3.0));
+    });
+
+    test('cache decode width matches the render width at that pixel ratio', () {
+      expect(previewImageCacheWidth,
+          (previewRenderWidthDp * previewPixelRatio).round());
+    });
+
+    test(
+        'the remaining upscale on a large full-bleed card at a typical '
+        'high-density ratio stays within an imperceptible range', () {
+      // 411dp (this file's test slot width) x a common 3.0 device ratio: the
+      // largest realistic gap between rendered and displayed resolution.
+      // MapTiler's raster tiles cap at @2x, so fully closing this gap would
+      // need higher-resolution tiles MapTiler doesn't offer — 3.0 is the
+      // deliberate trade documented on [previewPixelRatio]. What must hold is
+      // that the *remaining* upscale is small enough to not look blurry.
+      const typicalPhysicalWidth = 411 * 3.0;
+      final renderedPhysicalWidth = previewRenderWidthDp * previewPixelRatio;
+      final remainingUpscale = typicalPhysicalWidth / renderedPhysicalWidth;
+      expect(remainingUpscale, lessThan(1.5));
+    });
+  });
 }

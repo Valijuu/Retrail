@@ -15,11 +15,6 @@ import '../shell/theme_mode_provider.dart';
 import 'active_ride_controller.dart';
 import 'preview_renderer.dart';
 
-// Render target for cached preview PNGs. Size + aspect live in preview_projection
-// (previewRenderWidthDp/HeightDp) so the history card pins the same aspect and
-// BoxFit.cover never crops the route. Brightness is rendered on demand.
-const _previewPixelRatio = 2.0;
-
 /// Resolves the brightness the app is *currently* showing, so a ride saved in
 /// dark mode pre-generates the dark preview (system mode reads the platform).
 ui.Brightness _resolveBrightness(ThemeMode mode) => switch (mode) {
@@ -50,7 +45,7 @@ final routePreviewCacheProvider = Provider<RoutePreviewCache>((ref) {
         points: points,
         widthDp: previewRenderWidthDp,
         heightDp: previewRenderHeightDp,
-        pixelRatio: _previewPixelRatio,
+        pixelRatio: previewPixelRatio,
         tiles: tiles,
         brightness: brightness,
       ),
@@ -58,7 +53,7 @@ final routePreviewCacheProvider = Provider<RoutePreviewCache>((ref) {
         points: points,
         widthDp: previewRenderWidthDp,
         heightDp: previewRenderHeightDp,
-        pixelRatio: _previewPixelRatio,
+        pixelRatio: previewPixelRatio,
         brightness: brightness,
       ),
     ),
