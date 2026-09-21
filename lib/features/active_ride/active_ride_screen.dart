@@ -5,30 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_shapes.dart';
-import '../../domain/activity_type.dart';
-import '../../domain/formatters.dart';
 import '../../l10n/app_localizations.dart';
-import '../../map/live_map.dart';
 import '../../tracking/location_permission.dart';
 import '../../tracking/permission_gate_dialog.dart';
 import '../../tracking/ride_recording_controller.dart';
 import '../../tracking/ride_tracking_state.dart';
 import '../../tracking/tracking_providers.dart';
-import '../onboarding/activity_type_ui.dart';
 import '../shell/routes.dart';
 import '../shell/startup_provider.dart';
 import 'active_ride_controller.dart';
 import 'active_ride_providers.dart';
 import 'navigation_rules.dart';
 import 'ride_dialogs.dart';
-
-// Chrome (app bar + map backdrop) uses the original's fixed dark palette,
-// independent of theme — like the countdown. The stats panel + dialogs below
-// use the theme-resolved AppColors.
-const _chromeBg = AppColors.dark; // DarkSurface
-const _chromeAccent = AppColors.light; // hint / surface / liveIndicator
+import 'widgets/ride_chrome.dart';
+import 'widgets/ride_stats_panel.dart';
 
 /// The live active-ride screen. Ports `MapPage` + `MapViewModel`: live map +
 /// route, Live/Paused badge, offline banner, 2×2 live stats with pause/stop,
@@ -197,7 +187,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         if (!didPop) _onBack();
       },
       child: Scaffold(
-        backgroundColor: _chromeBg.surface,
+        backgroundColor: rideChromeBg.surface,
         // Don't squeeze the map + stats layout when the keyboard opens for the
         // summary dialog's inputs (it overflowed the panel and resized the
         // native map). The dialog lifts itself above the keyboard in [_modal].
@@ -207,12 +197,12 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
             SafeArea(
               child: Column(
                 children: [
-                  _AppBar(
+                  RideAppBar(
                     state: state,
                     showLive: showLive,
                     onBack: _onBack,
                   ),
-                  if (!isOnline) _OfflineBanner(label: l10n.mapOfflineBanner),
+                  if (!isOnline) OfflineBanner(label: l10n.mapOfflineBanner),
                   // The 65/35 map+stats layout is fixed for the whole screen
                   // session: the panel shows from the FIRST frame (zeros/--,
                   // blending in with the screen's entry transition, before GPS
@@ -221,7 +211,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   // pop in late on entry and flicker away on save.
                   Expanded(
                     flex: 65,
-                    child: _MapArea(
+                    child: RideMapArea(
                       state: state,
                       isFollowing: _isFollowing,
                       masked: _isLeaving,
@@ -233,9 +223,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   ),
                   Expanded(
                     flex: 35,
-                    child: _RideStatsPanel(
+                    child: RideStatsPanel(
                       state: state,
-                      maxSpeedKmh: state.maxSpeedKmh,
                       onPauseResume: () =>
                           _controller.pauseOrResume(state.isPaused),
                       onStop: () => setState(() => _showConfirmStop = true),
@@ -319,327 +308,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _AppBar extends StatelessWidget {
-  const _AppBar(
-      {required this.state, required this.showLive, required this.onBack});
-
-  final RideTrackingState state;
-
-  /// Whether to show the Live/Paused badge. Kept true while the summary dialog
-  /// is open (isTracking already flipped false), so the chrome doesn't change
-  /// behind the dialog.
-  final bool showLive;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final text = Theme.of(context).textTheme;
-    final activity = state.activityType ?? ActivityType.defaultType;
-    return Container(
-      color: _chromeBg.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back),
-            color: _chromeAccent.hintText,
-            tooltip: l10n.a11yBack,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: activity.glyph(size: 20, color: _chromeAccent.hintText),
-          ),
-          Expanded(
-            child: Text(l10n.mapActiveRideTitle,
-                style: text.titleMedium?.copyWith(color: _chromeAccent.surface)),
-          ),
-          if (showLive)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: _LiveBadge(isPaused: state.isPaused),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LiveBadge extends StatelessWidget {
-  const _LiveBadge({required this.isPaused});
-
-  final bool isPaused;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final color =
-        isPaused ? _chromeAccent.hintText : _chromeAccent.liveIndicator;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 5,
-          height: 5,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(isPaused ? l10n.mapPausedBadge : l10n.mapLiveBadge,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: color)),
-      ],
-    );
-  }
-}
-
-class _OfflineBanner extends StatelessWidget {
-  const _OfflineBanner({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    // editActionText (#92400E) is the original banner amber — no new hex.
-    final colors = Theme.of(context).extension<AppColors>()!;
-    return Container(
-      width: double.infinity,
-      color: colors.editActionText,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      alignment: Alignment.center,
-      child: Text(label,
-          style: Theme.of(context)
-              .textTheme
-              .labelSmall
-              ?.copyWith(color: Colors.white)),
-    );
-  }
-}
-
-class _MapArea extends StatelessWidget {
-  const _MapArea({
-    required this.state,
-    required this.isFollowing,
-    required this.masked,
-    required this.onGesture,
-    required this.onRecenter,
-  });
-
-  final RideTrackingState state;
-  final bool isFollowing;
-
-  /// True while the screen is leaving: COVERS the native map with the flat
-  /// terrain color so the route's exit transition animates only Flutter
-  /// widgets (platform views can't fade and jank when transformed). The map
-  /// itself stays mounted — REMOVING the hybrid-composition view mid-exit
-  /// forces Android to recomposite its surfaces, which flashed stale surface
-  /// content (the timer/ride frame those surfaces last held). Disposal happens
-  /// with the route, after home fully covers the screen.
-  final bool masked;
-  final VoidCallback onGesture;
-  final VoidCallback onRecenter;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final loc = state.location;
-    final current =
-        loc != null ? (lat: loc.latitude, lng: loc.longitude) : null;
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: LiveMap(
-            points: state.trackPoints,
-            current: current,
-            isFollowing: isFollowing,
-            activityType: state.activityType,
-            onGesture: onGesture,
-          ),
-        ),
-        if (masked)
-          Positioned.fill(child: ColoredBox(color: colors.mapTerrain)),
-        if (!masked && !isFollowing)
-          Positioned(
-            left: 12,
-            bottom: 12,
-            child: FloatingActionButton.small(
-              onPressed: onRecenter,
-              backgroundColor: Colors.white,
-              foregroundColor: _chromeBg.surface,
-              tooltip: l10n.mapRecenterCd,
-              child: const Icon(Icons.refresh),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _RideStatsPanel extends StatelessWidget {
-  const _RideStatsPanel({
-    required this.state,
-    required this.maxSpeedKmh,
-    required this.onPauseResume,
-    required this.onStop,
-  });
-
-  final RideTrackingState state;
-  final double maxSpeedKmh;
-  final VoidCallback onPauseResume;
-  final VoidCallback onStop;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final speed = state.speedKmh;
-    return Container(
-      width: double.infinity,
-      color: colors.surface,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 6, bottom: 8),
-            width: 24,
-            height: 3,
-            decoration: BoxDecoration(
-                color: colors.surfaceContainer,
-                borderRadius: BorderRadius.circular(2)),
-          ),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatSpeed,
-                    value: formatSpeedKmh(speed),
-                    valueColor: (speed ?? 0) > 0 ? colors.primary : colors.onSurface,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatDistance,
-                    value: formatDistanceKm(state.distanceMetres),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 5),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatDuration,
-                    value: formatElapsed(state.elapsedSeconds),
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatMaxSpeed,
-                    value: formatSpeedKmh(maxSpeedKmh),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _ActionButton(
-                  label: state.isPaused ? l10n.mapResumeRide : l10n.mapPauseRide,
-                  filled: state.isPaused,
-                  onTap: onPauseResume,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _ActionButton(
-                  label: l10n.mapStopRide,
-                  filled: false,
-                  onTap: onStop,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatCell extends StatelessWidget {
-  const _StatCell({required this.label, required this.value, this.valueColor});
-
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final text = Theme.of(context).textTheme;
-    return Container(
-      decoration: BoxDecoration(
-          color: colors.surfaceContainer, borderRadius: AppShapes.input),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      alignment: Alignment.centerLeft,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
-          Text(value,
-              style: text.titleMedium
-                  ?.copyWith(color: valueColor ?? colors.onSurface)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.filled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool filled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final style = ButtonStyle(
-      shape: const WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: AppShapes.pill)),
-      backgroundColor:
-          WidgetStatePropertyAll(filled ? colors.primary : colors.surface),
-      foregroundColor:
-          WidgetStatePropertyAll(filled ? colors.onPrimary : colors.primary),
-      side: filled
-          ? null
-          : WidgetStatePropertyAll(BorderSide(color: colors.surfaceContainer, width: 1.5)),
-    );
-    return TextButton(
-      onPressed: onTap,
-      style: style,
-      child: Text(label, style: Theme.of(context).textTheme.labelLarge),
     );
   }
 }
