@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart' show Value;
+
 import '../db/app_database.dart';
 import '../db/ride_dao.dart';
 import '../db/ride_with_trackpoints.dart';
@@ -26,7 +28,14 @@ class RideRepository {
           int weekStartMs, int weekEndMs) =>
       _dao.getRidesWithTrackpointsBetween(weekStartMs, weekEndMs);
 
-  Future<int> insert(RidesCompanion ride) => _dao.insert(ride);
+  /// Opens a ride row at recording start and returns its id. Takes plain
+  /// values so callers (the tracker) never touch Drift's companion types.
+  Future<int> startRide({String? activityTypeId, required int startedAtMs}) =>
+      _dao.insert(RidesCompanion.insert(
+        typ: Value(activityTypeId),
+        startTime: Value(startedAtMs),
+        date: Value(startedAtMs),
+      ));
 
   Future<void> updateEndTime(int rideId, int endTime) =>
       _dao.updateEndTime(rideId, endTime);

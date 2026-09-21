@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_dao.dart';
@@ -32,8 +31,8 @@ void main() {
     await tmp.delete(recursive: true);
   });
 
-  Future<int> insertRide({String? typ, bool fav = false}) => repo.insert(
-      RidesCompanion.insert(typ: Value(typ), date: const Value(1000)));
+  Future<int> insertRide({String? typ, bool fav = false}) =>
+      repo.startRide(activityTypeId: typ, startedAtMs: 1000);
 
   test('deleteRide removes the row and evicts the preview', () async {
     final id = await insertRide();

@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart' show Value;
+
 import '../db/app_database.dart';
 import '../db/trackpoint_dao.dart';
 
@@ -8,5 +10,21 @@ class TrackpointRepository {
 
   final TrackpointDao _dao;
 
-  Future<int> insert(TrackpointsCompanion tp) => _dao.insert(tp);
+  /// Appends one recorded point to a ride. Takes plain values so callers (the
+  /// tracker) never touch Drift's companion types. [speedMs] is the provider's
+  /// speed in m/s, or null when the fix carried none.
+  Future<void> addTrackpoint({
+    required int rideId,
+    required double latitude,
+    required double longitude,
+    required int timestampMs,
+    double? speedMs,
+  }) =>
+      _dao.insert(TrackpointsCompanion.insert(
+        rideId: rideId,
+        latitude: latitude,
+        longitude: longitude,
+        timestamp: timestampMs,
+        speed: Value(speedMs),
+      ));
 }

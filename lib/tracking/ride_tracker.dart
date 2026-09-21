@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:drift/drift.dart' show Value;
-
-import '../data/db/app_database.dart';
 import '../data/repositories/ride_repository.dart';
 import '../data/repositories/trackpoint_repository.dart';
 import '../domain/activity_type.dart';
@@ -18,8 +15,11 @@ import 'ride_tracking_state.dart';
 /// when the screen is locked or the user navigates away while the platform
 /// location source keeps feeding fixes into [onLocationReceived].
 ///
-/// Pure Dart — no Flutter imports. Ported 1:1 from the original Kotlin
-/// `RideTracker`, including the 9-stage GPS filter and its constants.
+/// Pure Dart — no Flutter imports, and no Drift: persistence goes through the
+/// repositories' intent-revealing methods ([RideRepository.startRide],
+/// [TrackpointRepository.addTrackpoint]), never their companion types. Ported
+/// 1:1 from the original Kotlin `RideTracker`, including the 9-stage GPS filter
+/// and its constants.
 class RideTracker {
   RideTracker(
     this._rideRepository,
@@ -145,11 +145,8 @@ class RideTracker {
 
   Future<void> _beginRide() async {
     final now = nowMs();
-    final rideId = await _rideRepository.insert(RidesCompanion.insert(
-      typ: Value(_pendingActivityType),
-      startTime: Value(now),
-      date: Value(now),
-    ));
+    final rideId = await _rideRepository.startRide(
+        activityTypeId: _pendingActivityType, startedAtMs: now);
     _beginInFlight = false;
     // A stop (and possibly discard) arrived while the insert was in flight —
     // don't resurrect the ride. Honour the latched discard, else finalize it
@@ -343,13 +340,13 @@ class RideTracker {
     _trackPoints = [..._trackPoints, (lat: fix.latitude, lng: fix.longitude)];
     _emit();
 
-    unawaited(_trackpointRepository.insert(TrackpointsCompanion.insert(
+    unawaited(_trackpointRepository.addTrackpoint(
       rideId: rideId,
       latitude: fix.latitude,
       longitude: fix.longitude,
-      timestamp: nowMs(),
-      speed: Value(fix.hasSpeed ? fix.speed : null),
-    )));
+      timestampMs: nowMs(),
+      speedMs: fix.hasSpeed ? fix.speed : null,
+    ));
   }
 
   /// Prefer the provider's speed; else fall back to displacement / time between
