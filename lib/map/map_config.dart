@@ -1,3 +1,5 @@
+import 'map_style.dart';
+
 /// Map configuration. The MapTiler API key is supplied at build time via
 /// `--dart-define=MAPTILER_KEY=…` (never committed). Reuse the existing key.
 abstract final class MapConfig {
@@ -6,16 +8,9 @@ abstract final class MapConfig {
 
   static bool get hasKey => mapTilerKey.isNotEmpty;
 
-  /// Raster tile URL template for the live map's `TileLayer`.
-  static String rasterUrlTemplate(bool dark) =>
-      'https://api.maptiler.com/maps/${dark ? 'streets-v2-dark' : 'streets-v2'}'
-      '/{z}/{x}/{y}.png?key=$mapTilerKey';
-
-  /// Vector style id for the live map. topo-v2 has no dark twin, so dark mode
-  /// pairs with the lighter basic-v2-dark (both verified smooth on-device).
-  static String vectorStyleId(bool dark) => dark ? 'basic-v2-dark' : 'topo-v2';
-
-  /// MapLibre vector style document URL for the live map.
+  /// MapLibre vector style document URL for the live map. The style id comes
+  /// from [MapStyle] — the single source of truth shared with the preview
+  /// renderer's raster tiles, so both stay on the same basemap.
   static String vectorStyleUrl(bool dark) =>
-      'https://api.maptiler.com/maps/${vectorStyleId(dark)}/style.json?key=$mapTilerKey';
+      'https://api.maptiler.com/maps/${MapStyle.mapId(dark)}/style.json?key=$mapTilerKey';
 }

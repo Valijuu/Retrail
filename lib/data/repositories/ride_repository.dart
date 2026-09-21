@@ -17,34 +17,16 @@ class RideRepository {
 
   Stream<List<Ride>> getAllRides() => _dao.getAll();
 
-  Stream<List<Ride>> getAllByIds(List<int> rideIds) => _dao.getAllByIds(rideIds);
-
   Stream<Ride?> getById(int rideId) => _dao.getById(rideId);
 
   Stream<List<RideWithTrackpoints>> getAllRidesWithTrackpoints() =>
       _dao.getAllRidesWithTrackpoints();
 
-  Stream<RideWithTrackpoints?> getRideWithTrackpointsById(int rideId) =>
-      _dao.getRideWithTrackpointsById(rideId);
-
   Stream<List<RideWithTrackpoints>> getRidesWithTrackpointsBetween(
           int weekStartMs, int weekEndMs) =>
       _dao.getRidesWithTrackpointsBetween(weekStartMs, weekEndMs);
 
-  Stream<List<Ride>> getFavoriteRides() => _dao.getFavoriteRides();
-
-  Stream<List<Ride>> getFilteredFavoriteRides(
-          {int startTime = 0, String sortBy = 'date'}) =>
-      _dao.getFilteredFavoriteRides(startTime: startTime, sortBy: sortBy);
-
-  Stream<List<Ride>> getFilteredRides(
-          {int startTime = 0, String sortBy = 'date', String searchQuery = ''}) =>
-      _dao.getFilteredRides(
-          startTime: startTime, sortBy: sortBy, searchQuery: searchQuery);
-
   Future<int> insert(RidesCompanion ride) => _dao.insert(ride);
-
-  Future<List<int>> insertAll(List<RidesCompanion> rides) => _dao.insertAll(rides);
 
   Future<void> updateEndTime(int rideId, int endTime) =>
       _dao.updateEndTime(rideId, endTime);
@@ -60,8 +42,6 @@ class RideRepository {
   /// recent favorites by when they were hearted).
   Future<void> updateFavorite(int rideId, bool isFavorite) =>
       _dao.updateFavorite(rideId, isFavorite, isFavorite ? _now() : null);
-
-  Future<void> delete(Ride ride) => _dao.deleteRide(ride);
 
   Future<void> deleteById(int rideId) => _dao.deleteById(rideId);
 }

@@ -7,7 +7,7 @@ import 'profile_photo_picker.dart';
 typedef FileDeleter = Future<void> Function(String path);
 
 /// Coordinates profile-photo files + prefs: add (pick/crop/save), select,
-/// delete, clear. Keeps the newest [PreferencesRepository.maxRecentPhotos]
+/// delete. Keeps the newest [PreferencesRepository.maxRecentPhotos]
 /// photos; evicted/deleted files are removed from disk. Reused by onboarding
 /// and Settings.
 class ProfilePhotoManager {
@@ -48,9 +48,6 @@ class ProfilePhotoManager {
     }
     await _deleteFile(path);
   }
-
-  /// Clears the current selection (stays in recents) — profile becomes blank.
-  Future<void> clear() => _prefs.setCurrentProfilePhoto(null);
 
   static Future<void> _defaultDelete(String path) async {
     final file = File(path);

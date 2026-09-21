@@ -64,6 +64,14 @@ String formatDateLabel(
   }
 }
 
+const double _metresPerKm = 1000;
+const int _distanceDecimalPlaces = 2;
+const String _kmUnit = 'km';
+
+/// `X.XX km` — converts [metres] to kilometres with two decimal places.
+String formatDistanceKm(double metres) =>
+    '${(metres / _metresPerKm).toStringAsFixed(_distanceDecimalPlaces)} $_kmUnit';
+
 const int _speedDecimalPlaces = 1;
 const String _speedPlaceholder = '--';
 const String _kmhUnit = 'km/h';

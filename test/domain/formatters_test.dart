@@ -46,4 +46,16 @@ void main() {
       expect(formatSpeedKmh(23.456), '23.5 km/h');
     });
   });
+
+  group('formatDistanceKm', () {
+    test('zero metres renders two decimals — 0.0 -> "0.00 km"', () {
+      expect(formatDistanceKm(0.0), '0.00 km');
+    });
+    test('converts metres to km — 1234.0 -> "1.23 km"', () {
+      expect(formatDistanceKm(1234.0), '1.23 km');
+    });
+    test('keeps a trailing zero — 4200.0 -> "4.20 km"', () {
+      expect(formatDistanceKm(4200.0), '4.20 km');
+    });
+  });
 }

@@ -150,8 +150,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                   const SizedBox(height: 16),
                   _DetailRow(
                       label: l10n.detailDistanceLabel,
-                      value:
-                          '${(widget.stats.distanceMetres / 1000).toStringAsFixed(2)} km'),
+                      value: formatDistanceKm(widget.stats.distanceMetres)),
                   const SizedBox(height: 10),
                   _DetailRow(
                       label: l10n.detailDurationLabel,
@@ -159,13 +158,11 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                   const SizedBox(height: 10),
                   _DetailRow(
                       label: l10n.detailMaxSpeedLabel,
-                      value:
-                          '${widget.stats.maxSpeedKmh.toStringAsFixed(1)} km/h'),
+                      value: formatSpeedKmh(widget.stats.maxSpeedKmh)),
                   const SizedBox(height: 10),
                   _DetailRow(
                       label: l10n.detailAvgSpeedLabel,
-                      value:
-                          '${widget.stats.avgSpeedKmh.toStringAsFixed(1)} km/h'),
+                      value: formatSpeedKmh(widget.stats.avgSpeedKmh)),
                   const SizedBox(height: 20),
                   Align(
                     alignment: Alignment.centerRight,

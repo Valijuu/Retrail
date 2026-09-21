@@ -49,13 +49,13 @@ Invoke the debugging skill (`.claude/skills/root-cause-debugging/SKILL.md`) when
 | State management | **Riverpod** (`flutter_riverpod` / `riverpod_annotation`) — replaces Android ViewModel + StateFlow |
 | Persistence | **Drift** (SQLite, reactive `Stream`s) — replaces Room |
 | Preferences | Drift table or `shared_preferences` — replaces DataStore |
-| Maps (live) | **`flutter_map`** (pure-Dart) + `flutter_map_tile_caching` (FMTC) |
+| Maps (live) | **`maplibre`** (native MapLibre GL, vector style) |
 | Map previews | Pre-rendered PNG snapshots (`CustomPainter → toImage → PNG`), cached on disk — NO live map per list item |
 | Background GPS | **`flutter_foreground_task`** (Android service + notification) + **`geolocator`** (location + iOS background modes) |
 | Notifications | `flutter_local_notifications` (Android) + **iOS Live Activity** (Swift ActivityKit) for lock-screen controls |
 | Images / crop | `image_picker` + `image_cropper` — replaces camera intent + uCrop |
 | Localization | `flutter_localizations` + `intl`, ARB files (`en` default, `de`) |
-| Tile source | **MapTiler** `streets-v2` / `streets-v2-dark` (existing API key) |
+| Tile source | **MapTiler** `topo-v2` / `basic-v2-dark` (existing API key) — vector style for the live map, `@2x` raster tiles for previews |
 | Testing | `flutter_test`, `mocktail`, `drift` in-memory DB for DAO tests |
 
 ---
@@ -83,7 +83,7 @@ lib/
 │   │     each: <feature>_screen.dart, <feature>_providers.dart, widgets/
 │   └── shell/                    # splash, main tabs + bottom nav, routing, deep-link
 ├── tracking/                     # RideTracker (singleton provider), location pipeline, foreground task
-└── map/                          # flutter_map live map, preview snapshot pipeline, projection math
+└── map/                          # MapLibre live map, preview snapshot pipeline, projection math
 ```
 
 **Conventions**

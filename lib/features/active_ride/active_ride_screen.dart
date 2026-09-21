@@ -528,7 +528,7 @@ class _RideStatsPanel extends StatelessWidget {
                 Expanded(
                   child: _StatCell(
                     label: l10n.mapStatDistance,
-                    value: '${(state.distanceMetres / 1000.0).toStringAsFixed(2)} km',
+                    value: formatDistanceKm(state.distanceMetres),
                   ),
                 ),
               ],

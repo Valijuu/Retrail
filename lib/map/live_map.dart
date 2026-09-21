@@ -110,8 +110,8 @@ String _hex(Color c) =>
 bool rideMarkerIsBadge(ActivityType? type) =>
     type != null && type != ActivityType.other;
 
-/// Renders the activity badge (Android `makeIconBitmap` parity): a 96px amber
-/// `#B45309` circle with the activity glyph tinted white, drawn with 18px
+/// Renders the activity badge (Android `makeIconBitmap` parity): a 96px circle
+/// in the brand primary with the activity glyph tinted white, drawn with 18px
 /// padding so the 960-unit glyph fills the centre 60×60. [loader] supplies the
 /// glyph; `_activityBadgePng` passes an [SvgAssetLoader], tests an
 /// [SvgStringLoader]. The viewBox transform is proven by `activity_badge_test`:
@@ -121,8 +121,10 @@ Future<Uint8List> activityBadgePngFromLoader(BytesLoader loader) async {
   const size = 96.0, pad = 18.0, inner = size - 2 * pad; // 60
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
+  // The badge is rendered to a PNG without a BuildContext, so it reads the
+  // light palette's token directly rather than duplicating its hex.
   canvas.drawCircle(const Offset(size / 2, size / 2), size / 2,
-      Paint()..color = const Color(0xFFB45309)); // amber badge
+      Paint()..color = AppColors.light.primary);
   final info = await vg.loadPicture(loader, null);
   canvas.saveLayer(
       const Rect.fromLTWH(0, 0, size, size),
