@@ -247,6 +247,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     if (!mounted) return;
     await showDialog<void>(
       context: context,
+      // Faster than the Material default (150ms): the dialog opens from a
+      // direct tap on the preview, so it should feel instant.
+      animationStyle:
+          const AnimationStyle(duration: Duration(milliseconds: 90)),
       builder: (_) => RideDetailDialog(
         rwt: RideWithTrackpoints(ride: entry.ride, trackpoints: tps),
         stats: entry.stats,

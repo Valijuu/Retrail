@@ -238,6 +238,7 @@ class _Thumbnail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).extension<AppColors>()!;
+    final text = Theme.of(context).textTheme;
     return ClipRRect(
       // Independently round the thumbnail's top corners (as the original did),
       // so the full-bleed preview image can't bleed past the card's rounded
@@ -268,7 +269,11 @@ class _Thumbnail extends ConsumerWidget {
                         cache: ref.watch(routePreviewCacheProvider),
                         cacheWidth: previewImageCacheWidth,
                       )
-                    : null,
+                    : Center(
+                        child: Text(l10n.chipNoRoute,
+                            style: text.bodyMedium
+                                ?.copyWith(color: colors.onSurfaceVariant)),
+                      ),
               ),
             ),
           ),

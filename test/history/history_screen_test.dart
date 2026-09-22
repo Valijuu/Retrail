@@ -202,7 +202,8 @@ void main() {
     expect(find.text('Morning roll'), findsOneWidget);
     expect(find.text('4.2 km'), findsOneWidget);
     expect(find.text('Great pace'), findsOneWidget); // avg 15 > 10
-    expect(find.text('No route'), findsOneWidget); // empty trackpoints
+    // Shown both in the thumbnail overlay and as a chip below it.
+    expect(find.text('No route'), findsNWidgets(2)); // empty trackpoints
     expect(find.text('Scooter'), findsOneWidget);
   });
 
