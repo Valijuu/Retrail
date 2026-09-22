@@ -522,10 +522,17 @@ class _LiveMapState extends State<LiveMap>
             initZoom: widget.initialZoom,
             minZoom: kLiveMapMinZoom,
             maxZoom: kLiveMapMaxZoom,
-            // Native SurfaceView (texture mode carries a perf penalty).
-            androidTextureMode: false,
-            // Hybrid Composition: smoothest animating native view.
-            androidMode: AndroidPlatformViewMode.hc,
+            // Texture-based composition (trial, issue #11): Hybrid
+            // Composition rendered the native map via its own independent
+            // Android Surface, and on a real device that surface could get
+            // recomposited mid-navigation-transition showing a stale buffer
+            // from an unrelated earlier screen (a one-frame flash of the
+            // countdown page when leaving /ride). Texture mode routes the
+            // map's output through Flutter's own Skia/Impeller frame instead,
+            // so there's no separate native surface left to go stale — at
+            // the cost of touch/animation smoothness vs. Hybrid Composition.
+            androidTextureMode: true,
+            androidMode: AndroidPlatformViewMode.tlhc_vd,
           ),
           onMapCreated: (c) => _controller = c,
           onStyleLoaded: _onStyleLoaded,
