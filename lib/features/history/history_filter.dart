@@ -24,6 +24,8 @@ class HistoryFilter {
     this.favoritesOnly = false,
     this.activities = const {},
     this.year,
+    this.monthFrom,
+    this.monthTo,
   });
 
   /// Selected time windows, combined as a union. Empty = all time.
@@ -38,6 +40,13 @@ class HistoryFilter {
   /// Selected calendar year, or `null` for "All years" (unrestricted).
   final int? year;
 
+  /// Start/end month (1-12, inclusive) of the month-range filter within
+  /// [year]. `null` on either side means "no restriction on that side" (the
+  /// dropdown shows January/December respectively). Only meaningful when
+  /// [year] is set.
+  final int? monthFrom;
+  final int? monthTo;
+
   HistoryFilter copyWith({
     Set<TimePeriod>? periods,
     SortOrder? sort,
@@ -46,6 +55,10 @@ class HistoryFilter {
     Set<ActivityType>? activities,
     int? year,
     bool clearYear = false,
+    int? monthFrom,
+    bool clearMonthFrom = false,
+    int? monthTo,
+    bool clearMonthTo = false,
   }) =>
       HistoryFilter(
         periods: periods ?? this.periods,
@@ -54,6 +67,8 @@ class HistoryFilter {
         favoritesOnly: favoritesOnly ?? this.favoritesOnly,
         activities: activities ?? this.activities,
         year: clearYear ? null : (year ?? this.year),
+        monthFrom: clearMonthFrom ? null : (monthFrom ?? this.monthFrom),
+        monthTo: clearMonthTo ? null : (monthTo ?? this.monthTo),
       );
 
   @override
@@ -64,11 +79,13 @@ class HistoryFilter {
       other.query == query &&
       other.favoritesOnly == favoritesOnly &&
       _setEq.equals(other.activities, activities) &&
-      other.year == year;
+      other.year == year &&
+      other.monthFrom == monthFrom &&
+      other.monthTo == monthTo;
 
   @override
   int get hashCode => Object.hash(_setEq.hash(periods), sort, query,
-      favoritesOnly, _setEq.hash(activities), year);
+      favoritesOnly, _setEq.hash(activities), year, monthFrom, monthTo);
 }
 
 /// Count of active, non-default filter sections for the filter-icon badge. The
@@ -81,6 +98,7 @@ int activeFilterCount(HistoryFilter f) {
   if (f.favoritesOnly) count++;
   if (f.activities.isNotEmpty) count++;
   if (f.year != null) count++;
+  if (f.monthFrom != null || f.monthTo != null) count++;
   return count;
 }
 
@@ -92,4 +110,6 @@ bool isFilterActive(HistoryFilter f) =>
     f.query.isNotEmpty ||
     f.favoritesOnly ||
     f.activities.isNotEmpty ||
-    f.year != null;
+    f.year != null ||
+    f.monthFrom != null ||
+    f.monthTo != null;
