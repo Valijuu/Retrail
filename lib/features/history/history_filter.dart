@@ -23,6 +23,7 @@ class HistoryFilter {
     this.query = '',
     this.favoritesOnly = false,
     this.activities = const {},
+    this.year,
   });
 
   /// Selected time windows, combined as a union. Empty = all time.
@@ -34,12 +35,17 @@ class HistoryFilter {
   /// Selected activity types (any-of). Empty = all activities.
   final Set<ActivityType> activities;
 
+  /// Selected calendar year, or `null` for "All years" (unrestricted).
+  final int? year;
+
   HistoryFilter copyWith({
     Set<TimePeriod>? periods,
     SortOrder? sort,
     String? query,
     bool? favoritesOnly,
     Set<ActivityType>? activities,
+    int? year,
+    bool clearYear = false,
   }) =>
       HistoryFilter(
         periods: periods ?? this.periods,
@@ -47,6 +53,7 @@ class HistoryFilter {
         query: query ?? this.query,
         favoritesOnly: favoritesOnly ?? this.favoritesOnly,
         activities: activities ?? this.activities,
+        year: clearYear ? null : (year ?? this.year),
       );
 
   @override
@@ -56,11 +63,12 @@ class HistoryFilter {
       other.sort == sort &&
       other.query == query &&
       other.favoritesOnly == favoritesOnly &&
-      _setEq.equals(other.activities, activities);
+      _setEq.equals(other.activities, activities) &&
+      other.year == year;
 
   @override
   int get hashCode => Object.hash(_setEq.hash(periods), sort, query,
-      favoritesOnly, _setEq.hash(activities));
+      favoritesOnly, _setEq.hash(activities), year);
 }
 
 /// Count of active, non-default filter sections for the filter-icon badge. The
@@ -72,6 +80,7 @@ int activeFilterCount(HistoryFilter f) {
   if (f.sort != SortOrder.date) count++;
   if (f.favoritesOnly) count++;
   if (f.activities.isNotEmpty) count++;
+  if (f.year != null) count++;
   return count;
 }
 
@@ -82,4 +91,5 @@ bool isFilterActive(HistoryFilter f) =>
     f.sort != SortOrder.date ||
     f.query.isNotEmpty ||
     f.favoritesOnly ||
-    f.activities.isNotEmpty;
+    f.activities.isNotEmpty ||
+    f.year != null;

@@ -82,24 +82,6 @@ void main() {
       expect(_rideIds(items), unorderedEquals([1, 2]));
     });
 
-    test('period THIS_WEEK excludes older rides', () {
-      final items = _build([
-        _rwt(_ride(1, date: _now)), // this week
-        _rwt(_ride(2, date: _now - 30 * _day)), // last month
-      ], const HistoryFilter(periods: {TimePeriod.thisWeek}));
-      expect(_rideIds(items), [1]);
-    });
-
-    test('multiple periods combine as a union (earliest start wins)', () {
-      final items = _build([
-        _rwt(_ride(1, date: _now)), // this week
-        _rwt(_ride(2, date: _now - 30 * _day)), // ~last month → in this year
-        _rwt(_ride(3, date: _now - 400 * _day)), // before this year
-      ], const HistoryFilter(
-          periods: {TimePeriod.thisWeek, TimePeriod.thisYear}));
-      expect(_rideIds(items), unorderedEquals([1, 2]));
-    });
-
     test('search matches title or comment, case-insensitive', () {
       final items = _build([
         _rwt(_ride(1, desc: 'Sunset Cruise')),

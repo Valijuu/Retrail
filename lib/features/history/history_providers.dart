@@ -8,6 +8,7 @@ import '../settings/settings_providers.dart';
 import 'history_controller.dart';
 import 'history_filter.dart';
 import 'history_items.dart';
+import 'history_range.dart';
 
 /// Mutable history filter state. Mirrors the original `RideHistoryViewModel`
 /// filter flows + setters.
@@ -39,6 +40,10 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   /// The "All" activity chip: clears the selection (= every activity).
   void clearActivities() => state = state.copyWith(activities: const {});
 
+  /// Sets the selected calendar year, or resets to "All years" for `null`.
+  void setYear(int? year) => state =
+      year == null ? state.copyWith(clearYear: true) : state.copyWith(year: year);
+
   void reset() => state = const HistoryFilter();
 }
 
@@ -58,7 +63,8 @@ final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
   final calc = ref.watch(distanceCalculatorProvider);
   final locale = ref.watch(dateFormatLocaleProvider);
   final repo = ref.watch(rideRepositoryProvider);
-  return repo.getAllRidesWithTrackpoints().map(
+  final (start, end) = effectiveRange(filter);
+  return repo.getRidesWithTrackpointsInRange(startMs: start, endMs: end).map(
       (rides) => buildHistoryItems(rides, filter, calc: calc, locale: locale));
 });
 

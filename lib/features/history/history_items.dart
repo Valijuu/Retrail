@@ -3,7 +3,6 @@ import '../../domain/distance_calculator.dart';
 import '../../domain/formatters.dart';
 import '../../domain/ride_stats.dart';
 import '../../domain/ride_title.dart';
-import '../../domain/time_bounds.dart';
 import 'history_filter.dart';
 
 export '../../domain/formatters.dart' show formatRideDayKey, formatDateLabel;
@@ -37,17 +36,6 @@ List<HistoryItem> buildHistoryItems(
   int? nowMs,
   String? locale,
 }) {
-  // Multi-select periods combine as a union — with the windows all ending
-  // "now" and nesting into each other, that is simply the EARLIEST selected
-  // start. Empty selection = all time.
-  int startOf(TimePeriod p) => switch (p) {
-        TimePeriod.thisWeek => weekBounds(nowMs: nowMs).$1,
-        TimePeriod.thisMonth => monthBounds(nowMs: nowMs).$1,
-        TimePeriod.thisYear => yearBounds(nowMs: nowMs).$1,
-      };
-  final periodStart = f.periods.isEmpty
-      ? 0
-      : f.periods.map(startOf).reduce((a, b) => a < b ? a : b);
   // Multi-select activities: a ride matches ANY selected type; empty = all.
   final activityIds = {for (final a in f.activities) a.id};
   final trimmedQuery = f.query.trim();
@@ -56,10 +44,6 @@ List<HistoryItem> buildHistoryItems(
       .where((rwt) => !f.favoritesOnly || rwt.ride.isFavorite)
       .where(
           (rwt) => activityIds.isEmpty || activityIds.contains(rwt.ride.typ))
-      .where((rwt) {
-        final ts = rwt.ride.date ?? rwt.ride.startTime ?? 0;
-        return periodStart == 0 || ts >= periodStart;
-      })
       .where((rwt) {
         if (trimmedQuery.isEmpty) return true;
         final q = trimmedQuery.toLowerCase();
