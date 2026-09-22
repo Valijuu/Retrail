@@ -1,6 +1,10 @@
 # Spec 16 — Live map: swap `flutter_map` → native MapLibre
 
-**Status:** DRAFT — awaiting review.
+**Status:** IMPLEMENTED (Android-verified) — merged to `main`. Android acceptance passed (Pixel 7:
+dense-route recording, fractional zoom/pan/world-fit, light/dark styles, recenter/follow). **iOS
+acceptance still ⬜ pending** (never run on a real iPhone) and the **airplane-mode/ambient-cache
+offline behavior is still ⬜ unverified** (see Acceptance below) — both are hard gates per this
+spec's own standing rule and are not yet closed.
 **Phase:** post-roadmap revision of Spec 7 §B (live map). Previews (Spec 7 §A) untouched.
 **Depends on:** Spec 7 (LiveMap API + preview pipeline), Spec 12 (active-ride screen embeds LiveMap), Spec 5A (`RideTracker`/`ConnectivityObserver`), Spec 5B (location perms / platform setup).
 
@@ -70,7 +74,7 @@ A `MapLibreMap` is a native platform view: in `flutter test` it renders an empty
   - **Long dense route while actively recording** — smooth pan + per-fix `updateGeoJsonSource` + follow. ✅ verified on Android (Pixel 7) in the spike; ⬜ iOS pending.
   - Android (Pixel ✅) **and** iOS (iPhone ⬜): smooth fractional zoom / world-fit / pan; route + dots crisp; light & dark styles load (`topo-v2` / `basic-v2-dark`); recenter + follow behave; hand-pan drops follow.
   - ⬜ Airplane mode mid-ride: previously-viewed tiles still render (ambient cache — see §C, must be verified, not assumed); recording continues; offline banner shows.
-- Branch `phase/16-maplibre-live-map` (or fold the existing `spike/maplibre-live-map`); delete `lib/dev/maplibre_demo.dart` before merge.
+- Done: merged via `spike/maplibre-live-map` → `main`; `lib/dev/maplibre_demo.dart` deleted before merge (verified, no `lib/dev/` left in the tree).
 
 ## Out of scope / follow-ups
 - **Heading-up rotation** (>1.5 m/s) — not in current `LiveMap`; a clean follow-up via `animateCamera(bearing:)`.
