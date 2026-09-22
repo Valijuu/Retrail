@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 /// Mirrors the original Room `rides` table (entity `Ride`).
 @DataClassName('Ride')
+@TableIndex(name: 'rides_date', columns: {#date})
 class Rides extends Table {
   IntColumn get rideId => integer().autoIncrement()();
   TextColumn get description => text().nullable()();

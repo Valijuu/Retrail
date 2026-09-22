@@ -28,6 +28,10 @@ class RideRepository {
           int weekStartMs, int weekEndMs) =>
       _dao.getRidesWithTrackpointsBetween(weekStartMs, weekEndMs);
 
+  Stream<List<RideWithTrackpoints>> getRidesWithTrackpointsInRange(
+          {int? startMs, int? endMs}) =>
+      _dao.getRidesWithTrackpointsInRange(startMs: startMs, endMs: endMs);
+
   /// Opens a ride row at recording start and returns its id. Takes plain
   /// values so callers (the tracker) never touch Drift's companion types.
   Future<int> startRide({String? activityTypeId, required int startedAtMs}) =>
@@ -53,4 +57,6 @@ class RideRepository {
       _dao.updateFavorite(rideId, isFavorite, isFavorite ? _now() : null);
 
   Future<void> deleteById(int rideId) => _dao.deleteById(rideId);
+
+  Future<void> deleteByIds(List<int> rideIds) => _dao.deleteByIds(rideIds);
 }

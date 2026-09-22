@@ -38,6 +38,20 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
     return query.watch().map(_group);
   }
 
+  // Uses coalesce(date, startTime) rather than startTime alone to replicate
+  // the timestamp fallback the History feature uses in Dart
+  // (`rwt.ride.date ?? rwt.ride.startTime ?? 0`, history_items.dart:60).
+  Stream<List<RideWithTrackpoints>> getRidesWithTrackpointsInRange(
+      {int? startMs, int? endMs}) {
+    final query = _joinedRides();
+    if (startMs != null || endMs != null) {
+      final ts = coalesce([rides.date, rides.startTime]);
+      if (startMs != null) query.where(ts.isBiggerOrEqualValue(startMs));
+      if (endMs != null) query.where(ts.isSmallerOrEqualValue(endMs));
+    }
+    return query.watch().map(_group);
+  }
+
   JoinedSelectStatement<HasResultSet, dynamic> _joinedRides() {
     return select(rides).join([
       leftOuterJoin(trackpoints, trackpoints.rideId.equalsExp(rides.rideId)),
@@ -138,4 +152,7 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
 
   Future<void> deleteById(int rideId) =>
       (delete(rides)..where((r) => r.rideId.equals(rideId))).go();
+
+  Future<void> deleteByIds(List<int> rideIds) =>
+      (delete(rides)..where((r) => r.rideId.isIn(rideIds))).go();
 }
