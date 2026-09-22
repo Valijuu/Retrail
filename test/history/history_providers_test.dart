@@ -52,6 +52,30 @@ void main() {
       notifier.setYear(2023);
       expect(c.read(historyFilterProvider).sort, SortOrder.distance);
     });
+
+    test('setYear clears a previously set month range', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setYear(2023);
+      notifier.setMonthFrom(6);
+      notifier.setMonthTo(8);
+      notifier.setYear(2024);
+      expect(c.read(historyFilterProvider).monthFrom, isNull);
+      expect(c.read(historyFilterProvider).monthTo, isNull);
+    });
+
+    test('setYear(null) also clears a previously set month range', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setYear(2023);
+      notifier.setMonthFrom(6);
+      notifier.setMonthTo(8);
+      notifier.setYear(null);
+      expect(c.read(historyFilterProvider).monthFrom, isNull);
+      expect(c.read(historyFilterProvider).monthTo, isNull);
+    });
   });
 
   group('activeFilterCountProvider with year', () {
@@ -60,6 +84,68 @@ void main() {
       addTearDown(c.dispose);
       c.read(historyFilterProvider.notifier).setYear(2023);
       expect(c.read(activeFilterCountProvider), 1);
+    });
+
+    test('counts a set month range as an additional active filter', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setYear(2023);
+      notifier.setMonthFrom(6);
+      notifier.setMonthTo(8);
+      expect(c.read(activeFilterCountProvider), 2);
+    });
+  });
+
+  group('HistoryFilterNotifier.setMonthFrom/setMonthTo', () {
+    test('setMonthFrom sets monthFrom', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      c.read(historyFilterProvider.notifier)
+        ..setYear(2023)
+        ..setMonthFrom(6);
+      expect(c.read(historyFilterProvider).monthFrom, 6);
+    });
+
+    test('setMonthTo sets monthTo', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      c.read(historyFilterProvider.notifier)
+        ..setYear(2023)
+        ..setMonthTo(8);
+      expect(c.read(historyFilterProvider).monthTo, 8);
+    });
+
+    test('setMonthFrom past the current monthTo pulls monthTo up with it', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setYear(2023);
+      notifier.setMonthTo(4);
+      notifier.setMonthFrom(6);
+      expect(c.read(historyFilterProvider).monthFrom, 6);
+      expect(c.read(historyFilterProvider).monthTo, 6);
+    });
+
+    test('setMonthTo before the current monthFrom pulls monthFrom down with it', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setYear(2023);
+      notifier.setMonthFrom(6);
+      notifier.setMonthTo(4);
+      expect(c.read(historyFilterProvider).monthFrom, 4);
+      expect(c.read(historyFilterProvider).monthTo, 4);
+    });
+
+    test('setMonthFrom does not touch other filter fields', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setSort(SortOrder.distance);
+      notifier.setYear(2023);
+      notifier.setMonthFrom(6);
+      expect(c.read(historyFilterProvider).sort, SortOrder.distance);
     });
   });
 
