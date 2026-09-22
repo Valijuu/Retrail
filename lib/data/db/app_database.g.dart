@@ -983,10 +983,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $RidesTable rides = $RidesTable(this);
   late final $TrackpointsTable trackpoints = $TrackpointsTable(this);
-  late final Index ridesDate = Index(
-    'rides_date',
-    'CREATE INDEX rides_date ON rides (date)',
-  );
   late final Index trackpointsRideId = Index(
     'trackpoints_ride_id',
     'CREATE INDEX trackpoints_ride_id ON trackpoints (ride_id)',
@@ -1000,7 +996,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     rides,
     trackpoints,
-    ridesDate,
     trackpointsRideId,
   ];
   @override

@@ -9,7 +9,7 @@ import 'history_filter.dart';
 ///   periods are only additionally applied (narrowing the start, open end —
 ///   same as the no-year case below) when `f.year` is the current calendar
 ///   year; for a past/future year they would be inconsistent, so they're
-///   ignored (the UI hides those chips in that case, see Task 4).
+///   ignored (the UI hides those chips in that case, see `filter_sheet.dart`).
 /// - `f.year == null` → the existing union-of-periods logic: the earliest
 ///   selected period's start, with an open (`null`) end. Empty `periods`
 ///   means no restriction at all.
@@ -21,8 +21,7 @@ import 'history_filter.dart';
     if (isCurrentYear && f.periods.isNotEmpty) {
       return (_periodUnionStart(f.periods, nowMs), null);
     }
-    final (start, end) = yearBounds(year: f.year, nowMs: nowMs);
-    return (start, end);
+    return yearBounds(year: f.year, nowMs: nowMs);
   }
   if (f.periods.isEmpty) return (null, null);
   return (_periodUnionStart(f.periods, nowMs), null);

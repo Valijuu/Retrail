@@ -70,15 +70,17 @@ final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
 
 /// Distinct calendar years present in the ride history, descending (newest
 /// first) — feeds the filter sheet's year picker. Derived in Dart from the
-/// full ride list (small, rarely-changing) rather than a new SQL query.
-final availableHistoryYearsProvider = StreamProvider<List<int>>((ref) {
+/// plain ride list (small, rarely-changing; no trackpoint join needed) rather
+/// than a new SQL query. `autoDispose` so the underlying `watch()` stream
+/// closes once the filter sheet (its only consumer) is no longer open.
+final availableHistoryYearsProvider = StreamProvider.autoDispose<List<int>>((ref) {
   final repo = ref.watch(rideRepositoryProvider);
-  return repo.getAllRidesWithTrackpoints().map((rides) {
+  return repo.getAllRides().map((rides) {
     final years = <int>{
-      for (final rwt in rides)
-        DateTime.fromMillisecondsSinceEpoch(
-                rwt.ride.date ?? rwt.ride.startTime ?? 0)
-            .year,
+      for (final ride in rides)
+        if (ride.date != null || ride.startTime != null)
+          DateTime.fromMillisecondsSinceEpoch(ride.date ?? ride.startTime!)
+              .year,
     };
     return years.toList()..sort((a, b) => b.compareTo(a));
   });

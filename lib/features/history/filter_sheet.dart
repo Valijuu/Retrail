@@ -95,28 +95,30 @@ class HistoryFilterSheet extends ConsumerWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 20),
-            _SectionLabel(l10n.historySectionPeriod),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                // Multi-select: chips toggle and combine (union); "All" clears.
-                FilterChip(
-                  selected: filter.periods.isEmpty,
-                  onSelected: (_) => notifier.clearPeriods(),
-                  label: Text(l10n.periodAll),
-                ),
-                for (final (label, value) in periods)
+            if (showPeriodChips) ...[
+              const SizedBox(height: 20),
+              _SectionLabel(l10n.historySectionPeriod),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  // Multi-select: chips toggle and combine (union); "All" clears.
                   FilterChip(
-                    selected: filter.periods.contains(value),
-                    onSelected: (_) => notifier.togglePeriod(value),
-                    label: Text(label),
+                    selected: filter.periods.isEmpty,
+                    onSelected: (_) => notifier.clearPeriods(),
+                    label: Text(l10n.periodAll),
                   ),
-              ],
-            ),
-            const SizedBox(height: 20),
+                  for (final (label, value) in periods)
+                    FilterChip(
+                      selected: filter.periods.contains(value),
+                      onSelected: (_) => notifier.togglePeriod(value),
+                      label: Text(label),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
             _SectionLabel(l10n.historySectionSort),
             const SizedBox(height: 8),
             Wrap(
