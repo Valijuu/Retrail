@@ -8,7 +8,9 @@ import 'package:retrail/data/db/ride_dao.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/features/history/history_filter.dart';
+import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_providers.dart';
+import 'package:retrail/features/settings/settings_providers.dart';
 
 /// Listens to an `AsyncValue` provider (driving its underlying stream) and
 /// resolves with the first non-loading value. A bare `read(p.future)` doesn't
@@ -101,6 +103,42 @@ void main() {
 
       final years = await firstData(c, availableHistoryYearsProvider);
       expect(years, [2023]);
+    });
+  });
+
+  group('historyItemsProvider wired to effectiveRange', () {
+    // The one integration seam in the branch with no direct test:
+    // `effectiveRange` (unit-tested) and `RideDao.getRidesWithTrackpointsInRange`
+    // (unit-tested) are correctly connected through `historyItemsProvider`
+    // when a year filter is set.
+    test('setYear(2023) restricts results to rides dated in 2023 only',
+        () async {
+      final db = AppDatabase.memory();
+      addTearDown(db.close);
+      final repo = RideRepository(RideDao(db));
+      final id2023 = await repo.startRide(
+          startedAtMs: DateTime(2023, 6, 1).millisecondsSinceEpoch);
+      final id2024 = await repo.startRide(
+          startedAtMs: DateTime(2024, 6, 1).millisecondsSinceEpoch);
+
+      final c = ProviderContainer(overrides: [
+        rideRepositoryProvider.overrideWithValue(repo),
+        // Avoid pulling in the real preferences/locale chain — this test
+        // only cares about which rides the range query returns.
+        dateFormatLocaleProvider.overrideWithValue('en_US'),
+      ]);
+      addTearDown(c.dispose);
+
+      c.read(historyFilterProvider.notifier).setYear(2023);
+
+      final items = await firstData(c, historyItemsProvider);
+      final rideIds = items
+          .whereType<RideEntryItem>()
+          .map((e) => e.rwt.ride.rideId)
+          .toList();
+
+      expect(rideIds, [id2023]);
+      expect(rideIds, isNot(contains(id2024)));
     });
   });
 }

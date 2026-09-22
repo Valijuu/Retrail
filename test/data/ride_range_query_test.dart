@@ -63,6 +63,20 @@ void main() {
           .first;
       expect(res.map((e) => e.ride.description), ['dateless']);
     });
+
+    test('date wins over a different, non-null startTime', () async {
+      // date is inside [100, 200], startTime is well outside it — if the
+      // query ever preferred startTime, this ride would be wrongly excluded.
+      await insertRide(title: 'dateInRange', date: 150, start: 9000);
+      // The inverse: startTime is inside [100, 200], date is well outside
+      // it — if the query ever preferred startTime, this ride would be
+      // wrongly included.
+      await insertRide(title: 'startTimeInRangeOnly', date: 9000, start: 150);
+      final res = await db.rideDao
+          .getRidesWithTrackpointsInRange(startMs: 100, endMs: 200)
+          .first;
+      expect(res.map((e) => e.ride.description), ['dateInRange']);
+    });
   });
 
   group('deleteByIds', () {
