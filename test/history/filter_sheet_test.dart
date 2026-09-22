@@ -67,15 +67,25 @@ void main() {
   });
 
   testWidgets(
-      'week/month/year period chips are hidden once a PAST year is selected',
+      'week/month/year period chips, the PERIOD section label, and its '
+      '"All" chip are all hidden once a PAST year is selected',
       (tester) async {
     await pump(tester);
+    // Before: the PERIOD section is present — its label, plus two "All"
+    // chips (one from PERIOD, one from ACTIVITY, both localized to "All").
+    expect(find.text('PERIOD'), findsOneWidget);
+    expect(find.text('All'), findsNWidgets(2));
+
     container.read(historyFilterProvider.notifier).setYear(2023);
     await tester.pump();
 
     expect(find.text('This week'), findsNothing);
     expect(find.text('This month'), findsNothing);
     expect(find.text('This year'), findsNothing);
+    // After: the whole PERIOD section is gone — its label, and its "All"
+    // chip (only ACTIVITY's "All" chip remains).
+    expect(find.text('PERIOD'), findsNothing);
+    expect(find.text('All'), findsOneWidget);
   });
 
   testWidgets(

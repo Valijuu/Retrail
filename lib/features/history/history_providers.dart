@@ -86,6 +86,22 @@ final availableHistoryYearsProvider = StreamProvider.autoDispose<List<int>>((ref
   });
 });
 
+/// Year-picker dropdown items: [availableHistoryYearsProvider]'s years,
+/// defensively unioned with the currently selected year (in case its rides
+/// were just bulk-deleted and it dropped out of the DB-derived list — keeps
+/// the dropdown's "exactly one item per value" assertion from ever firing on
+/// a stale value, see `filter_sheet.dart`). A dedicated provider rather than
+/// an inline widget computation so it only recomputes when the years list or
+/// the selected year actually change, not on every `HistoryFilterSheet`
+/// rebuild (e.g. toggling sort/activity/favorites no longer touches this).
+final yearPickerItemsProvider = Provider<List<int>>((ref) {
+  final years =
+      ref.watch(availableHistoryYearsProvider).asData?.value ?? const [];
+  final selectedYear = ref.watch(historyFilterProvider.select((f) => f.year));
+  final combined = {...years, ?selectedYear};
+  return combined.toList()..sort((a, b) => b.compareTo(a));
+});
+
 final historyControllerProvider = Provider<HistoryController>(
   (ref) => HistoryController(
     ref.watch(rideRepositoryProvider),

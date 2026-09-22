@@ -21,15 +21,7 @@ class HistoryFilterSheet extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final filter = ref.watch(historyFilterProvider);
     final notifier = ref.read(historyFilterProvider.notifier);
-    // The currently selected year might have just dropped out of the
-    // available-years list (e.g. its rides were all just bulk-deleted via
-    // "select all") — keep it in the item set regardless, so the dropdown's
-    // "exactly one item per value" assertion never fires on a stale value.
-    final availableYears = {
-      ...ref.watch(availableHistoryYearsProvider).asData?.value ?? const [],
-      if (filter.year != null) filter.year!,
-    }.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final availableYears = ref.watch(yearPickerItemsProvider);
 
     // A past/future year already fixes the window to that whole calendar
     // year (see `effectiveRange`) — the week/month/this-year chips are

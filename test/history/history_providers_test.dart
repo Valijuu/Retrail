@@ -106,6 +106,48 @@ void main() {
     });
   });
 
+  group('yearPickerItemsProvider', () {
+    test('unions availableHistoryYearsProvider with the selected year',
+        () async {
+      final db = AppDatabase.memory();
+      addTearDown(db.close);
+      final repo = RideRepository(RideDao(db));
+      await repo.startRide(
+          startedAtMs: DateTime(2024, 3, 1).millisecondsSinceEpoch);
+
+      final c = ProviderContainer(
+          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
+      addTearDown(c.dispose);
+
+      // Let availableHistoryYearsProvider's stream settle first.
+      await firstData(c, availableHistoryYearsProvider);
+      // Selected year (2022) isn't among the DB-derived years (2024) — the
+      // defensive union (e.g. its rides were just bulk-deleted) must still
+      // surface it.
+      c.read(historyFilterProvider.notifier).setYear(2022);
+
+      expect(c.read(yearPickerItemsProvider), [2024, 2022]);
+    });
+
+    test('does not duplicate when the selected year is already available',
+        () async {
+      final db = AppDatabase.memory();
+      addTearDown(db.close);
+      final repo = RideRepository(RideDao(db));
+      await repo.startRide(
+          startedAtMs: DateTime(2024, 3, 1).millisecondsSinceEpoch);
+
+      final c = ProviderContainer(
+          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
+      addTearDown(c.dispose);
+
+      await firstData(c, availableHistoryYearsProvider);
+      c.read(historyFilterProvider.notifier).setYear(2024);
+
+      expect(c.read(yearPickerItemsProvider), [2024]);
+    });
+  });
+
   group('historyItemsProvider wired to effectiveRange', () {
     // The one integration seam in the branch with no direct test:
     // `effectiveRange` (unit-tested) and `RideDao.getRidesWithTrackpointsInRange`

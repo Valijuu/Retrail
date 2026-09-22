@@ -20,7 +20,7 @@ void main() {
       await insertRide(title: 'a', date: 100);
       await insertRide(title: 'b', date: 200);
       final res = await db.rideDao.getRidesWithTrackpointsInRange().first;
-      expect(res.map((e) => e.ride.description), containsAll(['a', 'b']));
+      expect(res.map((e) => e.ride.description), ['a', 'b']);
     });
 
     test('only startMs set excludes rides before it', () async {
