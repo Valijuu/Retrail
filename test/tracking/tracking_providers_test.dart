@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,6 +10,7 @@ import 'package:retrail/data/db/trackpoint_dao.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/data/repositories/trackpoint_repository.dart';
+import 'package:retrail/features/settings/settings_providers.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_source.dart';
 import 'package:retrail/tracking/ride_recording_controller.dart';
@@ -97,5 +99,30 @@ void main() {
 
     expect(source.hasListener, isFalse,
         reason: 'the fix subscription must not outlive the provider container');
+  });
+
+  test(
+      'rideNotificationCopyProvider follows the device locale when the app '
+      'language is "system" (issue: always fell back to English there, '
+      'since localeProvider is null for "system" and the ternary treated '
+      'that as "not German" instead of resolving the actual device locale)',
+      () {
+    final german = ProviderContainer(overrides: [
+      localeProvider.overrideWithValue(null), // "system"
+      effectiveLocaleProvider.overrideWithValue(const Locale('de')),
+    ]);
+    addTearDown(german.dispose);
+    expect(german.read(rideNotificationCopyProvider).recordingTitle,
+        'Fahrt wird aufgezeichnet');
+    expect(german.read(rideNotificationCopyProvider).pause, 'Pause');
+    expect(german.read(rideNotificationCopyProvider).stop, 'Beenden');
+
+    final english = ProviderContainer(overrides: [
+      localeProvider.overrideWithValue(null),
+      effectiveLocaleProvider.overrideWithValue(const Locale('en')),
+    ]);
+    addTearDown(english.dispose);
+    expect(english.read(rideNotificationCopyProvider).recordingTitle,
+        'Recording ride');
   });
 }

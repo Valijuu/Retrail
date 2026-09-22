@@ -25,13 +25,14 @@ class RecentRideUi {
   final double? startLat;
   final double? startLng;
 
-  static RecentRideUi from(RideWithTrackpoints rwt, DistanceCalculator calc) {
+  static RecentRideUi from(RideWithTrackpoints rwt, DistanceCalculator calc,
+      {String? locale}) {
     final stats = computeRideStats(rwt, calc);
     final start = rwt.trackpoints.isNotEmpty ? rwt.trackpoints.first : null;
     return RecentRideUi(
       rideId: rwt.ride.rideId,
-      title: rideDisplayTitle(rwt.ride),
-      dateTime: formatRideDate(rwt.ride.date),
+      title: rideDisplayTitle(rwt.ride, locale: locale),
+      dateTime: formatRideDate(rwt.ride.date, locale: locale),
       distanceKm: stats.distanceMetres / 1000.0,
       hasRoute: rwt.trackpoints.isNotEmpty,
       startLat: start?.latitude,

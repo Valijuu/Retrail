@@ -117,7 +117,9 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(formatRideDate(ride.date),
+                  Text(
+                      formatRideDate(ride.date,
+                          locale: Localizations.localeOf(context).toString()),
                       style: text.titleMedium?.copyWith(color: colors.onSurface)),
                   if (activity != null) ...[
                     const SizedBox(height: 6),

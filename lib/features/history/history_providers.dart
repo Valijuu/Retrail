@@ -4,6 +4,7 @@ import '../../domain/activity_type.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../tracking/tracking_providers.dart';
 import '../active_ride/active_ride_providers.dart';
+import '../settings/settings_providers.dart';
 import 'history_controller.dart';
 import 'history_filter.dart';
 import 'history_items.dart';
@@ -55,10 +56,10 @@ final activeFilterCountProvider =
 final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
   final filter = ref.watch(historyFilterProvider);
   final calc = ref.watch(distanceCalculatorProvider);
+  final locale = ref.watch(dateFormatLocaleProvider);
   final repo = ref.watch(rideRepositoryProvider);
-  return repo
-      .getAllRidesWithTrackpoints()
-      .map((rides) => buildHistoryItems(rides, filter, calc: calc));
+  return repo.getAllRidesWithTrackpoints().map(
+      (rides) => buildHistoryItems(rides, filter, calc: calc, locale: locale));
 });
 
 final historyControllerProvider = Provider<HistoryController>(

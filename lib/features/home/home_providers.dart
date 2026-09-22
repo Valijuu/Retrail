@@ -7,6 +7,7 @@ import '../../domain/distance_calculator.dart';
 import '../../domain/stats_aggregation.dart';
 import '../../domain/time_bounds.dart';
 import '../../tracking/tracking_providers.dart';
+import '../settings/settings_providers.dart';
 import 'recent_ride_ui.dart';
 
 /// "Now" in epoch ms — overridable in tests for deterministic time bounds.
@@ -34,35 +35,45 @@ final yearlyStatsProvider = _statsFor((now) => yearBounds(nowMs: now));
 /// belongs in "last rides", and showing them made a discarded ride flash on
 /// home until its delete landed.
 List<RecentRideUi> toRecentRides(
-    List<RideWithTrackpoints> list, DistanceCalculator calc) {
+    List<RideWithTrackpoints> list, DistanceCalculator calc,
+    {String? locale}) {
   final sorted = list.where((rwt) => rwt.ride.endTime != null).toList()
     ..sort((a, b) => (b.ride.date ?? 0).compareTo(a.ride.date ?? 0));
-  return sorted.take(2).map((rwt) => RecentRideUi.from(rwt, calc)).toList();
+  return sorted
+      .take(2)
+      .map((rwt) => RecentRideUi.from(rwt, calc, locale: locale))
+      .toList();
 }
 
 /// Favorites sorted by when they were hearted (newest first), take 2.
 List<RecentRideUi> toFavoriteRides(
-    List<RideWithTrackpoints> list, DistanceCalculator calc) {
+    List<RideWithTrackpoints> list, DistanceCalculator calc,
+    {String? locale}) {
   final favs = list.where((rwt) => rwt.ride.isFavorite).toList()
     ..sort((a, b) => (b.ride.favoritedAt ?? b.ride.date ?? 0)
         .compareTo(a.ride.favoritedAt ?? a.ride.date ?? 0));
-  return favs.take(2).map((rwt) => RecentRideUi.from(rwt, calc)).toList();
+  return favs
+      .take(2)
+      .map((rwt) => RecentRideUi.from(rwt, calc, locale: locale))
+      .toList();
 }
 
 final recentRidesProvider = StreamProvider<List<RecentRideUi>>((ref) {
   final calc = ref.watch(distanceCalculatorProvider);
+  final locale = ref.watch(dateFormatLocaleProvider);
   return ref
       .watch(rideRepositoryProvider)
       .getAllRidesWithTrackpoints()
-      .map((list) => toRecentRides(list, calc));
+      .map((list) => toRecentRides(list, calc, locale: locale));
 });
 
 final favoriteRidesProvider = StreamProvider<List<RecentRideUi>>((ref) {
   final calc = ref.watch(distanceCalculatorProvider);
+  final locale = ref.watch(dateFormatLocaleProvider);
   return ref
       .watch(rideRepositoryProvider)
       .getAllRidesWithTrackpoints()
-      .map((list) => toFavoriteRides(list, calc));
+      .map((list) => toFavoriteRides(list, calc, locale: locale));
 });
 
 final lastActivityTypeProvider = StreamProvider<ActivityType>((ref) => ref

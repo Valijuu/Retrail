@@ -51,11 +51,16 @@ final locationPermissionServiceProvider = Provider<LocationPermissionService>(
     (ref) => const GeolocatorPermissionService());
 
 /// Current-locale copy for the recording notification (the service has no
-/// BuildContext). Falls back to English for unsupported/system locales.
+/// BuildContext). Falls back to English for unsupported locales — but reads
+/// [effectiveLocaleProvider], not [localeProvider] directly: with the app
+/// language set to "system" (the default), `localeProvider` is null — correct
+/// for `MaterialApp`, which resolves that itself, but this provider has no
+/// such resolution and would otherwise always fall through to English
+/// regardless of the device's actual language.
 final rideNotificationCopyProvider = Provider<RideNotificationCopy>((ref) {
-  final locale = ref.watch(localeProvider);
+  final locale = ref.watch(effectiveLocaleProvider);
   final l = lookupAppLocalizations(
-      Locale(locale?.languageCode == 'de' ? 'de' : 'en'));
+      Locale(locale.languageCode == 'de' ? 'de' : 'en'));
   return RideNotificationCopy(
     channelName: l.notifChannelName,
     recordingTitle: l.notifRecordingTitle,

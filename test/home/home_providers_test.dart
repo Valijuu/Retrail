@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/features/home/home_providers.dart';
+import 'package:retrail/features/settings/settings_providers.dart';
 
 import 'home_test_helpers.dart';
 
@@ -26,6 +29,7 @@ Future<T> firstData<T>(ProviderContainer c, StreamProvider<T> p) {
 /// Drift `.watch()` stream resolves fine outside `testWidgets`.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() => initializeDateFormatting());
 
   /// A Wednesday at noon — `now` for deterministic week/day/year bounds.
   final now = DateTime(2026, 6, 17, 12);
@@ -33,11 +37,14 @@ void main() {
   final earlierThisWeek = DateTime(2026, 6, 15, 12); // Monday
   final lastMonth = DateTime(2026, 5, 1, 12);
 
-  Future<ProviderContainer> containerWith(HomeEnv env) async {
+  // ignore: strict_top_level_inference
+  Future<ProviderContainer> containerWith(HomeEnv env,
+      {extraOverrides = const []}) async {
     final c = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(env.db),
       preferencesRepositoryProvider.overrideWithValue(env.prefs),
       nowMsProvider.overrideWithValue(() => now.millisecondsSinceEpoch),
+      ...extraOverrides,
     ]);
     addTearDown(c.dispose);
     return c;
@@ -75,6 +82,20 @@ void main() {
 
     final recent = await firstData(c, recentRidesProvider);
     expect(recent.map((r) => r.rideId).toList(), [newest, mid]);
+  });
+
+  test(
+      'recentRidesProvider formats an untitled ride\'s fallback title in the '
+      'app\'s selected locale, not English regardless of it', () async {
+    final env = await buildHomeEnv();
+    addTearDown(env.db.close);
+    // Tuesday — "Dienstag" in German, unmistakably not "Tuesday".
+    await rideAt(env, DateTime(2026, 6, 16, 8));
+    final c = await containerWith(env,
+        extraOverrides: [localeProvider.overrideWithValue(const Locale('de'))]);
+
+    final recent = await firstData(c, recentRidesProvider);
+    expect(recent.single.title, contains('Dienstag'));
   });
 
   test('favoriteRidesProvider returns only favorites, newest hearted first',

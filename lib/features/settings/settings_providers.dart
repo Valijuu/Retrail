@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,6 +46,29 @@ final localeProvider = Provider<Locale?>(
   (ref) => localeFor(
       ref.watch(appLanguageProvider).asData?.value ?? AppLanguage.system),
 );
+
+/// The concrete effective [Locale] — the user's explicit override, or the
+/// platform's own locale when set to "system". Unlike [localeProvider],
+/// where null correctly means "let MaterialApp/Localizations resolve the
+/// system locale" (Flutter does that resolution for free), code that isn't
+/// itself resolved by MaterialApp — `DateFormat` calls, and the foreground-
+/// service notification built without a `BuildContext` — has no such
+/// fallback and needs a concrete locale to actually follow the device
+/// instead of silently defaulting to English.
+final effectiveLocaleProvider = Provider<Locale>(
+  (ref) =>
+      ref.watch(localeProvider) ??
+      // `dart:ui`'s PlatformDispatcher, not `WidgetsBinding.instance` — this
+      // provider can build before any Flutter binding exists (e.g. a plain
+      // `ProviderContainer` in a non-widget test), and WidgetsBinding.instance
+      // throws in that case.
+      PlatformDispatcher.instance.locale,
+);
+
+/// The concrete locale tag for `intl`'s `DateFormat` (ride titles, history
+/// date labels).
+final dateFormatLocaleProvider = Provider<String>(
+    (ref) => ref.watch(effectiveLocaleProvider).toString());
 
 /// Thin testable seam over the preference writers (mirrors `SettingsViewModel`).
 /// DataStore stays the single source of truth — the screen reads the live

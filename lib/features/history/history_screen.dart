@@ -300,7 +300,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         final l10n = AppLocalizations.of(context);
         final colors = Theme.of(context).extension<AppColors>()!;
         final label = formatDateLabel(dayKey,
-            todayLabel: l10n.dateToday, yesterdayLabel: l10n.dateYesterday);
+            todayLabel: l10n.dateToday,
+            yesterdayLabel: l10n.dateYesterday,
+            locale: Localizations.localeOf(context).toString());
         return Padding(
           padding: const EdgeInsets.only(top: 4, bottom: 5),
           child: Text(label.toUpperCase(),

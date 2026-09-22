@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/features/home/home_providers.dart';
 
 import '../domain/domain_test_helpers.dart';
 
 void main() {
+  setUpAll(() => initializeDateFormatting());
   const calc = HaversineDistanceCalculator();
 
   test('recent rides are the newest two by date', () {
@@ -33,6 +35,21 @@ void main() {
       rwt(buildRide(rideId: 4, description: 'd', date: 60, isFavorite: true, favoritedAt: 20), const []),
     ];
     expect(toFavoriteRides(list, calc).map((r) => r.title), ['c', 'd']);
+  });
+
+  test(
+      'an untitled ride falls back to a date formatted in the given locale, '
+      'not intl\'s hardcoded English default', () {
+    // Tuesday, 2 Jan 2024 — "Tuesday" (en) vs. "Dienstag" (de) make the
+    // locale unmistakable regardless of which month names happen to overlap.
+    final noTitle = [
+      rwt(buildRide(rideId: 1, date: DateTime(2024, 1, 2).millisecondsSinceEpoch, endTime: 1), const []),
+    ];
+    final german = toRecentRides(noTitle, calc, locale: 'de_DE').single.title;
+    final english = toRecentRides(noTitle, calc, locale: 'en_US').single.title;
+    expect(german, contains('Dienstag'));
+    expect(english, contains('Tuesday'));
+    expect(german, isNot(contains('Tuesday')));
   });
 
   test('RecentRideUi reflects route presence and distance', () {

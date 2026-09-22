@@ -92,8 +92,9 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
     final hasRoute = points.isNotEmpty;
     final km = stats.distanceMetres / 1000;
     final distanceStr = km < 10 ? km.toStringAsFixed(1) : km.toStringAsFixed(0);
-    final title = rideDisplayTitle(ride);
-    final meta = '${formatRideTime(ride.date)} · '
+    final locale = Localizations.localeOf(context).toString();
+    final title = rideDisplayTitle(ride, locale: locale);
+    final meta = '${formatRideTime(ride.date, locale: locale)} · '
         '${formatDuration(stats.durationMs)} · '
         'Ø ${stats.avgSpeedKmh.round()} km/h';
     final activity = ActivityType.fromId(ride.typ);
