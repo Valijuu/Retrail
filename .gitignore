@@ -55,3 +55,6 @@ lib/l10n/app_localizations*.dart
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# Subagent-driven-development scratch workspace (ledger, briefs, reports).
+/.superpowers/
