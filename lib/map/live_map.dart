@@ -248,6 +248,18 @@ class _LiveMapState extends State<LiveMap>
   /// that the style load hasn't created yet.
   bool _markerReady = false;
 
+  /// True once every GeoJSON source this style load creates (`route`, plus
+  /// `current` or `start`/`end` depending on [LiveMap.fitBounds]) has actually
+  /// been added natively. Gates every `updateGeoJsonSource` call so none of
+  /// them can race [_onStyleLoaded]'s sequential, awaited source-creation —
+  /// `_style` is assigned before any source exists, so a GPS-driven
+  /// `didUpdateWidget` landing in that window would otherwise call
+  /// `updateGeoJsonSource` on a source id the native style doesn't have yet.
+  /// On Android that's a force-unwrapped native lookup with no existence
+  /// check (`StyleControllerAndroid.updateGeoJsonSource`), so a miss doesn't
+  /// throw a catchable Dart exception — it's a native crash.
+  bool _sourcesReady = false;
+
   /// True once the style has loaded and the camera has centered, at which point
   /// the terrain placeholder crossfades out to reveal the positioned map. Stays
   /// true after the first reveal so a later brightness reload doesn't re-flash
@@ -266,12 +278,16 @@ class _LiveMapState extends State<LiveMap>
     super.didUpdateWidget(oldWidget);
     // Push live geometry updates into the existing sources (no style reload).
     // The live map has no start/end dots (only the current marker), and the
-    // detail map's points are fixed — so only the route + current need updating.
-    if (widget.points != oldWidget.points) {
-      _style?.updateGeoJsonSource(
-          id: 'route', data: routeLineGeoJson(widget.points));
+    // detail map's points are fixed — so only the route + current need
+    // updating. Gated on _sourcesReady: a GPS-driven update can otherwise
+    // land before _onStyleLoaded has finished creating these sources — see
+    // _sourcesReady's doc comment for why that's a native crash, not just a
+    // no-op.
+    if (_sourcesReady && widget.points != oldWidget.points) {
+      _pushRoute();
     }
-    if (!widget.fitBounds &&
+    if (_sourcesReady &&
+        !widget.fitBounds &&
         widget.current != oldWidget.current &&
         widget.current != null) {
       _glideMarkerTo(widget.current!);
@@ -302,10 +318,20 @@ class _LiveMapState extends State<LiveMap>
     }
   }
 
+  /// Pushes [LiveMap.points] into the `route` source. Shared by
+  /// [didUpdateWidget] and [_onStyleLoaded]'s catch-up push, both gated on
+  /// [_sourcesReady].
+  void _pushRoute() => _style?.updateGeoJsonSource(
+      id: 'route', data: routeLineGeoJson(widget.points));
+
   /// Moves the `current` marker to [next]: a glide from where it is drawn now,
   /// or a direct snap when there is no previous position, or the jump is big
   /// enough (GPS recovery) that a 600 ms slide would look wrong.
   void _glideMarkerTo(RoutePoint next) {
+    // Defense in depth: every call site already checks _sourcesReady, but
+    // guard here too so a future call site can't reintroduce the race this
+    // gate exists to close (see _sourcesReady's doc comment).
+    if (!_sourcesReady) return;
     final from = _renderedCurrent;
     if (from == null || markerShouldSnap(from, next)) {
       _glide.stop();
@@ -324,6 +350,7 @@ class _LiveMapState extends State<LiveMap>
   /// source, throttled to ≥40 ms between pushes (~25 fps) so the platform
   /// channel isn't spammed at display rate. The final frame always lands.
   void _onGlideTick() {
+    if (!_sourcesReady) return; // see _glideMarkerTo's matching guard
     final from = _glideFrom, to = _glideTo;
     if (from == null || to == null) return;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -351,6 +378,7 @@ class _LiveMapState extends State<LiveMap>
     _glideFrom = null;
     _glideTo = null;
     _markerReady = false;
+    _sourcesReady = false;
     _markerImages.clear();
     final colors = Theme.of(context).extension<AppColors>()!;
     final halo = _hex(colors.routeLineHalo);
@@ -418,6 +446,17 @@ class _LiveMapState extends State<LiveMap>
       ));
       await _addCurrentMarker(style, widget.activityType, blue);
       _markerReady = true;
+    }
+
+    _sourcesReady = true;
+    // A fresh points/current prop may have arrived via didUpdateWidget while
+    // the awaited addSource/addLayer calls above were still in flight — that
+    // update was silently dropped by the _sourcesReady gate below (the
+    // sources didn't exist yet to receive it). Catch up now that they do,
+    // instead of waiting for the next GPS fix to self-heal it.
+    _pushRoute();
+    if (!widget.fitBounds && widget.current != null) {
+      _glideMarkerTo(widget.current!);
     }
 
     if (widget.fitBounds && widget.points.isNotEmpty) {
