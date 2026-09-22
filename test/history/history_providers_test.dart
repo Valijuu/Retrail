@@ -109,11 +109,14 @@ void main() {
   group('yearPickerItemsProvider', () {
     test('unions availableHistoryYearsProvider with the selected year',
         () async {
+      final currentYear = DateTime.now().year;
+      final rideYear = currentYear - 2;
+      final selectedYear = currentYear - 3;
       final db = AppDatabase.memory();
       addTearDown(db.close);
       final repo = RideRepository(RideDao(db));
       await repo.startRide(
-          startedAtMs: DateTime(2024, 3, 1).millisecondsSinceEpoch);
+          startedAtMs: DateTime(rideYear, 3, 1).millisecondsSinceEpoch);
 
       final c = ProviderContainer(
           overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
@@ -121,30 +124,50 @@ void main() {
 
       // Let availableHistoryYearsProvider's stream settle first.
       await firstData(c, availableHistoryYearsProvider);
-      // Selected year (2022) isn't among the DB-derived years (2024) — the
-      // defensive union (e.g. its rides were just bulk-deleted) must still
-      // surface it.
-      c.read(historyFilterProvider.notifier).setYear(2022);
+      // Selected year isn't among the DB-derived years — the defensive
+      // union (e.g. its rides were just bulk-deleted) must still surface it,
+      // alongside the always-included current year.
+      c.read(historyFilterProvider.notifier).setYear(selectedYear);
 
-      expect(c.read(yearPickerItemsProvider), [2024, 2022]);
+      expect(c.read(yearPickerItemsProvider),
+          [currentYear, rideYear, selectedYear]);
     });
 
     test('does not duplicate when the selected year is already available',
         () async {
+      final currentYear = DateTime.now().year;
+      final rideYear = currentYear - 1;
       final db = AppDatabase.memory();
       addTearDown(db.close);
       final repo = RideRepository(RideDao(db));
       await repo.startRide(
-          startedAtMs: DateTime(2024, 3, 1).millisecondsSinceEpoch);
+          startedAtMs: DateTime(rideYear, 3, 1).millisecondsSinceEpoch);
 
       final c = ProviderContainer(
           overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
       addTearDown(c.dispose);
 
       await firstData(c, availableHistoryYearsProvider);
-      c.read(historyFilterProvider.notifier).setYear(2024);
+      c.read(historyFilterProvider.notifier).setYear(rideYear);
 
-      expect(c.read(yearPickerItemsProvider), [2024]);
+      expect(c.read(yearPickerItemsProvider), [currentYear, rideYear]);
+    });
+
+    test('always includes the current calendar year, even with no rides yet',
+        () async {
+      final db = AppDatabase.memory();
+      addTearDown(db.close);
+      final repo = RideRepository(RideDao(db));
+      // No rides inserted at all — the year the app just rolled into must
+      // still be selectable without waiting for a first ride in it.
+
+      final c = ProviderContainer(
+          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
+      addTearDown(c.dispose);
+
+      await firstData(c, availableHistoryYearsProvider);
+
+      expect(c.read(yearPickerItemsProvider), [DateTime.now().year]);
     });
   });
 

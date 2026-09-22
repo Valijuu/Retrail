@@ -23,9 +23,9 @@ void main() {
     test('multiple periods union to the earliest start, open end', () {
       final (start, end) = effectiveRange(
           const HistoryFilter(
-              periods: {TimePeriod.thisWeek, TimePeriod.thisYear}),
+              periods: {TimePeriod.thisWeek, TimePeriod.thisMonth}),
           nowMs: _now);
-      expect(start, yearBounds(nowMs: _now).$1);
+      expect(start, monthBounds(nowMs: _now).$1);
       expect(end, isNull);
     });
 

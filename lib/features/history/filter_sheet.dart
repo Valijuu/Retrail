@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/activity_type_ui.dart';
 import 'history_filter.dart';
 import 'history_providers.dart';
 
-/// Period / sort / activity / favorites filter sheet. Filters apply live via
-/// [historyFilterProvider]; "Apply" just closes. Ports `FilterBottomSheet`.
+/// Year / period / sort / activity / favorites filter sheet. Filters apply
+/// live via [historyFilterProvider] as soon as a chip/dropdown is touched —
+/// there is no separate "Apply" step; the sheet is dismissed by dragging
+/// down or tapping outside it. Ports `FilterBottomSheet`.
 class HistoryFilterSheet extends ConsumerWidget {
   const HistoryFilterSheet({super.key});
 
@@ -24,15 +25,16 @@ class HistoryFilterSheet extends ConsumerWidget {
     final availableYears = ref.watch(yearPickerItemsProvider);
 
     // A past/future year already fixes the window to that whole calendar
-    // year (see `effectiveRange`) — the week/month/this-year chips are
-    // relative to "now" and would be misleading, so hide them.
+    // year (see `effectiveRange`) — the week/month chips are relative to
+    // "now" and would be misleading, so hide them. ("This year" as its own
+    // chip is gone — selecting the current year in the dropdown above does
+    // the same job.)
     final showPeriodChips =
         filter.year == null || filter.year == DateTime.now().year;
     final periods = showPeriodChips
         ? <(String, TimePeriod)>[
             (l10n.periodThisWeek, TimePeriod.thisWeek),
             (l10n.periodThisMonth, TimePeriod.thisMonth),
-            (l10n.periodThisYear, TimePeriod.thisYear),
           ]
         : const <(String, TimePeriod)>[];
     final sorts = <(String, SortOrder)>[
@@ -69,7 +71,6 @@ class HistoryFilterSheet extends ConsumerWidget {
             const SizedBox(height: 8),
             DropdownButton<int?>(
               value: filter.year,
-              isExpanded: true,
               underline: Container(height: 1, color: colors.onSurfaceVariant),
               dropdownColor: colors.surface,
               iconEnabledColor: colors.primary,
@@ -164,21 +165,6 @@ class HistoryFilterSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: FilledButton.styleFrom(
-                  backgroundColor: colors.primary,
-                  foregroundColor: colors.onPrimary,
-                  shape: const RoundedRectangleBorder(
-                      borderRadius: AppShapes.pill),
-                ),
-                child: Text(l10n.actionApply),
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       ),

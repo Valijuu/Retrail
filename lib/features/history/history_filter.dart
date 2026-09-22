@@ -5,7 +5,7 @@ import '../../domain/activity_type.dart';
 /// Time-window chips for the history filter. Mirrors the original `TimePeriod`;
 /// "all time" is no longer an enum member — it is the **empty selection** (see
 /// [HistoryFilter.periods]).
-enum TimePeriod { thisWeek, thisMonth, thisYear }
+enum TimePeriod { thisWeek, thisMonth }
 
 /// Sort-order chips for the history filter. Mirrors the original `SortOrder`.
 enum SortOrder { date, distance, speed, duration }

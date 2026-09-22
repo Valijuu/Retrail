@@ -58,16 +58,15 @@ void main() {
     expect(container.read(historyFilterProvider).year, 2023);
   });
 
-  testWidgets('week/month/year period chips stay visible with no year filter',
+  testWidgets('week/month period chips stay visible with no year filter',
       (tester) async {
     await pump(tester);
     expect(find.text('This week'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
-    expect(find.text('This year'), findsOneWidget);
   });
 
   testWidgets(
-      'week/month/year period chips, the PERIOD section label, and its '
+      'week/month period chips, the PERIOD section label, and its '
       '"All" chip are all hidden once a PAST year is selected',
       (tester) async {
     await pump(tester);
@@ -81,7 +80,6 @@ void main() {
 
     expect(find.text('This week'), findsNothing);
     expect(find.text('This month'), findsNothing);
-    expect(find.text('This year'), findsNothing);
     // After: the whole PERIOD section is gone — its label, and its "All"
     // chip (only ACTIVITY's "All" chip remains).
     expect(find.text('PERIOD'), findsNothing);
@@ -116,6 +114,5 @@ void main() {
 
     expect(find.text('This week'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
-    expect(find.text('This year'), findsOneWidget);
   });
 }

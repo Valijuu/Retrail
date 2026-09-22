@@ -34,7 +34,6 @@ int _periodUnionStart(Set<TimePeriod> periods, int? nowMs) {
   int startOf(TimePeriod p) => switch (p) {
         TimePeriod.thisWeek => weekBounds(nowMs: nowMs).$1,
         TimePeriod.thisMonth => monthBounds(nowMs: nowMs).$1,
-        TimePeriod.thisYear => yearBounds(nowMs: nowMs).$1,
       };
   return periods.map(startOf).reduce((a, b) => a < b ? a : b);
 }
