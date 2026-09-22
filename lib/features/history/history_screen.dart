@@ -71,6 +71,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         if (!_selectedIds.remove(rideId)) _selectedIds.add(rideId);
       });
 
+  /// Selects every currently visible (i.e. already filtered) ride.
+  void _selectAll() {
+    final items = ref.read(historyItemsProvider).asData?.value ?? const [];
+    setState(() {
+      _selectedIds = {
+        for (final item in items)
+          if (item is RideEntryItem) item.rwt.ride.rideId,
+      };
+    });
+  }
+
   /// Jump to the ride requested from Home: reset filters if it's hidden, scroll
   /// to it and highlight it briefly. Mirrors the original `LaunchedEffect`.
   void _maybeJumpToTarget() {
@@ -251,6 +262,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 _SelectionBar(
                   count: _selectedIds.length,
                   onClose: _exitSelection,
+                  onSelectAll: _selectAll,
                   onDelete: () => _confirmDelete(batch: true),
                 )
               else
@@ -412,10 +424,15 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _SelectionBar extends StatelessWidget {
-  const _SelectionBar(
-      {required this.count, required this.onClose, required this.onDelete});
+  const _SelectionBar({
+    required this.count,
+    required this.onClose,
+    required this.onSelectAll,
+    required this.onDelete,
+  });
   final int count;
   final VoidCallback onClose;
+  final VoidCallback onSelectAll;
   final VoidCallback onDelete;
 
   @override
@@ -438,6 +455,11 @@ class _SelectionBar extends StatelessWidget {
                     .textTheme
                     .titleMedium
                     ?.copyWith(color: colors.onSurface)),
+          ),
+          IconButton(
+            onPressed: onSelectAll,
+            icon: Icon(Icons.select_all, color: colors.primary),
+            tooltip: l10n.selectAll,
           ),
           IconButton(
             onPressed: onDelete,

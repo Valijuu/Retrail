@@ -28,6 +28,8 @@ English is the default and should read naturally (not a literal back-translation
 | Skip / Save | Überspringen / Speichern |
 | History title | Fahrtenverlauf |
 | Filter chip | Diese Woche |
+| Year filter section / all years | Jahr / Alle Jahre |
+| Select all (bulk delete) | Alle auswählen |
 | Today / Yesterday | Heute / Gestern |
 | Great pace / No route | Gutes Tempo / Keine Route |
 | Swipe hint | ← wischen zum Bearbeiten oder Löschen |

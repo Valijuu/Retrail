@@ -18,8 +18,10 @@ class HistoryController {
   }
 
   Future<void> deleteRides(Iterable<int> rideIds) async {
-    for (final id in rideIds) {
-      await _repo.deleteById(id);
+    final ids = rideIds.toList();
+    await _repo.deleteByIds(ids);
+    // Preview-cache eviction stays per-ID — the cache has no bulk API.
+    for (final id in ids) {
       await _cache.evict(id);
     }
   }

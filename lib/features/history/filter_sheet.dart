@@ -21,12 +21,28 @@ class HistoryFilterSheet extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final filter = ref.watch(historyFilterProvider);
     final notifier = ref.read(historyFilterProvider.notifier);
+    // The currently selected year might have just dropped out of the
+    // available-years list (e.g. its rides were all just bulk-deleted via
+    // "select all") — keep it in the item set regardless, so the dropdown's
+    // "exactly one item per value" assertion never fires on a stale value.
+    final availableYears = {
+      ...ref.watch(availableHistoryYearsProvider).asData?.value ?? const [],
+      if (filter.year != null) filter.year!,
+    }.toList()
+      ..sort((a, b) => b.compareTo(a));
 
-    final periods = <(String, TimePeriod)>[
-      (l10n.periodThisWeek, TimePeriod.thisWeek),
-      (l10n.periodThisMonth, TimePeriod.thisMonth),
-      (l10n.periodThisYear, TimePeriod.thisYear),
-    ];
+    // A past/future year already fixes the window to that whole calendar
+    // year (see `effectiveRange`) — the week/month/this-year chips are
+    // relative to "now" and would be misleading, so hide them.
+    final showPeriodChips =
+        filter.year == null || filter.year == DateTime.now().year;
+    final periods = showPeriodChips
+        ? <(String, TimePeriod)>[
+            (l10n.periodThisWeek, TimePeriod.thisWeek),
+            (l10n.periodThisMonth, TimePeriod.thisMonth),
+            (l10n.periodThisYear, TimePeriod.thisYear),
+          ]
+        : const <(String, TimePeriod)>[];
     final sorts = <(String, SortOrder)>[
       (l10n.sortNewest, SortOrder.date),
       (l10n.sortDistance, SortOrder.distance),
@@ -57,6 +73,29 @@ class HistoryFilterSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
+            _SectionLabel(l10n.historySectionYear),
+            const SizedBox(height: 8),
+            DropdownButton<int?>(
+              value: filter.year,
+              isExpanded: true,
+              underline: Container(height: 1, color: colors.onSurfaceVariant),
+              dropdownColor: colors.surface,
+              iconEnabledColor: colors.primary,
+              style: text.bodyLarge?.copyWith(color: colors.onSurface),
+              onChanged: notifier.setYear,
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(l10n.historyYearAll),
+                ),
+                for (final year in availableYears)
+                  DropdownMenuItem<int?>(
+                    value: year,
+                    child: Text('$year'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
             _SectionLabel(l10n.historySectionPeriod),
             const SizedBox(height: 8),
             Wrap(

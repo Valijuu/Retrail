@@ -267,6 +267,25 @@ void main() {
     expect(controller.calls, contains('deleteRides:[1]'));
   });
 
+  testWidgets(
+      '"select all" selects every visible ride; confirming delete removes '
+      'exactly those', (tester) async {
+    await pump(tester, [_entry(1), _entry(2), _entry(3)]);
+    await tester.longPress(find.byType(HistoryRideCard).first);
+    await tester.pump();
+    expect(find.text('1 selected'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.select_all));
+    await tester.pump();
+    expect(find.text('3 selected'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.delete));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(controller.calls, contains('deleteRides:[1, 2, 3]'));
+  });
+
   testWidgets('3-dot menu Edit opens the edit dialog', (tester) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);
     await tester.tap(find.byIcon(Icons.more_vert));

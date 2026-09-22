@@ -68,6 +68,22 @@ final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
       (rides) => buildHistoryItems(rides, filter, calc: calc, locale: locale));
 });
 
+/// Distinct calendar years present in the ride history, descending (newest
+/// first) — feeds the filter sheet's year picker. Derived in Dart from the
+/// full ride list (small, rarely-changing) rather than a new SQL query.
+final availableHistoryYearsProvider = StreamProvider<List<int>>((ref) {
+  final repo = ref.watch(rideRepositoryProvider);
+  return repo.getAllRidesWithTrackpoints().map((rides) {
+    final years = <int>{
+      for (final rwt in rides)
+        DateTime.fromMillisecondsSinceEpoch(
+                rwt.ride.date ?? rwt.ride.startTime ?? 0)
+            .year,
+    };
+    return years.toList()..sort((a, b) => b.compareTo(a));
+  });
+});
+
 final historyControllerProvider = Provider<HistoryController>(
   (ref) => HistoryController(
     ref.watch(rideRepositoryProvider),

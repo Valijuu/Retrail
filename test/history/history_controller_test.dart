@@ -49,6 +49,20 @@ void main() {
     expect(evicted, [a, b]);
   });
 
+  test('deleteRides makes a single bulk deleteByIds call, not N deleteById '
+      'calls', () async {
+    final calls = <String>[];
+    final spyRepo = _CallSpyRepo(RideDao(db), calls);
+    final spyController = HistoryController(spyRepo, _SpyCache(tmp, evicted));
+    final a = await spyRepo.startRide(activityTypeId: null, startedAtMs: 1000);
+    final b = await spyRepo.startRide(activityTypeId: null, startedAtMs: 1000);
+    calls.clear(); // drop setup noise (startRide doesn't call delete*)
+
+    await spyController.deleteRides([a, b]);
+
+    expect(calls, ['deleteByIds:[$a, $b]']);
+  });
+
   test('updateRideDetails writes description, comment and type', () async {
     final id = await insertRide(typ: 'LONGBOARD');
     await controller.updateRideDetails(
@@ -77,4 +91,24 @@ class _SpyCache extends RoutePreviewCache {
 
   @override
   Future<void> evict(int rideId) async => evicted.add(rideId);
+}
+
+/// Records which delete method was actually called, so the test can assert
+/// [HistoryController.deleteRides] issues one bulk [RideRepository.deleteByIds]
+/// call instead of N [RideRepository.deleteById] calls.
+class _CallSpyRepo extends RideRepository {
+  _CallSpyRepo(super.dao, this.calls);
+  final List<String> calls;
+
+  @override
+  Future<void> deleteById(int rideId) {
+    calls.add('deleteById:$rideId');
+    return super.deleteById(rideId);
+  }
+
+  @override
+  Future<void> deleteByIds(List<int> rideIds) {
+    calls.add('deleteByIds:$rideIds');
+    return super.deleteByIds(rideIds);
+  }
 }
