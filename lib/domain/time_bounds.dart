@@ -2,9 +2,6 @@
 /// local timezone. `now` is injectable for deterministic tests.
 typedef Bounds = (int start, int end);
 
-/// Mirrors `Long.MAX_VALUE` used by the original year bound.
-const int maxBoundMs = 9223372036854775807;
-
 int _nowMs(int? nowMs) => nowMs ?? DateTime.now().millisecondsSinceEpoch;
 
 /// Today 00:00:00.000 → 23:59:59.999 (local).
@@ -34,9 +31,11 @@ Bounds monthBounds({int? nowMs}) {
   return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
 }
 
-/// Jan 1 00:00:00.000 of the current year → [maxBoundMs] (local start).
-Bounds yearBounds({int? nowMs}) {
+/// Jan 1 00:00:00.000 of the specified or current year → Dec 31 23:59:59.999 (local).
+Bounds yearBounds({int? year, int? nowMs}) {
   final now = DateTime.fromMillisecondsSinceEpoch(_nowMs(nowMs));
-  final start = DateTime(now.year, 1, 1);
-  return (start.millisecondsSinceEpoch, maxBoundMs);
+  final selectedYear = year ?? now.year;
+  final start = DateTime(selectedYear, 1, 1);
+  final endExclusive = DateTime(selectedYear + 1, 1, 1);
+  return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
 }

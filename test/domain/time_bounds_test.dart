@@ -44,10 +44,34 @@ void main() {
     expect(now.millisecondsSinceEpoch <= e, isTrue);
   });
 
-  test('yearBounds: Jan 1 → max sentinel', () {
+  test('yearBounds: Jan 1 → Dec 31 23:59:59.999 for current year when year not provided', () {
     final now = DateTime(2026, 6, 17);
     final (s, e) = yearBounds(nowMs: now.millisecondsSinceEpoch);
     expect(DateTime.fromMillisecondsSinceEpoch(s), DateTime(2026, 1, 1));
-    expect(e, maxBoundMs);
+    expect(DateTime.fromMillisecondsSinceEpoch(e), DateTime(2026, 12, 31, 23, 59, 59, 999));
+  });
+
+  test('yearBounds: interval excludes timestamps from following year', () {
+    final jan1Next = DateTime(2027, 1, 1).millisecondsSinceEpoch;
+    final now = DateTime(2026, 6, 17);
+    final (s, e) = yearBounds(nowMs: now.millisecondsSinceEpoch);
+    expect(e < jan1Next, isTrue);
+  });
+
+  test('yearBounds: interval length is correct for current year', () {
+    final now = DateTime(2026, 6, 17);
+    final (s, e) = yearBounds(nowMs: now.millisecondsSinceEpoch);
+    expect(e - s, const Duration(days: 365).inMilliseconds - 1);
+  });
+
+  test('yearBounds: accepts year parameter for past years', () {
+    final (s, e) = yearBounds(year: 2024);
+    expect(DateTime.fromMillisecondsSinceEpoch(s), DateTime(2024, 1, 1));
+    expect(DateTime.fromMillisecondsSinceEpoch(e), DateTime(2024, 12, 31, 23, 59, 59, 999));
+  });
+
+  test('yearBounds: leap year (2024) interval length is correct', () {
+    final (s, e) = yearBounds(year: 2024);
+    expect(e - s, const Duration(days: 366).inMilliseconds - 1);
   });
 }
