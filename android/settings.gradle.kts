@@ -15,6 +15,17 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    // The maplibre_android federated plugin (a transitive dependency of the
+    // `maplibre` package, >=0.3.4) applies org.jlleitschuh.gradle.ktlint in
+    // its own build.gradle.kts without a version — fine inside its own
+    // monorepo (where the root build declares the classpath), but this app
+    // includes that build script directly as a subproject, so Gradle needs
+    // a version pinned here to resolve it at all. Not otherwise used by
+    // this app; version matches what the maplibre package's own repo pins.
+    plugins {
+        id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
+    }
 }
 
 plugins {

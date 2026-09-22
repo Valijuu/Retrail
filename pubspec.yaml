@@ -86,6 +86,15 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/branding/app_icon_foreground.png"
   remove_alpha_ios: true
 
+# maplibre_ios 0.3.6's generated FFI bindings hard-assert `objective_c ^9.5.0`
+# at runtime, but the package's own pubspec constraint (`^9.0.0+1`) is too
+# loose to force pub to pick that high — it resolved to 9.4.1 via
+# path_provider_foundation's looser `^9.2.1` floor instead, which then fails
+# to compile. Force a compatible version until upstream tightens their
+# constraint (https://github.com/josxha/flutter-maplibre).
+dependency_overrides:
+  objective_c: ^9.5.0
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
