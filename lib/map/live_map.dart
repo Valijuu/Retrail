@@ -48,7 +48,7 @@ CameraFollow? followCameraUpdate({
 LngLatBounds? routeBounds(List<RoutePoint> points) {
   if (points.isEmpty) return null;
   return LngLatBounds.fromPoints(
-      [for (final p in points) Position(p.lng, p.lat)]);
+      [for (final p in points) Geographic(lon: p.lng, lat: p.lat)]);
 }
 
 /// Live-map MapLibre style URL for the current brightness. Pure, so the
@@ -267,10 +267,12 @@ class _LiveMapState extends State<LiveMap>
   bool _styleReady = false;
 
   /// Centre target: the current fix if any, else the last recorded point.
-  Position get _centerPosition {
+  Geographic get _centerPosition {
     final c = widget.current ??
         (widget.points.isNotEmpty ? widget.points.last : null);
-    return c != null ? Position(c.lng, c.lat) : Position(0, 0);
+    return c != null
+        ? Geographic(lon: c.lng, lat: c.lat)
+        : Geographic(lon: 0, lat: 0);
   }
 
   @override
@@ -475,7 +477,7 @@ class _LiveMapState extends State<LiveMap>
           (widget.points.isNotEmpty ? widget.points.last : null);
       if (c != null) {
         _ignoreCancel(_controller?.moveCamera(
-          center: Position(c.lng, c.lat),
+          center: Geographic(lon: c.lng, lat: c.lat),
           zoom: widget.initialZoom,
         ));
       }
@@ -552,8 +554,7 @@ class _LiveMapState extends State<LiveMap>
       fit: StackFit.expand,
       children: [
         MapLibreMap(
-          // Rebuild on brightness change to reload topo-v2/basic-v2-dark
-          // (no runtime setStyle in maplibre 0.2.2).
+          // Rebuild on brightness change to reload topo-v2/basic-v2-dark.
           key: ValueKey(dark),
           options: MapOptions(
             initStyle: liveMapStyleUrl(dark),
