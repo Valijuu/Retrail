@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/app.dart';
 import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
+import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/stats_aggregation.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
 import 'package:retrail/tracking/location_permission.dart';
@@ -29,12 +30,14 @@ void main() {
     List<RecentRideUi> recent = const [],
     List<RecentRideUi> favorites = const [],
     WeeklyStats weekly = const WeeklyStats.zero(),
+    Map<String, Object> prefs = const {},
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final env = await buildHomeEnv(initialPrefs: {'onboarding_done': true});
+    final env = await buildHomeEnv(
+        initialPrefs: {'onboarding_done': true, ...prefs});
     addTearDown(env.db.close);
     // Build the recording controller from env.db so only one AppDatabase
     // instance exists per test (avoids Drift's multiple-database warning).
@@ -96,6 +99,25 @@ void main() {
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
     expect(find.text('GET READY'), findsOneWidget);
+  });
+
+  testWidgets(
+      'first Start after launch keeps the saved activity instead of '
+      'overwriting it with the default (issue #27)', (tester) async {
+    await pumpHome(tester, prefs: {'last_activity_type': 'OTHER'});
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+
+    expect(find.text('Other'), findsOneWidget); // countdown activity chip
+    final container =
+        ProviderScope.containerOf(tester.element(find.text('GET READY')));
+    expect(container.read(rideTrackerProvider).state.activityType,
+        ActivityType.other);
+    final saved = await tester.runAsync(() => container
+        .read(preferencesRepositoryProvider)
+        .lastActivityType
+        .first);
+    expect(saved, 'OTHER');
   });
 
   testWidgets('Start tracking requests permission before the countdown',

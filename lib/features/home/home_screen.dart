@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
-import '../../domain/activity_type.dart';
 import '../../domain/stats_aggregation.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/location_permission.dart';
@@ -56,9 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context.go(AppRoutes.ride);
       return;
     }
-    final type = ref.read(lastActivityTypeProvider).asData?.value ??
-        ActivityType.defaultType;
-    ref.read(homeControllerProvider).beginTracking(type);
+    ref.read(homeControllerProvider).beginTracking();
     final online = ref.read(isOnlineProvider).asData?.value ?? true;
     if (online) {
       await _proceed();

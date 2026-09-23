@@ -84,14 +84,22 @@ final lastActivityTypeProvider = StreamProvider<ActivityType>((ref) => ref
 final userNameProvider = StreamProvider<String>(
     (ref) => ref.watch(preferencesRepositoryProvider).userName);
 
-/// Records the chosen activity type for the ride about to start.
+/// Records the preselected activity type for the ride about to start.
 class HomeController {
   HomeController(this._ref);
   final Ref _ref;
 
-  void beginTracking(ActivityType type) {
+  /// Reads the stored preselection synchronously rather than through
+  /// [lastActivityTypeProvider]: nothing on Home listens to that provider, so
+  /// right after launch it was still loading, the Start tap fell back to the
+  /// default activity and then persisted that default over the user's choice
+  /// (issue #27).
+  void beginTracking() {
+    final prefs = _ref.read(preferencesRepositoryProvider);
+    final type = ActivityType.fromId(prefs.lastActivityTypeNow) ??
+        ActivityType.defaultType;
     _ref.read(rideTrackerProvider).setPendingActivityType(type.id);
-    _ref.read(preferencesRepositoryProvider).saveLastActivityType(type.id);
+    prefs.saveLastActivityType(type.id);
   }
 }
 

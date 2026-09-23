@@ -50,8 +50,12 @@ class PreferencesRepository {
   String get userNameNow => _prefs.getString(_kUserName) ?? '';
 
   /// Last activity type chosen in the picker — preselection for the next ride.
-  Stream<String> get lastActivityType =>
-      _watch(() => _prefs.getString(_kLastActivityType) ?? defaultActivityType);
+  Stream<String> get lastActivityType => _watch(() => lastActivityTypeNow);
+
+  /// Current preselection synchronously — for the Start tap, which must not
+  /// depend on a stream provider having emitted yet (issue #27).
+  String get lastActivityTypeNow =>
+      _prefs.getString(_kLastActivityType) ?? defaultActivityType;
 
   // ── Profile photo ────────────────────────────────────────────────────────
 
