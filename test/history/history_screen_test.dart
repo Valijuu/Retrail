@@ -219,6 +219,11 @@ void main() {
     expect(header.style?.fontSize, theme.textTheme.titleSmall?.fontSize);
     expect(header.style?.fontWeight, theme.textTheme.titleSmall?.fontWeight);
     expect(header.style?.color, theme.extension<AppColors>()!.onSurface);
+    // …followed by a rule running out to the edge, like a chapter divider.
+    final row = find.ancestor(
+        of: find.text('Some day'), matching: find.byType(Row)).first;
+    expect(find.descendant(of: row, matching: find.byType(Divider)),
+        findsOneWidget);
   });
 
   testWidgets('empty state when there are no rides', (tester) async {

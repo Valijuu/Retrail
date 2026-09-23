@@ -361,11 +361,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         // it matched the cards' own metadata line and got lost between them.
         return Padding(
           padding: const EdgeInsets.only(left: 4, top: 12, bottom: 4),
-          child: Text(label,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(color: colors.onSurface)),
+          child: Row(
+            children: [
+              Text(label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(color: colors.onSurface)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: colors.onSurfaceVariant.withValues(alpha: 0.3)),
+              ),
+            ],
+          ),
         );
       case RideEntryItem():
         final rideId = item.ride.rideId;
