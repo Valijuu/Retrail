@@ -40,4 +40,11 @@ void main() {
     await prefs.setThemeMode('light');
     expect(await future, ['system', 'light']);
   });
+
+  test('home stats period defaults to the week and persists a choice', () async {
+    final prefs = await build();
+    expect(await prefs.homeStatsPeriod.first, 'week');
+    await prefs.setHomeStatsPeriod('year');
+    expect(await prefs.homeStatsPeriod.first, 'year');
+  });
 }

@@ -30,6 +30,7 @@ void main() {
     List<RecentRideUi> recent = const [],
     List<RecentRideUi> favorites = const [],
     WeeklyStats weekly = const WeeklyStats.zero(),
+    WeeklyStats yearly = const WeeklyStats.zero(),
     Map<String, Object> prefs = const {},
   }) async {
     tester.view.physicalSize = const Size(400, 900);
@@ -53,7 +54,10 @@ void main() {
         if (tracking) isTrackingProvider.overrideWithValue(true),
         ...activeRideTestOverrides(env.db, recording: recording),
         ...homeStreamStubs(
-            recent: recent, favorites: favorites, weekly: weekly),
+            recent: recent,
+            favorites: favorites,
+            weekly: weekly,
+            yearly: yearly),
       ],
       child: const RetrailApp(),
     ));
@@ -92,6 +96,42 @@ void main() {
     expect(find.text('Morning roll'), findsOneWidget);
     expect(find.text('4.2 km'), findsOneWidget); // ride-card distance
     expect(find.text('12.5 km'), findsOneWidget); // weekly hero distance
+  });
+
+  testWidgets(
+      'tapping "This year" switches the stat row to the year and remembers it',
+      (tester) async {
+    await pumpHome(
+      tester,
+      weekly: const WeeklyStats(
+          totalKm: 5, rideCount: 3, avgSpeedKmh: 0, totalDurationSeconds: 0),
+      yearly: const WeeklyStats(
+          totalKm: 50, rideCount: 42, avgSpeedKmh: 0, totalDurationSeconds: 0),
+    );
+    expect(find.text('3'), findsOneWidget); // week by default
+
+    await tester.tap(find.text('This year'));
+    await _settle(tester);
+    expect(find.text('42'), findsOneWidget);
+    expect(find.text('3'), findsNothing);
+
+    final container =
+        ProviderScope.containerOf(tester.element(find.text('This year')));
+    final saved = await tester.runAsync(() => container
+        .read(preferencesRepositoryProvider)
+        .homeStatsPeriod
+        .first);
+    expect(saved, 'year');
+  });
+
+  testWidgets('a remembered period is restored on launch', (tester) async {
+    await pumpHome(
+      tester,
+      prefs: {'home_stats_period': 'year'},
+      yearly: const WeeklyStats(
+          totalKm: 50, rideCount: 42, avgSpeedKmh: 0, totalDurationSeconds: 0),
+    );
+    expect(find.text('42'), findsOneWidget);
   });
 
   testWidgets('Start tracking routes to the countdown timer', (tester) async {

@@ -6,26 +6,46 @@ import '../../core/theme/app_shapes.dart';
 import '../../domain/formatters.dart';
 import '../../domain/stats_aggregation.dart';
 import '../../l10n/app_localizations.dart';
+import 'home_providers.dart';
 
-/// "This week" hero card: week/day/year distances + week stats
-/// (Ø speed, ride count, duration). Mirrors the original `WeeklyHeroCard`.
+/// Hero card: week/day/year distances on top — each a tappable period, the
+/// [selected] one highlighted — and the selected period's stats below
+/// (Ø speed, ride count, duration). Based on the original `WeeklyHeroCard`,
+/// whose stat row was always the week without saying so.
 class WeeklyHeroCard extends StatelessWidget {
   const WeeklyHeroCard({
     super.key,
     required this.daily,
     required this.weekly,
     required this.yearly,
+    this.selected = StatsPeriod.week,
+    this.onSelect,
   });
 
   final WeeklyStats daily;
   final WeeklyStats weekly;
   final WeeklyStats yearly;
+  final StatsPeriod selected;
+  final ValueChanged<StatsPeriod>? onSelect;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final l10n = AppLocalizations.of(context);
     final nf = NumberFormat('0.0');
+    final stats = switch (selected) {
+      StatsPeriod.week => weekly,
+      StatsPeriod.day => daily,
+      StatsPeriod.year => yearly,
+    };
+    Widget column(StatsPeriod period, String label, WeeklyStats s) =>
+        _DistanceColumn(
+          label: label,
+          km: s.totalKm,
+          nf: nf,
+          selected: period == selected,
+          onTap: onSelect == null ? null : () => onSelect!(period),
+        );
 
     return Container(
       width: double.infinity,
@@ -38,9 +58,9 @@ class WeeklyHeroCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _DistanceColumn(label: l10n.homeWeekSection, km: weekly.totalKm, nf: nf),
-              _DistanceColumn(label: l10n.homeDaySection, km: daily.totalKm, nf: nf),
-              _DistanceColumn(label: l10n.homeYearSection, km: yearly.totalKm, nf: nf),
+              column(StatsPeriod.week, l10n.homeWeekSection, weekly),
+              column(StatsPeriod.day, l10n.homeDaySection, daily),
+              column(StatsPeriod.year, l10n.homeYearSection, yearly),
             ],
           ),
           const SizedBox(height: 14),
@@ -48,13 +68,13 @@ class WeeklyHeroCard extends StatelessWidget {
             children: [
               _StatCell(
                   label: l10n.statTempoKmh,
-                  value: 'Ø ${nf.format(weekly.avgSpeedKmh)}'),
+                  value: 'Ø ${nf.format(stats.avgSpeedKmh)}'),
               const SizedBox(width: 8),
-              _StatCell(label: l10n.statRides, value: '${weekly.rideCount}'),
+              _StatCell(label: l10n.statRides, value: '${stats.rideCount}'),
               const SizedBox(width: 8),
               _StatCell(
                   label: l10n.statDurationLabel,
-                  value: formatDuration(weekly.totalDurationSeconds * 1000)),
+                  value: formatDuration(stats.totalDurationSeconds * 1000)),
             ],
           ),
         ],
@@ -64,30 +84,65 @@ class WeeklyHeroCard extends StatelessWidget {
 }
 
 class _DistanceColumn extends StatelessWidget {
-  const _DistanceColumn({required this.label, required this.km, required this.nf});
+  const _DistanceColumn({
+    required this.label,
+    required this.km,
+    required this.nf,
+    required this.selected,
+    this.onTap,
+  });
   final String label;
   final double km;
   final NumberFormat nf;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  /// Unselected periods recede so the highlighted one reads as "these stats".
+  static const double _dimmedAlpha = 0.6;
+  static const double _highlightAlpha = 0.12;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     final text = Theme.of(context).textTheme;
+    final ink = colors.onPrimaryContainer;
     return Expanded(
-      child: Column(
-        children: [
-          Text(label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.labelSmall
-                  ?.copyWith(color: colors.onPrimaryContainer.withValues(alpha: 0.6))),
-          const SizedBox(height: 4),
-          Text('${nf.format(km)} km',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.titleMedium?.copyWith(
-                  color: colors.onPrimaryContainer, fontWeight: FontWeight.w500)),
-        ],
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppShapes.card,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: selected
+                  ? ink.withValues(alpha: _highlightAlpha)
+                  : Colors.transparent,
+              borderRadius: AppShapes.card,
+            ),
+            child: Column(
+              children: [
+                Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.labelSmall?.copyWith(
+                        color: ink.withValues(
+                            alpha: selected ? 0.85 : _dimmedAlpha))),
+                const SizedBox(height: 4),
+                Text('${nf.format(km)} km',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.titleMedium?.copyWith(
+                        color: selected
+                            ? ink
+                            : ink.withValues(alpha: _dimmedAlpha),
+                        fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -114,11 +169,17 @@ class _StatCell extends StatelessWidget {
                 style: text.labelSmall?.copyWith(
                     color: colors.onPrimaryContainer.withValues(alpha: 0.6))),
             const SizedBox(height: 4),
-            Text(value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: text.titleMedium?.copyWith(
-                    color: colors.onPrimaryContainer, fontWeight: FontWeight.w500)),
+            // Cross-fade when the period changes, so the switch is visible.
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: Text(value,
+                  key: ValueKey(value),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.titleMedium?.copyWith(
+                      color: colors.onPrimaryContainer,
+                      fontWeight: FontWeight.w500)),
+            ),
           ],
         ),
       ),

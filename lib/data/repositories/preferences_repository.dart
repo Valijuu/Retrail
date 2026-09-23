@@ -19,11 +19,13 @@ class PreferencesRepository {
   static const _kLastActivityType = 'last_activity_type';
   static const _kCurrentPhoto = 'current_profile_photo';
   static const _kRecentPhotos = 'profile_photos';
+  static const _kHomeStatsPeriod = 'home_stats_period';
 
   static const defaultUserName = 'Retrailer';
   static const defaultThemeMode = 'system';
   static const defaultLanguage = 'system';
   static const defaultActivityType = 'LONGBOARD';
+  static const defaultHomeStatsPeriod = 'week';
 
   /// Max number of recent profile photos kept.
   static const maxRecentPhotos = 5;
@@ -56,6 +58,15 @@ class PreferencesRepository {
   /// depend on a stream provider having emitted yet (issue #27).
   String get lastActivityTypeNow =>
       _prefs.getString(_kLastActivityType) ?? defaultActivityType;
+
+  /// Period the Home hero card's stat row shows: `week` | `day` | `year`.
+  Stream<String> get homeStatsPeriod => _watch(
+      () => _prefs.getString(_kHomeStatsPeriod) ?? defaultHomeStatsPeriod);
+
+  Future<void> setHomeStatsPeriod(String period) async {
+    await _prefs.setString(_kHomeStatsPeriod, period);
+    _notify();
+  }
 
   // ── Profile photo ────────────────────────────────────────────────────────
 

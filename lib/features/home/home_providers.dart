@@ -81,6 +81,16 @@ final lastActivityTypeProvider = StreamProvider<ActivityType>((ref) => ref
     .lastActivityType
     .map((id) => ActivityType.fromId(id) ?? ActivityType.defaultType));
 
+/// Which period the Home hero card's stat row (Ø speed, rides, duration)
+/// summarises — picked by tapping the week / day / year column (the original
+/// only ever showed the week, with nothing saying so).
+enum StatsPeriod { week, day, year }
+
+final homeStatsPeriodProvider = StreamProvider<StatsPeriod>((ref) => ref
+    .watch(preferencesRepositoryProvider)
+    .homeStatsPeriod
+    .map((id) => StatsPeriod.values.asNameMap()[id] ?? StatsPeriod.week));
+
 final userNameProvider = StreamProvider<String>(
     (ref) => ref.watch(preferencesRepositoryProvider).userName);
 
@@ -101,6 +111,10 @@ class HomeController {
     _ref.read(rideTrackerProvider).setPendingActivityType(type.id);
     prefs.saveLastActivityType(type.id);
   }
+
+  void selectStatsPeriod(StatsPeriod period) => _ref
+      .read(preferencesRepositoryProvider)
+      .setHomeStatsPeriod(period.name);
 }
 
 final homeControllerProvider = Provider<HomeController>(HomeController.new);

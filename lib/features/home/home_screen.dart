@@ -130,6 +130,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ref.watch(dailyStatsProvider).asData?.value ?? const WeeklyStats.zero();
     final yearly =
         ref.watch(yearlyStatsProvider).asData?.value ?? const WeeklyStats.zero();
+    final statsPeriod =
+        ref.watch(homeStatsPeriodProvider).asData?.value ?? StatsPeriod.week;
     final recent = ref.watch(recentRidesProvider).asData?.value ?? const [];
     final favorites = ref.watch(favoriteRidesProvider).asData?.value ?? const [];
     // Keep connectivity subscribed while Home is up, so the Start tap reads a
@@ -156,7 +158,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onAvatarTap: widget.onAvatarTap,
                     ),
                     const SizedBox(height: 16),
-                    WeeklyHeroCard(daily: daily, weekly: weekly, yearly: yearly),
+                    WeeklyHeroCard(
+                      daily: daily,
+                      weekly: weekly,
+                      yearly: yearly,
+                      selected: statsPeriod,
+                      onSelect: ref.read(homeControllerProvider).selectStatsPeriod,
+                    ),
                     const SizedBox(height: 16),
                     _SectionLabel(l10n.sectionRecentRides),
                     const SizedBox(height: 8),
