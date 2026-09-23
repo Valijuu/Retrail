@@ -164,6 +164,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Future<void> _openFilters() => showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        useSafeArea: true,
         backgroundColor:
             Theme.of(context).extension<AppColors>()!.surface,
         builder: (_) => const HistoryFilterSheet(),

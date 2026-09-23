@@ -189,6 +189,30 @@ void main() {
   });
 
   testWidgets(
+      'the filter sheet never grows above the top safe area, even once '
+      'selecting both period chips wraps PERIOD onto another line '
+      '(regression: showModalBottomSheet needs useSafeArea)', (tester) async {
+    await pump(tester, [_entry(1)]);
+
+    // Simulate a phone status bar / notch after the initial pump (which
+    // hard-codes its own physicalSize) — a real device always has this.
+    tester.view.padding = const FakeViewPadding(top: 40);
+    addTearDown(tester.view.resetPadding);
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.filter_list));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('This week'));
+    await tester.pump();
+    await tester.tap(find.text('This month'));
+    await tester.pumpAndSettle();
+
+    final sheetTop = tester.getTopLeft(find.text('Filter')).dy;
+    expect(sheetTop, greaterThanOrEqualTo(40));
+  });
+
+  testWidgets(
       'pre-warms previews for listed rides as soon as items load — '
       'not only when their card scrolls into view', (tester) async {
     final spy = WarmSpyCache();
