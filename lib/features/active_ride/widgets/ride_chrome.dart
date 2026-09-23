@@ -108,6 +108,8 @@ class RideWarningBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // editActionText (#92400E) is the original banner amber — no new hex.
+    // Text takes its paired editActionBg: fixed white was unreadable on the
+    // light amber the dark theme uses for the fill.
     final colors = Theme.of(context).extension<AppColors>()!;
     return GestureDetector(
       onTap: onTap,
@@ -121,7 +123,7 @@ class RideWarningBanner extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .labelSmall
-                ?.copyWith(color: Colors.white)),
+                ?.copyWith(color: colors.editActionBg)),
       ),
     );
   }
