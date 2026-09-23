@@ -120,6 +120,13 @@ void main() {
       );
       addTearDown(container.dispose);
 
+      // The ride is saved under a fixed 2023-era fake wall clock (`wallMs`),
+      // but the history filter now defaults to the REAL current calendar
+      // year (see `HistoryFilterNotifier`) — switch to "All years" so this
+      // pipeline test doesn't depend on which real year it happens to run
+      // in.
+      container.read(historyFilterProvider.notifier).setYear(null);
+
       // Keep the provider subscribed so its Drift stream stays active while we
       // await the first emission.
       final sub = container.listen(historyItemsProvider, (_, _) {});
