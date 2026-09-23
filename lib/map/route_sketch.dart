@@ -16,11 +16,13 @@ List<PreviewOffset> sketchOffsets(List<RoutePoint> points, double w, double h) {
   final maxLat = lats.reduce(math.max);
   final minLng = lngs.reduce(math.min);
   final maxLng = lngs.reduce(math.max);
-  final latRange = math.max(maxLat - minLat, 0.0001);
-  final lngRange = math.max(maxLng - minLng, 0.0001);
-  final scale = math.min(w / lngRange, h / latRange);
-  final padX = (w - lngRange * scale) / 2;
-  final padY = (h - latRange * scale) / 2;
+  // The floor only bounds the SCALE for a degenerate extent (a single point,
+  // a due N–S / E–W line); centring uses the real extent, otherwise such a
+  // route was pinned to the box's top/left edge (issue #31).
+  final scale = math.min(w / math.max(maxLng - minLng, 0.0001),
+      h / math.max(maxLat - minLat, 0.0001));
+  final padX = (w - (maxLng - minLng) * scale) / 2;
+  final padY = (h - (maxLat - minLat) * scale) / 2;
   return [
     for (final p in points)
       (x: padX + (p.lng - minLng) * scale, y: padY + (maxLat - p.lat) * scale),
