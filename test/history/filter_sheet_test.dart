@@ -40,10 +40,16 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('shows a YEAR section with "All years" + the available years',
+  testWidgets('shows a YEAR section with "All years" among the dropdown options',
       (tester) async {
     await pump(tester);
     expect(find.text('YEAR'), findsOneWidget);
+
+    // The closed pill now shows the selected value (the current-year
+    // default, see HistoryFilterNotifier) — "All years" is one of the
+    // options, found once the menu is opened, not in the closed state.
+    await tester.tap(find.byType(PillDropdown<int?>));
+    await tester.pumpAndSettle();
     expect(find.text('All years'), findsOneWidget);
   });
 
@@ -59,11 +65,46 @@ void main() {
     expect(container.read(historyFilterProvider).year, 2023);
   });
 
-  testWidgets('week/month period chips stay visible with no year filter',
-      (tester) async {
+  testWidgets(
+      'week/month period chips stay visible by default (current year, no '
+      'month range)', (tester) async {
     await pump(tester);
     expect(find.text('This week'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
+  });
+
+  testWidgets('period chips are hidden when "All years" is explicitly selected',
+      (tester) async {
+    await pump(tester);
+    container.read(historyFilterProvider.notifier).setYear(null);
+    await tester.pump();
+    expect(find.text('This week'), findsNothing);
+    expect(find.text('This month'), findsNothing);
+  });
+
+  testWidgets('period chips stay visible when Von=Bis=the current month',
+      (tester) async {
+    final now = DateTime.now();
+    await pump(tester, years: [now.year]);
+    final notifier = container.read(historyFilterProvider.notifier);
+    notifier.setMonthFrom(now.month);
+    notifier.setMonthTo(now.month);
+    await tester.pump();
+    expect(find.text('This week'), findsOneWidget);
+    expect(find.text('This month'), findsOneWidget);
+  });
+
+  testWidgets(
+      'period chips are hidden once the month range is narrowed to anything '
+      'other than the current month', (tester) async {
+    final now = DateTime.now();
+    await pump(tester, years: [now.year]);
+    // Setting only monthFrom already breaks "both null or both == current
+    // month" — monthTo stays null, neither side of the rule is satisfied.
+    container.read(historyFilterProvider.notifier).setMonthFrom(now.month);
+    await tester.pump();
+    expect(find.text('This week'), findsNothing);
+    expect(find.text('This month'), findsNothing);
   });
 
   testWidgets(
@@ -117,22 +158,25 @@ void main() {
     expect(find.text('This month'), findsOneWidget);
   });
 
-  testWidgets('Von/Bis month-range dropdowns are hidden with no year selected',
-      (tester) async {
+  testWidgets(
+      'Von/Bis month-range dropdowns are visible by default (current-year '
+      'default)', (tester) async {
     await pump(tester);
-    expect(find.text('MONTH RANGE'), findsNothing);
-  });
-
-  testWidgets('Von/Bis month-range dropdowns appear once a year is selected',
-      (tester) async {
-    await pump(tester);
-    container.read(historyFilterProvider.notifier).setYear(2023);
-    await tester.pump();
 
     expect(find.text('MONTH RANGE'), findsOneWidget);
     // Year dropdown + Von + Bis = 3 PillDropdown<...> instances.
     expect(find.byType(PillDropdown<int?>), findsOneWidget);
     expect(find.byType(PillDropdown<int>), findsNWidgets(2));
+  });
+
+  testWidgets(
+      'Von/Bis month-range dropdowns are hidden once "All years" is '
+      'explicitly selected', (tester) async {
+    await pump(tester);
+    container.read(historyFilterProvider.notifier).setYear(null);
+    await tester.pump();
+
+    expect(find.text('MONTH RANGE'), findsNothing);
   });
 
   testWidgets(

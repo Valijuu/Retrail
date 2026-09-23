@@ -28,13 +28,24 @@ class HistoryFilterSheet extends ConsumerWidget {
     final availableYears = ref.watch(yearPickerItemsProvider);
     final locale = ref.watch(dateFormatLocaleProvider);
 
-    // A past/future year already fixes the window to that whole calendar
-    // year (see `effectiveRange`) — the week/month chips are relative to
-    // "now" and would be misleading, so hide them. ("This year" as its own
-    // chip is gone — selecting the current year in the dropdown above does
-    // the same job.)
+    // The week/month chips are relative to "now" — they only combine
+    // sensibly with the Von/Bis month range (see `effectiveRange`) when that
+    // range still includes "now": either untouched (null/null) or narrowed
+    // down to exactly the current month. Any other combination either
+    // yields an empty result (e.g. Von=Bis=January while "now" is in
+    // September — the chip and the range don't overlap at all) or silently
+    // overrides part of the range (e.g. Von=August, Bis=September — a chip
+    // tap would make the August portion of the selection ineffective without
+    // saying so). So the chips only show for the current year AND a
+    // conflict-free month range — not for "All years" or any other year,
+    // and not for any other month-range value (including an explicit
+    // January–December that happens to equal the default).
+    final now = DateTime.now();
+    final hasConflictFreeMonthRange =
+        (filter.monthFrom == null && filter.monthTo == null) ||
+            (filter.monthFrom == now.month && filter.monthTo == now.month);
     final showPeriodChips =
-        filter.year == null || filter.year == DateTime.now().year;
+        filter.year == now.year && hasConflictFreeMonthRange;
     // The Von/Bis month range only means anything within one selected year
     // (see `HistoryFilter.monthFrom`) — unlike the period chips above, it
     // stays available for a past/future year too, not just the current one.
