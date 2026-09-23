@@ -40,10 +40,12 @@ class HistoryFilter {
   /// Selected calendar year, or `null` for "All years" (unrestricted).
   final int? year;
 
-  /// Start/end month (1-12, inclusive) of the month-range filter within
-  /// [year]. `null` on either side means "no restriction on that side" (the
-  /// dropdown shows January/December respectively). Only meaningful when
-  /// [year] is set.
+  /// Start/end month (1-12, inclusive) of the month-range filter. `null` on
+  /// either side means "no restriction on that side" (the dropdown shows
+  /// January/December respectively). With [year] set, restricts to that
+  /// month range within that one year; with [year] `null` ("All years"), it
+  /// becomes a cross-year filter — e.g. March–May matches every March
+  /// through May, in every year (see `monthOfYearInRange`).
   final int? monthFrom;
   final int? monthTo;
 

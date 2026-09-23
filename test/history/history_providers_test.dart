@@ -78,7 +78,8 @@ void main() {
       expect(c.read(historyFilterProvider).sort, SortOrder.distance);
     });
 
-    test('setYear clears a previously set month range', () {
+    test('setYear keeps a previously set month range (a month means the '
+        'same thing regardless of year)', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final notifier = c.read(historyFilterProvider.notifier);
@@ -86,11 +87,12 @@ void main() {
       notifier.setMonthFrom(6);
       notifier.setMonthTo(8);
       notifier.setYear(2024);
-      expect(c.read(historyFilterProvider).monthFrom, isNull);
-      expect(c.read(historyFilterProvider).monthTo, isNull);
+      expect(c.read(historyFilterProvider).monthFrom, 6);
+      expect(c.read(historyFilterProvider).monthTo, 8);
     });
 
-    test('setYear(null) also clears a previously set month range', () {
+    test('setYear(null) ("All years") also keeps a previously set month '
+        'range — it becomes the cross-year filter', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final notifier = c.read(historyFilterProvider.notifier);
@@ -98,8 +100,8 @@ void main() {
       notifier.setMonthFrom(6);
       notifier.setMonthTo(8);
       notifier.setYear(null);
-      expect(c.read(historyFilterProvider).monthFrom, isNull);
-      expect(c.read(historyFilterProvider).monthTo, isNull);
+      expect(c.read(historyFilterProvider).monthFrom, 6);
+      expect(c.read(historyFilterProvider).monthTo, 8);
     });
   });
 

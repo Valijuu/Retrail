@@ -170,13 +170,16 @@ void main() {
   });
 
   testWidgets(
-      'Von/Bis month-range dropdowns are hidden once "All years" is '
-      'explicitly selected', (tester) async {
+      'Von/Bis month-range dropdowns stay visible once "All years" is '
+      'explicitly selected (they become a cross-year "these months, every '
+      'year" filter)', (tester) async {
     await pump(tester);
     container.read(historyFilterProvider.notifier).setYear(null);
     await tester.pump();
 
-    expect(find.text('MONTH RANGE'), findsNothing);
+    expect(find.text('MONTH RANGE'), findsOneWidget);
+    expect(find.byType(PillDropdown<int?>), findsOneWidget);
+    expect(find.byType(PillDropdown<int>), findsNWidgets(2));
   });
 
   testWidgets(
@@ -202,8 +205,9 @@ void main() {
     expect(find.text('MONTH RANGE'), findsOneWidget);
   });
 
-  testWidgets('Von/Bis month-range dropdowns disappear back at "All years"',
-      (tester) async {
+  testWidgets(
+      'Von/Bis month-range dropdowns stay visible across every year '
+      'selection, including switching back to "All years"', (tester) async {
     await pump(tester);
     final notifier = container.read(historyFilterProvider.notifier);
     notifier.setYear(2023);
@@ -212,7 +216,24 @@ void main() {
 
     notifier.setYear(null);
     await tester.pump();
-    expect(find.text('MONTH RANGE'), findsNothing);
+    expect(find.text('MONTH RANGE'), findsOneWidget);
+  });
+
+  testWidgets(
+      'there is still visible spacing before SORT BY once period chips are '
+      'hidden (padding regression: the pre-SORT-BY spacer used to live '
+      'inside the now-conditionally-hidden period chips block)',
+      (tester) async {
+    await pump(tester);
+    container.read(historyFilterProvider.notifier).setYear(null);
+    await tester.pump();
+    expect(find.text('This week'), findsNothing); // chips are hidden here
+
+    final sortLabelTop = tester.getTopLeft(find.text('SORT BY')).dy;
+    final monthRangeBottom =
+        tester.getBottomLeft(find.byType(PillDropdown<int>).last).dy;
+
+    expect(sortLabelTop - monthRangeBottom, greaterThanOrEqualTo(20));
   });
 
   testWidgets('selecting a "Von" month updates historyFilterProvider.monthFrom',
@@ -229,8 +250,9 @@ void main() {
     expect(container.read(historyFilterProvider).monthFrom, 6);
   });
 
-  testWidgets('a year change resets a previously chosen month range back to '
-      'January/December', (tester) async {
+  testWidgets(
+      'a year change keeps a previously chosen month range (a month means '
+      'the same thing regardless of year)', (tester) async {
     await pump(tester, years: [2023, 2024]);
     final notifier = container.read(historyFilterProvider.notifier);
     notifier.setYear(2023);
@@ -238,12 +260,12 @@ void main() {
     notifier.setMonthTo(8);
     await tester.pump();
     expect(find.text('June'), findsOneWidget);
+    expect(find.text('August'), findsOneWidget);
 
     notifier.setYear(2024);
     await tester.pump();
 
-    expect(find.text('June'), findsNothing);
-    expect(find.text('January'), findsOneWidget);
-    expect(find.text('December'), findsOneWidget);
+    expect(find.text('June'), findsOneWidget);
+    expect(find.text('August'), findsOneWidget);
   });
 }

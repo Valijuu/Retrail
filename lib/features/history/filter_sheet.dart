@@ -46,10 +46,6 @@ class HistoryFilterSheet extends ConsumerWidget {
             (filter.monthFrom == now.month && filter.monthTo == now.month);
     final showPeriodChips =
         filter.year == now.year && hasConflictFreeMonthRange;
-    // The Von/Bis month range only means anything within one selected year
-    // (see `HistoryFilter.monthFrom`) — unlike the period chips above, it
-    // stays available for a past/future year too, not just the current one.
-    final showMonthRange = filter.year != null;
     final periods = showPeriodChips
         ? <(String, TimePeriod)>[
             (l10n.periodThisWeek, TimePeriod.thisWeek),
@@ -94,32 +90,30 @@ class HistoryFilterSheet extends ConsumerWidget {
               itemLabel: (year) => year == null ? l10n.historyYearAll : '$year',
               onChanged: notifier.setYear,
             ),
-            if (showMonthRange) ...[
-              const SizedBox(height: 20),
-              _SectionLabel(l10n.historySectionMonthRange),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MonthRangeDropdown(
-                      label: l10n.historyMonthFromLabel,
-                      value: filter.monthFrom ?? 1,
-                      locale: locale,
-                      onChanged: notifier.setMonthFrom,
-                    ),
+            const SizedBox(height: 20),
+            _SectionLabel(l10n.historySectionMonthRange),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _MonthRangeDropdown(
+                    label: l10n.historyMonthFromLabel,
+                    value: filter.monthFrom ?? 1,
+                    locale: locale,
+                    onChanged: notifier.setMonthFrom,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _MonthRangeDropdown(
-                      label: l10n.historyMonthToLabel,
-                      value: filter.monthTo ?? 12,
-                      locale: locale,
-                      onChanged: notifier.setMonthTo,
-                    ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _MonthRangeDropdown(
+                    label: l10n.historyMonthToLabel,
+                    value: filter.monthTo ?? 12,
+                    locale: locale,
+                    onChanged: notifier.setMonthTo,
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
             if (showPeriodChips) ...[
               const SizedBox(height: 20),
               _SectionLabel(l10n.historySectionPeriod),
@@ -142,8 +136,8 @@ class HistoryFilterSheet extends ConsumerWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
             ],
+            const SizedBox(height: 20),
             _SectionLabel(l10n.historySectionSort),
             const SizedBox(height: 8),
             Wrap(

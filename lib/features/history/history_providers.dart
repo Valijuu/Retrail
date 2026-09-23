@@ -48,13 +48,11 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   void clearActivities() => state = state.copyWith(activities: const {});
 
   /// Sets the selected calendar year, or resets to "All years" for `null`.
-  /// Also clears any month range (it's only meaningful within one year — see
-  /// [HistoryFilter.monthFrom]), so a year change never leaves a filter the
-  /// UI doesn't show active.
-  void setYear(int? year) => state = (year == null
-          ? state.copyWith(clearYear: true)
-          : state.copyWith(year: year))
-      .copyWith(clearMonthFrom: true, clearMonthTo: true);
+  /// Leaves any month range untouched — a month means the same thing
+  /// regardless of year (or "All years"), see [HistoryFilter.monthFrom].
+  void setYear(int? year) => state = year == null
+      ? state.copyWith(clearYear: true)
+      : state.copyWith(year: year);
 
   /// Sets the month-range start. Pulls [HistoryFilter.monthTo] up to match if
   /// it would otherwise fall before the new start (Von/Bis range picker UX).

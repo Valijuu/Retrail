@@ -7,9 +7,14 @@ import 'history_filter.dart';
 ///
 /// - `f.year == null` → the existing union-of-periods logic: the earliest
 ///   selected period's start, with an open (`null`) end. Empty `periods`
-///   means no restriction at all. The month range is only meaningful within
-///   one selected year (see [HistoryFilter.monthFrom]), so it's ignored here
-///   too — the UI never shows it without a year selected either.
+///   means no restriction at all. The month range is deliberately ignored
+///   here too — NOT because it's meaningless at "All years" (it becomes a
+///   cross-year "these months, every year" filter, see
+///   [HistoryFilter.monthFrom]), but because that can't be expressed as a
+///   single `(start, end)` window the way this function returns. That
+///   restriction is applied later, in `buildHistoryItems` (in-memory, via
+///   `monthOfYearInRange`), over whatever this unrestricted-by-month fetch
+///   returns.
 /// - `f.year` set, month range set (`monthFrom`/`monthTo` non-null) →
 ///   [monthRangeBounds] for that year, defaulting the unset side to
 ///   Jan/Dec. On the current year with periods also selected, this narrows
