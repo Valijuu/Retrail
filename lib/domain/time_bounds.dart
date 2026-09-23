@@ -1,7 +1,9 @@
 /// Inclusive `(start, end)` epoch-millisecond bounds, computed in the device's
 /// local timezone. `now` is injectable for deterministic tests where a
-/// function derives its window from "now" (all but [monthRangeBounds], whose
-/// window is fully specified by its `year`/`monthFrom`/`monthTo` arguments).
+/// function derives its window from "now" (all but [monthRangeBounds] and
+/// [monthOfYearInRange], whose result is fully specified by their own
+/// arguments — the latter also isn't a [Bounds] at all, but a predicate over
+/// a single timestamp).
 typedef Bounds = (int start, int end);
 
 int _nowMs(int? nowMs) => nowMs ?? DateTime.now().millisecondsSinceEpoch;
@@ -47,11 +49,28 @@ Bounds monthRangeBounds(
   return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
 }
 
+/// Whether [epochMs]'s local calendar month falls within the inclusive
+/// `[monthFrom, monthTo]` range (1-12). A missing bound defaults to the
+/// respective end of the year ([monthFrom] → 1, [monthTo] → 12). Used for the
+/// cross-year month filter (e.g. "March–May, every year" with no year
+/// selected — see `HistoryFilter.monthFrom`).
+///
+/// Caller guarantees `1 <= monthFrom <= monthTo <= 12` when both are given
+/// (mirrors [monthRangeBounds]'s invariant) — an inverted range (e.g.
+/// `monthFrom: 11, monthTo: 2` for "Nov–Feb") does NOT wrap across year-end;
+/// it matches no month at all, since `month >= 11 && month <= 2` is never
+/// true.
+bool monthOfYearInRange(int epochMs, {int? monthFrom, int? monthTo}) {
+  final month = DateTime.fromMillisecondsSinceEpoch(epochMs).month;
+  return month >= (monthFrom ?? DateTime.january) &&
+      month <= (monthTo ?? DateTime.december);
+}
+
 /// Jan 1 00:00:00.000 of the specified or current year → Dec 31 23:59:59.999 (local).
 Bounds yearBounds({int? year, int? nowMs}) {
   final now = DateTime.fromMillisecondsSinceEpoch(_nowMs(nowMs));
   final selectedYear = year ?? now.year;
-  final start = DateTime(selectedYear, 1, 1);
-  final endExclusive = DateTime(selectedYear + 1, 1, 1);
+  final start = DateTime(selectedYear, DateTime.january, 1);
+  final endExclusive = DateTime(selectedYear + 1, DateTime.january, 1);
   return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
 }

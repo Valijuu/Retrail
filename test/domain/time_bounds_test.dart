@@ -129,4 +129,93 @@ void main() {
     expect(monthRangeBounds(year: 2024, monthFrom: 1, monthTo: 12),
         yearBounds(year: 2024));
   });
+
+  test('monthOfYearInRange: month exactly on the lower bound (monthFrom) → true',
+      () {
+    final ms = DateTime(2024, 5, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(ms, monthFrom: 5, monthTo: 8), isTrue);
+  });
+
+  test('monthOfYearInRange: month exactly on the upper bound (monthTo) → true',
+      () {
+    final ms = DateTime(2024, 8, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(ms, monthFrom: 5, monthTo: 8), isTrue);
+  });
+
+  test('monthOfYearInRange: month strictly inside the range → true', () {
+    final ms = DateTime(2024, 6, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(ms, monthFrom: 5, monthTo: 8), isTrue);
+  });
+
+  test('monthOfYearInRange: month before monthFrom → false',
+      () {
+    final ms = DateTime(2024, 3, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(ms, monthFrom: 5, monthTo: 8), isFalse);
+  });
+
+  test('monthOfYearInRange: month after monthTo → false', () {
+    final ms = DateTime(2024, 10, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(ms, monthFrom: 5, monthTo: 8), isFalse);
+  });
+
+  test('monthOfYearInRange: both bounds null → always true (unrestricted, whole year)',
+      () {
+    for (final month in [1, 6, 12]) {
+      final ms = DateTime(2024, month, 15).millisecondsSinceEpoch;
+      expect(monthOfYearInRange(ms), isTrue);
+    }
+  });
+
+  test('monthOfYearInRange: only monthFrom set (monthTo defaults to December)',
+      () {
+    final beforeFrom = DateTime(2024, 4, 15).millisecondsSinceEpoch;
+    final afterFrom = DateTime(2024, 12, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(beforeFrom, monthFrom: 5), isFalse);
+    expect(monthOfYearInRange(afterFrom, monthFrom: 5), isTrue);
+  });
+
+  test('monthOfYearInRange: only monthTo set (monthFrom defaults to January)',
+      () {
+    final beforeTo = DateTime(2024, 1, 15).millisecondsSinceEpoch;
+    final afterTo = DateTime(2024, 9, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(beforeTo, monthTo: 8), isTrue);
+    expect(monthOfYearInRange(afterTo, monthTo: 8), isFalse);
+  });
+
+  test('monthOfYearInRange: single-month range (monthFrom == monthTo) matches only that month',
+      () {
+    final theMonth = DateTime(2024, 6, 15).millisecondsSinceEpoch;
+    final otherMonth = DateTime(2024, 7, 15).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(theMonth, monthFrom: 6, monthTo: 6), isTrue);
+    expect(monthOfYearInRange(otherMonth, monthFrom: 6, monthTo: 6), isFalse);
+  });
+
+  test('monthOfYearInRange: matches the same month across different years '
+      '(year-independent — the whole point of the cross-year filter)', () {
+    for (final year in [2019, 2024, 2031]) {
+      final ms = DateTime(year, 3, 15).millisecondsSinceEpoch;
+      expect(monthOfYearInRange(ms, monthFrom: 3, monthTo: 5), isTrue,
+          reason: 'March $year should match monthFrom:3, monthTo:5');
+    }
+  });
+
+  test('monthOfYearInRange: month boundary instants (discriminates local vs. '
+      'UTC — the doc comment promises the LOCAL calendar month)', () {
+    final lastInstantOfMay =
+        DateTime(2024, 5, 31, 23, 59, 59, 999).millisecondsSinceEpoch;
+    final firstInstantOfJune = DateTime(2024, 6, 1).millisecondsSinceEpoch;
+    expect(monthOfYearInRange(lastInstantOfMay, monthFrom: 6, monthTo: 6),
+        isFalse);
+    expect(monthOfYearInRange(firstInstantOfJune, monthFrom: 6, monthTo: 6),
+        isTrue);
+  });
+
+  test('monthOfYearInRange: an inverted range (monthFrom > monthTo) matches '
+      'no month — no wrap-around across year-end', () {
+    for (final month in [1, 6, 11, 12]) {
+      final ms = DateTime(2024, month, 15).millisecondsSinceEpoch;
+      expect(monthOfYearInRange(ms, monthFrom: 11, monthTo: 2), isFalse,
+          reason: 'month $month with an inverted 11..2 range should not match');
+    }
+  });
 }
