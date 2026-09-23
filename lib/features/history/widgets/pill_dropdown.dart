@@ -26,6 +26,12 @@ class PillDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
+    // The selected-item highlight intentionally uses the M3 ColorScheme's
+    // secondaryContainer/onSecondaryContainer, not the AppColors token set —
+    // it matches the color Flutter renders for a selected FilterChip in this
+    // sheet (none of them set an explicit selectedColor), keeping the
+    // "selected" look consistent between chips and dropdown menus.
+    final colorScheme = Theme.of(context).colorScheme;
     final itemStyle =
         Theme.of(context).textTheme.bodyLarge?.copyWith(color: colors.onSurface);
 
@@ -62,12 +68,12 @@ class PillDropdown<T> extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: colors.primaryContainer,
+                          color: colorScheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(_highlightRadius),
                         ),
                         child: Text(itemLabel(item),
                             style: itemStyle?.copyWith(
-                                color: colors.onPrimaryContainer)),
+                                color: colorScheme.onSecondaryContainer)),
                       )
                     : Text(itemLabel(item), style: itemStyle),
               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/features/history/widgets/pill_dropdown.dart';
 
@@ -46,18 +45,21 @@ void main() {
     expect(find.text('Item 3'), findsOneWidget);
   });
 
-  testWidgets('the selected item is wrapped in a primaryContainer highlight',
-      (tester) async {
+  testWidgets(
+      'the selected item is wrapped in a secondaryContainer highlight '
+      '(matches the FilterChip selected-state color used elsewhere in the '
+      'filter sheet)', (tester) async {
     await pump(tester, value: 2);
     await tester.tap(find.byType(DropdownButton<int>));
     await tester.pumpAndSettle();
 
-    final colors = AppColors.light;
+    final secondaryContainer =
+        buildTheme(Brightness.light).colorScheme.secondaryContainer;
     final highlighted = find.ancestor(
       of: find.text('Item 2').last,
       matching: find.byWidgetPredicate((w) =>
           w is Container &&
-          (w.decoration as BoxDecoration?)?.color == colors.primaryContainer),
+          (w.decoration as BoxDecoration?)?.color == secondaryContainer),
     );
     expect(highlighted, findsOneWidget);
   });
@@ -67,12 +69,13 @@ void main() {
     await tester.tap(find.byType(DropdownButton<int>));
     await tester.pumpAndSettle();
 
-    final colors = AppColors.light;
+    final secondaryContainer =
+        buildTheme(Brightness.light).colorScheme.secondaryContainer;
     final highlighted = find.ancestor(
       of: find.text('Item 3').last,
       matching: find.byWidgetPredicate((w) =>
           w is Container &&
-          (w.decoration as BoxDecoration?)?.color == colors.primaryContainer),
+          (w.decoration as BoxDecoration?)?.color == secondaryContainer),
     );
     expect(highlighted, findsNothing);
   });
