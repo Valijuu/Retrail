@@ -91,6 +91,10 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
     });
   }
 
+  /// Rides whose row was opened but never stamped with an end time.
+  Future<List<Ride>> getUnfinished() =>
+      (select(rides)..where((r) => r.endTime.isNull())).get();
+
   Future<void> updateEndTime(int rideId, int endTime) =>
       (update(rides)..where((r) => r.rideId.equals(rideId)))
           .write(RidesCompanion(endTime: Value(endTime)));

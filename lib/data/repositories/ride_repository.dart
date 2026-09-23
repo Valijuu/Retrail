@@ -86,6 +86,28 @@ class RideRepository {
   Future<void> updateFavorite(int rideId, bool isFavorite) =>
       _dao.updateFavorite(rideId, isFavorite, isFavorite ? _now() : null);
 
+  /// Repairs rides left open by a recording that never ended — the process
+  /// was killed mid-ride (OS, force-stop, reinstall), so no stop ever stamped
+  /// an endTime (issue #26). Those rows were invisible in every list (which
+  /// only show finished rides) yet still counted in Home's stats. Call only
+  /// while no ride can be recording, i.e. at app start: a ride with
+  /// trackpoints is closed at its last fix (keeping what was recorded), one
+  /// without any is deleted — there is nothing to keep.
+  Future<void> finalizeUnfinishedRides() async {
+    for (final ride in await _dao.getUnfinished()) {
+      final rwt = await _dao.getRideWithTrackpointsById(ride.rideId).first;
+      final points = rwt?.trackpoints ?? const [];
+      if (points.isEmpty) {
+        await _dao.deleteById(ride.rideId);
+      } else {
+        final lastFix = points
+            .map((tp) => tp.timestamp)
+            .reduce((a, b) => a > b ? a : b);
+        await updateEndTime(ride.rideId, lastFix);
+      }
+    }
+  }
+
   Future<void> deleteById(int rideId) => _dao.deleteById(rideId);
 
   Future<void> deleteByIds(List<int> rideIds) => _dao.deleteByIds(rideIds);

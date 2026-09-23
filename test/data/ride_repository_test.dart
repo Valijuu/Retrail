@@ -67,4 +67,39 @@ void main() {
     expect(r.maxSpeedKmh, 0);
     expect(r.hasRoute, isFalse);
   });
+
+  group('finalizeUnfinishedRides (issue #26)', () {
+    test('closes an orphaned ride at its last trackpoint and caches its stats',
+        () async {
+      final id = await repo.startRide(startedAtMs: 0);
+      await db.trackpointDao.insertAll([
+        TrackpointsCompanion.insert(rideId: id, latitude: 0, longitude: 0, timestamp: 0),
+        TrackpointsCompanion.insert(rideId: id, latitude: 0, longitude: 0, timestamp: 5000),
+      ]);
+
+      await repo.finalizeUnfinishedRides();
+
+      final r = await repo.getById(id).first;
+      expect(r!.endTime, 5000);
+      expect(r.distanceMetres, 100);
+      expect(r.hasRoute, isTrue);
+    });
+
+    test('deletes an orphaned ride that never recorded a trackpoint', () async {
+      final id = await repo.startRide(startedAtMs: 0);
+
+      await repo.finalizeUnfinishedRides();
+
+      expect(await repo.getById(id).first, isNull);
+    });
+
+    test('leaves finished rides untouched', () async {
+      final id = await repo.startRide(startedAtMs: 0);
+      await repo.updateEndTime(id, 7000);
+
+      await repo.finalizeUnfinishedRides();
+
+      expect((await repo.getById(id).first)!.endTime, 7000);
+    });
+  });
 }

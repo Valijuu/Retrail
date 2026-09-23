@@ -56,6 +56,10 @@ Future<void> main() async {
     channelName: container.read(rideNotificationCopyProvider).channelName,
   );
 
+  // A fresh isolate can't be recording yet, so any ride still missing its end
+  // time was cut off by a killed process — close or drop it (issue #26).
+  await container.read(rideRepositoryProvider).finalizeUnfinishedRides();
+
   // Relay recording-notification interactions (which arrive on the main isolate
   // via sendDataToMain) to the recording controller / deep-link.
   FlutterForegroundTask.addTaskDataCallback((data) {
