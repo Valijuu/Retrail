@@ -46,8 +46,6 @@
   "offlineTrackingTitle": "You're offline",
   "offlineTrackingBody": "The map won't load tiles, but your ride still records. Start anyway?",
   "offlineTrackingConfirm": "Start anyway",
-  "permissionLocationTitle": "Location needed",
-  "permissionLocationBody": "Retrail needs location access to record your rides.",
   "a11yNavigateToStart": "Navigate to start",
 
   "timerGetReady": "GET READY",

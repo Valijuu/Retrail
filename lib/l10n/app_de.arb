@@ -45,8 +45,6 @@
   "offlineTrackingTitle": "Du bist offline",
   "offlineTrackingBody": "Die Karte lädt keine Kacheln, aber deine Fahrt wird trotzdem aufgezeichnet. Trotzdem starten?",
   "offlineTrackingConfirm": "Trotzdem starten",
-  "permissionLocationTitle": "Standort benötigt",
-  "permissionLocationBody": "Retrail braucht Standortzugriff, um deine Fahrten aufzuzeichnen.",
   "a11yNavigateToStart": "Zum Start navigieren",
 
   "timerGetReady": "FERTIG MACHEN",
