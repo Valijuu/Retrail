@@ -4,6 +4,16 @@ import 'package:intl/intl.dart';
 // `locale`, that locale's data must be initialized first via
 // `initializeDateFormatting(locale)` — the app does this in `main()`.
 
+/// `DateFormat` construction parses its pattern against the locale's symbol
+/// tables — cheap once, but these formatters run per ride card on every
+/// build, so a fresh `DateFormat('HH:mm', locale)` etc. per call was
+/// measurable build-time cost during a fast History scroll. A `DateFormat`
+/// is a pure, stateless formatter for a given (pattern, locale) once built,
+/// so instances are safely reused across calls/dates.
+final _dateFormatCache = <String, DateFormat>{};
+DateFormat _cachedFormat(String pattern, [String? locale]) => _dateFormatCache
+    .putIfAbsent('$pattern|$locale', () => DateFormat(pattern, locale));
+
 /// Formats a duration in milliseconds as `H:MM:SS` (≥ 1h) or `MM:SS`.
 String formatDuration(int durationMs) => _hms(durationMs ~/ 1000);
 
@@ -22,19 +32,19 @@ String _hms(int totalSeconds) {
 /// `dd.MM.yyyy  HH:mm` (two spaces), or `—` when null.
 String formatRideDate(int? timestampMs, {String? locale}) => timestampMs == null
     ? '—'
-    : DateFormat('dd.MM.yyyy  HH:mm', locale)
+    : _cachedFormat('dd.MM.yyyy  HH:mm', locale)
         .format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
 /// `HH:mm`, or `—` when null.
 String formatRideTime(int? timestampMs, {String? locale}) => timestampMs == null
     ? '—'
-    : DateFormat('HH:mm', locale)
+    : _cachedFormat('HH:mm', locale)
         .format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
 /// `yyyy-MM-dd` grouping key, or `0000-00-00` when null.
 String formatRideDayKey(int? timestampMs) => timestampMs == null
     ? '0000-00-00'
-    : DateFormat('yyyy-MM-dd')
+    : _cachedFormat('yyyy-MM-dd')
         .format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
 /// Localized day label for history group headers: today/yesterday labels, else
@@ -49,7 +59,7 @@ String formatDateLabel(
 }) {
   final now = DateTime.fromMillisecondsSinceEpoch(
       nowMs ?? DateTime.now().millisecondsSinceEpoch);
-  final keyFormat = DateFormat('yyyy-MM-dd');
+  final keyFormat = _cachedFormat('yyyy-MM-dd');
   final today = keyFormat.format(DateTime(now.year, now.month, now.day));
   final yesterday =
       keyFormat.format(DateTime(now.year, now.month, now.day - 1));
@@ -58,7 +68,7 @@ String formatDateLabel(
   if (dayKey == yesterday) return yesterdayLabel;
   try {
     final date = keyFormat.parseStrict(dayKey);
-    return DateFormat('MMMMd', locale).format(date);
+    return _cachedFormat('MMMMd', locale).format(date);
   } catch (_) {
     return dayKey;
   }
