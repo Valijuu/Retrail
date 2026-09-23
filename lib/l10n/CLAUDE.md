@@ -29,6 +29,7 @@ English is the default and should read naturally (not a literal back-translation
 | History title | Fahrtenverlauf |
 | Filter chip | Diese Woche |
 | Year filter section / all years | Jahr / Alle Jahre |
+| Month range section / from / to | Monatsbereich / Von / Bis |
 | Select all (bulk delete) | Alle auswählen |
 | Today / Yesterday | Heute / Gestern |
 | Great pace / No route | Gutes Tempo / Keine Route |

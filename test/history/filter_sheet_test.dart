@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/features/history/filter_sheet.dart';
 import 'package:retrail/features/history/history_providers.dart';
+import 'package:retrail/features/history/widgets/pill_dropdown.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 
 /// Standalone widget tests for the year picker + period-chip hiding added to
@@ -50,7 +51,7 @@ void main() {
       (tester) async {
     await pump(tester);
 
-    await tester.tap(find.byType(DropdownButton<int?>));
+    await tester.tap(find.byType(PillDropdown<int?>));
     await tester.pumpAndSettle();
     await tester.tap(find.text('2023').last);
     await tester.pumpAndSettle();
@@ -101,7 +102,7 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
-    expect(find.byType(DropdownButton<int?>), findsOneWidget);
+    expect(find.byType(PillDropdown<int?>), findsOneWidget);
   });
 
   testWidgets(
@@ -114,5 +115,91 @@ void main() {
 
     expect(find.text('This week'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
+  });
+
+  testWidgets('Von/Bis month-range dropdowns are hidden with no year selected',
+      (tester) async {
+    await pump(tester);
+    expect(find.text('MONTH RANGE'), findsNothing);
+  });
+
+  testWidgets('Von/Bis month-range dropdowns appear once a year is selected',
+      (tester) async {
+    await pump(tester);
+    container.read(historyFilterProvider.notifier).setYear(2023);
+    await tester.pump();
+
+    expect(find.text('MONTH RANGE'), findsOneWidget);
+    // Year dropdown + Von + Bis = 3 PillDropdown<...> instances.
+    expect(find.byType(PillDropdown<int?>), findsOneWidget);
+    expect(find.byType(PillDropdown<int>), findsNWidgets(2));
+  });
+
+  testWidgets(
+      'Von/Bis month-range dropdowns stay visible for a PAST year (unlike '
+      'the period chips)', (tester) async {
+    await pump(tester);
+    container.read(historyFilterProvider.notifier).setYear(2023);
+    await tester.pump();
+
+    expect(find.text('This week'), findsNothing); // period chips hidden
+    expect(find.text('MONTH RANGE'), findsOneWidget); // month range shown
+  });
+
+  testWidgets(
+      'Von/Bis month-range dropdowns coexist with period chips in the '
+      'current year', (tester) async {
+    final currentYear = DateTime.now().year;
+    await pump(tester, years: [currentYear]);
+    container.read(historyFilterProvider.notifier).setYear(currentYear);
+    await tester.pump();
+
+    expect(find.text('This week'), findsOneWidget);
+    expect(find.text('MONTH RANGE'), findsOneWidget);
+  });
+
+  testWidgets('Von/Bis month-range dropdowns disappear back at "All years"',
+      (tester) async {
+    await pump(tester);
+    final notifier = container.read(historyFilterProvider.notifier);
+    notifier.setYear(2023);
+    await tester.pump();
+    expect(find.text('MONTH RANGE'), findsOneWidget);
+
+    notifier.setYear(null);
+    await tester.pump();
+    expect(find.text('MONTH RANGE'), findsNothing);
+  });
+
+  testWidgets('selecting a "Von" month updates historyFilterProvider.monthFrom',
+      (tester) async {
+    await pump(tester);
+    container.read(historyFilterProvider.notifier).setYear(2023);
+    await tester.pump();
+
+    await tester.tap(find.byType(PillDropdown<int>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('June').last);
+    await tester.pumpAndSettle();
+
+    expect(container.read(historyFilterProvider).monthFrom, 6);
+  });
+
+  testWidgets('a year change resets a previously chosen month range back to '
+      'January/December', (tester) async {
+    await pump(tester, years: [2023, 2024]);
+    final notifier = container.read(historyFilterProvider.notifier);
+    notifier.setYear(2023);
+    notifier.setMonthFrom(6);
+    notifier.setMonthTo(8);
+    await tester.pump();
+    expect(find.text('June'), findsOneWidget);
+
+    notifier.setYear(2024);
+    await tester.pump();
+
+    expect(find.text('June'), findsNothing);
+    expect(find.text('January'), findsOneWidget);
+    expect(find.text('December'), findsOneWidget);
   });
 }
