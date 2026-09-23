@@ -311,6 +311,24 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '');
   });
 
+  testWidgets(
+      'batch delete is disabled while nothing is selected (issue #30)',
+      (tester) async {
+    await pump(tester, [_entry(1), _entry(2)]);
+    await tester.longPress(find.byType(HistoryRideCard).first);
+    await tester.pump();
+    await tester.tap(find.byType(HistoryRideCard).first); // deselect again
+    await tester.pump();
+    expect(find.text('0 selected'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.delete));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete 0 rides'), findsNothing);
+    final button = tester.widget<IconButton>(
+        find.ancestor(of: find.byIcon(Icons.delete), matching: find.byType(IconButton)));
+    expect(button.onPressed, isNull);
+  });
+
   testWidgets('long-press enters selection; batch delete confirms',
       (tester) async {
     await pump(tester, [_entry(1), _entry(2)]);

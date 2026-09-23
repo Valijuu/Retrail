@@ -486,8 +486,12 @@ class _SelectionBar extends StatelessWidget {
             tooltip: l10n.selectAll,
           ),
           IconButton(
-            onPressed: onDelete,
-            icon: Icon(Icons.delete, color: colors.primary),
+            // Nothing to delete with an empty selection (issue #30).
+            onPressed: count > 0 ? onDelete : null,
+            icon: Icon(Icons.delete,
+                color: count > 0
+                    ? colors.primary
+                    : colors.onSurfaceVariant.withValues(alpha: 0.38)),
             tooltip: l10n.actionDelete,
           ),
         ],
