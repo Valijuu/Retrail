@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/app.dart';
@@ -153,6 +153,24 @@ void main() {
     await _settle(tester);
     expect(recording.calls, contains('prepare'));
     expect(find.text('GET READY'), findsOneWidget);
+  });
+
+  testWidgets(
+      'offline confirm uses the stacked full-width buttons of the location '
+      'dialog — primary on top, no shrink-to-fit', (tester) async {
+    await pumpHome(tester, online: false);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+
+    final primary = find.widgetWithText(FilledButton, 'Start anyway');
+    final secondary = find.widgetWithText(TextButton, 'Skip');
+    expect(tester.getSize(primary).width, tester.getSize(secondary).width);
+    expect(tester.getTopLeft(primary).dy,
+        lessThan(tester.getTopLeft(secondary).dy));
+    expect(
+        find.descendant(
+            of: find.byType(AlertDialog), matching: find.byType(FittedBox)),
+        findsNothing);
   });
 
   testWidgets('reopens the active ride when already tracking', (tester) async {

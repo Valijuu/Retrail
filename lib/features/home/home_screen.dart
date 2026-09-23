@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
+import '../../core/widgets/stacked_dialog_actions.dart';
 import '../../domain/stats_aggregation.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/location_permission.dart';
@@ -102,12 +103,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Text(l10n.offlineTrackingTitle),
         content: Text(l10n.offlineTrackingBody),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: Text(l10n.actionSkip)),
-          FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(l10n.offlineTrackingConfirm)),
+          StackedDialogActions(
+            primaryLabel: l10n.offlineTrackingConfirm,
+            onPrimary: () => Navigator.pop(c, true),
+            secondaryLabel: l10n.actionSkip,
+            onSecondary: () => Navigator.pop(c, false),
+          ),
         ],
       ),
     );
