@@ -190,8 +190,9 @@ void main() {
 
   testWidgets(
       'the filter sheet never grows above the top safe area, even once '
-      'selecting both period chips wraps PERIOD onto another line '
-      '(regression: showModalBottomSheet needs useSafeArea)', (tester) async {
+      'selecting several ACTIVITY TYPE chips wraps that section onto '
+      'another line (regression: showModalBottomSheet needs useSafeArea)',
+      (tester) async {
     await pump(tester, [_entry(1)]);
 
     // Simulate a phone status bar / notch after the initial pump (which
@@ -203,9 +204,19 @@ void main() {
     await tester.tap(find.byIcon(Icons.filter_list));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('This week'));
-    await tester.pump();
-    await tester.tap(find.text('This month'));
+    // Selecting several activity chips grows a checkmark on each (widening
+    // them) until the ACTIVITY TYPE Wrap spills onto a second line — the
+    // same layout-growth mechanism the period chips used to trigger before
+    // they were removed. Chip order in the sheet: 4 SORT BY + 1 ACTIVITY
+    // "All" + 7 ActivityType chips — tap 4 of the 7 real activity types
+    // (skip "All", which clears instead of adding). As each tap grows the
+    // sheet, tapping further down the list risks the target scrolling just
+    // outside the pumped viewport, so this stays conservative.
+    final chips = find.byType(FilterChip);
+    for (var i = 5; i <= 8; i++) {
+      await tester.tap(chips.at(i));
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
 
     final sheetTop = tester.getTopLeft(find.text('Filter')).dy;

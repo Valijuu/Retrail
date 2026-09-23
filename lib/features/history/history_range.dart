@@ -5,69 +5,28 @@ import 'history_filter.dart';
 /// nullable = unbounded that side) that a [HistoryFilter] restricts rides to.
 /// Feeds `RideRepository.getRidesWithTrackpointsInRange`.
 ///
-/// - `f.year == null` → the existing union-of-periods logic: the earliest
-///   selected period's start, with an open (`null`) end. Empty `periods`
-///   means no restriction at all. The month range is deliberately ignored
-///   here too — NOT because it's meaningless at "All years" (it becomes a
-///   cross-year "these months, every year" filter, see
-///   [HistoryFilter.monthFrom]), but because that can't be expressed as a
-///   single `(start, end)` window the way this function returns. That
+/// - `f.year == null` ("All years") → unrestricted (`null, null`). The month
+///   range is deliberately ignored here — it becomes a cross-year "these
+///   months, every year" filter instead (see [HistoryFilter.monthFrom]),
+///   which can't be expressed as a single `(start, end)` window; that
 ///   restriction is applied later, in `buildHistoryItems` (in-memory, via
-///   `monthOfYearInRange`), over whatever this unrestricted-by-month fetch
-///   returns.
+///   `monthOfYearInRange`).
 /// - `f.year` set, month range set (`monthFrom`/`monthTo` non-null) →
-///   [monthRangeBounds] for that year, defaulting the unset side to
-///   Jan/Dec. On the current year with periods also selected, this narrows
-///   further: the window is the *intersection* of the month range and the
-///   period-adjusted window below (latest start, earliest end) — a
-///   combination where the period falls outside the month range yields an
-///   empty window (`start > end`) rather than silently favoring one side.
+///   [monthRangeBounds] for that year, defaulting an unset side to Jan/Dec.
 /// - `f.year` set, no month range → the full-year window from [yearBounds].
-///   Week/month periods are only additionally applied (narrowing the start,
-///   open end) when `f.year` is the current calendar year; for a past/future
-///   year they would be inconsistent, so they're ignored (the UI hides those
-///   chips in that case, see `filter_sheet.dart`).
-(int? start, int? end) effectiveRange(HistoryFilter f, {int? nowMs}) {
-  if (f.year != null) {
-    final now = DateTime.fromMillisecondsSinceEpoch(
-        nowMs ?? DateTime.now().millisecondsSinceEpoch);
-    final isCurrentYear = f.year == now.year;
-    final hasMonthRange = f.monthFrom != null || f.monthTo != null;
-
-    if (hasMonthRange) {
-      final monthRange = monthRangeBounds(
-        year: f.year!,
-        monthFrom: f.monthFrom ?? 1,
-        monthTo: f.monthTo ?? 12,
-      );
-      if (isCurrentYear && f.periods.isNotEmpty) {
-        final periodStart = _periodUnionStart(f.periods, nowMs);
-        final start =
-            periodStart > monthRange.$1 ? periodStart : monthRange.$1;
-        final end = now.millisecondsSinceEpoch < monthRange.$2
-            ? now.millisecondsSinceEpoch
-            : monthRange.$2;
-        return (start, end);
-      }
-      return monthRange;
-    }
-
-    if (isCurrentYear && f.periods.isNotEmpty) {
-      return (_periodUnionStart(f.periods, nowMs), null);
-    }
-    return yearBounds(year: f.year, nowMs: nowMs);
+///
+/// Every value `f` carries is already concrete (no "now"-dependent
+/// fallback), so unlike its `lib/domain/time_bounds.dart` building blocks,
+/// this function takes no injectable `nowMs`.
+(int? start, int? end) effectiveRange(HistoryFilter f) {
+  if (f.year == null) return (null, null);
+  final hasMonthRange = f.monthFrom != null || f.monthTo != null;
+  if (hasMonthRange) {
+    return monthRangeBounds(
+      year: f.year!,
+      monthFrom: f.monthFrom ?? 1,
+      monthTo: f.monthTo ?? 12,
+    );
   }
-  if (f.periods.isEmpty) return (null, null);
-  return (_periodUnionStart(f.periods, nowMs), null);
-}
-
-// Multi-select periods combine as a union — with the windows all ending
-// "now" and nesting into each other, that is simply the EARLIEST selected
-// start.
-int _periodUnionStart(Set<TimePeriod> periods, int? nowMs) {
-  int startOf(TimePeriod p) => switch (p) {
-        TimePeriod.thisWeek => weekBounds(nowMs: nowMs).$1,
-        TimePeriod.thisMonth => monthBounds(nowMs: nowMs).$1,
-      };
-  return periods.map(startOf).reduce((a, b) => a < b ? a : b);
+  return yearBounds(year: f.year);
 }

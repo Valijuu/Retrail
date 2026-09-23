@@ -8,7 +8,7 @@ import 'package:retrail/features/history/history_items.dart';
 
 const _calc = HaversineDistanceCalculator();
 
-// 2024-06-12 12:00 local-ish (fixed reference for period tests).
+// 2024-06-12 12:00 local-ish (fixed reference for date-grouping/badge tests).
 const _now = 1718193600000;
 const _day = 86400000;
 
@@ -231,23 +231,27 @@ void main() {
 
   group('filter badges', () {
     test('activeFilterCount excludes the search query', () {
-      // year matches nowYear (the app default, see HistoryFilterNotifier) so
-      // it doesn't add to the count — isolates the 4 other active sections.
+      // year and month range both match _now's year/month (the app default,
+      // see HistoryFilterNotifier) so neither adds to the count — isolates
+      // the 3 other active sections.
       const f = HistoryFilter(
         year: 2024,
-        periods: {TimePeriod.thisWeek},
+        monthFrom: 6,
+        monthTo: 6,
         sort: SortOrder.distance,
         favoritesOnly: true,
         activities: {ActivityType.scooter},
         query: 'x',
       );
-      expect(activeFilterCount(f, nowYear: 2024), 4);
+      expect(activeFilterCount(f, nowMs: _now), 3);
     });
 
     test('isFilterActive includes the search query', () {
       expect(isFilterActive(const HistoryFilter(query: 'x')), isTrue);
       expect(
-          isFilterActive(const HistoryFilter(year: 2024), nowYear: 2024),
+          isFilterActive(
+              const HistoryFilter(year: 2024, monthFrom: 6, monthTo: 6),
+              nowMs: _now),
           isFalse);
     });
   });

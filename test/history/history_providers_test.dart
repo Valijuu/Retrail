@@ -28,20 +28,31 @@ Future<T> firstData<T>(ProviderContainer c, StreamProvider<T> p) {
 
 void main() {
   group('HistoryFilterNotifier default state', () {
-    test('a fresh container defaults to the current calendar year', () {
+    test('a fresh container defaults to the current calendar year and month',
+        () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
-      expect(c.read(historyFilterProvider).year, DateTime.now().year);
+      final now = DateTime.now();
+      final f = c.read(historyFilterProvider);
+      expect(f.year, now.year);
+      expect(f.monthFrom, now.month);
+      expect(f.monthTo, now.month);
     });
 
-    test('reset() after picking another year goes back to the current year, '
-        'not "All years"', () {
+    test('reset() after picking another year/month range goes back to the '
+        'current year and month, not "All years"/unrestricted', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final notifier = c.read(historyFilterProvider.notifier);
       notifier.setYear(2020);
+      notifier.setMonthFrom(1);
+      notifier.setMonthTo(3);
       notifier.reset();
-      expect(c.read(historyFilterProvider).year, DateTime.now().year);
+      final now = DateTime.now();
+      final f = c.read(historyFilterProvider);
+      expect(f.year, now.year);
+      expect(f.monthFrom, now.month);
+      expect(f.monthTo, now.month);
     });
 
     test('activeFilterCountProvider is 0 on a fresh container (current year '
@@ -307,7 +318,14 @@ void main() {
       ]);
       addTearDown(c.dispose);
 
-      c.read(historyFilterProvider.notifier).setYear(2023);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setYear(2023);
+      // The default month range (the real current calendar month, whatever
+      // that happens to be at test-run time) would otherwise filter out this
+      // June-dated fixture ride on months that aren't June — widen to the
+      // full year, since this test is about the year restriction only.
+      notifier.setMonthFrom(1);
+      notifier.setMonthTo(12);
 
       final items = await firstData(c, historyItemsProvider);
       final rideIds = items

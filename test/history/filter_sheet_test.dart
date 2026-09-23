@@ -8,9 +8,10 @@ import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/widgets/pill_dropdown.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 
-/// Standalone widget tests for the year picker + period-chip hiding added to
-/// [HistoryFilterSheet]. Stubs [availableHistoryYearsProvider] with a finite
-/// stream (Drift `.watch()` never closes — see the established test rule).
+/// Standalone widget tests for the year picker and Von/Bis month-range
+/// dropdowns in [HistoryFilterSheet]. Stubs [availableHistoryYearsProvider]
+/// with a finite stream (Drift `.watch()` never closes — see the
+/// established test rule).
 void main() {
   late ProviderContainer container;
 
@@ -66,69 +67,6 @@ void main() {
   });
 
   testWidgets(
-      'week/month period chips stay visible by default (current year, no '
-      'month range)', (tester) async {
-    await pump(tester);
-    expect(find.text('This week'), findsOneWidget);
-    expect(find.text('This month'), findsOneWidget);
-  });
-
-  testWidgets('period chips are hidden when "All years" is explicitly selected',
-      (tester) async {
-    await pump(tester);
-    container.read(historyFilterProvider.notifier).setYear(null);
-    await tester.pump();
-    expect(find.text('This week'), findsNothing);
-    expect(find.text('This month'), findsNothing);
-  });
-
-  testWidgets('period chips stay visible when Von=Bis=the current month',
-      (tester) async {
-    final now = DateTime.now();
-    await pump(tester, years: [now.year]);
-    final notifier = container.read(historyFilterProvider.notifier);
-    notifier.setMonthFrom(now.month);
-    notifier.setMonthTo(now.month);
-    await tester.pump();
-    expect(find.text('This week'), findsOneWidget);
-    expect(find.text('This month'), findsOneWidget);
-  });
-
-  testWidgets(
-      'period chips are hidden once the month range is narrowed to anything '
-      'other than the current month', (tester) async {
-    final now = DateTime.now();
-    await pump(tester, years: [now.year]);
-    // Setting only monthFrom already breaks "both null or both == current
-    // month" — monthTo stays null, neither side of the rule is satisfied.
-    container.read(historyFilterProvider.notifier).setMonthFrom(now.month);
-    await tester.pump();
-    expect(find.text('This week'), findsNothing);
-    expect(find.text('This month'), findsNothing);
-  });
-
-  testWidgets(
-      'week/month period chips, the PERIOD section label, and its '
-      '"All" chip are all hidden once a PAST year is selected',
-      (tester) async {
-    await pump(tester);
-    // Before: the PERIOD section is present — its label, plus two "All"
-    // chips (one from PERIOD, one from ACTIVITY, both localized to "All").
-    expect(find.text('PERIOD'), findsOneWidget);
-    expect(find.text('All'), findsNWidgets(2));
-
-    container.read(historyFilterProvider.notifier).setYear(2023);
-    await tester.pump();
-
-    expect(find.text('This week'), findsNothing);
-    expect(find.text('This month'), findsNothing);
-    // After: the whole PERIOD section is gone — its label, and its "All"
-    // chip (only ACTIVITY's "All" chip remains).
-    expect(find.text('PERIOD'), findsNothing);
-    expect(find.text('All'), findsOneWidget);
-  });
-
-  testWidgets(
       'does not crash when the selected year is no longer in the available '
       'years (e.g. its rides were just bulk-deleted)', (tester) async {
     await pump(tester, years: const [2024, 2023]);
@@ -144,18 +82,6 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(PillDropdown<int?>), findsOneWidget);
-  });
-
-  testWidgets(
-      'period chips stay visible when the selected year is the current year',
-      (tester) async {
-    final currentYear = DateTime.now().year;
-    await pump(tester, years: [currentYear, currentYear - 1]);
-    container.read(historyFilterProvider.notifier).setYear(currentYear);
-    await tester.pump();
-
-    expect(find.text('This week'), findsOneWidget);
-    expect(find.text('This month'), findsOneWidget);
   });
 
   testWidgets(
@@ -183,25 +109,12 @@ void main() {
   });
 
   testWidgets(
-      'Von/Bis month-range dropdowns stay visible for a PAST year (unlike '
-      'the period chips)', (tester) async {
+      'Von/Bis month-range dropdowns stay visible for a PAST year',
+      (tester) async {
     await pump(tester);
     container.read(historyFilterProvider.notifier).setYear(2023);
     await tester.pump();
 
-    expect(find.text('This week'), findsNothing); // period chips hidden
-    expect(find.text('MONTH RANGE'), findsOneWidget); // month range shown
-  });
-
-  testWidgets(
-      'Von/Bis month-range dropdowns coexist with period chips in the '
-      'current year', (tester) async {
-    final currentYear = DateTime.now().year;
-    await pump(tester, years: [currentYear]);
-    container.read(historyFilterProvider.notifier).setYear(currentYear);
-    await tester.pump();
-
-    expect(find.text('This week'), findsOneWidget);
     expect(find.text('MONTH RANGE'), findsOneWidget);
   });
 
@@ -219,15 +132,9 @@ void main() {
     expect(find.text('MONTH RANGE'), findsOneWidget);
   });
 
-  testWidgets(
-      'there is still visible spacing before SORT BY once period chips are '
-      'hidden (padding regression: the pre-SORT-BY spacer used to live '
-      'inside the now-conditionally-hidden period chips block)',
+  testWidgets('there is visible spacing between MONTH RANGE and SORT BY',
       (tester) async {
     await pump(tester);
-    container.read(historyFilterProvider.notifier).setYear(null);
-    await tester.pump();
-    expect(find.text('This week'), findsNothing); // chips are hidden here
 
     final sortLabelTop = tester.getTopLeft(find.text('SORT BY')).dy;
     final monthRangeBottom =

@@ -16,22 +16,17 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   @override
   HistoryFilter build() => _defaultFilter();
 
-  /// The app's default filter: the current calendar year (not "All years") —
-  /// so the Von/Bis month range is visible from the first open, and the
-  /// filter badge starts at 0 (see `activeFilterCount`'s `nowYear` seam).
-  /// "All years" stays reachable by explicitly picking it via [setYear].
-  static HistoryFilter _defaultFilter() =>
-      HistoryFilter(year: DateTime.now().year);
-
-  /// Adds/removes [p] from the multi-select period set (union semantics).
-  void togglePeriod(TimePeriod p) {
-    final s = {...state.periods};
-    if (!s.remove(p)) s.add(p);
-    state = state.copyWith(periods: s);
+  /// The app's default filter: the current calendar month and year (not
+  /// "All years"/unrestricted) — so the Von/Bis month range and Year
+  /// dropdown both start on "now", and the filter badge starts at 0 (see
+  /// `activeFilterCount`'s `nowMs` seam). Both stay explicitly changeable
+  /// afterwards — "All years" via `setYear(null)`, any month range via
+  /// [setMonthFrom]/[setMonthTo].
+  static HistoryFilter _defaultFilter() {
+    final now = DateTime.now();
+    return HistoryFilter(
+        year: now.year, monthFrom: now.month, monthTo: now.month);
   }
-
-  /// The "All" period chip: clears the selection (= no time restriction).
-  void clearPeriods() => state = state.copyWith(periods: const {});
 
   void setSort(SortOrder s) => state = state.copyWith(sort: s);
   void setQuery(String q) => state = state.copyWith(query: q);
@@ -50,6 +45,11 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   /// Sets the selected calendar year, or resets to "All years" for `null`.
   /// Leaves any month range untouched — a month means the same thing
   /// regardless of year (or "All years"), see [HistoryFilter.monthFrom].
+  /// Since the default month range is "this month" (see [_defaultFilter]),
+  /// switching to a year other than the current one shows just that one
+  /// month within the new year unless the month range is widened too — e.g.
+  /// Von=January/Bis=December for the whole year (there's no "All" shortcut
+  /// for the month range).
   void setYear(int? year) => state = year == null
       ? state.copyWith(clearYear: true)
       : state.copyWith(year: year);

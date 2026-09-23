@@ -2,23 +2,17 @@ import 'package:collection/collection.dart';
 
 import '../../domain/activity_type.dart';
 
-/// Time-window chips for the history filter. Mirrors the original `TimePeriod`;
-/// "all time" is no longer an enum member — it is the **empty selection** (see
-/// [HistoryFilter.periods]).
-enum TimePeriod { thisWeek, thisMonth }
-
 /// Sort-order chips for the history filter. Mirrors the original `SortOrder`.
 enum SortOrder { date, distance, speed, duration }
 
 const _setEq = SetEquality<Object>();
 
-/// Immutable bundle of the history filter state (periods, sort, search,
-/// favorites and activities). Periods and activities are **multi-select** sets:
-/// a ride matches when it falls in ANY selected period and has ANY selected
-/// activity; an empty set means "no restriction" (the "All" chip).
+/// Immutable bundle of the history filter state (year, month range, sort,
+/// search, favorites and activities). Activities are a **multi-select**
+/// set: a ride matches when it has ANY selected activity; an empty set
+/// means "no restriction" (the "All" chip).
 class HistoryFilter {
   const HistoryFilter({
-    this.periods = const {},
     this.sort = SortOrder.date,
     this.query = '',
     this.favoritesOnly = false,
@@ -28,8 +22,6 @@ class HistoryFilter {
     this.monthTo,
   });
 
-  /// Selected time windows, combined as a union. Empty = all time.
-  final Set<TimePeriod> periods;
   final SortOrder sort;
   final String query;
   final bool favoritesOnly;
@@ -50,7 +42,6 @@ class HistoryFilter {
   final int? monthTo;
 
   HistoryFilter copyWith({
-    Set<TimePeriod>? periods,
     SortOrder? sort,
     String? query,
     bool? favoritesOnly,
@@ -63,7 +54,6 @@ class HistoryFilter {
     bool clearMonthTo = false,
   }) =>
       HistoryFilter(
-        periods: periods ?? this.periods,
         sort: sort ?? this.sort,
         query: query ?? this.query,
         favoritesOnly: favoritesOnly ?? this.favoritesOnly,
@@ -76,7 +66,6 @@ class HistoryFilter {
   @override
   bool operator ==(Object other) =>
       other is HistoryFilter &&
-      _setEq.equals(other.periods, periods) &&
       other.sort == sort &&
       other.query == query &&
       other.favoritesOnly == favoritesOnly &&
@@ -86,38 +75,41 @@ class HistoryFilter {
       other.monthTo == monthTo;
 
   @override
-  int get hashCode => Object.hash(_setEq.hash(periods), sort, query,
-      favoritesOnly, _setEq.hash(activities), year, monthFrom, monthTo);
+  int get hashCode => Object.hash(
+      sort, query, favoritesOnly, _setEq.hash(activities), year, monthFrom, monthTo);
 }
 
 /// Count of active, non-default filter sections for the filter-icon badge. The
 /// search query is excluded (it has its own visible bar). Mirrors
 /// `activeFilterCount`.
 ///
-/// [nowYear] is the injectable "current calendar year" seam (mirrors the
-/// `nowMs` pattern in `time_bounds.dart`/`history_range.dart`) — the app's
-/// default filter state is now "this year" (see `HistoryFilterNotifier`), so
-/// `f.year` matching the current year is the non-active baseline, not `null`.
-int activeFilterCount(HistoryFilter f, {int? nowYear}) {
-  final currentYear = nowYear ?? DateTime.now().year;
+/// [nowMs] is the injectable "now" seam (epoch ms, mirrors the `nowMs`
+/// pattern in `time_bounds.dart`/`history_range.dart`) — the app's default
+/// filter state is "this month, this year" (see
+/// `HistoryFilterNotifier._defaultFilter`), so `f.year`/`f.monthFrom`/
+/// `f.monthTo` all matching "now" is the non-active baseline.
+int activeFilterCount(HistoryFilter f, {int? nowMs}) {
+  final now = DateTime.fromMillisecondsSinceEpoch(
+      nowMs ?? DateTime.now().millisecondsSinceEpoch);
   var count = 0;
-  if (f.periods.isNotEmpty) count++;
   if (f.sort != SortOrder.date) count++;
   if (f.favoritesOnly) count++;
   if (f.activities.isNotEmpty) count++;
-  if (f.year != currentYear) count++;
-  if (f.monthFrom != null || f.monthTo != null) count++;
+  if (f.year != now.year) count++;
+  if (f.monthFrom != now.month || f.monthTo != now.month) count++;
   return count;
 }
 
 /// Whether any non-default filter (search included) is active. Mirrors
-/// `isFilterActive`. See [activeFilterCount] for [nowYear].
-bool isFilterActive(HistoryFilter f, {int? nowYear}) =>
-    f.periods.isNotEmpty ||
-    f.sort != SortOrder.date ||
-    f.query.isNotEmpty ||
-    f.favoritesOnly ||
-    f.activities.isNotEmpty ||
-    f.year != (nowYear ?? DateTime.now().year) ||
-    f.monthFrom != null ||
-    f.monthTo != null;
+/// `isFilterActive`. See [activeFilterCount] for [nowMs].
+bool isFilterActive(HistoryFilter f, {int? nowMs}) {
+  final now = DateTime.fromMillisecondsSinceEpoch(
+      nowMs ?? DateTime.now().millisecondsSinceEpoch);
+  return f.sort != SortOrder.date ||
+      f.query.isNotEmpty ||
+      f.favoritesOnly ||
+      f.activities.isNotEmpty ||
+      f.year != now.year ||
+      f.monthFrom != now.month ||
+      f.monthTo != now.month;
+}

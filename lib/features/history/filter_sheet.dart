@@ -11,10 +11,10 @@ import 'history_filter.dart';
 import 'history_providers.dart';
 import 'widgets/pill_dropdown.dart';
 
-/// Year / period / sort / activity / favorites filter sheet. Filters apply
-/// live via [historyFilterProvider] as soon as a chip/dropdown is touched —
-/// there is no separate "Apply" step; the sheet is dismissed by dragging
-/// down or tapping outside it. Ports `FilterBottomSheet`.
+/// Year / month range / sort / activity / favorites filter sheet. Filters
+/// apply live via [historyFilterProvider] as soon as a chip/dropdown is
+/// touched — there is no separate "Apply" step; the sheet is dismissed by
+/// dragging down or tapping outside it. Ports `FilterBottomSheet`.
 class HistoryFilterSheet extends ConsumerWidget {
   const HistoryFilterSheet({super.key});
 
@@ -28,30 +28,6 @@ class HistoryFilterSheet extends ConsumerWidget {
     final availableYears = ref.watch(yearPickerItemsProvider);
     final locale = ref.watch(dateFormatLocaleProvider);
 
-    // The week/month chips are relative to "now" — they only combine
-    // sensibly with the Von/Bis month range (see `effectiveRange`) when that
-    // range still includes "now": either untouched (null/null) or narrowed
-    // down to exactly the current month. Any other combination either
-    // yields an empty result (e.g. Von=Bis=January while "now" is in
-    // September — the chip and the range don't overlap at all) or silently
-    // overrides part of the range (e.g. Von=August, Bis=September — a chip
-    // tap would make the August portion of the selection ineffective without
-    // saying so). So the chips only show for the current year AND a
-    // conflict-free month range — not for "All years" or any other year,
-    // and not for any other month-range value (including an explicit
-    // January–December that happens to equal the default).
-    final now = DateTime.now();
-    final hasConflictFreeMonthRange =
-        (filter.monthFrom == null && filter.monthTo == null) ||
-            (filter.monthFrom == now.month && filter.monthTo == now.month);
-    final showPeriodChips =
-        filter.year == now.year && hasConflictFreeMonthRange;
-    final periods = showPeriodChips
-        ? <(String, TimePeriod)>[
-            (l10n.periodThisWeek, TimePeriod.thisWeek),
-            (l10n.periodThisMonth, TimePeriod.thisMonth),
-          ]
-        : const <(String, TimePeriod)>[];
     final sorts = <(String, SortOrder)>[
       (l10n.sortNewest, SortOrder.date),
       (l10n.sortDistance, SortOrder.distance),
@@ -114,29 +90,6 @@ class HistoryFilterSheet extends ConsumerWidget {
                 ),
               ],
             ),
-            if (showPeriodChips) ...[
-              const SizedBox(height: 20),
-              _SectionLabel(l10n.historySectionPeriod),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  // Multi-select: chips toggle and combine (union); "All" clears.
-                  FilterChip(
-                    selected: filter.periods.isEmpty,
-                    onSelected: (_) => notifier.clearPeriods(),
-                    label: Text(l10n.periodAll),
-                  ),
-                  for (final (label, value) in periods)
-                    FilterChip(
-                      selected: filter.periods.contains(value),
-                      onSelected: (_) => notifier.togglePeriod(value),
-                      label: Text(label),
-                    ),
-                ],
-              ),
-            ],
             const SizedBox(height: 20),
             _SectionLabel(l10n.historySectionSort),
             const SizedBox(height: 8),

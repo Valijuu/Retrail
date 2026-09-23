@@ -27,7 +27,6 @@ English is the default and should read naturally (not a literal back-translation
 | Title / Comment inputs | Titel / Kommentar |
 | Skip / Save | Überspringen / Speichern |
 | History title | Fahrtenverlauf |
-| Filter chip | Diese Woche |
 | Year filter section / all years | Jahr / Alle Jahre |
 | Month range section / from / to | Monatsbereich / Von / Bis |
 | Select all (bulk delete) | Alle auswählen |
