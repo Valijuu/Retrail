@@ -37,7 +37,7 @@ final previewCacheDirProvider = Provider<Directory>(
 final routePreviewCacheProvider = Provider<RoutePreviewCache>((ref) {
   final dir = ref.watch(previewCacheDirProvider);
   final tiles = MapTilerTileProvider(apiKey: MapConfig.mapTilerKey);
-  return RoutePreviewCache(
+  final cache = RoutePreviewCache(
     baseDir: dir,
     render: buildPreviewRenderer(
       isOnline: () => ref.read(isOnlineProvider).asData?.value ?? true,
@@ -58,6 +58,8 @@ final routePreviewCacheProvider = Provider<RoutePreviewCache>((ref) {
       ),
     ),
   );
+  ref.onDispose(cache.dispose);
+  return cache;
 });
 
 /// Orchestrates the active-ride save/discard/stop/pause intents + preview.

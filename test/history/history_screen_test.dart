@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_dao.dart';
@@ -150,6 +152,7 @@ void main() {
     int? presetTarget,
     RoutePreviewCache? previewCache,
     Map<int, List<Trackpoint>> trackpoints = const {},
+    Stream<bool>? online,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -167,6 +170,7 @@ void main() {
         routePreviewCacheProvider.overrideWithValue(previewCache),
       if (navLauncher != null)
         navigationLauncherProvider.overrideWithValue(navLauncher),
+      isOnlineProvider.overrideWith((ref) => online ?? Stream.value(true)),
     ]);
     // Simulate Home parking a jump target *before* the History screen mounts
     // (the PageView builds it lazily on navigation).
@@ -239,6 +243,34 @@ void main() {
 
     final sheetTop = tester.getTopLeft(find.text('Filter')).dy;
     expect(sheetTop, greaterThanOrEqualTo(40));
+  });
+
+  testWidgets(
+      'coming back online re-warms previews so stale offline sketches get '
+      're-rendered as real maps (issue #31)', (tester) async {
+    final spy = WarmSpyCache();
+    final online = StreamController<bool>.broadcast();
+    // Don't await close(): a paused (unlistened) subscription never delivers
+    // the done event, so an awaited close hangs the whole test run.
+    addTearDown(() => unawaited(online.close()));
+    await pump(
+      tester,
+      [_routedEntry(1)],
+      previewCache: spy,
+      trackpoints: {
+        1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
+      },
+      online: online.stream,
+    );
+    online.add(false);
+    await tester.pump();
+    await tester.pump();
+    spy.warmed.clear();
+
+    online.add(true);
+    await tester.pump();
+    await tester.pump();
+    expect(spy.warmed, [1]);
   });
 
   testWidgets(

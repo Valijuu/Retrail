@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -45,6 +46,36 @@ class _WarmCache extends RoutePreviewCache {
   @override
   File? resolvedFileFor(int rideId, {required Brightness brightness}) =>
       File('${Directory.systemTemp.path}/warm_$rideId.png');
+}
+
+/// A cache whose preview starts stale (unresolved) and can be flipped to
+/// resolved + announced as upgraded, without real file IO.
+class _UpgradingCache extends RoutePreviewCache {
+  _UpgradingCache()
+      : super(
+            baseDir: Directory.systemTemp,
+            render: (_, _) async =>
+                PreviewResult(Uint8List(0), complete: true));
+
+  final _upgradeEvents = StreamController<int>.broadcast();
+  bool resolved = false;
+
+  @override
+  Stream<int> get upgrades => _upgradeEvents.stream;
+
+  @override
+  File? resolvedFileFor(int rideId, {required Brightness brightness}) =>
+      resolved ? File('${Directory.systemTemp.path}/up_$rideId.png') : null;
+
+  @override
+  Future<File> ensurePreview(int rideId, List<RoutePoint> points,
+          {required Brightness brightness}) async =>
+      File('${Directory.systemTemp.path}/up_$rideId.png');
+
+  void upgrade(int rideId) {
+    resolved = true;
+    _upgradeEvents.add(rideId);
+  }
 }
 
 void main() {
@@ -135,5 +166,34 @@ void main() {
   test('live map zoom envelope', () {
     expect(kLiveMapMinZoom, 3.0);
     expect(kLiveMapMaxZoom, 19.0);
+  });
+
+  testWidgets(
+      'RoutePreview re-resolves when the cache announces an upgrade of its '
+      'ride (stale offline sketch → real map, issue #31)', (tester) async {
+    final cache = _UpgradingCache();
+    await tester.pumpWidget(_wrap(
+      SizedBox(
+        width: 200,
+        height: 100,
+        child: RoutePreview(
+          rideId: 1,
+          hasRoute: true,
+          pointsLoader: () async => const [(lat: 1, lng: 2), (lat: 3, lng: 4)],
+          cache: cache,
+        ),
+      ),
+    ));
+    expect(find.byType(FutureBuilder<File>), findsOneWidget); // not resolved
+
+    cache.upgrade(2); // another ride — ignored
+    await tester.pump();
+    expect(find.byType(FutureBuilder<File>), findsOneWidget);
+
+    cache.upgrade(1);
+    await tester.pump(); // deliver the broadcast event
+    await tester.pump(); // rebuild after the listener's setState
+    expect(find.byType(FutureBuilder<File>), findsNothing); // sync fast path
+    expect(find.byType(Image), findsOneWidget);
   });
 }

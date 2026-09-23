@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
@@ -261,6 +262,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       _maybeJumpToTarget();
       final items = next.asData?.value;
       if (items != null) _warmPreviews(items);
+    });
+    // Back online: re-warm so previews rendered offline (stale flat sketches)
+    // re-render as real maps now; the cards swap them in via the cache's
+    // upgrade events instead of waiting for an app restart (issue #31).
+    ref.listen(isOnlineProvider, (prev, next) {
+      if (prev?.asData?.value == false && next.asData?.value == true) {
+        _warmPreviews(ref.read(historyItemsProvider).asData?.value ?? const []);
+      }
     });
 
     final l10n = AppLocalizations.of(context);

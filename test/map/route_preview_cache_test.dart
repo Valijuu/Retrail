@@ -110,6 +110,25 @@ void main() {
     expect(renders, 2);
   });
 
+  test('upgrading a stale preview to a complete render announces the ride on '
+      '`upgrades` — a first complete render does not (issue #31)', () async {
+    var completeNow = false;
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1], complete: completeNow),
+    );
+    final announced = <int>[];
+    final sub = cache.upgrades.listen(announced.add);
+    addTearDown(sub.cancel);
+
+    await cache.ensurePreview(7, points, brightness: Brightness.light); // stale
+    completeNow = true;
+    await cache.ensurePreview(8, points, brightness: Brightness.light); // fresh
+    await cache.ensurePreview(7, points, brightness: Brightness.light); // upgrade
+    await pumpEventQueue();
+    expect(announced, [7]);
+  });
+
   test('a stale preview that re-renders incomplete stays stale and keeps '
       'its existing bytes (no pointless rewrite)', () async {
     var renders = 0;

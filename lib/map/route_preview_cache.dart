@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show Brightness;
 
@@ -51,6 +52,13 @@ class RoutePreviewCache {
   final List<Future<void>> _renderLanes;
   int _nextLane = 0;
 
+  final StreamController<int> _upgrades = StreamController<int>.broadcast();
+
+  /// Ride ids whose stale (degraded) preview was just replaced by a complete
+  /// render — e.g. an offline sketch upgraded to the real map once back
+  /// online. Shown previews listen so they swap in the new PNG (issue #31).
+  Stream<int> get upgrades => _upgrades.stream;
+
   String _key(int rideId, Brightness brightness) =>
       '$rideId:${brightness.name}';
 
@@ -98,8 +106,10 @@ class RoutePreviewCache {
       await file.parent.create(recursive: true);
       if (result.complete) {
         await file.writeAsBytes(result.bytes, flush: true);
-        if (await marker.exists()) await marker.delete();
+        final wasStale = await marker.exists();
+        if (wasStale) await marker.delete();
         _resolved[key] = file;
+        if (wasStale) _upgrades.add(rideId);
       } else {
         // Still degraded: keep already-written bytes (same sketch — no churn),
         // only write when there is nothing to show yet; stays marked stale.
@@ -120,6 +130,8 @@ class RoutePreviewCache {
     _renderLanes[lane] = run.then((_) {}, onError: (_) {});
     return run;
   }
+
+  void dispose() => _upgrades.close();
 
   /// Deletes both cached variants and their stale markers (on ride
   /// edit/delete), so neither theme serves a stale preview.

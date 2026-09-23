@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -44,6 +45,39 @@ class _RoutePreviewState extends State<RoutePreview> {
   /// [widget.pointsLoader] — that's only called below it, on a real miss.
   File? _ready;
   Brightness? _brightness;
+  StreamSubscription<int>? _upgradeSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenForUpgrades();
+  }
+
+  /// A stale preview of this ride was just re-rendered complete: drop the old
+  /// decoded frame (same file path, so the ImageCache would keep serving it)
+  /// and re-resolve onto the synchronous fast path.
+  void _listenForUpgrades() {
+    _upgradeSub?.cancel();
+    _upgradeSub = widget.cache.upgrades
+        .where((id) => id == widget.rideId)
+        .listen((_) {
+      final file = _ready ?? widget.cache.resolvedFileFor(widget.rideId,
+          brightness: _brightness ?? Brightness.light);
+      if (file != null) {
+        FileImage(file).evict();
+        if (widget.cacheWidth != null) {
+          ResizeImage(FileImage(file), width: widget.cacheWidth).evict();
+        }
+      }
+      if (mounted) setState(_maybeGenerate);
+    });
+  }
+
+  @override
+  void dispose() {
+    _upgradeSub?.cancel();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -60,6 +94,7 @@ class _RoutePreviewState extends State<RoutePreview> {
   @override
   void didUpdateWidget(RoutePreview oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.cache != widget.cache) _listenForUpgrades();
     if (oldWidget.rideId != widget.rideId) _maybeGenerate();
   }
 
