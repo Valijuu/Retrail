@@ -31,11 +31,16 @@ class _FakePermissions implements LocationPermissionService {
     required this.serviceEnabled,
     required this.permission,
     LocationPermission? afterRequest,
-  }) : afterRequest = afterRequest ?? permission;
+    this.precise = true,
+    bool? preciseAfterRequest,
+  })  : afterRequest = afterRequest ?? permission,
+        preciseAfterRequest = preciseAfterRequest ?? precise;
 
   bool serviceEnabled;
   LocationPermission permission;
   final LocationPermission afterRequest;
+  bool precise;
+  final bool preciseAfterRequest;
   int requestCount = 0;
   int backgroundCount = 0;
   int openLocationSettingsCount = 0;
@@ -47,8 +52,12 @@ class _FakePermissions implements LocationPermissionService {
   @override
   Future<LocationPermission> requestPermission() async {
     requestCount++;
+    precise = preciseAfterRequest;
     return permission = afterRequest;
   }
+
+  @override
+  Future<bool> isPreciseLocation() async => precise;
 
   @override
   Future<void> ensureBackgroundPermission() async => backgroundCount++;
@@ -276,6 +285,33 @@ void main() {
       permission: LocationPermission.deniedForever,
     )).prepare();
     expect(action, LocationStartAction.showRationale);
+    expect(tracker.state.isTracking, isFalse);
+    expect(service.starts, 0);
+  });
+  test('approximate-only location: re-requests once and proceeds when the '
+      'user upgrades to precise (issue #28)', () async {
+    final perms = _FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+      afterRequest: LocationPermission.whileInUse,
+      precise: false,
+      preciseAfterRequest: true,
+    );
+    final action = await controller(perms).prepare();
+    expect(action, LocationStartAction.proceed);
+    expect(perms.requestCount, 1);
+  });
+
+  test('approximate-only location kept → requestPreciseLocation, nothing '
+      'started (issue #28)', () async {
+    final perms = _FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+      precise: false,
+    );
+    final action = await controller(perms).start();
+    expect(action, LocationStartAction.requestPreciseLocation);
+    expect(perms.requestCount, 1);
     expect(tracker.state.isTracking, isFalse);
     expect(service.starts, 0);
   });

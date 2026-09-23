@@ -15,14 +15,22 @@ enum LocationStartAction {
 
   /// Permanently denied → show the rationale dialog with an app-settings path.
   showRationale,
+
+  /// Granted and GPS on, but only APPROXIMATE location (Android 12+ "Approximate",
+  /// iOS "Precise: Off") → ask for precise. Coarse fixes are hundreds of metres
+  /// off and never pass the recording accuracy filter, so the ride would record
+  /// nothing without saying so (issue #28).
+  requestPreciseLocation,
 }
 
 /// Resolves permission FIRST, then the GPS-on check (only when granted) —
 /// mirroring the original: request location permission, then check that location
-/// services are enabled before recording.
+/// services are enabled before recording — and finally that the grant is for
+/// PRECISE location ([precise]).
 LocationStartAction permissionGateDecision({
   required bool serviceEnabled,
   required LocationPermission permission,
+  bool precise = true,
 }) {
   switch (permission) {
     case LocationPermission.denied:
@@ -32,8 +40,9 @@ LocationStartAction permissionGateDecision({
       return LocationStartAction.showRationale;
     case LocationPermission.whileInUse:
     case LocationPermission.always:
-      return serviceEnabled
+      if (!serviceEnabled) return LocationStartAction.openLocationSettings;
+      return precise
           ? LocationStartAction.proceed
-          : LocationStartAction.openLocationSettings;
+          : LocationStartAction.requestPreciseLocation;
   }
 }

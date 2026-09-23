@@ -13,6 +13,10 @@ abstract interface class LocationPermissionService {
   Future<LocationPermission> checkPermission();
   Future<LocationPermission> requestPermission();
 
+  /// Whether the granted location is precise (false for Android 12+
+  /// "Approximate" / iOS reduced accuracy).
+  Future<bool> isPreciseLocation();
+
   /// Escalates to background ("Always") authorization where the platform needs
   /// it for screen-off recording. iOS only: a second request upgrades
   /// whileInUse → Always (the location FGS already covers Android). Best-effort.
@@ -93,6 +97,22 @@ class RideRecordingController {
       permission = await _permissions.requestPermission();
       action = permissionGateDecision(
           serviceEnabled: serviceEnabled, permission: permission);
+    }
+    if (action == LocationStartAction.proceed) {
+      action = permissionGateDecision(
+          serviceEnabled: serviceEnabled,
+          permission: permission,
+          precise: await _permissions.isPreciseLocation());
+    }
+    if (action == LocationStartAction.requestPreciseLocation) {
+      // Asking again while only approximate is granted makes Android 12+ offer
+      // the upgrade to precise; if it's declined (or on iOS) the gate reports
+      // it so the UI can point to the app settings.
+      permission = await _permissions.requestPermission();
+      action = permissionGateDecision(
+          serviceEnabled: serviceEnabled,
+          permission: permission,
+          precise: await _permissions.isPreciseLocation());
     }
     if (action != LocationStartAction.proceed) return action;
 

@@ -44,6 +44,8 @@ class _NoopSource implements LocationSource {
 
 class _NoopPerms implements LocationPermissionService {
   @override
+  Future<bool> isPreciseLocation() async => true;
+  @override
   Future<bool> isLocationServiceEnabled() async => true;
   @override
   Future<LocationPermission> checkPermission() async =>

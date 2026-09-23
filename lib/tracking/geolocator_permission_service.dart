@@ -20,6 +20,10 @@ class GeolocatorPermissionService implements LocationPermissionService {
       Geolocator.requestPermission();
 
   @override
+  Future<bool> isPreciseLocation() async =>
+      await Geolocator.getLocationAccuracy() == LocationAccuracyStatus.precise;
+
+  @override
   Future<void> ensureBackgroundPermission() async {
     // Android's location foreground service covers screen-off recording, so
     // whileInUse is enough there. iOS has no foreground service: background

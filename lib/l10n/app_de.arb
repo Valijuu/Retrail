@@ -176,5 +176,7 @@
   "permissionLocationBody": "Retrail benötigt Standortzugriff, um deine Strecke aufzuzeichnen.",
   "permissionOpenSettings": "Einstellungen öffnen",
   "permissionEnableLocationTitle": "Standort aktivieren",
-  "permissionEnableLocationBody": "Aktiviere den Standort, um die Aufzeichnung zu starten."
+  "permissionEnableLocationBody": "Aktiviere den Standort, um die Aufzeichnung zu starten.",
+  "permissionPreciseLocationTitle": "Genauer Standort benötigt",
+  "permissionPreciseLocationBody": "Mit ungefährem Standort kann Retrail deine Strecke nicht aufzeichnen. Erlaube den genauen Standort in den App-Einstellungen."
 }

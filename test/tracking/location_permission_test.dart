@@ -38,6 +38,32 @@ void main() {
       }
     });
 
+    test(
+        'granted + services on but only APPROXIMATE location → ask for '
+        'precise (issue #28: coarse fixes never pass the accuracy filter)', () {
+      for (final p in [
+        LocationPermission.whileInUse,
+        LocationPermission.always,
+      ]) {
+        expect(
+          permissionGateDecision(
+              serviceEnabled: true, permission: p, precise: false),
+          LocationStartAction.requestPreciseLocation,
+        );
+      }
+    });
+
+    test('services off wins over approximate accuracy', () {
+      expect(
+        permissionGateDecision(
+          serviceEnabled: false,
+          permission: LocationPermission.whileInUse,
+          precise: false,
+        ),
+        LocationStartAction.openLocationSettings,
+      );
+    });
+
     test('granted but location services off → open location settings', () {
       expect(
         permissionGateDecision(

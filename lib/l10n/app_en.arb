@@ -177,5 +177,7 @@
   "permissionLocationBody": "Retrail needs location access to record your route.",
   "permissionOpenSettings": "Open settings",
   "permissionEnableLocationTitle": "Turn on location",
-  "permissionEnableLocationBody": "Turn on location to start recording your ride."
+  "permissionEnableLocationBody": "Turn on location to start recording your ride.",
+  "permissionPreciseLocationTitle": "Precise location needed",
+  "permissionPreciseLocationBody": "With approximate location Retrail can't record your route. Allow precise location in the app settings."
 }

@@ -4,8 +4,9 @@ import '../l10n/app_localizations.dart';
 import 'location_permission.dart';
 
 /// Shown when the location gate blocks recording — permanently denied
-/// ([LocationStartAction.showRationale]) or device location services off
-/// ([LocationStartAction.openLocationSettings]). Offers the matching settings
+/// ([LocationStartAction.showRationale]), device location services off
+/// ([LocationStartAction.openLocationSettings]) or only approximate location
+/// granted ([LocationStartAction.requestPreciseLocation]). Offers the matching settings
 /// path; [onDismiss] cancels. Shared by the Start-tracking press (home) and the
 /// active-ride fallback gate.
 class PermissionGateDialog extends StatelessWidget {
@@ -23,14 +24,20 @@ class PermissionGateDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final enableLocation = action == LocationStartAction.openLocationSettings;
+    final (title, body) = switch (action) {
+      LocationStartAction.openLocationSettings => (
+          l10n.permissionEnableLocationTitle,
+          l10n.permissionEnableLocationBody
+        ),
+      LocationStartAction.requestPreciseLocation => (
+          l10n.permissionPreciseLocationTitle,
+          l10n.permissionPreciseLocationBody
+        ),
+      _ => (l10n.permissionLocationTitle, l10n.permissionLocationBody),
+    };
     return AlertDialog(
-      title: Text(enableLocation
-          ? l10n.permissionEnableLocationTitle
-          : l10n.permissionLocationTitle),
-      content: Text(enableLocation
-          ? l10n.permissionEnableLocationBody
-          : l10n.permissionLocationBody),
+      title: Text(title),
+      content: Text(body),
       actions: [
         // One row of two equal-width buttons: the default OverflowBar stacked
         // them vertically at different sizes because "Open settings" (DE:

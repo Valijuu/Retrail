@@ -63,6 +63,8 @@ class _NoopService implements RideForegroundService {
 
 class _GrantedPerms implements LocationPermissionService {
   @override
+  Future<bool> isPreciseLocation() async => true;
+  @override
   Future<bool> isLocationServiceEnabled() async => true;
   @override
   Future<LocationPermission> checkPermission() async =>
