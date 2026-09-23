@@ -20,8 +20,8 @@ void main() {
     expect(label('2026-06-16'), 'Yesterday');
   });
 
-  test('other days use a localized MMMMd', () {
-    expect(label('2026-06-10'), 'June 10');
+  test('other days use a localized yMMMMd (includes the year)', () {
+    expect(label('2026-06-10'), 'June 10, 2026');
   });
 
   test('an unparseable key is returned unchanged', () {

@@ -47,9 +47,14 @@ String formatRideDayKey(int? timestampMs) => timestampMs == null
     : _cachedFormat('yyyy-MM-dd')
         .format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
+const String _dayKeyPattern = 'yyyy-MM-dd';
+const String _localizedDateLabelPattern = 'yMMMMd';
+
 /// Localized day label for history group headers: today/yesterday labels, else
-/// a localized `MMMMd` (e.g. "14. Juni" / "June 14"); falls back to [dayKey] on
-/// parse failure. The UI supplies the localized today/yesterday strings.
+/// a localized `yMMMMd` (e.g. "14. Juni 2026" / "June 14, 2026") — the year is
+/// always included so headers stay unambiguous when history spans multiple
+/// years; falls back to [dayKey] on parse failure. The UI supplies the
+/// localized today/yesterday strings.
 String formatDateLabel(
   String dayKey, {
   required String todayLabel,
@@ -59,7 +64,7 @@ String formatDateLabel(
 }) {
   final now = DateTime.fromMillisecondsSinceEpoch(
       nowMs ?? DateTime.now().millisecondsSinceEpoch);
-  final keyFormat = _cachedFormat('yyyy-MM-dd');
+  final keyFormat = _cachedFormat(_dayKeyPattern);
   final today = keyFormat.format(DateTime(now.year, now.month, now.day));
   final yesterday =
       keyFormat.format(DateTime(now.year, now.month, now.day - 1));
@@ -68,7 +73,7 @@ String formatDateLabel(
   if (dayKey == yesterday) return yesterdayLabel;
   try {
     final date = keyFormat.parseStrict(dayKey);
-    return _cachedFormat('MMMMd', locale).format(date);
+    return _cachedFormat(_localizedDateLabelPattern, locale).format(date);
   } catch (_) {
     return dayKey;
   }

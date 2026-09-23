@@ -52,7 +52,7 @@ WeeklyStats aggregateStats(List<RideWithTrackpoints> rides, DistanceCalculator c
 - `formatRideDate(int? ms, {String? locale})` → `dd.MM.yyyy  HH:mm`, null → `"—"`.
 - `formatRideTime(int? ms, {String? locale})` → `HH:mm`, null → `"—"`.
 - `formatRideDayKey(int? ms)` → `yyyy-MM-dd`, null → `"0000-00-00"`.
-- `formatDateLabel(String dayKey, {required String todayLabel, required String yesterdayLabel, String? locale, int? nowMs})` → today/yesterday labels, else localized `MMMMd` (e.g. "14. Juni" / "Jun 14"); falls back to `dayKey` on parse failure. (UI passes the localized today/yesterday strings — keeps this pure.)
+- `formatDateLabel(String dayKey, {required String todayLabel, required String yesterdayLabel, String? locale, int? nowMs})` → today/yesterday labels, else localized `yMMMMd` (e.g. "14. Juni 2026" / "June 14, 2026" — the year is always included so history headers stay unambiguous across years); falls back to `dayKey` on parse failure. (UI passes the localized today/yesterday strings — keeps this pure.)
 
 ### 7. `rideDisplayTitle` (`lib/domain/ride_title.dart`)
 `String rideDisplayTitle(Ride ride, {String? locale, int? nowMs})` → `description` if non-blank, else a FULL localized date (`yMMMMEEEEd`) of `date ?? startTime ?? now` — never empty.
