@@ -46,10 +46,10 @@ void main() {
       overrides: [
         appDatabaseProvider.overrideWithValue(env.db),
         preferencesRepositoryProvider.overrideWithValue(env.prefs),
-        // Home only reads connectivity on the Start tap (never watches it), so a
-        // Stream override would still be AsyncLoading then; present data
-        // synchronously so the offline branch is exercised deterministically.
-        isOnlineProvider.overrideWithValue(AsyncData(online)),
+        // A stream, like the real ConnectivityObserver — Home must keep it
+        // subscribed so the Start tap sees the real value (issue #31: a bare
+        // read saw a paused provider and always assumed online).
+        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
         if (tracking) isTrackingProvider.overrideWithValue(true),
         ...activeRideTestOverrides(env.db, recording: recording),
         ...homeStreamStubs(

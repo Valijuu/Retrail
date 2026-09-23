@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/app.dart';
+import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
@@ -24,6 +25,8 @@ void main() {
     final container = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
       preferencesRepositoryProvider.overrideWithValue(prefs),
+      // Home keeps connectivity subscribed — stub it (no real probe/poll timer).
+      isOnlineProvider.overrideWith((ref) => Stream.value(true)),
       ...homeStreamStubs(),
     ]);
     addTearDown(container.dispose);
@@ -78,6 +81,8 @@ void main() {
     final container = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
       preferencesRepositoryProvider.overrideWithValue(prefs),
+      // Home keeps connectivity subscribed — stub it (no real probe/poll timer).
+      isOnlineProvider.overrideWith((ref) => Stream.value(true)),
       ...homeStreamStubs(),
     ]);
     addTearDown(container.dispose);

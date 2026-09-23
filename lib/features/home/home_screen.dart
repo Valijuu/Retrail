@@ -131,6 +131,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ref.watch(yearlyStatsProvider).asData?.value ?? const WeeklyStats.zero();
     final recent = ref.watch(recentRidesProvider).asData?.value ?? const [];
     final favorites = ref.watch(favoriteRidesProvider).asData?.value ?? const [];
+    // Keep connectivity subscribed while Home is up, so the Start tap reads a
+    // real value: an unwatched provider is paused, and the bare read in
+    // [_start] then always saw "loading → online" and never offered the
+    // offline confirm (issue #31).
+    ref.watch(isOnlineProvider);
 
     return Scaffold(
       backgroundColor: colors.surface,
