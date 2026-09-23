@@ -40,26 +40,51 @@ void main() {
   });
 
   group('filter badges with year', () {
-    test('activeFilterCount counts a set year', () {
+    // The app's actual default is now "this year" (see HistoryFilterNotifier),
+    // not "All years" — so activeFilterCount/isFilterActive must know the
+    // current calendar year to tell "still on the default" apart from "the
+    // user picked a year". `nowYear` is the injectable seam for that (mirrors
+    // the `nowMs` pattern in time_bounds.dart/history_range.dart).
+    test('activeFilterCount counts a year that does not match nowYear', () {
       const f = HistoryFilter(year: 2023);
-      expect(activeFilterCount(f), 1);
+      expect(activeFilterCount(f, nowYear: 2020), 1);
     });
 
-    test('activeFilterCount combines year with other active filters', () {
+    test('activeFilterCount combines a non-matching year with other active filters', () {
       const f = HistoryFilter(
         year: 2023,
         periods: {TimePeriod.thisWeek},
         favoritesOnly: true,
       );
-      expect(activeFilterCount(f), 3);
+      expect(activeFilterCount(f, nowYear: 2020), 3);
     });
 
-    test('isFilterActive is true when only year is set', () {
-      expect(isFilterActive(const HistoryFilter(year: 2023)), isTrue);
+    test('isFilterActive is true when year does not match nowYear', () {
+      expect(
+          isFilterActive(const HistoryFilter(year: 2023), nowYear: 2020),
+          isTrue);
     });
 
-    test('isFilterActive is false for the default filter', () {
-      expect(isFilterActive(const HistoryFilter()), isFalse);
+    test('activeFilterCount does not count a year that matches nowYear (the app default)', () {
+      const f = HistoryFilter(year: 2024);
+      expect(activeFilterCount(f, nowYear: 2024), 0);
+    });
+
+    test('isFilterActive is false when year matches nowYear and nothing else is set', () {
+      expect(
+          isFilterActive(const HistoryFilter(year: 2024), nowYear: 2024),
+          isFalse);
+    });
+
+    test('year == null ("All years") counts as active regardless of nowYear', () {
+      expect(activeFilterCount(const HistoryFilter(), nowYear: 2024), 1);
+      expect(isFilterActive(const HistoryFilter(), nowYear: 2024), isTrue);
+    });
+
+    test('without nowYear, falls back to the real current calendar year', () {
+      final currentYear = DateTime.now().year;
+      expect(activeFilterCount(HistoryFilter(year: currentYear)), 0);
+      expect(isFilterActive(HistoryFilter(year: currentYear)), isFalse);
     });
   });
 
@@ -120,22 +145,22 @@ void main() {
   group('filter badges with month range', () {
     test('activeFilterCount counts a set month range as a single active filter', () {
       const f = HistoryFilter(year: 2023, monthFrom: 6, monthTo: 8);
-      expect(activeFilterCount(f), 2);
+      expect(activeFilterCount(f, nowYear: 2020), 2);
     });
 
     test('activeFilterCount counts monthFrom alone (monthTo still null) as active', () {
       const f = HistoryFilter(year: 2023, monthFrom: 6);
-      expect(activeFilterCount(f), 2);
+      expect(activeFilterCount(f, nowYear: 2020), 2);
     });
 
-    test('isFilterActive is true when only a month range is set', () {
-      expect(
-          isFilterActive(const HistoryFilter(monthFrom: 6, monthTo: 8)),
-          isTrue);
+    test('isFilterActive is true when only a month range is set (year matches nowYear)', () {
+      const f = HistoryFilter(year: 2024, monthFrom: 6, monthTo: 8);
+      expect(isFilterActive(f, nowYear: 2024), isTrue);
     });
 
-    test('isFilterActive is false for the default filter (still no month range)', () {
-      expect(isFilterActive(const HistoryFilter()), isFalse);
+    test('isFilterActive is false when year matches nowYear and no month range is set', () {
+      const f = HistoryFilter(year: 2024);
+      expect(isFilterActive(f, nowYear: 2024), isFalse);
     });
   });
 }

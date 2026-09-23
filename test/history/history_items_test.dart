@@ -170,19 +170,24 @@ void main() {
 
   group('filter badges', () {
     test('activeFilterCount excludes the search query', () {
+      // year matches nowYear (the app default, see HistoryFilterNotifier) so
+      // it doesn't add to the count — isolates the 4 other active sections.
       const f = HistoryFilter(
+        year: 2024,
         periods: {TimePeriod.thisWeek},
         sort: SortOrder.distance,
         favoritesOnly: true,
         activities: {ActivityType.scooter},
         query: 'x',
       );
-      expect(activeFilterCount(f), 4);
+      expect(activeFilterCount(f, nowYear: 2024), 4);
     });
 
     test('isFilterActive includes the search query', () {
       expect(isFilterActive(const HistoryFilter(query: 'x')), isTrue);
-      expect(isFilterActive(const HistoryFilter()), isFalse);
+      expect(
+          isFilterActive(const HistoryFilter(year: 2024), nowYear: 2024),
+          isFalse);
     });
   });
 }
