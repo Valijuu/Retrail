@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/connectivity/connectivity_providers.dart';
+import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_dao.dart';
@@ -203,6 +204,21 @@ void main() {
     expect(find.text('Great pace'), findsOneWidget); // avg 15 > 10
     expect(find.text('No route'), findsOneWidget); // empty trackpoints
     expect(find.text('Scooter'), findsOneWidget);
+  });
+
+  testWidgets(
+      'date headers stand out as section titles: titleSmall in full-strength '
+      'onSurface, not dimmed uppercase labelSmall', (tester) async {
+    // An unparseable day key is shown verbatim by formatDateLabel, so the
+    // rendered text is fixed regardless of today's date.
+    await pump(tester, [const DateHeaderItem('Some day'), _entry(1)]);
+
+    final header = tester.widget<Text>(find.text('Some day'));
+    final context = tester.element(find.text('Some day'));
+    final theme = Theme.of(context);
+    expect(header.style?.fontSize, theme.textTheme.titleSmall?.fontSize);
+    expect(header.style?.fontWeight, theme.textTheme.titleSmall?.fontWeight);
+    expect(header.style?.color, theme.extension<AppColors>()!.onSurface);
   });
 
   testWidgets('empty state when there are no rides', (tester) async {

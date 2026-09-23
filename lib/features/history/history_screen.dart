@@ -357,13 +357,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             todayLabel: l10n.dateToday,
             yesterdayLabel: l10n.dateYesterday,
             locale: Localizations.localeOf(context).toString());
+        // A section title, not a dimmed label: in labelSmall/onSurfaceVariant
+        // it matched the cards' own metadata line and got lost between them.
         return Padding(
-          padding: const EdgeInsets.only(top: 4, bottom: 5),
-          child: Text(label.toUpperCase(),
+          padding: const EdgeInsets.only(left: 4, top: 12, bottom: 4),
+          child: Text(label,
               style: Theme.of(context)
                   .textTheme
-                  .labelSmall
-                  ?.copyWith(color: colors.onSurfaceVariant)),
+                  .titleSmall
+                  ?.copyWith(color: colors.onSurface)),
         );
       case RideEntryItem():
         final rideId = item.ride.rideId;

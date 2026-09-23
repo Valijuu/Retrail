@@ -95,7 +95,7 @@ List<HistoryItem> buildHistoryItems(
 double estimatedOffsetOf(
   List<HistoryItem> items,
   int rideId, {
-  double headerExtent = 30,
+  double headerExtent = 42,
   double cardExtent = 240,
 }) {
   var offset = 0.0;
