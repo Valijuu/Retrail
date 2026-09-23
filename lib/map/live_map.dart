@@ -462,10 +462,29 @@ class _LiveMapState extends State<LiveMap>
     }
 
     if (widget.fitBounds && widget.points.isNotEmpty) {
-      _ignoreCancel(_controller?.fitBounds(
-        bounds: routeBounds(widget.points)!,
-        padding: const EdgeInsets.all(24),
-      ));
+      // Awaited (not fire-and-forget like the live map's moves below) so this
+      // finishes — hidden behind the terrain placeholder — before the reveal
+      // check runs: the map used to appear already visible and then visibly
+      // animate/zoom into its fitted framing on every open. A short duration
+      // just keeps that hidden wait brief; it's never seen either way.
+      try {
+        await _controller?.fitBounds(
+          bounds: routeBounds(widget.points)!,
+          padding: const EdgeInsets.all(24),
+          nativeDuration: const Duration(milliseconds: 300),
+        );
+        // fitBounds() has no zoom ceiling — a short/near-stationary route's
+        // tiny bounding box can fit at an arbitrarily high, street-level
+        // zoom. Cap it at the same zoom the ride-preview thumbnails use, so
+        // a short ride doesn't end up zoomed in absurdly close.
+        final zoom = _controller?.camera?.zoom;
+        if (zoom != null && zoom > maxPreviewZoom) {
+          await _controller?.moveCamera(zoom: maxPreviewZoom);
+        }
+      } catch (_) {
+        // A cancelled/aborted fit still reveals the map below — a slightly
+        // off camera beats a placeholder stuck on screen forever.
+      }
     } else if (!widget.fitBounds && widget.isFollowing) {
       // Recenter once the style is ready. The map is created with initCenter
       // (0,0) when the ride starts with no fix yet; the follow update in
@@ -508,7 +527,15 @@ class _LiveMapState extends State<LiveMap>
         sourceId: 'current',
         layout: {
           'icon-image': imageId,
-          'icon-size': 0.5,
+          // maplibre 0.3.5 fixed Android's addImage() to respect
+          // devicePixelRatio (it previously registered bitmaps at raw-pixel
+          // size, rendering symbols ~pixelRatio× too small there). That made
+          // this 96px badge render correctly-sized but much larger than the
+          // pre-upgrade appearance this value was tuned against. 0.19 (~18dp
+          // on a 420dpi/2.625x device) restores that footprint, now
+          // consistently across every device rather than shrinking on
+          // higher-density screens as before.
+          'icon-size': 0.19,
           'icon-allow-overlap': true,
           'icon-ignore-placement': true,
         },
