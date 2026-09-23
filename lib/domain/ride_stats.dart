@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../data/db/app_database.dart' show Ride;
 import '../data/db/ride_with_trackpoints.dart';
 import 'distance_calculator.dart';
 
@@ -48,6 +49,29 @@ RideStats computeRideStats(RideWithTrackpoints rwt, DistanceCalculator calc) {
   final avgSpeedKmh =
       durationMs > 0 ? (distanceMetres / 1000.0 / (durationMs / 3600000.0)) : 0.0;
 
+  return RideStats(
+    durationMs: durationMs,
+    distanceMetres: distanceMetres,
+    maxSpeedKmh: maxSpeedKmh,
+    avgSpeedKmh: avgSpeedKmh,
+  );
+}
+
+/// Reads the [RideStats] denormalized onto [ride] at finalization time (see
+/// `RideRepository.updateEndTime`) — null when not yet computed (an
+/// in-progress ride, or a pre-migration row before the backfill ran), so
+/// callers know to fall back to [computeRideStats].
+RideStats? storedRideStats(Ride ride) {
+  final distanceMetres = ride.distanceMetres;
+  final durationMs = ride.durationMs;
+  final avgSpeedKmh = ride.avgSpeedKmh;
+  final maxSpeedKmh = ride.maxSpeedKmh;
+  if (distanceMetres == null ||
+      durationMs == null ||
+      avgSpeedKmh == null ||
+      maxSpeedKmh == null) {
+    return null;
+  }
   return RideStats(
     durationMs: durationMs,
     distanceMetres: distanceMetres,

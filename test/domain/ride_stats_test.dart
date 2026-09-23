@@ -50,4 +50,31 @@ void main() {
         calc);
     expect(s.avgSpeedKmh, closeTo(0.2, 1e-9));
   });
+
+  group('storedRideStats', () {
+    test('returns the denormalized stats when all four columns are set', () {
+      final s = storedRideStats(buildRide(
+        distanceMetres: 123.4,
+        durationMs: 5000,
+        avgSpeedKmh: 8.8,
+        maxSpeedKmh: 20.0,
+      ));
+      expect(s, isNotNull);
+      expect(s!.distanceMetres, 123.4);
+      expect(s.durationMs, 5000);
+      expect(s.avgSpeedKmh, 8.8);
+      expect(s.maxSpeedKmh, 20.0);
+    });
+
+    test('returns null when a ride has no stored stats yet', () {
+      expect(storedRideStats(buildRide()), isNull);
+    });
+
+    test('returns null when only some columns are set (partial/corrupt row)', () {
+      expect(
+        storedRideStats(buildRide(distanceMetres: 1, durationMs: 2)),
+        isNull,
+      );
+    });
+  });
 }

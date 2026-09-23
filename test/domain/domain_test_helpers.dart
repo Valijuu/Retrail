@@ -12,6 +12,10 @@ Ride buildRide({
   String? comment,
   bool isFavorite = false,
   int? favoritedAt,
+  double? distanceMetres,
+  int? durationMs,
+  double? avgSpeedKmh,
+  double? maxSpeedKmh,
 }) =>
     Ride(
       rideId: rideId,
@@ -23,6 +27,10 @@ Ride buildRide({
       comment: comment,
       isFavorite: isFavorite,
       favoritedAt: favoritedAt,
+      distanceMetres: distanceMetres,
+      durationMs: durationMs,
+      avgSpeedKmh: avgSpeedKmh,
+      maxSpeedKmh: maxSpeedKmh,
     );
 
 int _tpId = 0;

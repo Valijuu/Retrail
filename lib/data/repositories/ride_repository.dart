@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 
+import '../../domain/distance_calculator.dart';
+import '../../domain/ride_stats.dart';
 import '../db/app_database.dart';
 import '../db/ride_dao.dart';
 import '../db/ride_with_trackpoints.dart';
@@ -12,10 +14,13 @@ int _systemNow() => DateTime.now().millisecondsSinceEpoch;
 
 /// Thin wrapper over [RideDao], mirroring the original Kotlin `RideRepository`.
 class RideRepository {
-  RideRepository(this._dao, {NowMs? now}) : _now = now ?? _systemNow;
+  RideRepository(this._dao, {NowMs? now, DistanceCalculator? calc})
+      : _now = now ?? _systemNow,
+        _calc = calc ?? const HaversineDistanceCalculator();
 
   final RideDao _dao;
   final NowMs _now;
+  final DistanceCalculator _calc;
 
   Stream<List<Ride>> getAllRides() => _dao.getAll();
 
@@ -41,8 +46,25 @@ class RideRepository {
         date: Value(startedAtMs),
       ));
 
-  Future<void> updateEndTime(int rideId, int endTime) =>
-      _dao.updateEndTime(rideId, endTime);
+  /// Stamps the end time AND caches [RideStats] onto the row (distance,
+  /// duration, avg/max speed) — computed once here via [computeRideStats],
+  /// so History reads them straight off the row instead of recomputing a
+  /// full Haversine sum over every trackpoint on every list rebuild. A ride
+  /// with no trackpoints yet (the finalize-race edge case in RideTracker)
+  /// still gets a zeroed stats row rather than staying null forever.
+  Future<void> updateEndTime(int rideId, int endTime) async {
+    await _dao.updateEndTime(rideId, endTime);
+    final rwt = await _dao.getRideWithTrackpointsById(rideId).first;
+    if (rwt == null) return;
+    final stats = computeRideStats(rwt, _calc);
+    await _dao.updateStats(
+      rideId,
+      distanceMetres: stats.distanceMetres,
+      durationMs: stats.durationMs,
+      avgSpeedKmh: stats.avgSpeedKmh,
+      maxSpeedKmh: stats.maxSpeedKmh,
+    );
+  }
 
   Future<void> updateRideDetails(int rideId, String? description, String? comment) =>
       _dao.updateRideDetails(rideId, description, comment);

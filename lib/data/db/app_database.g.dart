@@ -109,6 +109,50 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _distanceMetresMeta = const VerificationMeta(
+    'distanceMetres',
+  );
+  @override
+  late final GeneratedColumn<double> distanceMetres = GeneratedColumn<double>(
+    'distance_metres',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durationMsMeta = const VerificationMeta(
+    'durationMs',
+  );
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+    'duration_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _avgSpeedKmhMeta = const VerificationMeta(
+    'avgSpeedKmh',
+  );
+  @override
+  late final GeneratedColumn<double> avgSpeedKmh = GeneratedColumn<double>(
+    'avg_speed_kmh',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxSpeedKmhMeta = const VerificationMeta(
+    'maxSpeedKmh',
+  );
+  @override
+  late final GeneratedColumn<double> maxSpeedKmh = GeneratedColumn<double>(
+    'max_speed_kmh',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     rideId,
@@ -120,6 +164,10 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     comment,
     isFavorite,
     favoritedAt,
+    distanceMetres,
+    durationMs,
+    avgSpeedKmh,
+    maxSpeedKmh,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -193,6 +241,39 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         ),
       );
     }
+    if (data.containsKey('distance_metres')) {
+      context.handle(
+        _distanceMetresMeta,
+        distanceMetres.isAcceptableOrUnknown(
+          data['distance_metres']!,
+          _distanceMetresMeta,
+        ),
+      );
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+        _durationMsMeta,
+        durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
+      );
+    }
+    if (data.containsKey('avg_speed_kmh')) {
+      context.handle(
+        _avgSpeedKmhMeta,
+        avgSpeedKmh.isAcceptableOrUnknown(
+          data['avg_speed_kmh']!,
+          _avgSpeedKmhMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_speed_kmh')) {
+      context.handle(
+        _maxSpeedKmhMeta,
+        maxSpeedKmh.isAcceptableOrUnknown(
+          data['max_speed_kmh']!,
+          _maxSpeedKmhMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -238,6 +319,22 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         DriftSqlType.int,
         data['${effectivePrefix}favorited_at'],
       ),
+      distanceMetres: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}distance_metres'],
+      ),
+      durationMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_ms'],
+      ),
+      avgSpeedKmh: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}avg_speed_kmh'],
+      ),
+      maxSpeedKmh: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_speed_kmh'],
+      ),
     );
   }
 
@@ -257,6 +354,10 @@ class Ride extends DataClass implements Insertable<Ride> {
   final String? comment;
   final bool isFavorite;
   final int? favoritedAt;
+  final double? distanceMetres;
+  final int? durationMs;
+  final double? avgSpeedKmh;
+  final double? maxSpeedKmh;
   const Ride({
     required this.rideId,
     this.description,
@@ -267,6 +368,10 @@ class Ride extends DataClass implements Insertable<Ride> {
     this.comment,
     required this.isFavorite,
     this.favoritedAt,
+    this.distanceMetres,
+    this.durationMs,
+    this.avgSpeedKmh,
+    this.maxSpeedKmh,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -294,6 +399,18 @@ class Ride extends DataClass implements Insertable<Ride> {
     if (!nullToAbsent || favoritedAt != null) {
       map['favorited_at'] = Variable<int>(favoritedAt);
     }
+    if (!nullToAbsent || distanceMetres != null) {
+      map['distance_metres'] = Variable<double>(distanceMetres);
+    }
+    if (!nullToAbsent || durationMs != null) {
+      map['duration_ms'] = Variable<int>(durationMs);
+    }
+    if (!nullToAbsent || avgSpeedKmh != null) {
+      map['avg_speed_kmh'] = Variable<double>(avgSpeedKmh);
+    }
+    if (!nullToAbsent || maxSpeedKmh != null) {
+      map['max_speed_kmh'] = Variable<double>(maxSpeedKmh);
+    }
     return map;
   }
 
@@ -318,6 +435,18 @@ class Ride extends DataClass implements Insertable<Ride> {
       favoritedAt: favoritedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(favoritedAt),
+      distanceMetres: distanceMetres == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceMetres),
+      durationMs: durationMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationMs),
+      avgSpeedKmh: avgSpeedKmh == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avgSpeedKmh),
+      maxSpeedKmh: maxSpeedKmh == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxSpeedKmh),
     );
   }
 
@@ -336,6 +465,10 @@ class Ride extends DataClass implements Insertable<Ride> {
       comment: serializer.fromJson<String?>(json['comment']),
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       favoritedAt: serializer.fromJson<int?>(json['favoritedAt']),
+      distanceMetres: serializer.fromJson<double?>(json['distanceMetres']),
+      durationMs: serializer.fromJson<int?>(json['durationMs']),
+      avgSpeedKmh: serializer.fromJson<double?>(json['avgSpeedKmh']),
+      maxSpeedKmh: serializer.fromJson<double?>(json['maxSpeedKmh']),
     );
   }
   @override
@@ -351,6 +484,10 @@ class Ride extends DataClass implements Insertable<Ride> {
       'comment': serializer.toJson<String?>(comment),
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'favoritedAt': serializer.toJson<int?>(favoritedAt),
+      'distanceMetres': serializer.toJson<double?>(distanceMetres),
+      'durationMs': serializer.toJson<int?>(durationMs),
+      'avgSpeedKmh': serializer.toJson<double?>(avgSpeedKmh),
+      'maxSpeedKmh': serializer.toJson<double?>(maxSpeedKmh),
     };
   }
 
@@ -364,6 +501,10 @@ class Ride extends DataClass implements Insertable<Ride> {
     Value<String?> comment = const Value.absent(),
     bool? isFavorite,
     Value<int?> favoritedAt = const Value.absent(),
+    Value<double?> distanceMetres = const Value.absent(),
+    Value<int?> durationMs = const Value.absent(),
+    Value<double?> avgSpeedKmh = const Value.absent(),
+    Value<double?> maxSpeedKmh = const Value.absent(),
   }) => Ride(
     rideId: rideId ?? this.rideId,
     description: description.present ? description.value : this.description,
@@ -374,6 +515,12 @@ class Ride extends DataClass implements Insertable<Ride> {
     comment: comment.present ? comment.value : this.comment,
     isFavorite: isFavorite ?? this.isFavorite,
     favoritedAt: favoritedAt.present ? favoritedAt.value : this.favoritedAt,
+    distanceMetres: distanceMetres.present
+        ? distanceMetres.value
+        : this.distanceMetres,
+    durationMs: durationMs.present ? durationMs.value : this.durationMs,
+    avgSpeedKmh: avgSpeedKmh.present ? avgSpeedKmh.value : this.avgSpeedKmh,
+    maxSpeedKmh: maxSpeedKmh.present ? maxSpeedKmh.value : this.maxSpeedKmh,
   );
   Ride copyWithCompanion(RidesCompanion data) {
     return Ride(
@@ -392,6 +539,18 @@ class Ride extends DataClass implements Insertable<Ride> {
       favoritedAt: data.favoritedAt.present
           ? data.favoritedAt.value
           : this.favoritedAt,
+      distanceMetres: data.distanceMetres.present
+          ? data.distanceMetres.value
+          : this.distanceMetres,
+      durationMs: data.durationMs.present
+          ? data.durationMs.value
+          : this.durationMs,
+      avgSpeedKmh: data.avgSpeedKmh.present
+          ? data.avgSpeedKmh.value
+          : this.avgSpeedKmh,
+      maxSpeedKmh: data.maxSpeedKmh.present
+          ? data.maxSpeedKmh.value
+          : this.maxSpeedKmh,
     );
   }
 
@@ -406,7 +565,11 @@ class Ride extends DataClass implements Insertable<Ride> {
           ..write('date: $date, ')
           ..write('comment: $comment, ')
           ..write('isFavorite: $isFavorite, ')
-          ..write('favoritedAt: $favoritedAt')
+          ..write('favoritedAt: $favoritedAt, ')
+          ..write('distanceMetres: $distanceMetres, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('avgSpeedKmh: $avgSpeedKmh, ')
+          ..write('maxSpeedKmh: $maxSpeedKmh')
           ..write(')'))
         .toString();
   }
@@ -422,6 +585,10 @@ class Ride extends DataClass implements Insertable<Ride> {
     comment,
     isFavorite,
     favoritedAt,
+    distanceMetres,
+    durationMs,
+    avgSpeedKmh,
+    maxSpeedKmh,
   );
   @override
   bool operator ==(Object other) =>
@@ -435,7 +602,11 @@ class Ride extends DataClass implements Insertable<Ride> {
           other.date == this.date &&
           other.comment == this.comment &&
           other.isFavorite == this.isFavorite &&
-          other.favoritedAt == this.favoritedAt);
+          other.favoritedAt == this.favoritedAt &&
+          other.distanceMetres == this.distanceMetres &&
+          other.durationMs == this.durationMs &&
+          other.avgSpeedKmh == this.avgSpeedKmh &&
+          other.maxSpeedKmh == this.maxSpeedKmh);
 }
 
 class RidesCompanion extends UpdateCompanion<Ride> {
@@ -448,6 +619,10 @@ class RidesCompanion extends UpdateCompanion<Ride> {
   final Value<String?> comment;
   final Value<bool> isFavorite;
   final Value<int?> favoritedAt;
+  final Value<double?> distanceMetres;
+  final Value<int?> durationMs;
+  final Value<double?> avgSpeedKmh;
+  final Value<double?> maxSpeedKmh;
   const RidesCompanion({
     this.rideId = const Value.absent(),
     this.description = const Value.absent(),
@@ -458,6 +633,10 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.comment = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.favoritedAt = const Value.absent(),
+    this.distanceMetres = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.avgSpeedKmh = const Value.absent(),
+    this.maxSpeedKmh = const Value.absent(),
   });
   RidesCompanion.insert({
     this.rideId = const Value.absent(),
@@ -469,6 +648,10 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.comment = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.favoritedAt = const Value.absent(),
+    this.distanceMetres = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.avgSpeedKmh = const Value.absent(),
+    this.maxSpeedKmh = const Value.absent(),
   });
   static Insertable<Ride> custom({
     Expression<int>? rideId,
@@ -480,6 +663,10 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Expression<String>? comment,
     Expression<bool>? isFavorite,
     Expression<int>? favoritedAt,
+    Expression<double>? distanceMetres,
+    Expression<int>? durationMs,
+    Expression<double>? avgSpeedKmh,
+    Expression<double>? maxSpeedKmh,
   }) {
     return RawValuesInsertable({
       if (rideId != null) 'ride_id': rideId,
@@ -491,6 +678,10 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       if (comment != null) 'comment': comment,
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (favoritedAt != null) 'favorited_at': favoritedAt,
+      if (distanceMetres != null) 'distance_metres': distanceMetres,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (avgSpeedKmh != null) 'avg_speed_kmh': avgSpeedKmh,
+      if (maxSpeedKmh != null) 'max_speed_kmh': maxSpeedKmh,
     });
   }
 
@@ -504,6 +695,10 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Value<String?>? comment,
     Value<bool>? isFavorite,
     Value<int?>? favoritedAt,
+    Value<double?>? distanceMetres,
+    Value<int?>? durationMs,
+    Value<double?>? avgSpeedKmh,
+    Value<double?>? maxSpeedKmh,
   }) {
     return RidesCompanion(
       rideId: rideId ?? this.rideId,
@@ -515,6 +710,10 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       comment: comment ?? this.comment,
       isFavorite: isFavorite ?? this.isFavorite,
       favoritedAt: favoritedAt ?? this.favoritedAt,
+      distanceMetres: distanceMetres ?? this.distanceMetres,
+      durationMs: durationMs ?? this.durationMs,
+      avgSpeedKmh: avgSpeedKmh ?? this.avgSpeedKmh,
+      maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
     );
   }
 
@@ -548,6 +747,18 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     if (favoritedAt.present) {
       map['favorited_at'] = Variable<int>(favoritedAt.value);
     }
+    if (distanceMetres.present) {
+      map['distance_metres'] = Variable<double>(distanceMetres.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (avgSpeedKmh.present) {
+      map['avg_speed_kmh'] = Variable<double>(avgSpeedKmh.value);
+    }
+    if (maxSpeedKmh.present) {
+      map['max_speed_kmh'] = Variable<double>(maxSpeedKmh.value);
+    }
     return map;
   }
 
@@ -562,7 +773,11 @@ class RidesCompanion extends UpdateCompanion<Ride> {
           ..write('date: $date, ')
           ..write('comment: $comment, ')
           ..write('isFavorite: $isFavorite, ')
-          ..write('favoritedAt: $favoritedAt')
+          ..write('favoritedAt: $favoritedAt, ')
+          ..write('distanceMetres: $distanceMetres, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('avgSpeedKmh: $avgSpeedKmh, ')
+          ..write('maxSpeedKmh: $maxSpeedKmh')
           ..write(')'))
         .toString();
   }
@@ -1021,6 +1236,10 @@ typedef $$RidesTableCreateCompanionBuilder =
       Value<String?> comment,
       Value<bool> isFavorite,
       Value<int?> favoritedAt,
+      Value<double?> distanceMetres,
+      Value<int?> durationMs,
+      Value<double?> avgSpeedKmh,
+      Value<double?> maxSpeedKmh,
     });
 typedef $$RidesTableUpdateCompanionBuilder =
     RidesCompanion Function({
@@ -1033,6 +1252,10 @@ typedef $$RidesTableUpdateCompanionBuilder =
       Value<String?> comment,
       Value<bool> isFavorite,
       Value<int?> favoritedAt,
+      Value<double?> distanceMetres,
+      Value<int?> durationMs,
+      Value<double?> avgSpeedKmh,
+      Value<double?> maxSpeedKmh,
     });
 
 final class $$RidesTableReferences
@@ -1108,6 +1331,26 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
 
   ColumnFilters<int> get favoritedAt => $composableBuilder(
     column: $table.favoritedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get distanceMetres => $composableBuilder(
+    column: $table.distanceMetres,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get avgSpeedKmh => $composableBuilder(
+    column: $table.avgSpeedKmh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxSpeedKmh => $composableBuilder(
+    column: $table.maxSpeedKmh,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1190,6 +1433,26 @@ class $$RidesTableOrderingComposer
     column: $table.favoritedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get distanceMetres => $composableBuilder(
+    column: $table.distanceMetres,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get avgSpeedKmh => $composableBuilder(
+    column: $table.avgSpeedKmh,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxSpeedKmh => $composableBuilder(
+    column: $table.maxSpeedKmh,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RidesTableAnnotationComposer
@@ -1231,6 +1494,26 @@ class $$RidesTableAnnotationComposer
 
   GeneratedColumn<int> get favoritedAt => $composableBuilder(
     column: $table.favoritedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get distanceMetres => $composableBuilder(
+    column: $table.distanceMetres,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get avgSpeedKmh => $composableBuilder(
+    column: $table.avgSpeedKmh,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get maxSpeedKmh => $composableBuilder(
+    column: $table.maxSpeedKmh,
     builder: (column) => column,
   );
 
@@ -1297,6 +1580,10 @@ class $$RidesTableTableManager
                 Value<String?> comment = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<int?> favoritedAt = const Value.absent(),
+                Value<double?> distanceMetres = const Value.absent(),
+                Value<int?> durationMs = const Value.absent(),
+                Value<double?> avgSpeedKmh = const Value.absent(),
+                Value<double?> maxSpeedKmh = const Value.absent(),
               }) => RidesCompanion(
                 rideId: rideId,
                 description: description,
@@ -1307,6 +1594,10 @@ class $$RidesTableTableManager
                 comment: comment,
                 isFavorite: isFavorite,
                 favoritedAt: favoritedAt,
+                distanceMetres: distanceMetres,
+                durationMs: durationMs,
+                avgSpeedKmh: avgSpeedKmh,
+                maxSpeedKmh: maxSpeedKmh,
               ),
           createCompanionCallback:
               ({
@@ -1319,6 +1610,10 @@ class $$RidesTableTableManager
                 Value<String?> comment = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<int?> favoritedAt = const Value.absent(),
+                Value<double?> distanceMetres = const Value.absent(),
+                Value<int?> durationMs = const Value.absent(),
+                Value<double?> avgSpeedKmh = const Value.absent(),
+                Value<double?> maxSpeedKmh = const Value.absent(),
               }) => RidesCompanion.insert(
                 rideId: rideId,
                 description: description,
@@ -1329,6 +1624,10 @@ class $$RidesTableTableManager
                 comment: comment,
                 isFavorite: isFavorite,
                 favoritedAt: favoritedAt,
+                distanceMetres: distanceMetres,
+                durationMs: durationMs,
+                avgSpeedKmh: avgSpeedKmh,
+                maxSpeedKmh: maxSpeedKmh,
               ),
           withReferenceMapper: (p0) => p0
               .map(

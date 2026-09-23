@@ -66,7 +66,8 @@ List<HistoryItem> buildHistoryItems(
         return title.toLowerCase().contains(q) ||
             (rwt.ride.comment?.toLowerCase().contains(q) ?? false);
       })
-      .map((rwt) => RideEntryItem(rwt, computeRideStats(rwt, calc)))
+      .map((rwt) => RideEntryItem(
+          rwt, storedRideStats(rwt.ride) ?? computeRideStats(rwt, calc)))
       .toList();
 
   switch (f.sort) {

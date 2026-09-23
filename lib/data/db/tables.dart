@@ -13,6 +13,16 @@ class Rides extends Table {
   BoolColumn get isFavorite =>
       boolean().named('is_favorite').withDefault(const Constant(false))();
   IntColumn get favoritedAt => integer().named('favorited_at').nullable()();
+
+  // Denormalized [RideStats] fields (lib/domain/ride_stats.dart), written once
+  // at ride finalization (RideRepository.updateEndTime) instead of recomputed
+  // from the full trackpoint list on every History list rebuild. Null means
+  // "not yet computed" (an in-progress ride, or a pre-migration row before
+  // the v2 backfill runs) — callers fall back to computeRideStats in that case.
+  RealColumn get distanceMetres => real().named('distance_metres').nullable()();
+  IntColumn get durationMs => integer().named('duration_ms').nullable()();
+  RealColumn get avgSpeedKmh => real().named('avg_speed_kmh').nullable()();
+  RealColumn get maxSpeedKmh => real().named('max_speed_kmh').nullable()();
 }
 
 /// Mirrors the original Room `trackpoints` table (entity `Trackpoint`).

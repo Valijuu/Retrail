@@ -89,6 +89,23 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
       (update(rides)..where((r) => r.rideId.equals(rideId)))
           .write(RidesCompanion(endTime: Value(endTime)));
 
+  /// Writes the denormalized [RideStats] fields (see tables.dart) computed
+  /// once at ride finalization, so History never recomputes them from raw
+  /// trackpoints on every list rebuild.
+  Future<void> updateStats(
+    int rideId, {
+    required double distanceMetres,
+    required int durationMs,
+    required double avgSpeedKmh,
+    required double maxSpeedKmh,
+  }) =>
+      (update(rides)..where((r) => r.rideId.equals(rideId))).write(RidesCompanion(
+        distanceMetres: Value(distanceMetres),
+        durationMs: Value(durationMs),
+        avgSpeedKmh: Value(avgSpeedKmh),
+        maxSpeedKmh: Value(maxSpeedKmh),
+      ));
+
   Future<void> updateRideDetails(int rideId, String? description, String? comment) =>
       (update(rides)..where((r) => r.rideId.equals(rideId))).write(
           RidesCompanion(description: Value(description), comment: Value(comment)));

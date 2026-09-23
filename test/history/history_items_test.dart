@@ -21,6 +21,10 @@ Ride _ride(
   String? comment,
   int? start,
   int? end,
+  double? distanceMetres,
+  int? durationMs,
+  double? avgSpeedKmh,
+  double? maxSpeedKmh,
 }) =>
     Ride(
       rideId: id,
@@ -32,6 +36,10 @@ Ride _ride(
       comment: comment,
       isFavorite: fav,
       favoritedAt: fav ? date : null,
+      distanceMetres: distanceMetres,
+      durationMs: durationMs,
+      avgSpeedKmh: avgSpeedKmh,
+      maxSpeedKmh: maxSpeedKmh,
     );
 
 Trackpoint _tp(int rideId, double lat, double lng, {double? speed}) => Trackpoint(
@@ -181,6 +189,37 @@ void main() {
       final items = _build(
           [longRide, shortRide], const HistoryFilter(sort: SortOrder.duration));
       expect(_rideIds(items), [2, 1]);
+    });
+  });
+
+  group('stats source', () {
+    test('uses the denormalized stats on the ride row when present, not '
+        'recomputed from trackpoints', () {
+      // Trackpoints alone would compute a non-zero distance (real Haversine
+      // segment) — if the stored value below (0) is what wins, that proves
+      // buildHistoryItems didn't fall back to computeRideStats.
+      final entry = _rwt(
+        _ride(1,
+            start: 0,
+            end: 5000,
+            distanceMetres: 0,
+            durationMs: 5000,
+            avgSpeedKmh: 0,
+            maxSpeedKmh: 0),
+        [_tp(1, 52.0, 13.0), _tp(1, 52.5, 13.5)],
+      );
+      final items = _build([entry], const HistoryFilter());
+      final stats = items.whereType<RideEntryItem>().single.stats;
+      expect(stats.distanceMetres, 0);
+    });
+
+    test('falls back to computeRideStats when the row has no stored stats',
+        () {
+      final entry = _rwt(_ride(1, start: 0, end: 3600000),
+          [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)]);
+      final items = _build([entry], const HistoryFilter());
+      final stats = items.whereType<RideEntryItem>().single.stats;
+      expect(stats.distanceMetres, greaterThan(0));
     });
   });
 
