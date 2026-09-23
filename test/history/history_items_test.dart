@@ -253,9 +253,6 @@ void main() {
 
   group('filter badges', () {
     test('activeFilterCount excludes the search query', () {
-      // year and month range both match _now's year/month (the app default,
-      // see HistoryFilterNotifier) so neither adds to the count — isolates
-      // the 3 other active sections.
       const f = HistoryFilter(
         year: 2024,
         monthFrom: 6,
@@ -265,16 +262,14 @@ void main() {
         activities: {ActivityType.scooter},
         query: 'x',
       );
-      expect(activeFilterCount(f, nowMs: _now), 3);
+      // year + month range + sort + favorites + activities = 5; query is
+      // excluded (it has its own visible bar).
+      expect(activeFilterCount(f), 5);
     });
 
     test('isFilterActive includes the search query', () {
       expect(isFilterActive(const HistoryFilter(query: 'x')), isTrue);
-      expect(
-          isFilterActive(
-              const HistoryFilter(year: 2024, monthFrom: 6, monthTo: 6),
-              nowMs: _now),
-          isFalse);
+      expect(isFilterActive(const HistoryFilter()), isFalse);
     });
   });
 }

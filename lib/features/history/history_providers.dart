@@ -15,17 +15,12 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   @override
   HistoryFilter build() => _defaultFilter();
 
-  /// The app's default filter: the current calendar month and year (not
-  /// "All years"/unrestricted) — so the Von/Bis month range and Year
-  /// dropdown both start on "now", and the filter badge starts at 0 (see
-  /// `activeFilterCount`'s `nowMs` seam). Both stay explicitly changeable
-  /// afterwards — "All years" via `setYear(null)`, any month range via
-  /// [setMonthFrom]/[setMonthTo].
-  static HistoryFilter _defaultFilter() {
-    final now = DateTime.now();
-    return HistoryFilter(
-        year: now.year, monthFrom: now.month, monthTo: now.month);
-  }
+  /// The app's default filter: "All years"/unrestricted — the Year dropdown
+  /// starts on "All", the Von/Bis month range is unrestricted, and the
+  /// filter badge starts at 0 (see `activeFilterCount`). Both stay
+  /// explicitly changeable afterwards via [setYear]/[setMonthFrom]/
+  /// [setMonthTo].
+  static HistoryFilter _defaultFilter() => const HistoryFilter();
 
   void setSort(SortOrder s) => state = state.copyWith(sort: s);
   void setQuery(String q) => state = state.copyWith(query: q);

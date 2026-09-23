@@ -83,33 +83,28 @@ class HistoryFilter {
 /// search query is excluded (it has its own visible bar). Mirrors
 /// `activeFilterCount`.
 ///
-/// [nowMs] is the injectable "now" seam (epoch ms, mirrors the `nowMs`
-/// pattern in `time_bounds.dart`/`history_range.dart`) — the app's default
-/// filter state is "this month, this year" (see
-/// `HistoryFilterNotifier._defaultFilter`), so `f.year`/`f.monthFrom`/
-/// `f.monthTo` all matching "now" is the non-active baseline.
-int activeFilterCount(HistoryFilter f, {int? nowMs}) {
-  final now = DateTime.fromMillisecondsSinceEpoch(
-      nowMs ?? DateTime.now().millisecondsSinceEpoch);
+/// The app's default filter state is "All years"/unrestricted (see
+/// `HistoryFilterNotifier._defaultFilter`), so a set `year` or a set
+/// `monthFrom`/`monthTo` is itself the deviation from the baseline — no
+/// "now" reference needed.
+int activeFilterCount(HistoryFilter f) {
   var count = 0;
   if (f.sort != SortOrder.date) count++;
   if (f.favoritesOnly) count++;
   if (f.activities.isNotEmpty) count++;
-  if (f.year != now.year) count++;
-  if (f.monthFrom != now.month || f.monthTo != now.month) count++;
+  if (f.year != null) count++;
+  if (f.monthFrom != null || f.monthTo != null) count++;
   return count;
 }
 
 /// Whether any non-default filter (search included) is active. Mirrors
-/// `isFilterActive`. See [activeFilterCount] for [nowMs].
-bool isFilterActive(HistoryFilter f, {int? nowMs}) {
-  final now = DateTime.fromMillisecondsSinceEpoch(
-      nowMs ?? DateTime.now().millisecondsSinceEpoch);
+/// `isFilterActive`. See [activeFilterCount].
+bool isFilterActive(HistoryFilter f) {
   return f.sort != SortOrder.date ||
       f.query.isNotEmpty ||
       f.favoritesOnly ||
       f.activities.isNotEmpty ||
-      f.year != now.year ||
-      f.monthFrom != now.month ||
-      f.monthTo != now.month;
+      f.year != null ||
+      f.monthFrom != null ||
+      f.monthTo != null;
 }

@@ -46,12 +46,15 @@ void main() {
     await pump(tester);
     expect(find.text('YEAR'), findsOneWidget);
 
-    // The closed pill now shows the selected value (the current-year
-    // default, see HistoryFilterNotifier) — "All years" is one of the
-    // options, found once the menu is opened, not in the closed state.
+    // The closed pill shows the selected value, which is "All years" by
+    // default (see HistoryFilterNotifier).
+    expect(find.text('All years'), findsOneWidget);
+
+    // Opening the menu adds the "All years" option itself alongside the
+    // closed pill's label.
     await tester.tap(find.byType(PillDropdown<int?>));
     await tester.pumpAndSettle();
-    expect(find.text('All years'), findsOneWidget);
+    expect(find.text('All years'), findsNWidgets(2));
   });
 
   testWidgets('selecting a year in the dropdown updates historyFilterProvider',
@@ -85,7 +88,7 @@ void main() {
   });
 
   testWidgets(
-      'Von/Bis month-range dropdowns are visible by default (current-year '
+      'Von/Bis month-range dropdowns are visible by default ("All years" '
       'default)', (tester) async {
     await pump(tester);
 

@@ -28,19 +28,17 @@ Future<T> firstData<T>(ProviderContainer c, StreamProvider<T> p) {
 
 void main() {
   group('HistoryFilterNotifier default state', () {
-    test('a fresh container defaults to the current calendar year and month',
-        () {
+    test('a fresh container defaults to "All years"/unrestricted', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
-      final now = DateTime.now();
       final f = c.read(historyFilterProvider);
-      expect(f.year, now.year);
-      expect(f.monthFrom, now.month);
-      expect(f.monthTo, now.month);
+      expect(f.year, isNull);
+      expect(f.monthFrom, isNull);
+      expect(f.monthTo, isNull);
     });
 
-    test('reset() after picking another year/month range goes back to the '
-        'current year and month, not "All years"/unrestricted', () {
+    test('reset() after picking another year/month range goes back to '
+        '"All years"/unrestricted', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final notifier = c.read(historyFilterProvider.notifier);
@@ -48,14 +46,13 @@ void main() {
       notifier.setMonthFrom(1);
       notifier.setMonthTo(3);
       notifier.reset();
-      final now = DateTime.now();
       final f = c.read(historyFilterProvider);
-      expect(f.year, now.year);
-      expect(f.monthFrom, now.month);
-      expect(f.monthTo, now.month);
+      expect(f.year, isNull);
+      expect(f.monthFrom, isNull);
+      expect(f.monthTo, isNull);
     });
 
-    test('activeFilterCountProvider is 0 on a fresh container (current year '
+    test('activeFilterCountProvider is 0 on a fresh container ("All years" '
         'is the baseline, not an active filter)', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);

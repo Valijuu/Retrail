@@ -3,7 +3,6 @@ import 'package:retrail/features/history/history_filter.dart';
 
 // 2024-06-12 12:00 (fixed reference, matches history_range_test.dart /
 // history_items_test.dart).
-const _now = 1718193600000;
 const _nowYear = 2024;
 const _nowMonth = 6;
 
@@ -46,60 +45,39 @@ void main() {
   });
 
   group('filter badges with year', () {
-    // The app's default is "this month, this year" (see
-    // HistoryFilterNotifier) — activeFilterCount/isFilterActive need to know
-    // "now" to tell "still on default" apart from "the user picked
-    // something else". `nowMs` is the injectable seam (mirrors the `nowMs`
-    // pattern in time_bounds.dart/history_range.dart); year AND month are
-    // both derived from it.
-    test('activeFilterCount counts a year that does not match nowMs '
-        '(month range pinned to the nowMs month, to isolate the year '
-        'dimension)', () {
+    // The app's default is "All years"/unrestricted (see
+    // HistoryFilterNotifier) — activeFilterCount/isFilterActive treat any
+    // set year as a deviation from that default, no "now" reference needed.
+    test('activeFilterCount counts a set year', () {
       const f =
           HistoryFilter(year: 2020, monthFrom: _nowMonth, monthTo: _nowMonth);
-      expect(activeFilterCount(f, nowMs: _now), 1);
+      expect(activeFilterCount(f), 2);
     });
 
-    test('activeFilterCount combines a non-matching year with other active filters', () {
+    test('activeFilterCount combines a set year with other active filters', () {
       const f = HistoryFilter(
         year: 2020,
         monthFrom: _nowMonth,
         monthTo: _nowMonth,
         favoritesOnly: true,
       );
-      expect(activeFilterCount(f, nowMs: _now), 2);
+      expect(activeFilterCount(f), 3);
     });
 
-    test('isFilterActive is true when year does not match nowMs', () {
-      const f =
-          HistoryFilter(year: 2020, monthFrom: _nowMonth, monthTo: _nowMonth);
-      expect(isFilterActive(f, nowMs: _now), isTrue);
+    test('isFilterActive is true when a year is set', () {
+      const f = HistoryFilter(year: 2020);
+      expect(isFilterActive(f), isTrue);
     });
 
-    test('activeFilterCount does not count a year that matches nowMs (the app default)', () {
-      const f = HistoryFilter(
-          year: _nowYear, monthFrom: _nowMonth, monthTo: _nowMonth);
-      expect(activeFilterCount(f, nowMs: _now), 0);
-    });
-
-    test('isFilterActive is false when year and month range both match '
-        'nowMs and nothing else is set', () {
-      const f = HistoryFilter(
-          year: _nowYear, monthFrom: _nowMonth, monthTo: _nowMonth);
-      expect(isFilterActive(f, nowMs: _now), isFalse);
-    });
-
-    test('year == null ("All years") counts as active regardless of nowMs', () {
-      const f = HistoryFilter(monthFrom: _nowMonth, monthTo: _nowMonth);
-      expect(activeFilterCount(f, nowMs: _now), 1);
-      expect(isFilterActive(f, nowMs: _now), isTrue);
-    });
-
-    test('without nowMs, falls back to the real current calendar year/month', () {
-      final now = DateTime.now();
-      final f = HistoryFilter(
-          year: now.year, monthFrom: now.month, monthTo: now.month);
+    test('activeFilterCount is 0 for the unrestricted default (year and '
+        'month range both null)', () {
+      const f = HistoryFilter();
       expect(activeFilterCount(f), 0);
+    });
+
+    test('isFilterActive is false for the unrestricted default and nothing '
+        'else set', () {
+      const f = HistoryFilter();
       expect(isFilterActive(f), isFalse);
     });
   });
@@ -159,33 +137,19 @@ void main() {
   });
 
   group('filter badges with month range', () {
-    test('activeFilterCount counts a month range that deviates from nowMs as active', () {
+    test('activeFilterCount counts a set month range as active', () {
       const f = HistoryFilter(year: _nowYear, monthFrom: 3, monthTo: 5);
-      expect(activeFilterCount(f, nowMs: _now), 1);
+      expect(activeFilterCount(f), 2);
     });
 
-    test('activeFilterCount counts monthFrom alone (monthTo still null, so '
-        'it cannot match nowMs on both sides) as active', () {
-      const f = HistoryFilter(year: _nowYear, monthFrom: 3);
-      expect(activeFilterCount(f, nowMs: _now), 1);
+    test('activeFilterCount counts monthFrom alone as active', () {
+      const f = HistoryFilter(monthFrom: 3);
+      expect(activeFilterCount(f), 1);
     });
 
-    test('isFilterActive is true when only the month range deviates from nowMs', () {
-      const f = HistoryFilter(year: _nowYear, monthFrom: 3, monthTo: 5);
-      expect(isFilterActive(f, nowMs: _now), isTrue);
-    });
-
-    test('activeFilterCount does not count a month range matching nowMs on both sides (the app default)', () {
-      const f = HistoryFilter(
-          year: _nowYear, monthFrom: _nowMonth, monthTo: _nowMonth);
-      expect(activeFilterCount(f, nowMs: _now), 0);
-    });
-
-    test('isFilterActive is false when year and month range both match '
-        'nowMs and nothing else deviates', () {
-      const f = HistoryFilter(
-          year: _nowYear, monthFrom: _nowMonth, monthTo: _nowMonth);
-      expect(isFilterActive(f, nowMs: _now), isFalse);
+    test('isFilterActive is true when only the month range is set', () {
+      const f = HistoryFilter(monthFrom: 3, monthTo: 5);
+      expect(isFilterActive(f), isTrue);
     });
   });
 }
