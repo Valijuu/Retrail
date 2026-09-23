@@ -14,7 +14,14 @@ import 'history_range.dart';
 /// filter flows + setters.
 class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   @override
-  HistoryFilter build() => const HistoryFilter();
+  HistoryFilter build() => _defaultFilter();
+
+  /// The app's default filter: the current calendar year (not "All years") —
+  /// so the Von/Bis month range is visible from the first open, and the
+  /// filter badge starts at 0 (see `activeFilterCount`'s `nowYear` seam).
+  /// "All years" stays reachable by explicitly picking it via [setYear].
+  static HistoryFilter _defaultFilter() =>
+      HistoryFilter(year: DateTime.now().year);
 
   /// Adds/removes [p] from the multi-select period set (union semantics).
   void togglePeriod(TimePeriod p) {
@@ -65,7 +72,7 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
           ? month
           : state.monthFrom);
 
-  void reset() => state = const HistoryFilter();
+  void reset() => state = _defaultFilter();
 }
 
 final historyFilterProvider =

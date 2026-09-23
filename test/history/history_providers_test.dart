@@ -27,6 +27,31 @@ Future<T> firstData<T>(ProviderContainer c, StreamProvider<T> p) {
 }
 
 void main() {
+  group('HistoryFilterNotifier default state', () {
+    test('a fresh container defaults to the current calendar year', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      expect(c.read(historyFilterProvider).year, DateTime.now().year);
+    });
+
+    test('reset() after picking another year goes back to the current year, '
+        'not "All years"', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final notifier = c.read(historyFilterProvider.notifier);
+      notifier.setYear(2020);
+      notifier.reset();
+      expect(c.read(historyFilterProvider).year, DateTime.now().year);
+    });
+
+    test('activeFilterCountProvider is 0 on a fresh container (current year '
+        'is the baseline, not an active filter)', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      expect(c.read(activeFilterCountProvider), 0);
+    });
+  });
+
   group('HistoryFilterNotifier.setYear', () {
     test('sets the year', () {
       final c = ProviderContainer();

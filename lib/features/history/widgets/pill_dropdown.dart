@@ -39,6 +39,7 @@ class PillDropdown<T> extends StatelessWidget {
         child: DropdownButton<T>(
           value: value,
           isDense: true,
+          isExpanded: true,
           borderRadius: BorderRadius.circular(_radius),
           dropdownColor: colors.surfaceContainer,
           icon: Icon(Icons.keyboard_arrow_down, color: colors.primary),
