@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -8,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'data/debug_seed_rides.dart';
 import 'data/repositories/data_providers.dart';
 import 'data/repositories/preferences_repository.dart';
 import 'features/active_ride/active_ride_providers.dart';
@@ -59,6 +61,15 @@ Future<void> main() async {
   // A fresh isolate can't be recording yet, so any ride still missing its end
   // time was cut off by a killed process — close or drop it (issue #26).
   await container.read(rideRepositoryProvider).finalizeUnfinishedRides();
+
+  // Debug-only sample rides for manually checking the history/detail map on
+  // more than one route shape. No-ops once the rides table isn't empty.
+  if (kDebugMode) {
+    await seedSampleRidesIfEmpty(
+      container.read(rideRepositoryProvider),
+      container.read(trackpointRepositoryProvider),
+    );
+  }
 
   // Relay recording-notification interactions (which arrive on the main isolate
   // via sendDataToMain) to the recording controller / deep-link.
