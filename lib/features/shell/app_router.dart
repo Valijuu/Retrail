@@ -49,15 +49,24 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: AppRoutes.splash,
           pageBuilder: (c, s) => _fade(const RoutePlaceholder('Retrail'), s)),
+      // Onboarding steps nest (name → photo → activity) so `go` to a later
+      // step stacks the earlier ones beneath it: system back steps back one
+      // screen instead of closing the app mid-onboarding (issue #32).
       GoRoute(
-          path: AppRoutes.init,
-          pageBuilder: (c, s) => _fade(const InitScreen(), s)),
-      GoRoute(
-          path: AppRoutes.profilePicture,
-          pageBuilder: (c, s) => _fade(const ProfilePictureScreen(), s)),
-      GoRoute(
-          path: AppRoutes.activityPicker,
-          pageBuilder: (c, s) => _fade(const ActivityInitScreen(), s)),
+        path: AppRoutes.init,
+        pageBuilder: (c, s) => _fade(const InitScreen(), s),
+        routes: [
+          GoRoute(
+            path: 'photo',
+            pageBuilder: (c, s) => _fade(const ProfilePictureScreen(), s),
+            routes: [
+              GoRoute(
+                  path: 'activity',
+                  pageBuilder: (c, s) => _fade(const ActivityInitScreen(), s)),
+            ],
+          ),
+        ],
+      ),
       GoRoute(
         path: AppRoutes.main,
         pageBuilder: (c, s) => _fade(const MainShell(), s),

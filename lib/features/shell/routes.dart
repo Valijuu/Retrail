@@ -3,7 +3,7 @@ abstract final class AppRoutes {
   static const splash = '/splash';
   static const init = '/init';
   static const profilePicture = '/init/photo';
-  static const activityPicker = '/init/activity';
+  static const activityPicker = '/init/photo/activity';
   static const main = '/';
   static const timer = '/timer';
   static const ride = '/ride';

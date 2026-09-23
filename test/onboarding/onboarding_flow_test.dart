@@ -62,4 +62,47 @@ void main() {
     expect(await prefs.lastActivityType.first, 'SCOOTER');
     expect(await prefs.onboardingDone.first, true);
   });
+
+  testWidgets(
+      'system back steps back through onboarding instead of closing the app '
+      '(issue #32)', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    SharedPreferences.setMockInitialValues({});
+    final prefs = PreferencesRepository(await SharedPreferences.getInstance());
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    final container = ProviderContainer(overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      preferencesRepositoryProvider.overrideWithValue(prefs),
+      ...homeStreamStubs(),
+    ]);
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const RetrailApp()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Vali');
+    await tester.tap(find.text("Let's go"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('How do you roll?'), findsOneWidget);
+
+    // Back from the activity step → photo step.
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Looking good, Vali!'), findsOneWidget);
+
+    // Back from the photo step → name step (name still filled in).
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome to Retrail'), findsOneWidget);
+    expect(find.text('Vali'), findsOneWidget);
+  });
 }

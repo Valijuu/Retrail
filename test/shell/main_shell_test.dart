@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,13 +12,18 @@ import 'package:retrail/data/repositories/preferences_repository.dart';
 import 'package:retrail/features/profile/profile_avatar.dart';
 import 'package:retrail/features/profile/profile_edit_sheet.dart';
 import 'package:retrail/features/profile/profile_providers.dart';
+import 'package:retrail/domain/ride_stats.dart';
+import 'package:retrail/features/active_ride/active_ride_providers.dart';
+import 'package:retrail/features/history/history_items.dart';
+import 'package:retrail/features/history/history_ride_card.dart';
 import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../home/home_test_helpers.dart';
 
-Future<Widget> _app(WidgetTester tester) async {
+Future<Widget> _app(WidgetTester tester,
+    {List<HistoryItem> historyItems = const []}) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = PreferencesRepository(await SharedPreferences.getInstance());
   final db = AppDatabase.memory();
@@ -28,7 +35,8 @@ Future<Widget> _app(WidgetTester tester) async {
       isOnlineProvider.overrideWith((ref) => Stream.value(true)),
       currentProfilePhotoProvider.overrideWith((ref) => Stream.value(null)),
       recentProfilePhotosProvider.overrideWith((ref) => Stream.value(const [])),
-      ...homeStreamStubs(),
+      previewCacheDirProvider.overrideWithValue(Directory.systemTemp),
+      ...homeStreamStubs(history: historyItems),
     ],
     child: MaterialApp(
       theme: buildTheme(Brightness.light),
@@ -87,5 +95,66 @@ void main() {
 
     expect(find.byType(ProfileEditSheet), findsOneWidget);
     expect(find.text('Edit profile'), findsOneWidget);
+  });
+
+  Future<void> settle(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
+  testWidgets(
+      'system back on a non-Home tab returns to Home instead of closing the '
+      'app (issue #32)', (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await settle(tester);
+    await tester.tap(find.text('Settings'));
+    await settle(tester);
+    expect(find.text('THEME'), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isTrue); // consumed
+    await settle(tester);
+    expect(find.text('Recent rides'), findsOneWidget);
+    expect(find.text('THEME'), findsNothing);
+  });
+
+  testWidgets(
+      'system back in History selection mode only exits the selection '
+      '(issue #32)', (tester) async {
+    final ride = RideEntryItem(
+      const Ride(
+        rideId: 1,
+        description: 'Evening roll',
+        typ: null,
+        startTime: 0,
+        endTime: 600000,
+        date: 1718193600000,
+        comment: null,
+        isFavorite: false,
+        favoritedAt: null,
+        hasRoute: false,
+      ),
+      const RideStats(
+          durationMs: 600000,
+          distanceMetres: 1000,
+          maxSpeedKmh: 10,
+          avgSpeedKmh: 6),
+    );
+    await tester.pumpWidget(await _app(tester, historyItems: [ride]));
+    await settle(tester);
+    await tester.tap(find.text('History'));
+    await settle(tester);
+    await settle(tester); // items stream resumes once the tab is visible
+    await tester.longPress(find.byType(HistoryRideCard));
+    await settle(tester);
+    expect(find.text('1 selected'), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await settle(tester);
+    expect(find.text('1 selected'), findsNothing);
+    expect(find.text('Ride history'), findsOneWidget); // still on History
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await settle(tester);
+    expect(find.text('Recent rides'), findsOneWidget); // now back on Home
   });
 }

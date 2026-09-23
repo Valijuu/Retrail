@@ -38,6 +38,19 @@ class _MainShellState extends ConsumerState<MainShell> {
   final ValueNotifier<int> _homeVisits = ValueNotifier(1);
   int _lastSettledPage = 0;
 
+  /// The mounted History tab's back handler (see
+  /// [HistoryScreen.onRegisterBackHandler]).
+  bool Function()? _historyBack;
+
+  /// The shell's single back handler, so the steps run in a fixed order
+  /// (issue #32): the History tab may consume it (leaving selection mode),
+  /// then any tab but Home returns to Home. Only Home lets the route pop.
+  void _onBack(bool didPop) {
+    if (didPop) return;
+    if (_current.value == 1 && (_historyBack?.call() ?? false)) return;
+    _goToTab(0);
+  }
+
   void _goToTab(int index) => _controller.animateToPage(
         index,
         duration: const Duration(milliseconds: 250),
@@ -99,15 +112,21 @@ class _MainShellState extends ConsumerState<MainShell> {
                 ),
               ),
             ),
-            const HistoryScreen(),
+            HistoryScreen(onRegisterBackHandler: (h) => _historyBack = h),
             const SettingsScreen(),
           ],
         ),
       ),
+      // The back scope lives with the bottom bar so a tab change rebuilds
+      // only this subtree, not the PageView.
       bottomNavigationBar: ValueListenableBuilder<int>(
         valueListenable: _current,
-        builder: (_, current, _) => _BottomNav(
-            tabs: tabs, current: current, onTap: _goToTab, colors: colors),
+        builder: (_, current, _) => PopScope(
+          canPop: current == 0,
+          onPopInvokedWithResult: (didPop, _) => _onBack(didPop),
+          child: _BottomNav(
+              tabs: tabs, current: current, onTap: _goToTab, colors: colors),
+        ),
       ),
     );
   }

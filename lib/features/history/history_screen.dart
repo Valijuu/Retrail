@@ -27,7 +27,13 @@ import '../active_ride/active_ride_providers.dart';
 /// a filter sheet, multi-select + batch delete, per-row edit/delete, a detail
 /// dialog, and jump-to-ride from Home. Ports `RideHistoryPage`.
 class HistoryScreen extends ConsumerStatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({super.key, this.onRegisterBackHandler});
+
+  /// Hands the shell this screen's back handler while mounted (null once
+  /// disposed). The handler returns true when it consumed the back press —
+  /// leaving selection mode — so the shell's single back handler can ask the
+  /// tab first and only then fall back to switching to Home (issue #32).
+  final ValueSetter<bool Function()?>? onRegisterBackHandler;
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
@@ -60,10 +66,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (mounted) _maybeJumpToTarget();
     });
+    widget.onRegisterBackHandler?.call(_handleBack);
+  }
+
+  /// Back leaves selection mode first; otherwise it isn't ours to handle.
+  bool _handleBack() {
+    if (!_selectionMode) return false;
+    _exitSelection();
+    return true;
   }
 
   @override
   void dispose() {
+    widget.onRegisterBackHandler?.call(null);
     _highlightTimer?.cancel();
     _scrollController.dispose();
     _searchController.dispose();
@@ -272,59 +287,53 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       );
     }
 
-    return PopScope(
-      canPop: !_selectionMode,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _exitSelection();
-      },
-      child: ColoredBox(
-        color: colors.surface,
-        child: SafeArea(
-          child: Column(
-            children: [
-              if (_selectionMode)
-                _SelectionBar(
-                  count: _selectedIds.length,
-                  onClose: _exitSelection,
-                  onSelectAll: _selectAll,
-                  onDelete: () => _confirmDelete(batch: true),
-                )
-              else
-                _FilterBar(
-                  searchController: _searchController,
-                  showSearch: _showSearch,
-                  activeFilterCount: ref.watch(activeFilterCountProvider),
-                  onToggleSearch: () =>
-                      setState(() => _showSearch = !_showSearch),
-                  onSearchChange: (q) =>
-                      ref.read(historyFilterProvider.notifier).setQuery(q),
-                  onOpenFilters: _openFilters,
-                ),
-              Expanded(
-                child: hasRides
-                    ? ListView.separated(
-                        controller: _scrollController,
-                        // Build ~4-5 cards ahead of the viewport so preview
-                        // PNGs resolve/decode + upload well before their card
-                        // scrolls in — at slow scroll speeds nothing is ever
-                        // built at the viewport edge (visible as a hitch).
-                        scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        itemCount: items.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 6),
-                        itemBuilder: (context, i) => _buildItem(items[i]),
-                      )
-                    : Center(
-                        child: Text(l10n.historyEmpty,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: colors.onSurfaceVariant)),
-                      ),
+    return ColoredBox(
+      color: colors.surface,
+      child: SafeArea(
+        child: Column(
+          children: [
+            if (_selectionMode)
+              _SelectionBar(
+                count: _selectedIds.length,
+                onClose: _exitSelection,
+                onSelectAll: _selectAll,
+                onDelete: () => _confirmDelete(batch: true),
+              )
+            else
+              _FilterBar(
+                searchController: _searchController,
+                showSearch: _showSearch,
+                activeFilterCount: ref.watch(activeFilterCountProvider),
+                onToggleSearch: () =>
+                    setState(() => _showSearch = !_showSearch),
+                onSearchChange: (q) =>
+                    ref.read(historyFilterProvider.notifier).setQuery(q),
+                onOpenFilters: _openFilters,
               ),
-            ],
-          ),
+            Expanded(
+              child: hasRides
+                  ? ListView.separated(
+                      controller: _scrollController,
+                      // Build ~4-5 cards ahead of the viewport so preview
+                      // PNGs resolve/decode + upload well before their card
+                      // scrolls in — at slow scroll speeds nothing is ever
+                      // built at the viewport edge (visible as a hitch).
+                      scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      itemCount: items.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 6),
+                      itemBuilder: (context, i) => _buildItem(items[i]),
+                    )
+                  : Center(
+                      child: Text(l10n.historyEmpty,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: colors.onSurfaceVariant)),
+                    ),
+            ),
+          ],
         ),
       ),
     );
