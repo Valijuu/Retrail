@@ -297,7 +297,7 @@ void main() {
 
   group('historyItemsProvider wired to effectiveRange', () {
     // The one integration seam in the branch with no direct test:
-    // `effectiveRange` (unit-tested) and `RideDao.getRidesWithTrackpointsInRange`
+    // `effectiveRange` (unit-tested) and `RideDao.getRidesInRange`
     // (unit-tested) are correctly connected through `historyItemsProvider`
     // when a year filter is set.
     test('setYear(2023) restricts results to rides dated in 2023 only',
@@ -330,7 +330,7 @@ void main() {
       final items = await firstData(c, historyItemsProvider);
       final rideIds = items
           .whereType<RideEntryItem>()
-          .map((e) => e.rwt.ride.rideId)
+          .map((e) => e.ride.rideId)
           .toList();
 
       expect(rideIds, [id2023]);

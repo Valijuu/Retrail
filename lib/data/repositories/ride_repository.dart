@@ -33,9 +33,15 @@ class RideRepository {
           int weekStartMs, int weekEndMs) =>
       _dao.getRidesWithTrackpointsBetween(weekStartMs, weekEndMs);
 
-  Stream<List<RideWithTrackpoints>> getRidesWithTrackpointsInRange(
-          {int? startMs, int? endMs}) =>
-      _dao.getRidesWithTrackpointsInRange(startMs: startMs, endMs: endMs);
+  /// Drives the History list — rides only, no trackpoints join (see
+  /// issue #21 / [RideDao.getRidesInRange]).
+  Stream<List<Ride>> getRidesInRange({int? startMs, int? endMs}) =>
+      _dao.getRidesInRange(startMs: startMs, endMs: endMs);
+
+  /// A single ride with its trackpoints, on demand (detail dialog, or a
+  /// History card's not-yet-cached route preview — see issue #21).
+  Stream<RideWithTrackpoints?> getRideWithTrackpointsById(int rideId) =>
+      _dao.getRideWithTrackpointsById(rideId);
 
   /// Opens a ride row at recording start and returns its id. Takes plain
   /// values so callers (the tracker) never touch Drift's companion types.
@@ -46,12 +52,13 @@ class RideRepository {
         date: Value(startedAtMs),
       ));
 
-  /// Stamps the end time AND caches [RideStats] onto the row (distance,
-  /// duration, avg/max speed) — computed once here via [computeRideStats],
-  /// so History reads them straight off the row instead of recomputing a
-  /// full Haversine sum over every trackpoint on every list rebuild. A ride
-  /// with no trackpoints yet (the finalize-race edge case in RideTracker)
-  /// still gets a zeroed stats row rather than staying null forever.
+  /// Stamps the end time AND caches [RideStats] + hasRoute onto the row
+  /// (distance, duration, avg/max speed, whether it has any trackpoints) —
+  /// computed once here via [computeRideStats], so History reads them
+  /// straight off the row instead of recomputing a full Haversine sum (and
+  /// joining every trackpoint) on every list rebuild. A ride with no
+  /// trackpoints yet (the finalize-race edge case in RideTracker) still gets
+  /// a zeroed stats row rather than staying null forever.
   Future<void> updateEndTime(int rideId, int endTime) async {
     await _dao.updateEndTime(rideId, endTime);
     final rwt = await _dao.getRideWithTrackpointsById(rideId).first;
@@ -63,6 +70,7 @@ class RideRepository {
       durationMs: stats.durationMs,
       avgSpeedKmh: stats.avgSpeedKmh,
       maxSpeedKmh: stats.maxSpeedKmh,
+      hasRoute: rwt.trackpoints.isNotEmpty,
     );
   }
 

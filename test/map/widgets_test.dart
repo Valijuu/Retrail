@@ -60,10 +60,12 @@ void main() {
         height: 100,
         child: RoutePreview(
             rideId: 1,
-            points: const [(lat: 1, lng: 2), (lat: 3, lng: 4)],
+            hasRoute: true,
+            pointsLoader: () async => const [(lat: 1, lng: 2), (lat: 3, lng: 4)],
             cache: cache),
       ),
     ));
+    await tester.pump();
     expect(cache.requested, Brightness.dark); // dark theme → dark snapshot
   });
 
@@ -77,7 +79,11 @@ void main() {
       SizedBox(
         width: 200,
         height: 100,
-        child: RoutePreview(rideId: 1, points: const [], cache: cache),
+        child: RoutePreview(
+            rideId: 1,
+            hasRoute: false,
+            pointsLoader: () async => const [],
+            cache: cache),
       ),
     ));
     expect(find.byType(RouteSketch), findsOneWidget);
@@ -85,21 +91,31 @@ void main() {
 
   testWidgets(
       'RoutePreview shows the image on the FIRST frame once the cache has '
-      'resolved it (no sketch flash while scrolling)', (tester) async {
-    const points = <RoutePoint>[(lat: 1, lng: 2), (lat: 3, lng: 4)];
+      'resolved it (no sketch flash, no points fetch, while scrolling)',
+      (tester) async {
     final cache = _WarmCache();
+    var loaderCalls = 0;
 
     await tester.pumpWidget(_wrap(
       SizedBox(
         width: 200,
         height: 100,
-        child: RoutePreview(rideId: 1, points: points, cache: cache),
+        child: RoutePreview(
+          rideId: 1,
+          hasRoute: true,
+          pointsLoader: () async {
+            loaderCalls++;
+            return const [(lat: 1, lng: 2), (lat: 3, lng: 4)];
+          },
+          cache: cache,
+        ),
       ),
     ));
     // First build, no pump: the sync fast path must already show the image —
-    // no RouteSketch flash, no FutureBuilder round-trip.
+    // no RouteSketch flash, no FutureBuilder round-trip, no points fetch.
     expect(find.byType(RouteSketch), findsNothing);
     expect(find.byType(Image), findsOneWidget);
+    expect(loaderCalls, 0);
   });
 
   testWidgets('LiveMap builds (native map stubbed via static override)',

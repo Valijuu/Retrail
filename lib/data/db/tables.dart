@@ -23,6 +23,15 @@ class Rides extends Table {
   IntColumn get durationMs => integer().named('duration_ms').nullable()();
   RealColumn get avgSpeedKmh => real().named('avg_speed_kmh').nullable()();
   RealColumn get maxSpeedKmh => real().named('max_speed_kmh').nullable()();
+
+  // Whether this ride has any recorded trackpoints, written once at
+  // finalization alongside the stats above (see RideRepository.updateEndTime).
+  // Lets the History list (RideDao.getRidesInRange) decide whether a card has
+  // a route to preview/navigate to WITHOUT joining trackpoints for every
+  // visible ride on every rebuild — see issue #21. Defaults false; an
+  // in-progress ride (no endTime yet) reads as routeless until finalized.
+  BoolColumn get hasRoute =>
+      boolean().named('has_route').withDefault(const Constant(false))();
 }
 
 /// Mirrors the original Room `trackpoints` table (entity `Trackpoint`).

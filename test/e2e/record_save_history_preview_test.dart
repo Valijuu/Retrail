@@ -144,12 +144,14 @@ void main() {
       );
 
       final entry = entries.single;
-      expect(entry.rwt.ride.rideId, rideId);
-      expect(entry.rwt.ride.description, 'Sunset cruise');
-      expect(entry.rwt.ride.isFavorite, isTrue);
-      expect(entry.rwt.trackpoints, hasLength(2));
+      expect(entry.ride.rideId, rideId);
+      expect(entry.ride.description, 'Sunset cruise');
+      expect(entry.ride.isFavorite, isTrue);
+      // hasRoute is denormalized at save time (updateEndTime) — the list
+      // itself no longer joins trackpoints (issue #21).
+      expect(entry.ride.hasRoute, isTrue);
 
-      // Computed stats are real, not placeholders.
+      // Computed stats are real (denormalized at save time), not placeholders.
       expect(entry.stats.distanceMetres, greaterThan(0));
       expect(entry.stats.maxSpeedKmh, closeTo(18.0, 0.01));
       expect(entry.stats.durationMs, 90000); // 3 × 30 s of advanced wall clock
@@ -158,9 +160,14 @@ void main() {
       expect(items.whereType<DateHeaderItem>(), isNotEmpty);
 
       // ── 4. Preview: the history card's request is a cache hit, no re-render ──
+      // A card fetches its own trackpoints lazily (see HistoryRideCard/
+      // _Thumbnail) — reproduce that here directly against the real DB.
+      final tps = await TrackpointRepository(TrackpointDao(db))
+          .getForRide(rideId)
+          .first;
+      expect(tps, hasLength(2));
       final route = <RoutePoint>[
-        for (final t in entry.rwt.trackpoints)
-          (lat: t.latitude, lng: t.longitude),
+        for (final t in tps) (lat: t.latitude, lng: t.longitude),
       ];
       final servedAgain =
           await cache.ensurePreview(rideId, route, brightness: Brightness.light);

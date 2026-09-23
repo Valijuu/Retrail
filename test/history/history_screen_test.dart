@@ -8,8 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_dao.dart';
-import 'package:retrail/data/db/ride_with_trackpoints.dart';
+import 'package:retrail/data/db/trackpoint_dao.dart';
+import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
+import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/ride_stats.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
@@ -69,29 +71,40 @@ class FakeNavigationLauncher implements NavigationLauncher {
       launches.add((lat, lng, label));
 }
 
+/// Serves canned trackpoints per ride id, synchronously (`Stream.value`) —
+/// a card fetches its own trackpoints lazily now (issue #21), so tests feed
+/// them through this instead of the pre-loaded `RideWithTrackpoints` the
+/// list used to carry. `super(TrackpointDao(...))` is never actually queried.
+class FakeTrackpointRepository extends TrackpointRepository {
+  FakeTrackpointRepository(AppDatabase db, this._byRideId)
+      : super(TrackpointDao(db));
+  final Map<int, List<Trackpoint>> _byRideId;
+
+  @override
+  Stream<List<Trackpoint>> getForRide(int rideId) =>
+      Stream.value(_byRideId[rideId] ?? const []);
+}
+
+Trackpoint _tp(int rideId, double lat, double lng) => Trackpoint(
+      trackpointId: 0,
+      rideId: rideId,
+      latitude: lat,
+      longitude: lng,
+      timestamp: 0,
+    );
+
+/// A ride with a route (`hasRoute: true`); pass the same [trackpoints] map to
+/// `pump(... trackpoints: ...)` so `_Thumbnail`'s/`_warmPreviews`'/the
+/// navigate button's lazy fetch (issue #21) resolves real coordinates.
 RideEntryItem _routedEntry(int id) => RideEntryItem(
-      RideWithTrackpoints(
-        ride: _ride(id, desc: 'Routed ride'),
-        trackpoints: [
-          Trackpoint(
-              trackpointId: 0,
-              rideId: id,
-              latitude: 52.0,
-              longitude: 13.0,
-              timestamp: 0),
-          Trackpoint(
-              trackpointId: 1,
-              rideId: id,
-              latitude: 52.01,
-              longitude: 13.0,
-              timestamp: 1),
-        ],
-      ),
+      _ride(id, desc: 'Routed ride', hasRoute: true),
       const RideStats(
           durationMs: 600000, distanceMetres: 1200, maxSpeedKmh: 22, avgSpeedKmh: 15),
     );
 
-Ride _ride(int id, {String? desc, String? typ, bool fav = false}) => Ride(
+Ride _ride(int id,
+        {String? desc, String? typ, bool fav = false, bool hasRoute = false}) =>
+    Ride(
       rideId: id,
       description: desc,
       typ: typ,
@@ -101,11 +114,12 @@ Ride _ride(int id, {String? desc, String? typ, bool fav = false}) => Ride(
       comment: null,
       isFavorite: fav,
       favoritedAt: null,
+      hasRoute: hasRoute,
     );
 
 RideEntryItem _entry(int id, {String? desc, String? typ, bool fav = false}) =>
     RideEntryItem(
-      RideWithTrackpoints(ride: _ride(id, desc: desc, typ: typ, fav: fav), trackpoints: const []),
+      _ride(id, desc: desc, typ: typ, fav: fav),
       const RideStats(
           durationMs: 600000, distanceMetres: 4200, maxSpeedKmh: 22, avgSpeedKmh: 15),
     );
@@ -135,6 +149,7 @@ void main() {
     NavigationLauncher? navLauncher,
     int? presetTarget,
     RoutePreviewCache? previewCache,
+    Map<int, List<Trackpoint>> trackpoints = const {},
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -143,6 +158,9 @@ void main() {
 
     container = ProviderContainer(overrides: [
       previewCacheDirProvider.overrideWithValue(Directory.systemTemp),
+      // A card fetches its own trackpoints lazily now (issue #21).
+      trackpointRepositoryProvider
+          .overrideWithValue(FakeTrackpointRepository(db, trackpoints)),
       historyItemsProvider.overrideWith((ref) => Stream.value(items)),
       historyControllerProvider.overrideWithValue(controller),
       if (previewCache != null)
@@ -231,8 +249,13 @@ void main() {
       tester,
       [_routedEntry(1), _routedEntry(2), _entry(3)], // 3 has no route
       previewCache: spy,
+      trackpoints: {
+        1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
+        2: [_tp(2, 52.0, 13.0), _tp(2, 52.01, 13.0)],
+      },
     );
     await tester.pump(); // post-frame warm pass
+    await tester.pump(); // lazy per-ride trackpoints fetch (issue #21) lands
     expect(spy.warmed, containsAll([1, 2]));
     expect(spy.warmed, isNot(contains(3))); // nothing to render for no-route
   });
@@ -345,11 +368,15 @@ void main() {
   testWidgets('routed card mounts a RoutePreview and navigates to start',
       (tester) async {
     final launcher = FakeNavigationLauncher();
-    await pump(tester, [_routedEntry(5)], navLauncher: launcher);
+    await pump(tester, [_routedEntry(5)],
+        navLauncher: launcher,
+        trackpoints: {
+          5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
+        });
 
     final preview = tester.widget<RoutePreview>(find.byType(RoutePreview));
     expect(preview.rideId, 5);
-    expect(preview.points.length, 2);
+    expect(preview.hasRoute, isTrue);
 
     // The preview slot is pinned to the render aspect so BoxFit.cover shows the
     // whole route (no top/bottom crop). Same constant the renderer uses.
@@ -362,6 +389,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.directions));
     await tester.pump();
     expect(launcher.launches, isNotEmpty);
+    // Fetched lazily now (issue #21), not carried on the entry itself.
     expect(launcher.launches.first.$1, 52.0); // start latitude
   });
 
@@ -390,7 +418,7 @@ void main() {
     expect(container.read(historyTargetRideProvider), isNull);
     final target = tester
         .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
-        .firstWhere((c) => c.entry.rwt.ride.rideId == 2);
+        .firstWhere((c) => c.entry.ride.rideId == 2);
     expect(target.highlighted, isTrue);
     await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
   });
@@ -408,7 +436,7 @@ void main() {
     expect(container.read(historyTargetRideProvider), isNull);
     final target = tester
         .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
-        .firstWhere((c) => c.entry.rwt.ride.rideId == 2);
+        .firstWhere((c) => c.entry.ride.rideId == 2);
     expect(target.highlighted, isTrue);
     await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
   });
@@ -433,7 +461,7 @@ void main() {
     // …and the target card is built + highlighted + on screen.
     final target = tester
         .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
-        .firstWhere((c) => c.entry.rwt.ride.rideId == 25);
+        .firstWhere((c) => c.entry.ride.rideId == 25);
     expect(target.highlighted, isTrue);
     expect(find.text('Ride 25'), findsOneWidget);
     final rect = tester.getRect(find.text('Ride 25'));

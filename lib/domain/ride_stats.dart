@@ -57,6 +57,24 @@ RideStats computeRideStats(RideWithTrackpoints rwt, DistanceCalculator calc) {
   );
 }
 
+/// Fallback for [storedRideStats] returning null with no trackpoints on hand
+/// to recompute from (the History list no longer joins them — see issue
+/// #21). Duration still reflects start/end; distance and speeds read as
+/// zero. Should be rare — every ride gets denormalized stats at
+/// `RideRepository.updateEndTime`; this only covers an in-progress ride or a
+/// row from before the v2/v3 migrations ran (backfilled on upgrade).
+RideStats statsWithoutTrackpoints(Ride ride) {
+  final durationMs = (ride.startTime != null && ride.endTime != null)
+      ? ride.endTime! - ride.startTime!
+      : 0;
+  return RideStats(
+    durationMs: durationMs,
+    distanceMetres: 0,
+    maxSpeedKmh: 0,
+    avgSpeedKmh: 0,
+  );
+}
+
 /// Reads the [RideStats] denormalized onto [ride] at finalization time (see
 /// `RideRepository.updateEndTime`) — null when not yet computed (an
 /// in-progress ride, or a pre-migration row before the backfill ran), so

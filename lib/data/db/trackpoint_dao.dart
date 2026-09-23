@@ -15,6 +15,13 @@ class TrackpointDao extends DatabaseAccessor<AppDatabase> with _$TrackpointDaoMi
   Stream<List<Trackpoint>> getAllByIds(List<int> ids) =>
       (select(trackpoints)..where((t) => t.trackpointId.isIn(ids))).watch();
 
+  /// A single ride's trackpoints, indexed via `trackpoints_ride_id`. Used to
+  /// lazily render a History card's route preview only for the (usually rare,
+  /// post-first-render) cache miss — see issue #21 — instead of the History
+  /// list eagerly joining every visible ride's trackpoints up front.
+  Stream<List<Trackpoint>> getByRideId(int rideId) =>
+      (select(trackpoints)..where((t) => t.rideId.equals(rideId))).watch();
+
   Stream<Trackpoint?> getById(int id) =>
       (select(trackpoints)..where((t) => t.trackpointId.equals(id)))
           .watchSingleOrNull();

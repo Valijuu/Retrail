@@ -9,17 +9,25 @@ import 'route_sketch.dart';
 /// Shows a ride's cached preview PNG (generated once via [RoutePreviewCache]).
 /// While generating — or when the ride has no route — it falls back to the
 /// tile-free [RouteSketch], so list scrolling never blocks on tiles.
+///
+/// Takes [hasRoute] + a lazy [pointsLoader] rather than an eager point list:
+/// the cache-hit fast path ([RoutePreviewCache.resolvedFileFor]) never needs
+/// the actual coordinates, so a caller backed by a rides-only list query
+/// (see issue #21) isn't forced to have every ride's trackpoints on hand
+/// just to check whether a preview is already cached.
 class RoutePreview extends StatefulWidget {
   const RoutePreview({
     super.key,
     required this.rideId,
-    required this.points,
+    required this.hasRoute,
+    required this.pointsLoader,
     required this.cache,
     this.cacheWidth,
   });
 
   final int rideId;
-  final List<RoutePoint> points;
+  final bool hasRoute;
+  final Future<List<RoutePoint>> Function() pointsLoader;
   final RoutePreviewCache cache;
   final int? cacheWidth;
 
@@ -32,7 +40,8 @@ class _RoutePreviewState extends State<RoutePreview> {
 
   /// Set when the cache already knows the final PNG (synchronous fast path):
   /// the image builds on the FIRST frame — no sketch flash, no FutureBuilder
-  /// rebuild — which is what keeps list scrolling smooth.
+  /// rebuild — which is what keeps list scrolling smooth. Never needs
+  /// [widget.pointsLoader] — that's only called below it, on a real miss.
   File? _ready;
   Brightness? _brightness;
 
@@ -55,7 +64,7 @@ class _RoutePreviewState extends State<RoutePreview> {
   }
 
   void _maybeGenerate() {
-    if (widget.points.isEmpty || _brightness == null) {
+    if (!widget.hasRoute || _brightness == null) {
       _ready = null;
       _file = null;
       return;
@@ -64,8 +73,8 @@ class _RoutePreviewState extends State<RoutePreview> {
         widget.cache.resolvedFileFor(widget.rideId, brightness: _brightness!);
     _file = _ready != null
         ? null
-        : widget.cache.ensurePreview(widget.rideId, widget.points,
-            brightness: _brightness!);
+        : widget.pointsLoader().then((points) => widget.cache
+            .ensurePreview(widget.rideId, points, brightness: _brightness!));
   }
 
   Widget _image(File file) => Image.file(
@@ -77,14 +86,16 @@ class _RoutePreviewState extends State<RoutePreview> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.points.isEmpty) return const RouteSketch(points: []);
+    if (!widget.hasRoute) return const RouteSketch(points: []);
     final ready = _ready;
     if (ready != null) return _image(ready);
     return FutureBuilder<File>(
       future: _file,
       builder: (context, snapshot) {
         if (snapshot.hasData) return _image(snapshot.data!);
-        return RouteSketch(points: widget.points);
+        // Loading (points not fetched yet) or mid-render — same flat
+        // fallback either way; the real shape only exists once points load.
+        return const RouteSketch(points: []);
       },
     );
   }

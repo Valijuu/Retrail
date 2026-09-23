@@ -16,7 +16,9 @@ import 'history_items.dart';
 import 'history_providers.dart';
 import 'history_ride_card.dart';
 import 'ride_detail_dialog.dart';
+import '../../data/db/app_database.dart' show Ride;
 import '../../data/db/ride_with_trackpoints.dart';
+import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
 import '../../map/preview_projection.dart';
 import '../active_ride/active_ride_providers.dart';
@@ -37,11 +39,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   GlobalKey _targetKey = GlobalKey();
   bool _showSearch = false;
   Set<int> _selectedIds = {};
+  bool _selectionModeActive = false;
   int? _highlightRideId;
   Timer? _highlightTimer;
   bool _warmedInitialItems = false;
 
-  bool get _selectionMode => _selectedIds.isNotEmpty;
+  /// Selection mode stays active — even with zero rides selected — until the
+  /// user explicitly closes it via the X, rather than exiting automatically
+  /// when the last selection is deselected.
+  bool get _selectionMode => _selectionModeActive;
 
   @override
   void initState() {
@@ -64,21 +70,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     super.dispose();
   }
 
-  void _exitSelection() => setState(() => _selectedIds = {});
+  void _exitSelection() => setState(() {
+        _selectedIds = {};
+        _selectionModeActive = false;
+      });
 
   void _toggleSelected(int rideId) => setState(() {
+        _selectionModeActive = true;
         _selectedIds = {..._selectedIds};
         if (!_selectedIds.remove(rideId)) _selectedIds.add(rideId);
       });
 
-  /// Selects every currently visible (i.e. already filtered) ride.
+  /// Selects every currently visible (i.e. already filtered) ride, or — if
+  /// all of them are already selected — deselects everything (toggle).
   void _selectAll() {
     final items = ref.read(historyItemsProvider).asData?.value ?? const [];
+    final visibleIds = {
+      for (final item in items)
+        if (item is RideEntryItem) item.ride.rideId,
+    };
     setState(() {
-      _selectedIds = {
-        for (final item in items)
-          if (item is RideEntryItem) item.rwt.ride.rideId,
-      };
+      _selectedIds =
+          _selectedIds.containsAll(visibleIds) ? {} : visibleIds;
     });
   }
 
@@ -88,8 +101,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final target = ref.read(historyTargetRideProvider);
     if (target == null) return;
     final items = ref.read(historyItemsProvider).asData?.value ?? [];
-    final found = items.any(
-        (i) => i is RideEntryItem && i.rwt.ride.rideId == target);
+    final found =
+        items.any((i) => i is RideEntryItem && i.ride.rideId == target);
     if (!found) {
       ref.read(historyFilterProvider.notifier).reset();
       return; // re-runs on the next items emission
@@ -138,19 +151,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   void _warmPreviews(List<HistoryItem> items) {
     final cache = ref.read(routePreviewCacheProvider);
+    final trackpoints = ref.read(trackpointRepositoryProvider);
     final brightness = Theme.of(context).brightness;
     var decodesLeft = _precacheDecodes;
     for (final item in items) {
-      if (item is! RideEntryItem) continue;
-      final tps = item.rwt.trackpoints;
-      if (tps.isEmpty) continue;
-      final points = <RoutePoint>[
-        for (final tp in tps) (lat: tp.latitude, lng: tp.longitude),
-      ];
+      if (item is! RideEntryItem || !item.ride.hasRoute) continue;
+      final rideId = item.ride.rideId;
       final precache = decodesLeft-- > 0;
-      unawaited(cache
-          .ensurePreview(item.rwt.ride.rideId, points, brightness: brightness)
-          .then((file) {
+      unawaited(trackpoints.getForRide(rideId).first.then((tps) async {
+        if (tps.isEmpty) return;
+        final points = <RoutePoint>[
+          for (final tp in tps) (lat: tp.latitude, lng: tp.longitude),
+        ];
+        final file =
+            await cache.ensurePreview(rideId, points, brightness: brightness);
         if (!mounted || !precache) return;
         // Same provider shape as the card's Image.file(cacheWidth: ...) so the
         // decoded frame is an exact ImageCache hit when the card builds.
@@ -191,30 +205,39 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Future<void> _openEdit(RideWithTrackpoints rwt) => showDialog<void>(
+  Future<void> _openEdit(Ride ride) => showDialog<void>(
         context: context,
         builder: (_) => EditRideDialog(
-          initialDescription: rwt.ride.description,
-          initialComment: rwt.ride.comment,
-          initialType: ActivityType.fromId(rwt.ride.typ),
+          initialDescription: ride.description,
+          initialComment: ride.comment,
+          initialType: ActivityType.fromId(ride.typ),
           onDismiss: () => Navigator.of(context).pop(),
           onSave: (description, comment, type) {
             Navigator.of(context).pop();
             ref
                 .read(historyControllerProvider)
-                .updateRideDetails(rwt.ride.rideId, description, comment, type);
+                .updateRideDetails(ride.rideId, description, comment, type);
           },
         ),
       );
 
-  Future<void> _openDetail(RideEntryItem entry) => showDialog<void>(
-        context: context,
-        builder: (_) => RideDetailDialog(
-          rwt: entry.rwt,
-          stats: entry.stats,
-          onDismiss: () => Navigator.of(context).pop(),
-        ),
-      );
+  /// Fetches this ride's trackpoints on demand — the list itself doesn't have
+  /// them (issue #21) — then opens the read-only detail dialog.
+  Future<void> _openDetail(RideEntryItem entry) async {
+    final tps = await ref
+        .read(trackpointRepositoryProvider)
+        .getForRide(entry.ride.rideId)
+        .first;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: entry.ride, trackpoints: tps),
+        stats: entry.stats,
+        onDismiss: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -325,7 +348,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   ?.copyWith(color: colors.onSurfaceVariant)),
         );
       case RideEntryItem():
-        final rideId = item.rwt.ride.rideId;
+        final rideId = item.ride.rideId;
         return HistoryRideCard(
           key: rideId == _highlightRideId
               ? _targetKey
@@ -337,10 +360,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           onTap: () =>
               _selectionMode ? _toggleSelected(rideId) : _openDetail(item),
           onLongPress: () => _toggleSelected(rideId),
-          onEdit: () => _openEdit(item.rwt),
+          onEdit: () => _openEdit(item.ride),
           onDelete: () => _confirmDelete(single: rideId),
           onToggleFavorite: () =>
-              ref.read(historyControllerProvider).toggleFavorite(item.rwt.ride),
+              ref.read(historyControllerProvider).toggleFavorite(item.ride),
         );
     }
   }

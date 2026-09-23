@@ -16,6 +16,7 @@ Ride buildRide({
   int? durationMs,
   double? avgSpeedKmh,
   double? maxSpeedKmh,
+  bool hasRoute = false,
 }) =>
     Ride(
       rideId: rideId,
@@ -31,6 +32,7 @@ Ride buildRide({
       durationMs: durationMs,
       avgSpeedKmh: avgSpeedKmh,
       maxSpeedKmh: maxSpeedKmh,
+      hasRoute: hasRoute,
     );
 
 int _tpId = 0;

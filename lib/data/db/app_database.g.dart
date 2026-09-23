@@ -153,6 +153,21 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _hasRouteMeta = const VerificationMeta(
+    'hasRoute',
+  );
+  @override
+  late final GeneratedColumn<bool> hasRoute = GeneratedColumn<bool>(
+    'has_route',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_route" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     rideId,
@@ -168,6 +183,7 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     durationMs,
     avgSpeedKmh,
     maxSpeedKmh,
+    hasRoute,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -274,6 +290,12 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         ),
       );
     }
+    if (data.containsKey('has_route')) {
+      context.handle(
+        _hasRouteMeta,
+        hasRoute.isAcceptableOrUnknown(data['has_route']!, _hasRouteMeta),
+      );
+    }
     return context;
   }
 
@@ -335,6 +357,10 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         DriftSqlType.double,
         data['${effectivePrefix}max_speed_kmh'],
       ),
+      hasRoute: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_route'],
+      )!,
     );
   }
 
@@ -358,6 +384,7 @@ class Ride extends DataClass implements Insertable<Ride> {
   final int? durationMs;
   final double? avgSpeedKmh;
   final double? maxSpeedKmh;
+  final bool hasRoute;
   const Ride({
     required this.rideId,
     this.description,
@@ -372,6 +399,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     this.durationMs,
     this.avgSpeedKmh,
     this.maxSpeedKmh,
+    required this.hasRoute,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -411,6 +439,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     if (!nullToAbsent || maxSpeedKmh != null) {
       map['max_speed_kmh'] = Variable<double>(maxSpeedKmh);
     }
+    map['has_route'] = Variable<bool>(hasRoute);
     return map;
   }
 
@@ -447,6 +476,7 @@ class Ride extends DataClass implements Insertable<Ride> {
       maxSpeedKmh: maxSpeedKmh == null && nullToAbsent
           ? const Value.absent()
           : Value(maxSpeedKmh),
+      hasRoute: Value(hasRoute),
     );
   }
 
@@ -469,6 +499,7 @@ class Ride extends DataClass implements Insertable<Ride> {
       durationMs: serializer.fromJson<int?>(json['durationMs']),
       avgSpeedKmh: serializer.fromJson<double?>(json['avgSpeedKmh']),
       maxSpeedKmh: serializer.fromJson<double?>(json['maxSpeedKmh']),
+      hasRoute: serializer.fromJson<bool>(json['hasRoute']),
     );
   }
   @override
@@ -488,6 +519,7 @@ class Ride extends DataClass implements Insertable<Ride> {
       'durationMs': serializer.toJson<int?>(durationMs),
       'avgSpeedKmh': serializer.toJson<double?>(avgSpeedKmh),
       'maxSpeedKmh': serializer.toJson<double?>(maxSpeedKmh),
+      'hasRoute': serializer.toJson<bool>(hasRoute),
     };
   }
 
@@ -505,6 +537,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     Value<int?> durationMs = const Value.absent(),
     Value<double?> avgSpeedKmh = const Value.absent(),
     Value<double?> maxSpeedKmh = const Value.absent(),
+    bool? hasRoute,
   }) => Ride(
     rideId: rideId ?? this.rideId,
     description: description.present ? description.value : this.description,
@@ -521,6 +554,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     durationMs: durationMs.present ? durationMs.value : this.durationMs,
     avgSpeedKmh: avgSpeedKmh.present ? avgSpeedKmh.value : this.avgSpeedKmh,
     maxSpeedKmh: maxSpeedKmh.present ? maxSpeedKmh.value : this.maxSpeedKmh,
+    hasRoute: hasRoute ?? this.hasRoute,
   );
   Ride copyWithCompanion(RidesCompanion data) {
     return Ride(
@@ -551,6 +585,7 @@ class Ride extends DataClass implements Insertable<Ride> {
       maxSpeedKmh: data.maxSpeedKmh.present
           ? data.maxSpeedKmh.value
           : this.maxSpeedKmh,
+      hasRoute: data.hasRoute.present ? data.hasRoute.value : this.hasRoute,
     );
   }
 
@@ -569,7 +604,8 @@ class Ride extends DataClass implements Insertable<Ride> {
           ..write('distanceMetres: $distanceMetres, ')
           ..write('durationMs: $durationMs, ')
           ..write('avgSpeedKmh: $avgSpeedKmh, ')
-          ..write('maxSpeedKmh: $maxSpeedKmh')
+          ..write('maxSpeedKmh: $maxSpeedKmh, ')
+          ..write('hasRoute: $hasRoute')
           ..write(')'))
         .toString();
   }
@@ -589,6 +625,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     durationMs,
     avgSpeedKmh,
     maxSpeedKmh,
+    hasRoute,
   );
   @override
   bool operator ==(Object other) =>
@@ -606,7 +643,8 @@ class Ride extends DataClass implements Insertable<Ride> {
           other.distanceMetres == this.distanceMetres &&
           other.durationMs == this.durationMs &&
           other.avgSpeedKmh == this.avgSpeedKmh &&
-          other.maxSpeedKmh == this.maxSpeedKmh);
+          other.maxSpeedKmh == this.maxSpeedKmh &&
+          other.hasRoute == this.hasRoute);
 }
 
 class RidesCompanion extends UpdateCompanion<Ride> {
@@ -623,6 +661,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
   final Value<int?> durationMs;
   final Value<double?> avgSpeedKmh;
   final Value<double?> maxSpeedKmh;
+  final Value<bool> hasRoute;
   const RidesCompanion({
     this.rideId = const Value.absent(),
     this.description = const Value.absent(),
@@ -637,6 +676,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.durationMs = const Value.absent(),
     this.avgSpeedKmh = const Value.absent(),
     this.maxSpeedKmh = const Value.absent(),
+    this.hasRoute = const Value.absent(),
   });
   RidesCompanion.insert({
     this.rideId = const Value.absent(),
@@ -652,6 +692,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.durationMs = const Value.absent(),
     this.avgSpeedKmh = const Value.absent(),
     this.maxSpeedKmh = const Value.absent(),
+    this.hasRoute = const Value.absent(),
   });
   static Insertable<Ride> custom({
     Expression<int>? rideId,
@@ -667,6 +708,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Expression<int>? durationMs,
     Expression<double>? avgSpeedKmh,
     Expression<double>? maxSpeedKmh,
+    Expression<bool>? hasRoute,
   }) {
     return RawValuesInsertable({
       if (rideId != null) 'ride_id': rideId,
@@ -682,6 +724,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       if (durationMs != null) 'duration_ms': durationMs,
       if (avgSpeedKmh != null) 'avg_speed_kmh': avgSpeedKmh,
       if (maxSpeedKmh != null) 'max_speed_kmh': maxSpeedKmh,
+      if (hasRoute != null) 'has_route': hasRoute,
     });
   }
 
@@ -699,6 +742,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Value<int?>? durationMs,
     Value<double?>? avgSpeedKmh,
     Value<double?>? maxSpeedKmh,
+    Value<bool>? hasRoute,
   }) {
     return RidesCompanion(
       rideId: rideId ?? this.rideId,
@@ -714,6 +758,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       durationMs: durationMs ?? this.durationMs,
       avgSpeedKmh: avgSpeedKmh ?? this.avgSpeedKmh,
       maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
+      hasRoute: hasRoute ?? this.hasRoute,
     );
   }
 
@@ -759,6 +804,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     if (maxSpeedKmh.present) {
       map['max_speed_kmh'] = Variable<double>(maxSpeedKmh.value);
     }
+    if (hasRoute.present) {
+      map['has_route'] = Variable<bool>(hasRoute.value);
+    }
     return map;
   }
 
@@ -777,7 +825,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
           ..write('distanceMetres: $distanceMetres, ')
           ..write('durationMs: $durationMs, ')
           ..write('avgSpeedKmh: $avgSpeedKmh, ')
-          ..write('maxSpeedKmh: $maxSpeedKmh')
+          ..write('maxSpeedKmh: $maxSpeedKmh, ')
+          ..write('hasRoute: $hasRoute')
           ..write(')'))
         .toString();
   }
@@ -1240,6 +1289,7 @@ typedef $$RidesTableCreateCompanionBuilder =
       Value<int?> durationMs,
       Value<double?> avgSpeedKmh,
       Value<double?> maxSpeedKmh,
+      Value<bool> hasRoute,
     });
 typedef $$RidesTableUpdateCompanionBuilder =
     RidesCompanion Function({
@@ -1256,6 +1306,7 @@ typedef $$RidesTableUpdateCompanionBuilder =
       Value<int?> durationMs,
       Value<double?> avgSpeedKmh,
       Value<double?> maxSpeedKmh,
+      Value<bool> hasRoute,
     });
 
 final class $$RidesTableReferences
@@ -1351,6 +1402,11 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
 
   ColumnFilters<double> get maxSpeedKmh => $composableBuilder(
     column: $table.maxSpeedKmh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasRoute => $composableBuilder(
+    column: $table.hasRoute,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1453,6 +1509,11 @@ class $$RidesTableOrderingComposer
     column: $table.maxSpeedKmh,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get hasRoute => $composableBuilder(
+    column: $table.hasRoute,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RidesTableAnnotationComposer
@@ -1516,6 +1577,9 @@ class $$RidesTableAnnotationComposer
     column: $table.maxSpeedKmh,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get hasRoute =>
+      $composableBuilder(column: $table.hasRoute, builder: (column) => column);
 
   Expression<T> trackpointsRefs<T extends Object>(
     Expression<T> Function($$TrackpointsTableAnnotationComposer a) f,
@@ -1584,6 +1648,7 @@ class $$RidesTableTableManager
                 Value<int?> durationMs = const Value.absent(),
                 Value<double?> avgSpeedKmh = const Value.absent(),
                 Value<double?> maxSpeedKmh = const Value.absent(),
+                Value<bool> hasRoute = const Value.absent(),
               }) => RidesCompanion(
                 rideId: rideId,
                 description: description,
@@ -1598,6 +1663,7 @@ class $$RidesTableTableManager
                 durationMs: durationMs,
                 avgSpeedKmh: avgSpeedKmh,
                 maxSpeedKmh: maxSpeedKmh,
+                hasRoute: hasRoute,
               ),
           createCompanionCallback:
               ({
@@ -1614,6 +1680,7 @@ class $$RidesTableTableManager
                 Value<int?> durationMs = const Value.absent(),
                 Value<double?> avgSpeedKmh = const Value.absent(),
                 Value<double?> maxSpeedKmh = const Value.absent(),
+                Value<bool> hasRoute = const Value.absent(),
               }) => RidesCompanion.insert(
                 rideId: rideId,
                 description: description,
@@ -1628,6 +1695,7 @@ class $$RidesTableTableManager
                 durationMs: durationMs,
                 avgSpeedKmh: avgSpeedKmh,
                 maxSpeedKmh: maxSpeedKmh,
+                hasRoute: hasRoute,
               ),
           withReferenceMapper: (p0) => p0
               .map(

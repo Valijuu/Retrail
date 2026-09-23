@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
+import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
 import '../../domain/formatters.dart';
 import '../../domain/ride_title.dart';
@@ -55,18 +56,10 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
   );
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.entry.rwt.ride.isFavorite) {
-      // already favorited on first build — no pulse
-    }
-  }
-
-  @override
   void didUpdateWidget(HistoryRideCard old) {
     super.didUpdateWidget(old);
-    final was = old.entry.rwt.ride.isFavorite;
-    final now = widget.entry.rwt.ride.isFavorite;
+    final was = old.entry.ride.isFavorite;
+    final now = widget.entry.ride.isFavorite;
     if (now && !was) {
       _pulse.forward(from: 1.0).then((_) => _pulse.reverse());
     }
@@ -83,13 +76,9 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).extension<AppColors>()!;
     final text = Theme.of(context).textTheme;
-    final ride = widget.entry.rwt.ride;
+    final ride = widget.entry.ride;
     final stats = widget.entry.stats;
-    final points = <RoutePoint>[
-      for (final tp in widget.entry.rwt.trackpoints)
-        (lat: tp.latitude, lng: tp.longitude),
-    ];
-    final hasRoute = points.isNotEmpty;
+    final hasRoute = ride.hasRoute;
     final km = stats.distanceMetres / 1000;
     final distanceStr = km < 10 ? km.toStringAsFixed(1) : km.toStringAsFixed(0);
     final locale = Localizations.localeOf(context).toString();
@@ -117,7 +106,6 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
           children: [
             _Thumbnail(
               rideId: ride.rideId,
-              points: points,
               hasRoute: hasRoute,
               title: title,
               selectionMode: widget.selectionMode,
@@ -216,7 +204,6 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
 class _Thumbnail extends ConsumerWidget {
   const _Thumbnail({
     required this.rideId,
-    required this.points,
     required this.hasRoute,
     required this.title,
     required this.selectionMode,
@@ -224,11 +211,19 @@ class _Thumbnail extends ConsumerWidget {
   });
 
   final int rideId;
-  final List<RoutePoint> points;
   final bool hasRoute;
   final String title;
   final bool selectionMode;
   final bool selected;
+
+  /// This ride's trackpoints, fetched only when actually needed (a
+  /// not-yet-cached preview render, or a navigate-to-start tap) — the list
+  /// itself no longer joins them (issue #21).
+  Future<List<RoutePoint>> _loadPoints(WidgetRef ref) async {
+    final tps =
+        await ref.read(trackpointRepositoryProvider).getForRide(rideId).first;
+    return [for (final tp in tps) (lat: tp.latitude, lng: tp.longitude)];
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -255,7 +250,8 @@ class _Thumbnail extends ConsumerWidget {
               child: hasRoute
                   ? RoutePreview(
                       rideId: rideId,
-                      points: points,
+                      hasRoute: true,
+                      pointsLoader: () => _loadPoints(ref),
                       cache: ref.watch(routePreviewCacheProvider),
                       cacheWidth: previewImageCacheWidth,
                     )
@@ -292,9 +288,12 @@ class _Thumbnail extends ConsumerWidget {
                 shape: const CircleBorder(),
                 child: IconButton(
                   iconSize: 20,
-                  onPressed: () => ref
-                      .read(navigationLauncherProvider)
-                      .launchTo(points.first.lat, points.first.lng, title),
+                  onPressed: () async {
+                    final points = await _loadPoints(ref);
+                    if (points.isEmpty) return;
+                    ref.read(navigationLauncherProvider).launchTo(
+                        points.first.lat, points.first.lng, title);
+                  },
                   icon: Icon(Icons.directions, color: colors.primary),
                   tooltip: l10n.a11yNavigateToStartPoint,
                 ),

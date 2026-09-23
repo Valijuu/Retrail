@@ -55,14 +55,16 @@ void main() {
     expect(r.distanceMetres, 200); // 2 segments × 100 m (FixedDistanceCalculator)
     expect(r.durationMs, 3600000);
     expect(r.avgSpeedKmh, closeTo(0.2, 1e-9)); // 0.2 km / 1 h
+    expect(r.hasRoute, isTrue);
   });
 
-  test('updateEndTime on a ride with no trackpoints stores zeroed stats',
-      () async {
+  test('updateEndTime on a ride with no trackpoints stores zeroed stats and '
+      'hasRoute=false', () async {
     final id = await repo.startRide(startedAtMs: 0);
     await repo.updateEndTime(id, 1000);
     final r = await repo.getById(id).first;
     expect(r!.distanceMetres, 0);
     expect(r.maxSpeedKmh, 0);
+    expect(r.hasRoute, isFalse);
   });
 }

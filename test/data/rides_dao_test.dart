@@ -74,15 +74,21 @@ void main() {
     expect(favs.map((r) => r.description), ['b', 'a']);
   });
 
-  test('updateStats writes distance/duration/avg/max speed', () async {
+  test('updateStats writes distance/duration/avg/max speed + hasRoute',
+      () async {
     final id = await db.rideDao.insert(ride(title: 'stats'));
     await db.rideDao.updateStats(id,
-        distanceMetres: 1234.5, durationMs: 60000, avgSpeedKmh: 12.3, maxSpeedKmh: 20.1);
+        distanceMetres: 1234.5,
+        durationMs: 60000,
+        avgSpeedKmh: 12.3,
+        maxSpeedKmh: 20.1,
+        hasRoute: true);
     final r = await db.rideDao.getById(id).first;
     expect(r!.distanceMetres, 1234.5);
     expect(r.durationMs, 60000);
     expect(r.avgSpeedKmh, 12.3);
     expect(r.maxSpeedKmh, 20.1);
+    expect(r.hasRoute, true);
   });
 
   test('deleteById removes the ride', () async {

@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/activity_type.dart';
 import '../../data/repositories/data_providers.dart';
-import '../../tracking/tracking_providers.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../settings/settings_providers.dart';
 import 'history_controller.dart';
@@ -86,12 +85,12 @@ final activeFilterCountProvider =
 /// never closes — see the established test rule).
 final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
   final filter = ref.watch(historyFilterProvider);
-  final calc = ref.watch(distanceCalculatorProvider);
   final locale = ref.watch(dateFormatLocaleProvider);
   final repo = ref.watch(rideRepositoryProvider);
   final (start, end) = effectiveRange(filter);
-  return repo.getRidesWithTrackpointsInRange(startMs: start, endMs: end).map(
-      (rides) => buildHistoryItems(rides, filter, calc: calc, locale: locale));
+  return repo
+      .getRidesInRange(startMs: start, endMs: end)
+      .map((rides) => buildHistoryItems(rides, filter, locale: locale));
 });
 
 /// Distinct calendar years present in the ride history, descending (newest

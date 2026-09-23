@@ -1,5 +1,4 @@
-import '../../data/db/ride_with_trackpoints.dart';
-import '../../domain/distance_calculator.dart';
+import '../../data/db/app_database.dart' show Ride;
 import '../../domain/formatters.dart';
 import '../../domain/ride_stats.dart';
 import '../../domain/ride_title.dart';
@@ -20,20 +19,23 @@ class DateHeaderItem extends HistoryItem {
   final String dayKey;
 }
 
-/// A ride with its computed [RideStats].
+/// A ride with its computed [RideStats]. No trackpoints — the list query
+/// doesn't join them (see issue #21); a card fetches its own, lazily, only
+/// to render a not-yet-cached route preview (HistoryRideCard/_Thumbnail).
 class RideEntryItem extends HistoryItem {
-  const RideEntryItem(this.rwt, this.stats);
-  final RideWithTrackpoints rwt;
+  const RideEntryItem(this.ride, this.stats);
+  final Ride ride;
   final RideStats stats;
 }
 
 /// Filters, sorts and (for date sort) date-groups the history into a flat
-/// display list. Pure — mirrors `RideHistoryViewModel.ridesWithStats`, so the
-/// distance/speed/duration sorts run over trackpoint-derived stats.
+/// display list. Pure — mirrors `RideHistoryViewModel.ridesWithStats`. Stats
+/// come off the ride row (denormalized at save time, see
+/// `RideRepository.updateEndTime`), falling back to a duration-only estimate
+/// for the rare row without them yet — see [storedRideStats].
 List<HistoryItem> buildHistoryItems(
-  List<RideWithTrackpoints> rides,
+  List<Ride> rides,
   HistoryFilter f, {
-  required DistanceCalculator calc,
   int? nowMs,
   String? locale,
 }) {
@@ -44,10 +46,9 @@ List<HistoryItem> buildHistoryItems(
   final hasMonthRange = f.monthFrom != null || f.monthTo != null;
 
   final entries = rides
-      .where((rwt) => !f.favoritesOnly || rwt.ride.isFavorite)
-      .where(
-          (rwt) => activityIds.isEmpty || activityIds.contains(rwt.ride.typ))
-      .where((rwt) {
+      .where((ride) => !f.favoritesOnly || ride.isFavorite)
+      .where((ride) => activityIds.isEmpty || activityIds.contains(ride.typ))
+      .where((ride) {
         if (!hasMonthRange) return true;
         // A concrete `year` already narrows the DB query to exactly this
         // month range for that year (see `effectiveRange`), so this check is
@@ -55,19 +56,19 @@ List<HistoryItem> buildHistoryItems(
         // (year == null): `effectiveRange` can't express "these months, every
         // year" as a single (start, end) window, so the cross-year
         // restriction is applied here instead, over the unrestricted fetch.
-        final ts = rwt.ride.date ?? rwt.ride.startTime;
+        final ts = ride.date ?? ride.startTime;
         return ts != null &&
             monthOfYearInRange(ts, monthFrom: f.monthFrom, monthTo: f.monthTo);
       })
-      .where((rwt) {
+      .where((ride) {
         if (trimmedQuery.isEmpty) return true;
         final q = trimmedQuery.toLowerCase();
-        final title = rideDisplayTitle(rwt.ride, locale: locale, nowMs: nowMs);
+        final title = rideDisplayTitle(ride, locale: locale, nowMs: nowMs);
         return title.toLowerCase().contains(q) ||
-            (rwt.ride.comment?.toLowerCase().contains(q) ?? false);
+            (ride.comment?.toLowerCase().contains(q) ?? false);
       })
-      .map((rwt) => RideEntryItem(
-          rwt, storedRideStats(rwt.ride) ?? computeRideStats(rwt, calc)))
+      .map((ride) => RideEntryItem(
+          ride, storedRideStats(ride) ?? statsWithoutTrackpoints(ride)))
       .toList();
 
   switch (f.sort) {
@@ -99,7 +100,7 @@ double estimatedOffsetOf(
 }) {
   var offset = 0.0;
   for (final item in items) {
-    if (item is RideEntryItem && item.rwt.ride.rideId == rideId) return offset;
+    if (item is RideEntryItem && item.ride.rideId == rideId) return offset;
     offset += item is DateHeaderItem ? headerExtent : cardExtent;
   }
   return 0;
@@ -110,7 +111,7 @@ double estimatedOffsetOf(
 List<HistoryItem> _groupByDate(List<RideEntryItem> entries) {
   final byDay = <String, List<RideEntryItem>>{};
   for (final e in entries) {
-    final key = formatRideDayKey(e.rwt.ride.date);
+    final key = formatRideDayKey(e.ride.date);
     (byDay[key] ??= []).add(e);
   }
   final dayKeys = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -119,7 +120,7 @@ List<HistoryItem> _groupByDate(List<RideEntryItem> entries) {
   for (final key in dayKeys) {
     out.add(DateHeaderItem(key));
     final dayEntries = byDay[key]!
-      ..sort((a, b) => (b.rwt.ride.date ?? 0).compareTo(a.rwt.ride.date ?? 0));
+      ..sort((a, b) => (b.ride.date ?? 0).compareTo(a.ride.date ?? 0));
     out.addAll(dayEntries);
   }
   return out;

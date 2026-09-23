@@ -40,16 +40,22 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
 
   // Uses coalesce(date, startTime) rather than startTime alone to replicate
   // the timestamp fallback the History feature uses in Dart
-  // (`rwt.ride.date ?? rwt.ride.startTime ?? 0`, history_items.dart:60).
-  Stream<List<RideWithTrackpoints>> getRidesWithTrackpointsInRange(
-      {int? startMs, int? endMs}) {
-    final query = _joinedRides();
+  // (`ride.date ?? ride.startTime ?? 0`, history_items.dart).
+  //
+  // Rides only — no trackpoints join. The History list used to join every
+  // visible ride's full trackpoint list here, re-fetching/re-parsing it on
+  // every write to either table (issue #21). Stats are denormalized (see
+  // updateStats) and hasRoute tells the list whether a card has a preview to
+  // show; the actual points are fetched lazily, per card, only for a preview
+  // that isn't cached yet (see HistoryRideCard/_Thumbnail).
+  Stream<List<Ride>> getRidesInRange({int? startMs, int? endMs}) {
+    final query = select(rides);
     if (startMs != null || endMs != null) {
       final ts = coalesce([rides.date, rides.startTime]);
-      if (startMs != null) query.where(ts.isBiggerOrEqualValue(startMs));
-      if (endMs != null) query.where(ts.isSmallerOrEqualValue(endMs));
+      if (startMs != null) query.where((_) => ts.isBiggerOrEqualValue(startMs));
+      if (endMs != null) query.where((_) => ts.isSmallerOrEqualValue(endMs));
     }
-    return query.watch().map(_group);
+    return query.watch();
   }
 
   JoinedSelectStatement<HasResultSet, dynamic> _joinedRides() {
@@ -89,21 +95,23 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
       (update(rides)..where((r) => r.rideId.equals(rideId)))
           .write(RidesCompanion(endTime: Value(endTime)));
 
-  /// Writes the denormalized [RideStats] fields (see tables.dart) computed
-  /// once at ride finalization, so History never recomputes them from raw
-  /// trackpoints on every list rebuild.
+  /// Writes the denormalized [RideStats] fields + [hasRoute] (see tables.dart)
+  /// computed once at ride finalization, so History never recomputes them
+  /// from raw trackpoints on every list rebuild.
   Future<void> updateStats(
     int rideId, {
     required double distanceMetres,
     required int durationMs,
     required double avgSpeedKmh,
     required double maxSpeedKmh,
+    required bool hasRoute,
   }) =>
       (update(rides)..where((r) => r.rideId.equals(rideId))).write(RidesCompanion(
         distanceMetres: Value(distanceMetres),
         durationMs: Value(durationMs),
         avgSpeedKmh: Value(avgSpeedKmh),
         maxSpeedKmh: Value(maxSpeedKmh),
+        hasRoute: Value(hasRoute),
       ));
 
   Future<void> updateRideDetails(int rideId, String? description, String? comment) =>

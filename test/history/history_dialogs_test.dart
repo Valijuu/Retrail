@@ -35,6 +35,7 @@ Ride _ride() => const Ride(
       comment: 'felt great',
       isFavorite: false,
       favoritedAt: null,
+      hasRoute: false,
     );
 
 void main() {
