@@ -166,8 +166,31 @@ void main() {
     expect(cache.resolvedFileFor(7, brightness: Brightness.light), isNull);
   });
 
-  test('renders are serialized — never more than one at a time', () async {
+  test('renders are bounded to maxConcurrentRenders — queued, not fanned '
+      'out unboundedly, but not fully serial either (issue #23)', () async {
     var active = 0, maxActive = 0;
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      maxConcurrentRenders: 3,
+      render: (_, _) async {
+        active++;
+        maxActive = active > maxActive ? active : maxActive;
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        active--;
+        return _png([1]);
+      },
+    );
+    // A fast scroll (or a bulk-seeded backlog) kicks off many previews at once.
+    await Future.wait([
+      for (var id = 1; id <= 9; id++)
+        cache.ensurePreview(id, points, brightness: Brightness.light),
+    ]);
+    expect(maxActive, 3); // capped at the configured lane count…
+    expect(maxActive, greaterThan(1)); // …but actually running some in parallel
+  });
+
+  test('maxConcurrentRenders defaults to 3', () async {
+    var maxActive = 0, active = 0;
     final cache = RoutePreviewCache(
       baseDir: tempDir,
       render: (_, _) async {
@@ -178,12 +201,11 @@ void main() {
         return _png([1]);
       },
     );
-    // A fast scroll kicks off many previews at once.
     await Future.wait([
-      for (var id = 1; id <= 5; id++)
+      for (var id = 1; id <= 9; id++)
         cache.ensurePreview(id, points, brightness: Brightness.light),
     ]);
-    expect(maxActive, 1); // queued, not fanned out on the UI isolate
+    expect(maxActive, 3);
   });
 
   test('evict removes stale markers too', () async {

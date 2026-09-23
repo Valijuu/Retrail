@@ -22,7 +22,12 @@ typedef PreviewRenderer = Future<PreviewResult> Function(
 /// [ensurePreview] re-renders it, upgrading to the full-tile PNG once online —
 /// "save flat sketch now, regenerate full tiles later".
 class RoutePreviewCache {
-  RoutePreviewCache({required this.baseDir, required this.render});
+  RoutePreviewCache(
+      {required this.baseDir,
+      required this.render,
+      this.maxConcurrentRenders = 3})
+      : _renderLanes =
+            List.generate(maxConcurrentRenders, (_) => Future<void>.value());
 
   final Directory baseDir;
   final PreviewRenderer render;
@@ -32,10 +37,19 @@ class RoutePreviewCache {
   /// `exists()` round-trips, no sketch-then-image pop-in.
   final Map<String, File> _resolved = {};
 
-  /// Tail of the render queue: renders run **one at a time** so a fast scroll
-  /// over many un-rendered rides doesn't fan out concurrent tile fetches +
-  /// decodes + PNG encodes on the UI isolate (visible as scroll stutter).
-  Future<void> _renderTail = Future<void>.value();
+  /// How many renders may run at once. Bounded (not unlimited) so a fast
+  /// scroll over many un-rendered rides doesn't fan out unboundedly many
+  /// concurrent tile fetches + decodes + PNG encodes on the UI isolate
+  /// (visible as scroll stutter); >1 so a backlog of many un-rendered rides —
+  /// a bulk import, or first-ever big History open — drains meaningfully
+  /// faster than one at a time (issue #23).
+  final int maxConcurrentRenders;
+
+  /// One render-queue tail per lane; a new render joins the lane it's
+  /// assigned to round-robin, so at most [maxConcurrentRenders] run at once
+  /// while each lane still serializes its own renders.
+  final List<Future<void>> _renderLanes;
+  int _nextLane = 0;
 
   String _key(int rideId, Brightness brightness) =>
       '$rideId:${brightness.name}';
@@ -96,10 +110,14 @@ class RoutePreviewCache {
     });
   }
 
-  /// Chains [task] onto the render queue so renders never run concurrently.
+  /// Chains [task] onto one render lane (round-robin), bounding concurrency
+  /// to [maxConcurrentRenders] instead of either serializing everything or
+  /// fanning out unboundedly.
   Future<File> _enqueue(Future<File> Function() task) {
-    final run = _renderTail.then((_) => task());
-    _renderTail = run.then((_) {}, onError: (_) {});
+    final lane = _nextLane;
+    _nextLane = (_nextLane + 1) % maxConcurrentRenders;
+    final run = _renderLanes[lane].then((_) => task());
+    _renderLanes[lane] = run.then((_) {}, onError: (_) {});
     return run;
   }
 
