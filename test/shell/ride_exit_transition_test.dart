@@ -65,6 +65,8 @@ class _GrantedPerms implements LocationPermissionService {
   @override
   Future<bool> isPreciseLocation() async => true;
   @override
+  Future<void> requestPreciseLocation() async {}
+  @override
   Future<bool> isLocationServiceEnabled() async => true;
   @override
   Future<LocationPermission> checkPermission() async =>

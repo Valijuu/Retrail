@@ -23,6 +23,20 @@ class GeolocatorPermissionService implements LocationPermissionService {
   Future<bool> isPreciseLocation() async =>
       await Geolocator.getLocationAccuracy() == LocationAccuracyStatus.precise;
 
+  /// Purpose key into `NSLocationTemporaryUsageDescriptionDictionary`
+  /// (ios/Runner/Info.plist, DE copy in de.lproj/InfoPlist.strings).
+  static const _preciseLocationPurposeKey = 'RideTracking';
+
+  @override
+  Future<void> requestPreciseLocation() async {
+    if (Platform.isIOS) {
+      await Geolocator.requestTemporaryFullAccuracy(
+          purposeKey: _preciseLocationPurposeKey);
+    } else {
+      await Geolocator.requestPermission();
+    }
+  }
+
   @override
   Future<void> ensureBackgroundPermission() async {
     // Android's location foreground service covers screen-off recording, so

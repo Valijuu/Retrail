@@ -69,6 +69,13 @@
 	<string>Retrail records your route while you ride.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Retrail keeps recording your route when the screen is off.</string>
+	<!-- iOS 14+ "Precise: Off": the start gate asks for temporary full accuracy
+	     under this purpose key (GeolocatorPermissionService). -->
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>RideTracking</key>
+		<string>Retrail needs your precise location to record the route of this ride.</string>
+	</dict>
 	<!-- Profile photo (image_picker / image_cropper). -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose a profile photo from your library.</string>

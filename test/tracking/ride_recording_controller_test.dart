@@ -52,8 +52,14 @@ class _FakePermissions implements LocationPermissionService {
   @override
   Future<LocationPermission> requestPermission() async {
     requestCount++;
-    precise = preciseAfterRequest;
     return permission = afterRequest;
+  }
+
+  int preciseRequestCount = 0;
+  @override
+  Future<void> requestPreciseLocation() async {
+    preciseRequestCount++;
+    precise = preciseAfterRequest;
   }
 
   @override
@@ -299,7 +305,8 @@ void main() {
     );
     final action = await controller(perms).prepare();
     expect(action, LocationStartAction.proceed);
-    expect(perms.requestCount, 1);
+    expect(perms.preciseRequestCount, 1);
+    expect(perms.requestCount, 0); // the permission itself was already granted
   });
 
   test('approximate-only location kept → requestPreciseLocation, nothing '
@@ -311,7 +318,7 @@ void main() {
     );
     final action = await controller(perms).start();
     expect(action, LocationStartAction.requestPreciseLocation);
-    expect(perms.requestCount, 1);
+    expect(perms.preciseRequestCount, 1);
     expect(tracker.state.isTracking, isFalse);
     expect(service.starts, 0);
   });
