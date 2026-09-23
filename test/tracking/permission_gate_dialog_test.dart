@@ -35,4 +35,23 @@ void main() {
     await tester.tap(find.text('Open settings'));
     expect(opened, isTrue);
   });
+
+  testWidgets(
+      'long action labels render at full size — stacked full-width buttons, '
+      'no shrink-to-fit (issue #31)', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpDialog(tester, LocationStartAction.showRationale);
+
+    expect(
+        find.descendant(
+            of: find.byType(PermissionGateDialog),
+            matching: find.byType(FittedBox)),
+        findsNothing);
+    final open = tester.getSize(find.byType(FilledButton));
+    final cancel = tester.getSize(find.byType(TextButton));
+    expect(open.width, cancel.width); // same full width, one per row
+    expect(tester.getTopLeft(find.byType(FilledButton)).dy,
+        lessThan(tester.getTopLeft(find.byType(TextButton)).dy));
+  });
 }

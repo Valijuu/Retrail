@@ -39,25 +39,22 @@ class PermissionGateDialog extends StatelessWidget {
       title: Text(title),
       content: Text(body),
       actions: [
-        // One row of two equal-width buttons: the default OverflowBar stacked
-        // them vertically at different sizes because "Open settings" (DE:
-        // "Einstellungen öffnen") doesn't fit next to Cancel at natural size.
-        Row(
+        // Stacked full-width buttons, primary on top: side by side each got
+        // half the width and the long German "Einstellungen öffnen" had to be
+        // shrunk to fit, visibly smaller than "Abbrechen" (issue #31).
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: _ActionButton(
-                label: l10n.actionCancel,
-                filled: false,
-                onTap: onDismiss,
-              ),
+            _ActionButton(
+              label: l10n.permissionOpenSettings,
+              filled: true,
+              onTap: onOpenSettings,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _ActionButton(
-                label: l10n.permissionOpenSettings,
-                filled: true,
-                onTap: onOpenSettings,
-              ),
+            const SizedBox(height: 8),
+            _ActionButton(
+              label: l10n.actionCancel,
+              filled: false,
+              onTap: onDismiss,
             ),
           ],
         ),
@@ -76,11 +73,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // FittedBox: the long localized labels scale down instead of wrapping, so
-    // both halves stay the same height.
-    final child = FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(label, maxLines: 1, softWrap: false));
+    final child = Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
     return SizedBox(
       height: 44,
       child: filled
