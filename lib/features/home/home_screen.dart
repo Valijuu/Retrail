@@ -38,15 +38,14 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  static const _greetingCount = 15;
   final GreetingSelector _greeting = GreetingSelector();
-  late int _greetingIndex = _greeting.next(_greetingCount);
+  late int _greetingIndex = _greeting.next(skaterGreetingCount);
 
   @override
   void didUpdateWidget(HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.greetingKey != widget.greetingKey) {
-      setState(() => _greetingIndex = _greeting.next(_greetingCount));
+      setState(() => _greetingIndex = _greeting.next(skaterGreetingCount));
     }
   }
 

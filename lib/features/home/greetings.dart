@@ -1,6 +1,10 @@
 import '../../l10n/app_localizations.dart';
 
-/// The 15 skater greeting templates (each contains a `%s` token where the name
+/// How many skater greetings there are — Home rolls a random index below this
+/// per visit. Kept next to [skaterGreetings] so the two can't drift apart.
+const int skaterGreetingCount = 8;
+
+/// The skater greeting templates (each contains a `%s` token where the name
 /// goes — split in code so the name can be styled).
 List<String> skaterGreetings(AppLocalizations l10n) => [
       l10n.skaterGreeting1,
@@ -11,11 +15,4 @@ List<String> skaterGreetings(AppLocalizations l10n) => [
       l10n.skaterGreeting6,
       l10n.skaterGreeting7,
       l10n.skaterGreeting8,
-      l10n.skaterGreeting9,
-      l10n.skaterGreeting10,
-      l10n.skaterGreeting11,
-      l10n.skaterGreeting12,
-      l10n.skaterGreeting13,
-      l10n.skaterGreeting14,
-      l10n.skaterGreeting15,
     ];
