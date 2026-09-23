@@ -17,12 +17,20 @@ import 'package:retrail/tracking/ride_tracker.dart';
 /// Fake source we can pump fixes through.
 class _FakeSource implements LocationSource {
   final _controller = StreamController<LocationFix>.broadcast();
+  final _service = StreamController<bool>.broadcast();
   @override
   Stream<LocationFix> get fixes => _controller.stream;
   @override
+  Stream<bool> get serviceEnabled => _service.stream;
+  @override
   Future<LocationFix?> lastKnown() async => null;
   void emit(LocationFix f) => _controller.add(f);
-  Future<void> close() => _controller.close();
+  void emitError(Object e) => _controller.addError(e);
+  void setService(bool on) => _service.add(on);
+  Future<void> close() async {
+    await _controller.close();
+    await _service.close();
+  }
 }
 
 /// Scriptable permission service.
@@ -321,5 +329,40 @@ void main() {
     expect(perms.preciseRequestCount, 1);
     expect(tracker.state.isTracking, isFalse);
     expect(service.starts, 0);
+  });
+
+  test('location services switched off / on mid-ride reach the tracker '
+      '(issue #33)', () async {
+    final c = controller(_FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+    ));
+    await c.start();
+    await pumpEventQueue();
+
+    source.setService(false);
+    await pumpEventQueue();
+    expect(tracker.state.locationServiceEnabled, isFalse);
+
+    source.setService(true);
+    await pumpEventQueue();
+    expect(tracker.state.locationServiceEnabled, isTrue);
+    await c.stop();
+  });
+
+  test('an error on the fix stream is contained and later fixes still record',
+      () async {
+    final c = controller(_FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+    ));
+    await c.start();
+    await pumpEventQueue();
+
+    source.emitError(Exception('location service disabled'));
+    source.emit(_fix(52.0, 13.0, 9000000000));
+    await pumpEventQueue();
+    expect(tracker.state.location?.latitude, 52.0);
+    await c.stop();
   });
 }

@@ -96,25 +96,33 @@ class LiveBadge extends StatelessWidget {
 }
 
 /// Full-width amber banner shown while recording without a network.
-class OfflineBanner extends StatelessWidget {
-  const OfflineBanner({super.key, required this.label});
+class RideWarningBanner extends StatelessWidget {
+  const RideWarningBanner({super.key, required this.label, this.onTap});
 
   final String label;
+
+  /// Optional action (e.g. open the location settings); the whole strip is
+  /// the tap target.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     // editActionText (#92400E) is the original banner amber — no new hex.
     final colors = Theme.of(context).extension<AppColors>()!;
-    return Container(
-      width: double.infinity,
-      color: colors.editActionText,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      alignment: Alignment.center,
-      child: Text(label,
-          style: Theme.of(context)
-              .textTheme
-              .labelSmall
-              ?.copyWith(color: Colors.white)),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        color: colors.editActionText,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        alignment: Alignment.center,
+        child: Text(label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: Colors.white)),
+      ),
     );
   }
 }

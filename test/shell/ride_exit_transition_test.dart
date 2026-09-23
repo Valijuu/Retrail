@@ -41,6 +41,8 @@ import '../support/live_map_stub.dart';
 // it) can be pumped end-to-end without platform channels or real GPS/DB work.
 class _NoopSource implements LocationSource {
   @override
+  Stream<bool> get serviceEnabled => const Stream.empty();
+  @override
   Stream<LocationFix> get fixes => const Stream.empty();
   @override
   Future<LocationFix?> lastKnown() async => null;

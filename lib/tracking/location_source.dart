@@ -12,6 +12,10 @@ abstract interface class LocationSource {
 
   /// Last known fix, to seed an immediate marker so the map isn't blank.
   Future<LocationFix?> lastKnown();
+
+  /// Emits whenever the device's location services are switched on (true) or
+  /// off (false) — while off, [fixes] stays silent (issue #33).
+  Stream<bool> get serviceEnabled;
 }
 
 /// Maps a geolocator [Position] to a [LocationFix].
@@ -42,6 +46,10 @@ class GeolocatorLocationSource implements LocationSource {
   Stream<LocationFix> get fixes =>
       Geolocator.getPositionStream(locationSettings: _settings())
           .map(fixFromPosition);
+
+  @override
+  Stream<bool> get serviceEnabled => Geolocator.getServiceStatusStream()
+      .map((status) => status == ServiceStatus.enabled);
 
   @override
   Future<LocationFix?> lastKnown() async {

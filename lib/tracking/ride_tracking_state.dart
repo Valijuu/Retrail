@@ -17,6 +17,7 @@ class RideTrackingState {
     this.elapsedSeconds = 0,
     this.isPaused = false,
     this.activityType,
+    this.locationServiceEnabled = true,
   });
 
   final LocationFix? location;
@@ -32,4 +33,8 @@ class RideTrackingState {
   final int elapsedSeconds;
   final bool isPaused;
   final ActivityType? activityType;
+
+  /// False while the device's location services (GPS) are switched off — no
+  /// fixes arrive, so nothing is recorded; the ride screen warns (issue #33).
+  final bool locationServiceEnabled;
 }

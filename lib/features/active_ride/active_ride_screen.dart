@@ -21,7 +21,7 @@ import 'widgets/ride_chrome.dart';
 import 'widgets/ride_stats_panel.dart';
 
 /// The live active-ride screen. Ports `MapPage` + `MapViewModel`: live map +
-/// route, Live/Paused badge, offline banner, 2×2 live stats with pause/stop,
+/// route, Live/Paused badge, offline + location-off banners, 2×2 live stats with pause/stop,
 /// recenter FAB, and the stop/discard/summary dialogs. Starts the ride on
 /// entry and, on save, triggers the preview snapshot.
 ///
@@ -202,7 +202,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     showLive: showLive,
                     onBack: _onBack,
                   ),
-                  if (!isOnline) OfflineBanner(label: l10n.mapOfflineBanner),
+                  if (!isOnline)
+                    RideWarningBanner(label: l10n.mapOfflineBanner),
+                  // GPS switched off mid-ride: nothing records until it's back
+                  // on, so say so instead of looking live (issue #33).
+                  if (!state.locationServiceEnabled)
+                    RideWarningBanner(
+                      label: l10n.rideLocationOffBanner,
+                      onTap: _recording.openLocationSettings,
+                    ),
                   // The 65/35 map+stats layout is fixed for the whole screen
                   // session: the panel shows from the FIRST frame (zeros/--,
                   // blending in with the screen's entry transition, before GPS

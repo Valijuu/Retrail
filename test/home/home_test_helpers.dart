@@ -38,6 +38,8 @@ class NoopActiveRideController extends ActiveRideController {
 
 class _NoopSource implements LocationSource {
   @override
+  Stream<bool> get serviceEnabled => const Stream.empty();
+  @override
   Stream<LocationFix> get fixes => const Stream.empty();
   @override
   Future<LocationFix?> lastKnown() async => null;

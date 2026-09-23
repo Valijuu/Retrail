@@ -67,6 +67,7 @@
   "mapResumeRide": "Resume",
   "mapRecenterCd": "Re-center",
   "mapOfflineBanner": "Offline — map tiles may not be available",
+  "rideLocationOffBanner": "Location is off — your route isn't being recorded. Tap to turn it on.",
   "confirmStopTitle": "Stop ride?",
   "confirmStopBody": "Do you want to stop the current ride?",
   "confirmStopKeep": "Keep riding",

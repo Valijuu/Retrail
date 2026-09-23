@@ -71,6 +71,7 @@ class RideRecordingController {
 
   StreamSubscription<void>? _fixSub;
   StreamSubscription<void>? _stateSub;
+  StreamSubscription<void>? _serviceSub;
 
   /// Bumped by [stop]. [start] snapshots it and re-checks after every await:
   /// a stop that lands while start's slow platform calls are in flight must
@@ -144,7 +145,15 @@ class RideRecordingController {
     final seed = await _source.lastKnown();
     if (epoch != _epoch) return LocationStartAction.proceed;
     if (seed != null) _tracker.seedLocation(seed);
-    _fixSub = _source.fixes.listen(_tracker.onLocationReceived);
+    // onError: a platform error on the fix stream (e.g. location services
+    // switched off) must not escape as an unhandled exception; the service
+    // stream below reports that state to the UI instead (issue #33).
+    _fixSub = _source.fixes.listen(_tracker.onLocationReceived,
+        onError: (Object _) {});
+    // The gate just confirmed services are on; track changes from here.
+    _tracker.setLocationServiceEnabled(true);
+    _serviceSub =
+        _source.serviceEnabled.listen(_tracker.setLocationServiceEnabled);
     // Keep the ongoing notification's live stats in sync.
     _stateSub = _tracker.changes.listen((s) => _service.update(
           isPaused: s.isPaused,
@@ -156,10 +165,7 @@ class RideRecordingController {
     if (epoch != _epoch) {
       // A stop won the race after the service came up: undo this start
       // instead of resurrecting a ride the user already left/discarded.
-      await _fixSub?.cancel();
-      _fixSub = null;
-      await _stateSub?.cancel();
-      _stateSub = null;
+      await _cancelSubscriptions();
       await _service.stop();
       return LocationStartAction.proceed;
     }
@@ -192,11 +198,17 @@ class RideRecordingController {
     } else {
       _tracker.stopTracking();
     }
+    await _cancelSubscriptions();
+    await _service.stop();
+  }
+
+  Future<void> _cancelSubscriptions() async {
     await _fixSub?.cancel();
     _fixSub = null;
     await _stateSub?.cancel();
     _stateSub = null;
-    await _service.stop();
+    await _serviceSub?.cancel();
+    _serviceSub = null;
   }
 
   Future<void> openLocationSettings() => _permissions.openLocationSettings();
@@ -215,5 +227,7 @@ class RideRecordingController {
     _fixSub = null;
     unawaited(_stateSub?.cancel());
     _stateSub = null;
+    unawaited(_serviceSub?.cancel());
+    _serviceSub = null;
   }
 }

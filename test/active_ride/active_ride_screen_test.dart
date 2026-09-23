@@ -40,6 +40,8 @@ typedef SaveArgs = ({String? title, String? comment, bool favorite});
 // overrides start/stop so none are actually exercised.
 class _NoopSource implements LocationSource {
   @override
+  Stream<bool> get serviceEnabled => const Stream.empty();
+  @override
   Stream<LocationFix> get fixes => const Stream.empty();
   @override
   Future<LocationFix?> lastKnown() async => null;
@@ -104,6 +106,9 @@ class FakeRecording extends RideRecordingController {
   @override
   Future<void> stop({bool discard = false}) async =>
       calls.add(discard ? 'stop:discard' : 'stop');
+
+  @override
+  Future<void> openLocationSettings() async => calls.add('openLocationSettings');
 }
 
 /// Records intent calls without touching the DB / preview pipeline.
@@ -260,6 +265,27 @@ void main() {
   testWidgets('offline shows the offline banner', (tester) async {
     await pumpScreen(tester, online: false);
     expect(find.text('Offline — map tiles may not be available'), findsOneWidget);
+  });
+
+  testWidgets(
+      'location services off mid-ride: warning banner, speed shows "--", and '
+      'tapping the banner opens the location settings (issue #33)',
+      (tester) async {
+    await pumpScreen(tester,
+        state: const RideTrackingState(
+            isTracking: true, locationServiceEnabled: false));
+    const banner = "Location is off — your route isn't being recorded. "
+        'Tap to turn it on.';
+    expect(find.text(banner), findsOneWidget);
+    expect(find.text('-- km/h'), findsOneWidget);
+
+    await tester.tap(find.text(banner));
+    expect(recording.calls, contains('openLocationSettings'));
+  });
+
+  testWidgets('no location banner while services are on', (tester) async {
+    await pumpScreen(tester);
+    expect(find.textContaining('Location is off'), findsNothing);
   });
 
   testWidgets('Stop → confirm opens the summary and calls stopRide',

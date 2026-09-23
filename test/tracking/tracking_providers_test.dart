@@ -19,6 +19,8 @@ import 'package:retrail/tracking/tracking_providers.dart';
 /// Fake source whose listener count is observable — that is what tells us
 /// whether the controller's GPS subscription was actually cancelled.
 class _FakeSource implements LocationSource {
+  @override
+  Stream<bool> get serviceEnabled => const Stream.empty();
   final _controller = StreamController<LocationFix>.broadcast();
 
   @override

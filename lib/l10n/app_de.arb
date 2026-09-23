@@ -66,6 +66,7 @@
   "mapResumeRide": "Fortsetzen",
   "mapRecenterCd": "Neu zentrieren",
   "mapOfflineBanner": "Offline — Karte eventuell nicht verfügbar",
+  "rideLocationOffBanner": "Standort ist aus — deine Strecke wird nicht aufgezeichnet. Tippen zum Einschalten.",
   "confirmStopTitle": "Fahrt beenden?",
   "confirmStopBody": "Möchtest du die aktuelle Fahrt beenden?",
   "confirmStopKeep": "Weiterfahren",

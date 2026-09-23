@@ -75,6 +75,40 @@ void main() {
     });
   }
 
+  // ─── Location services (issue #33) ───────────────────────────────────────
+  group('location services', () {
+    test('services start as enabled', () {
+      runTracker((fa, t) => expect(t.state.locationServiceEnabled, isTrue));
+    });
+
+    test('switched off mid-ride: state says so and the live speed is cleared '
+        '(no frozen last value)', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 3));
+        expect(t.state.speedKmh, isNotNull);
+
+        final emitted = <bool>[];
+        t.changes.listen((s) => emitted.add(s.locationServiceEnabled));
+        t.setLocationServiceEnabled(false);
+        fa.flushMicrotasks();
+
+        expect(t.state.locationServiceEnabled, isFalse);
+        expect(t.state.speedKmh, isNull);
+        expect(emitted, contains(false));
+      });
+    });
+
+    test('switched back on: state recovers', () {
+      runTracker((fa, t) {
+        t.setLocationServiceEnabled(false);
+        t.setLocationServiceEnabled(true);
+        expect(t.state.locationServiceEnabled, isTrue);
+      });
+    });
+  });
+
   // ─── Ride lifecycle ──────────────────────────────────────────────────────
   group('lifecycle', () {
     test('startTracking creates a ride and sets tracking', () {

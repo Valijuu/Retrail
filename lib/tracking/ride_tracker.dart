@@ -54,6 +54,7 @@ class RideTracker {
   int _elapsedSeconds = 0;
   bool _isPaused = false;
   ActivityType? _activityType;
+  bool _locationServiceEnabled = true;
 
   int? _activeRideId;
   int? _lastCompletedRideId;
@@ -88,6 +89,7 @@ class RideTracker {
         elapsedSeconds: _elapsedSeconds,
         isPaused: _isPaused,
         activityType: _activityType,
+        locationServiceEnabled: _locationServiceEnabled,
       );
 
   /// Emits on every state change (for the UI / Riverpod). Broadcast and does NOT
@@ -271,6 +273,15 @@ class RideTracker {
   void seedLocation(LocationFix fix) {
     if (_location != null) return;
     _location = fix;
+    _emit();
+  }
+
+  /// Device location services switched on/off (issue #33). While off no fix
+  /// arrives, so the last speed would freeze on screen — clear it instead.
+  void setLocationServiceEnabled(bool enabled) {
+    if (enabled == _locationServiceEnabled) return;
+    _locationServiceEnabled = enabled;
+    if (!enabled) _speedKmh = null;
     _emit();
   }
 
