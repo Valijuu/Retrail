@@ -97,6 +97,67 @@ void main() {
     });
   });
 
+  group('filtering by month range (cross-year — see monthOfYearInRange)', () {
+    test('monthFrom/monthTo restrict rides to that calendar month, any year', () {
+      final items = _build([
+        _rwt(_ride(1, date: DateTime(2019, 3, 10).millisecondsSinceEpoch)),
+        _rwt(_ride(2, date: DateTime(2024, 5, 20).millisecondsSinceEpoch)),
+        _rwt(_ride(3, date: DateTime(2024, 6, 1).millisecondsSinceEpoch)),
+        _rwt(_ride(4, date: DateTime(2031, 2, 28).millisecondsSinceEpoch)),
+      ], const HistoryFilter(monthFrom: 3, monthTo: 5));
+      expect(_rideIds(items), unorderedEquals([1, 2]));
+    });
+
+    test('only monthFrom set → monthTo defaults to December', () {
+      final items = _build([
+        _rwt(_ride(1, date: DateTime(2020, 4, 1).millisecondsSinceEpoch)),
+        _rwt(_ride(2, date: DateTime(2020, 12, 31).millisecondsSinceEpoch)),
+        _rwt(_ride(3, date: DateTime(2020, 2, 1).millisecondsSinceEpoch)),
+      ], const HistoryFilter(monthFrom: 3));
+      expect(_rideIds(items), unorderedEquals([1, 2]));
+    });
+
+    test('only monthTo set → monthFrom defaults to January', () {
+      final items = _build([
+        _rwt(_ride(1, date: DateTime(2020, 1, 1).millisecondsSinceEpoch)),
+        _rwt(_ride(2, date: DateTime(2020, 5, 1).millisecondsSinceEpoch)),
+        _rwt(_ride(3, date: DateTime(2020, 9, 1).millisecondsSinceEpoch)),
+      ], const HistoryFilter(monthTo: 5));
+      expect(_rideIds(items), unorderedEquals([1, 2]));
+    });
+
+    test('no month range set does not filter at all', () {
+      final items = _build([
+        _rwt(_ride(1, date: DateTime(2019, 1, 1).millisecondsSinceEpoch)),
+        _rwt(_ride(2, date: DateTime(2031, 12, 31).millisecondsSinceEpoch)),
+      ], const HistoryFilter());
+      expect(_rideIds(items), unorderedEquals([1, 2]));
+    });
+
+    test('a ride with neither date nor startTime is excluded once a month '
+        'range is active', () {
+      final noTimestamp = RideWithTrackpoints(
+        ride: Ride(
+          rideId: 5,
+          description: null,
+          typ: null,
+          startTime: null,
+          endTime: null,
+          date: null,
+          comment: null,
+          isFavorite: false,
+          favoritedAt: null,
+        ),
+        trackpoints: const [],
+      );
+      final items = _build([
+        noTimestamp,
+        _rwt(_ride(1, date: DateTime(2020, 4, 1).millisecondsSinceEpoch)),
+      ], const HistoryFilter(monthFrom: 3, monthTo: 5));
+      expect(_rideIds(items), [1]);
+    });
+  });
+
   group('sorting', () {
     test('distance descending', () {
       final long = _rwt(_ride(1), [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)]);

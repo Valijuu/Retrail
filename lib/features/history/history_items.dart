@@ -3,6 +3,7 @@ import '../../domain/distance_calculator.dart';
 import '../../domain/formatters.dart';
 import '../../domain/ride_stats.dart';
 import '../../domain/ride_title.dart';
+import '../../domain/time_bounds.dart';
 import 'history_filter.dart';
 
 export '../../domain/formatters.dart' show formatRideDayKey, formatDateLabel;
@@ -40,10 +41,24 @@ List<HistoryItem> buildHistoryItems(
   final activityIds = {for (final a in f.activities) a.id};
   final trimmedQuery = f.query.trim();
 
+  final hasMonthRange = f.monthFrom != null || f.monthTo != null;
+
   final entries = rides
       .where((rwt) => !f.favoritesOnly || rwt.ride.isFavorite)
       .where(
           (rwt) => activityIds.isEmpty || activityIds.contains(rwt.ride.typ))
+      .where((rwt) {
+        if (!hasMonthRange) return true;
+        // A concrete `year` already narrows the DB query to exactly this
+        // month range for that year (see `effectiveRange`), so this check is
+        // redundant-but-harmless there. It's load-bearing for "All years"
+        // (year == null): `effectiveRange` can't express "these months, every
+        // year" as a single (start, end) window, so the cross-year
+        // restriction is applied here instead, over the unrestricted fetch.
+        final ts = rwt.ride.date ?? rwt.ride.startTime;
+        return ts != null &&
+            monthOfYearInRange(ts, monthFrom: f.monthFrom, monthTo: f.monthTo);
+      })
       .where((rwt) {
         if (trimmedQuery.isEmpty) return true;
         final q = trimmedQuery.toLowerCase();
