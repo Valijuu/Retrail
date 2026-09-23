@@ -411,12 +411,34 @@ void main() {
     expect(launcher.launches.first.$1, 52.0); // start latitude
   });
 
-  testWidgets('tapping a card opens the detail dialog', (tester) async {
+  testWidgets('tapping a card\'s map opens the detail dialog', (tester) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);
-    await tester.tap(find.text('Morning roll'));
+    await tester.tap(find.byKey(const ValueKey('ride_map_1')));
     await tester.pumpAndSettle();
     expect(find.text('Distance'), findsOneWidget);
     expect(find.text('Avg speed'), findsOneWidget);
+  });
+
+  testWidgets(
+      'tapping the rest of a card no longer opens the detail dialog — only '
+      'the map does', (tester) async {
+    await pump(tester, [_entry(1, desc: 'Morning roll')]);
+    await tester.tap(find.text('Morning roll'));
+    await tester.pumpAndSettle();
+    expect(find.text('Avg speed'), findsNothing);
+  });
+
+  testWidgets('in selection mode tapping the map toggles the selection',
+      (tester) async {
+    await pump(tester, [_entry(1), _entry(2)]);
+    await tester.longPress(find.byType(HistoryRideCard).first);
+    await tester.pump();
+    expect(find.text('1 selected'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('ride_map_2')));
+    await tester.pumpAndSettle();
+    expect(find.text('2 selected'), findsOneWidget);
+    expect(find.text('Avg speed'), findsNothing);
   });
 
   testWidgets('favorite heart toggles via the controller', (tester) async {

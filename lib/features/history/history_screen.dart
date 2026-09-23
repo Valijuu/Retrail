@@ -366,8 +366,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           selectionMode: _selectionMode,
           selected: _selectedIds.contains(rideId),
           highlighted: rideId == _highlightRideId,
-          onTap: () =>
-              _selectionMode ? _toggleSelected(rideId) : _openDetail(item),
+          onTap: () => _toggleSelected(rideId),
+          onOpenMap: () => _openDetail(item),
           onLongPress: () => _toggleSelected(rideId),
           onEdit: () => _openEdit(item.ride),
           onDelete: () => _confirmDelete(single: rideId),

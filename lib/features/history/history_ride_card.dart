@@ -26,6 +26,7 @@ class HistoryRideCard extends ConsumerStatefulWidget {
     required this.selected,
     required this.highlighted,
     required this.onTap,
+    required this.onOpenMap,
     required this.onLongPress,
     required this.onEdit,
     required this.onDelete,
@@ -36,7 +37,12 @@ class HistoryRideCard extends ConsumerStatefulWidget {
   final bool selectionMode;
   final bool selected;
   final bool highlighted;
+  /// Card tap — only acts in selection mode (toggles the selection).
   final VoidCallback onTap;
+
+  /// Map-thumbnail tap outside selection mode — opens the ride detail. Only
+  /// the map opens it, not the whole card.
+  final VoidCallback onOpenMap;
   final VoidCallback onLongPress;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -89,7 +95,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
     final activity = ActivityType.fromId(ride.typ);
 
     return InkWell(
-      onTap: widget.onTap,
+      onTap: widget.selectionMode ? widget.onTap : null,
       onLongPress: widget.onLongPress,
       borderRadius: AppShapes.heroCard,
       child: Container(
@@ -110,6 +116,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
               title: title,
               selectionMode: widget.selectionMode,
               selected: widget.selected,
+              onTap: widget.selectionMode ? widget.onTap : widget.onOpenMap,
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
@@ -208,6 +215,7 @@ class _Thumbnail extends ConsumerWidget {
     required this.title,
     required this.selectionMode,
     required this.selected,
+    required this.onTap,
   });
 
   final int rideId;
@@ -215,6 +223,7 @@ class _Thumbnail extends ConsumerWidget {
   final String title;
   final bool selectionMode;
   final bool selected;
+  final VoidCallback onTap;
 
   /// This ride's trackpoints, fetched only when actually needed (a
   /// not-yet-cached preview render, or a navigate-to-start tap) — the list
@@ -245,17 +254,22 @@ class _Thumbnail extends ConsumerWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: ColoredBox(
-              color: hasRoute ? colors.mapTerrain : colors.mapTerrainGrid,
-              child: hasRoute
-                  ? RoutePreview(
-                      rideId: rideId,
-                      hasRoute: true,
-                      pointsLoader: () => _loadPoints(ref),
-                      cache: ref.watch(routePreviewCacheProvider),
-                      cacheWidth: previewImageCacheWidth,
-                    )
-                  : null,
+            child: GestureDetector(
+              key: ValueKey('ride_map_$rideId'),
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: ColoredBox(
+                color: hasRoute ? colors.mapTerrain : colors.mapTerrainGrid,
+                child: hasRoute
+                    ? RoutePreview(
+                        rideId: rideId,
+                        hasRoute: true,
+                        pointsLoader: () => _loadPoints(ref),
+                        cache: ref.watch(routePreviewCacheProvider),
+                        cacheWidth: previewImageCacheWidth,
+                      )
+                    : null,
+              ),
             ),
           ),
           if (selectionMode)
