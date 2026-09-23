@@ -55,5 +55,53 @@ void main() {
           effectiveRange(const HistoryFilter(year: 2024), nowMs: _now);
       expect(range, yearBounds(year: 2024, nowMs: _now));
     });
+
+    test('month range set, current year, no periods -> monthRangeBounds directly', () {
+      final range = effectiveRange(
+          const HistoryFilter(year: 2024, monthFrom: 3, monthTo: 5),
+          nowMs: _now);
+      expect(range, monthRangeBounds(year: 2024, monthFrom: 3, monthTo: 5));
+    });
+
+    test('month range set, past year -> monthRangeBounds for that year', () {
+      final range = effectiveRange(
+          const HistoryFilter(year: 2023, monthFrom: 3, monthTo: 5),
+          nowMs: _now);
+      expect(range, monthRangeBounds(year: 2023, monthFrom: 3, monthTo: 5));
+    });
+
+    test('month range + period, current year -> intersection (later start, earlier end)', () {
+      // Period "this month" (June 2024) starts later than the month range's
+      // May start, and ends "now" — earlier than the month range's July end.
+      final (start, end) = effectiveRange(
+          const HistoryFilter(
+              year: 2024,
+              periods: {TimePeriod.thisMonth},
+              monthFrom: 5,
+              monthTo: 7),
+          nowMs: _now);
+      expect(start, monthBounds(nowMs: _now).$1);
+      expect(end, _now);
+    });
+
+    test('month range + period, current year, contradictory combination -> empty window', () {
+      // Period "this month" (June 2024) starts after the Jan-Mar month
+      // range's end — the intersection is empty (start > end), not a crash
+      // or a silent preference for one side.
+      final (start, end) = effectiveRange(
+          const HistoryFilter(
+              year: 2024,
+              periods: {TimePeriod.thisMonth},
+              monthFrom: 1,
+              monthTo: 3),
+          nowMs: _now);
+      expect(start! > end!, isTrue);
+    });
+
+    test('month range ignored when no year is selected', () {
+      final range = effectiveRange(
+          const HistoryFilter(monthFrom: 3, monthTo: 5), nowMs: _now);
+      expect(range, (null, null));
+    });
   });
 }
