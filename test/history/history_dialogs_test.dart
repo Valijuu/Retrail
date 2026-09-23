@@ -69,6 +69,25 @@ void main() {
       expect(savedTitle, 'New title');
       expect(savedType, isNull);
     });
+
+    testWidgets(
+        'activity chips draw no checkmark over their glyph (issue #29) — '
+        'selection shows through the chip fill instead', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_host(EditRideDialog(
+        initialType: ActivityType.skateboard,
+        onDismiss: () {},
+        onSave: (_, _, _) {},
+      )));
+
+      final chips = tester.widgetList<FilterChip>(find.byType(FilterChip));
+      expect(chips, hasLength(ActivityType.values.length));
+      expect(chips.every((c) => c.showCheckmark == false), isTrue);
+    });
   });
 
   group('RideDetailDialog', () {

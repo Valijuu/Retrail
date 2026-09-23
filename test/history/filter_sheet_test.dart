@@ -41,6 +41,18 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets(
+      'activity chips with a glyph draw no checkmark over it (issue #29)',
+      (tester) async {
+    await pump(tester);
+    final glyphChips = tester
+        .widgetList<FilterChip>(find.byType(FilterChip))
+        .where((c) => c.avatar != null)
+        .toList();
+    expect(glyphChips, isNotEmpty);
+    expect(glyphChips.every((c) => c.showCheckmark == false), isTrue);
+  });
+
   testWidgets('shows a YEAR section with "All years" among the dropdown options',
       (tester) async {
     await pump(tester);

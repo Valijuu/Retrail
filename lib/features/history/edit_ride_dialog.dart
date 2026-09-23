@@ -96,6 +96,9 @@ class _EditRideDialogState extends State<EditRideDialog> {
                     onSelected: (_) => setState(
                         () => _type = _type == option ? null : option),
                     avatar: option.glyph(size: 18),
+                    // M3 draws the checkmark on top of the avatar glyph —
+                    // the fill already marks the selection (issue #29).
+                    showCheckmark: false,
                     label: Text(option.label(l10n)),
                   ),
               ],

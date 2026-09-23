@@ -123,6 +123,9 @@ class HistoryFilterSheet extends ConsumerWidget {
                     selected: filter.activities.contains(type),
                     onSelected: (_) => notifier.toggleActivity(type),
                     avatar: type.glyph(size: 18),
+                    // M3 draws the checkmark on top of the avatar glyph —
+                    // the fill already marks the selection (issue #29).
+                    showCheckmark: false,
                     label: Text(type.label(l10n)),
                   ),
               ],
