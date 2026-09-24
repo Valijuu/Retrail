@@ -15,8 +15,10 @@ const _year = WeeklyStats(
     totalKm: 50, rideCount: 42, avgSpeedKmh: 13, totalDurationSeconds: 6000);
 
 void main() {
-  Future<void> pumpCard(WidgetTester tester, StatsPeriod selected) async {
+  Future<void> pumpCard(WidgetTester tester, StatsPeriod selected,
+      {Locale? locale}) async {
     await tester.pumpWidget(MaterialApp(
+      locale: locale,
       theme: buildTheme(Brightness.light),
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -79,5 +81,12 @@ void main() {
     ));
     await tester.tap(find.text('This year'));
     expect(tapped, StatsPeriod.year);
+  });
+
+  testWidgets('German uses the decimal comma for km and Ø speed',
+      (tester) async {
+    await pumpCard(tester, StatsPeriod.week, locale: const Locale('de'));
+    expect(find.text('5,0 km'), findsOneWidget);
+    expect(find.text('Ø 12,0'), findsOneWidget);
   });
 }

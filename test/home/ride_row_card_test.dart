@@ -6,7 +6,8 @@ import 'package:retrail/features/home/recent_ride_ui.dart';
 import 'package:retrail/features/home/ride_row_card.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 
-Widget _wrap(Widget child) => MaterialApp(
+Widget _wrap(Widget child, {Locale? locale}) => MaterialApp(
+      locale: locale,
       theme: buildTheme(Brightness.light),
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -53,5 +54,20 @@ void main() {
       onTap: () {},
     )));
     expect(find.byIcon(Icons.directions), findsNothing);
+  });
+
+  testWidgets('German uses the decimal comma for the distance', (tester) async {
+    await tester.pumpWidget(_wrap(
+        RideRowCard(
+          ride: const RecentRideUi(
+              rideId: 1,
+              title: 'Ride',
+              dateTime: 'today',
+              distanceKm: 1.2,
+              hasRoute: false),
+          onTap: () {},
+        ),
+        locale: const Locale('de')));
+    expect(find.text('1,2 km'), findsOneWidget);
   });
 }

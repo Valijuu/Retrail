@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import '../domain/formatters.dart';
@@ -14,6 +15,7 @@ class RideNotificationCopy {
     required this.pause,
     required this.resume,
     required this.stop,
+    required this.locale,
   });
 
   final String channelName;
@@ -22,6 +24,9 @@ class RideNotificationCopy {
   final String pause;
   final String resume;
   final String stop;
+
+  /// Locale tag for numbers in the notification body (decimal separator).
+  final String locale;
 }
 
 /// Entry point for the foreground-service isolate.
@@ -104,7 +109,8 @@ class ForegroundTaskService implements RideForegroundService {
       serviceId: 1,
       serviceTypes: const [ForegroundServiceTypes.location],
       notificationTitle: c.recordingTitle,
-      notificationText: _body(elapsedSeconds: 0, distanceMetres: 0),
+      notificationText: notificationBody(
+          elapsedSeconds: 0, distanceMetres: 0, locale: c.locale),
       notificationButtons: _buttons(isPaused: false, copy: c),
       callback: startRideTaskCallback,
     );
@@ -120,8 +126,10 @@ class ForegroundTaskService implements RideForegroundService {
     final c = _copy();
     await FlutterForegroundTask.updateService(
       notificationTitle: isPaused ? c.pausedTitle : c.recordingTitle,
-      notificationText:
-          _body(elapsedSeconds: elapsedSeconds, distanceMetres: distanceMetres),
+      notificationText: notificationBody(
+          elapsedSeconds: elapsedSeconds,
+          distanceMetres: distanceMetres,
+          locale: c.locale),
       notificationButtons: _buttons(isPaused: isPaused, copy: c),
     );
   }
@@ -133,11 +141,15 @@ class ForegroundTaskService implements RideForegroundService {
     }
   }
 
-  static String _body({
+  /// `MM:SS · X.XX km` (decimal separator per [locale]).
+  @visibleForTesting
+  static String notificationBody({
     required int elapsedSeconds,
     required double distanceMetres,
+    required String locale,
   }) =>
-      '${formatElapsed(elapsedSeconds)} · ${formatDistanceKm(distanceMetres)}';
+      '${formatElapsed(elapsedSeconds)} · '
+      '${formatDistanceKm(distanceMetres, locale: locale)}';
 
   // Toggle action reflects state: Resume when paused, Pause when recording.
   static List<NotificationButton> _buttons({

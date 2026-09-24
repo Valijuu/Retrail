@@ -25,6 +25,7 @@ class RideStatsPanel extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final speed = state.speedKmh;
+    final locale = Localizations.localeOf(context).toString();
     return Container(
       width: double.infinity,
       color: colors.surface,
@@ -45,7 +46,7 @@ class RideStatsPanel extends StatelessWidget {
                 Expanded(
                   child: _StatCell(
                     label: l10n.mapStatSpeed,
-                    value: formatSpeedKmh(speed),
+                    value: formatSpeedKmh(speed, locale: locale),
                     valueColor:
                         (speed ?? 0) > 0 ? colors.primary : colors.onSurface,
                   ),
@@ -54,7 +55,7 @@ class RideStatsPanel extends StatelessWidget {
                 Expanded(
                   child: _StatCell(
                     label: l10n.mapStatDistance,
-                    value: formatDistanceKm(state.distanceMetres),
+                    value: formatDistanceKm(state.distanceMetres, locale: locale),
                   ),
                 ),
               ],
@@ -74,7 +75,7 @@ class RideStatsPanel extends StatelessWidget {
                 Expanded(
                   child: _StatCell(
                     label: l10n.mapStatMaxSpeed,
-                    value: formatSpeedKmh(state.maxSpeedKmh),
+                    value: formatSpeedKmh(state.maxSpeedKmh, locale: locale),
                   ),
                 ),
               ],

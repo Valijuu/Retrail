@@ -131,4 +131,14 @@ void main() {
     expect(english.read(rideNotificationCopyProvider).recordingTitle,
         'Recording ride');
   });
+
+  test('rideNotificationCopyProvider carries the locale for number formatting',
+      () {
+    final german = ProviderContainer(overrides: [
+      localeProvider.overrideWithValue(null),
+      effectiveLocaleProvider.overrideWithValue(const Locale('de', 'DE')),
+    ]);
+    addTearDown(german.dispose);
+    expect(german.read(rideNotificationCopyProvider).locale, 'de_DE');
+  });
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/theme/app_shapes.dart';
 import '../../domain/formatters.dart';
@@ -32,7 +31,7 @@ class WeeklyHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final l10n = AppLocalizations.of(context);
-    final nf = NumberFormat('0.0');
+    final locale = Localizations.localeOf(context).toString();
     final stats = switch (selected) {
       StatsPeriod.week => weekly,
       StatsPeriod.day => daily,
@@ -42,7 +41,7 @@ class WeeklyHeroCard extends StatelessWidget {
         _DistanceColumn(
           label: label,
           km: s.totalKm,
-          nf: nf,
+          locale: locale,
           selected: period == selected,
           onTap: onSelect == null ? null : () => onSelect!(period),
         );
@@ -68,7 +67,7 @@ class WeeklyHeroCard extends StatelessWidget {
             children: [
               _StatCell(
                   label: l10n.statTempoKmh,
-                  value: 'Ø ${nf.format(stats.avgSpeedKmh)}'),
+                  value: 'Ø ${formatDecimal(stats.avgSpeedKmh, 1, locale: locale)}'),
               const SizedBox(width: 8),
               _StatCell(label: l10n.statRides, value: '${stats.rideCount}'),
               const SizedBox(width: 8),
@@ -87,13 +86,13 @@ class _DistanceColumn extends StatelessWidget {
   const _DistanceColumn({
     required this.label,
     required this.km,
-    required this.nf,
+    required this.locale,
     required this.selected,
     this.onTap,
   });
   final String label;
   final double km;
-  final NumberFormat nf;
+  final String locale;
   final bool selected;
   final VoidCallback? onTap;
 
@@ -131,7 +130,7 @@ class _DistanceColumn extends StatelessWidget {
                         color: ink.withValues(
                             alpha: selected ? 0.85 : _dimmedAlpha))),
                 const SizedBox(height: 4),
-                Text('${nf.format(km)} km',
+                Text('${formatDecimal(km, 1, locale: locale)} km',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: text.titleMedium?.copyWith(

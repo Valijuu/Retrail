@@ -38,6 +38,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
+    final locale = Localizations.localeOf(context).toString();
     final ride = widget.rwt.ride;
     final points = <RoutePoint>[
       for (final tp in widget.rwt.trackpoints) (lat: tp.latitude, lng: tp.longitude),
@@ -119,8 +120,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                      formatRideDate(ride.date,
-                          locale: Localizations.localeOf(context).toString()),
+                      formatRideDate(ride.date, locale: locale),
                       style: text.titleMedium?.copyWith(color: colors.onSurface)),
                   if (activity != null) ...[
                     const SizedBox(height: 6),
@@ -153,7 +153,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                   const SizedBox(height: 16),
                   _DetailRow(
                       label: l10n.detailDistanceLabel,
-                      value: formatDistanceKm(widget.stats.distanceMetres)),
+                      value: formatDistanceKm(widget.stats.distanceMetres, locale: locale)),
                   const SizedBox(height: 10),
                   _DetailRow(
                       label: l10n.detailDurationLabel,
@@ -161,11 +161,11 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                   const SizedBox(height: 10),
                   _DetailRow(
                       label: l10n.detailMaxSpeedLabel,
-                      value: formatSpeedKmh(widget.stats.maxSpeedKmh)),
+                      value: formatSpeedKmh(widget.stats.maxSpeedKmh, locale: locale)),
                   const SizedBox(height: 10),
                   _DetailRow(
                       label: l10n.detailAvgSpeedLabel,
-                      value: formatSpeedKmh(widget.stats.avgSpeedKmh)),
+                      value: formatSpeedKmh(widget.stats.avgSpeedKmh, locale: locale)),
                   const SizedBox(height: 20),
                   Align(
                     alignment: Alignment.centerRight,
@@ -197,8 +197,13 @@ class _DetailRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
+        // Flexible: long labels (German "Höchstgeschwindigkeit") wrap instead
+        // of pushing the value off the dialog's edge.
+        Flexible(
+          child: Text(label,
+              style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
+        ),
+        const SizedBox(width: 12),
         Text(value,
             style: text.bodyMedium
                 ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w500)),

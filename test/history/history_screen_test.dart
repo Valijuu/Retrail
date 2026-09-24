@@ -154,6 +154,7 @@ void main() {
     RoutePreviewCache? previewCache,
     Map<int, List<Trackpoint>> trackpoints = const {},
     Stream<bool>? online,
+    Locale? locale,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -182,6 +183,7 @@ void main() {
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
+        locale: locale,
         theme: buildTheme(Brightness.light),
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -573,5 +575,11 @@ void main() {
     expect(rect.top, greaterThanOrEqualTo(0));
     expect(rect.bottom, lessThanOrEqualTo(900));
     await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
+  });
+
+  testWidgets('German cards use the decimal comma for the distance',
+      (tester) async {
+    await pump(tester, [_entry(1)], locale: const Locale('de'));
+    expect(find.text('4,2 km'), findsOneWidget);
   });
 }

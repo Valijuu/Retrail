@@ -13,7 +13,8 @@ import 'package:retrail/map/live_map.dart';
 
 import '../support/live_map_stub.dart';
 
-Widget _host(Widget child) => MaterialApp(
+Widget _host(Widget child, {Locale? locale}) => MaterialApp(
+      locale: locale,
       theme: buildTheme(Brightness.light),
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -152,5 +153,27 @@ void main() {
       final map = tester.widget<LiveMap>(find.byType(LiveMap));
       expect(map.fitBounds, isTrue); // whole route, not centred on the last point
     });
+  });
+
+  testWidgets('RideDetailDialog: German uses the decimal comma in its stats',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(_host(
+        RideDetailDialog(
+          rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+          stats: const RideStats(
+              durationMs: 600000,
+              distanceMetres: 4200,
+              maxSpeedKmh: 22,
+              avgSpeedKmh: 15),
+          onDismiss: () {},
+        ),
+        locale: const Locale('de')));
+    expect(find.text('4,20 km'), findsOneWidget);
+    expect(find.text('22,0 km/h'), findsOneWidget);
+    expect(find.text('15,0 km/h'), findsOneWidget);
   });
 }

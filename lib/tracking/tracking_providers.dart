@@ -68,6 +68,7 @@ final rideNotificationCopyProvider = Provider<RideNotificationCopy>((ref) {
     pause: l.notifActionPause,
     resume: l.notifActionResume,
     stop: l.notifActionStop,
+    locale: locale.toString(),
   );
 });
 

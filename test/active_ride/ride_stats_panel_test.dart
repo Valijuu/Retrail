@@ -8,7 +8,10 @@ import 'package:retrail/features/active_ride/widgets/ride_stats_panel.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/tracking/ride_tracking_state.dart';
 
-Widget _host(RideTrackingState state, Brightness brightness) => MaterialApp(
+Widget _host(RideTrackingState state, Brightness brightness,
+        {Locale? locale}) =>
+    MaterialApp(
+      locale: locale,
       theme: buildTheme(brightness),
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -45,4 +48,15 @@ void main() {
       expect(_labelColor(tester, 'Resume'), colors.onPrimary);
     });
   }
+
+  testWidgets('German uses the decimal comma for speed and distance',
+      (tester) async {
+    await tester.pumpWidget(_host(
+        const RideTrackingState(
+            isTracking: true, speedKmh: 12.3, distanceMetres: 1234),
+        Brightness.light,
+        locale: const Locale('de')));
+    expect(find.text('12,3 km/h'), findsWidgets);
+    expect(find.text('1,23 km'), findsOneWidget);
+  });
 }

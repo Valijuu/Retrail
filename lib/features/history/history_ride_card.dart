@@ -85,9 +85,8 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
     final ride = widget.entry.ride;
     final stats = widget.entry.stats;
     final hasRoute = ride.hasRoute;
-    final km = stats.distanceMetres / 1000;
-    final distanceStr = km < 10 ? km.toStringAsFixed(1) : km.toStringAsFixed(0);
     final locale = Localizations.localeOf(context).toString();
+    final distance = formatShortDistanceKm(stats.distanceMetres, locale: locale);
     final title = rideDisplayTitle(ride, locale: locale);
     final meta = '${formatRideTime(ride.date, locale: locale)} · '
         '${formatDuration(stats.durationMs)} · '
@@ -150,7 +149,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text('$distanceStr km',
+                      Text(distance,
                           style: text.bodyMedium?.copyWith(
                               color: colors.primary,
                               fontWeight: FontWeight.w500)),

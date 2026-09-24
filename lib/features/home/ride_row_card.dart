@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/theme/app_shapes.dart';
+import '../../domain/formatters.dart';
 import '../../l10n/app_localizations.dart';
 import 'recent_ride_ui.dart';
 import '../../core/theme/theme_context.dart';
@@ -24,6 +24,7 @@ class RideRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).toString();
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
@@ -69,7 +70,7 @@ class RideRowCard extends StatelessWidget {
                 Icon(Icons.favorite, size: 18, color: colors.primary),
               ],
               const SizedBox(width: 10),
-              Text('${NumberFormat('0.0').format(ride.distanceKm)} km',
+              Text('${formatDecimal(ride.distanceKm, 1, locale: locale)} km',
                   style: text.bodyLarge?.copyWith(
                       color: colors.primary, fontWeight: FontWeight.w500)),
               if (canNavigate) ...[
