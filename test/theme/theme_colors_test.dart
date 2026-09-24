@@ -45,4 +45,27 @@ void main() {
           const Color(0xFFB45309));
     });
   });
+
+  group('overlay tokens (identical in both themes)', () {
+    test('scrim is opaque black — dialog barriers apply their own alpha', () {
+      expect(AppColors.light.scrim, const Color(0xFF000000));
+      expect(AppColors.dark.scrim, AppColors.light.scrim);
+    });
+
+    test('onMap is white — marker rings, badge glyph, buttons over the map',
+        () {
+      expect(AppColors.light.onMap, const Color(0xFFFFFFFF));
+      expect(AppColors.dark.onMap, AppColors.light.onMap);
+    });
+
+    test('copyWith and lerp carry the overlay tokens', () {
+      const red = Color(0xFFFF0000);
+      final changed = AppColors.light.copyWith(scrim: red, onMap: red);
+      expect(changed.scrim, red);
+      expect(changed.onMap, red);
+      final mid = AppColors.light.lerp(changed, 1.0);
+      expect(mid.scrim, red);
+      expect(mid.onMap, red);
+    });
+  });
 }

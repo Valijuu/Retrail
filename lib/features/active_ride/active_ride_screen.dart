@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
+import '../../core/theme/theme_context.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/location_permission.dart';
 import '../../tracking/permission_gate_dialog.dart';
@@ -140,6 +141,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     }
   }
 
+  /// Dimming behind the ride dialogs: the scrim at Material's `black54`
+  /// alpha (0x8A), so the barrier color matches `Colors.black54` exactly.
+  static Color _barrierColor(BuildContext context) =>
+      context.colors.scrim.withAlpha(0x8A);
+
   /// Overlays [dialog] on a scrim that swallows every tap/gesture, like a real
   /// `showDialog` barrier. The dialogs live in this screen's Stack (not a
   /// Navigator route), so without this the map, stop/pause buttons and back
@@ -154,7 +160,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const ModalBarrier(dismissible: false, color: Colors.black54),
+            ModalBarrier(dismissible: false, color: _barrierColor(context)),
             // SafeArea: the overlay Stack spans the whole screen (unlike the
             // chrome, which sits in its own SafeArea) — without it the dialog
             // slid up under the status bar when the keyboard squeezed it.
@@ -294,8 +300,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
             // so the frozen ride screen fades out dimmed instead of flashing
             // back to life for a few frames.
             if (_isLeaving)
-              const Positioned.fill(
-                child: ModalBarrier(dismissible: false, color: Colors.black54),
+              Positioned.fill(
+                child: ModalBarrier(
+                    dismissible: false, color: _barrierColor(context)),
               ),
             if (_gateBlock != null)
               _modal(PermissionGateDialog(

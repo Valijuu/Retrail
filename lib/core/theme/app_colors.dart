@@ -32,6 +32,8 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.routeLineHalo,
     required this.markerStartGreen,
     required this.markerEndRed,
+    required this.scrim,
+    required this.onMap,
   });
 
   final Color primary;
@@ -58,6 +60,15 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color markerStartGreen;
   final Color markerEndRed;
 
+  /// Opaque black behind modal content: the fullscreen map dialog's backdrop,
+  /// and — at reduced alpha — the barriers that block the ride screen while a
+  /// dialog is up.
+  final Color scrim;
+
+  /// White drawn on top of map content: marker rings, the activity badge's
+  /// glyph, and the translucent buttons floating over a map.
+  final Color onMap;
+
   static const AppColors light = AppColors(
     primary: Color(0xFFB45309),
     onPrimary: Color(0xFFFFF8F5),
@@ -82,6 +93,8 @@ class AppColors extends ThemeExtension<AppColors> {
     routeLineHalo: Color(0xFFFFFFFF),
     markerStartGreen: Color(0xFF16A34A),
     markerEndRed: Color(0xFFDC2626),
+    scrim: Color(0xFF000000),
+    onMap: Color(0xFFFFFFFF),
   );
 
   static const AppColors dark = AppColors(
@@ -108,6 +121,8 @@ class AppColors extends ThemeExtension<AppColors> {
     routeLineHalo: Color(0xFFFFFFFF),
     markerStartGreen: Color(0xFF16A34A),
     markerEndRed: Color(0xFFDC2626),
+    scrim: Color(0xFF000000),
+    onMap: Color(0xFFFFFFFF),
   );
 
   @override
@@ -135,6 +150,8 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? routeLineHalo,
     Color? markerStartGreen,
     Color? markerEndRed,
+    Color? scrim,
+    Color? onMap,
   }) {
     return AppColors(
       primary: primary ?? this.primary,
@@ -160,6 +177,8 @@ class AppColors extends ThemeExtension<AppColors> {
       routeLineHalo: routeLineHalo ?? this.routeLineHalo,
       markerStartGreen: markerStartGreen ?? this.markerStartGreen,
       markerEndRed: markerEndRed ?? this.markerEndRed,
+      scrim: scrim ?? this.scrim,
+      onMap: onMap ?? this.onMap,
     );
   }
 
@@ -194,6 +213,8 @@ class AppColors extends ThemeExtension<AppColors> {
       routeLineHalo: Color.lerp(routeLineHalo, other.routeLineHalo, t)!,
       markerStartGreen: Color.lerp(markerStartGreen, other.markerStartGreen, t)!,
       markerEndRed: Color.lerp(markerEndRed, other.markerEndRed, t)!,
+      scrim: Color.lerp(scrim, other.scrim, t)!,
+      onMap: Color.lerp(onMap, other.onMap, t)!,
     );
   }
 }

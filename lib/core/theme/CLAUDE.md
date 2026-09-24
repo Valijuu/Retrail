@@ -21,6 +21,8 @@ LiveIndicator      = 0xFFFFBB70
 MapTerrain         = 0xFFDDE8DD   MapTerrainGrid     = 0xFFCCE0CC
 RouteLineBlue      = 0xFF2563EB   RouteLineHalo      = 0xFFFFFFFF
 MarkerStartGreen   = 0xFF16A34A   MarkerEndRed       = 0xFFDC2626
+// Overlays
+Scrim              = 0xFF000000   OnMap              = 0xFFFFFFFF
 ```
 
 ## Colors — dark
@@ -36,7 +38,9 @@ DarkEditActionBg     = 0xFF3A2A12   DarkEditActionText   = 0xFFFCD9A6
 DarkDeleteActionBg   = 0xFF3A1A1A   DarkDeleteActionText = 0xFFFCA5A5
 DarkLiveIndicator    = 0xFFFFBB70
 DarkMapTerrain       = 0xFF20292A   DarkMapTerrainGrid   = 0xFF2C3A3A
-// Route line colors are identical across themes.
+// Route line and overlay colors (Scrim, OnMap) are identical across themes.
+// Scrim: modal backdrops (barriers use it at 54 % alpha). OnMap: white on top of
+// map content — marker rings, activity-badge glyph, floating map buttons.
 ```
 
 Tokens live in an `AppColors` `ThemeExtension`; access via `context.colors` (extension in `theme_context.dart`). Widgets without a `BuildContext` (e.g. PNG rendering) read `AppColors.light` / `AppColors.dark` directly. Dynamic color is OFF — Retrail uses brand colors on both themes. Theme mode (system/light/dark) is user-selectable and persisted.

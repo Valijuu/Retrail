@@ -48,7 +48,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
 
     if (_fullscreen && points.isNotEmpty) {
       return Dialog.fullscreen(
-        backgroundColor: Colors.black,
+        backgroundColor: context.colors.scrim,
         child: Stack(
           children: [
             Positioned.fill(
@@ -217,7 +217,7 @@ class _CircleIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.6),
+      color: context.colors.onMap.withValues(alpha: 0.6),
       shape: const CircleBorder(),
       child: IconButton(
         onPressed: onTap,

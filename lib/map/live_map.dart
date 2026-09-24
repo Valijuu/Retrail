@@ -131,7 +131,7 @@ Future<Uint8List> activityBadgePngFromLoader(BytesLoader loader) async {
       const Rect.fromLTWH(0, 0, size, size),
       Paint()
         ..colorFilter =
-            const ColorFilter.mode(Color(0xFFFFFFFF), BlendMode.srcIn));
+            ColorFilter.mode(AppColors.light.onMap, BlendMode.srcIn));
   canvas.save();
   canvas.translate(pad, pad);
   canvas.scale(inner / 960);
@@ -385,6 +385,7 @@ class _LiveMapState extends State<LiveMap>
     _markerImages.clear();
     final colors = context.colors;
     final halo = _hex(colors.routeLineHalo);
+    final ring = _hex(colors.onMap);
     final blue = _hex(colors.routeLineBlue);
     final green = _hex(colors.markerStartGreen);
     final red = _hex(colors.markerEndRed);
@@ -420,7 +421,7 @@ class _LiveMapState extends State<LiveMap>
             'circle-radius': 7.0,
             'circle-color': green,
             'circle-stroke-width': 3.0,
-            'circle-stroke-color': '#FFFFFF',
+            'circle-stroke-color': ring,
           },
         ));
       }
@@ -434,7 +435,7 @@ class _LiveMapState extends State<LiveMap>
             'circle-radius': 7.0,
             'circle-color': red,
             'circle-stroke-width': 3.0,
-            'circle-stroke-color': '#FFFFFF',
+            'circle-stroke-color': ring,
           },
         ));
       }
@@ -518,6 +519,7 @@ class _LiveMapState extends State<LiveMap>
   /// dot ([blue]) for null/OTHER. Each badge image is rasterized once.
   Future<void> _addCurrentMarker(
       StyleController style, ActivityType? type, String blue) async {
+    final ring = _hex(context.colors.onMap);
     if (rideMarkerIsBadge(type)) {
       final imageId = 'marker-${type!.name}';
       if (_markerImages.add(imageId)) {
@@ -549,7 +551,7 @@ class _LiveMapState extends State<LiveMap>
           'circle-radius': 7.0,
           'circle-color': blue,
           'circle-stroke-width': 3.0,
-          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-color': ring,
         },
       ));
     }
