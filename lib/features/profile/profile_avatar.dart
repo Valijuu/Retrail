@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Circular profile picture: shows [photoPath] if set, else a neutral blank
 /// placeholder (person glyph). Reused by onboarding, Home header, Settings.
@@ -20,7 +20,7 @@ class ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return SizedBox(
       width: size,
       height: size,

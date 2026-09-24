@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_shapes.dart';
+import '../theme/theme_context.dart';
 
 /// Labelled text input on a rounded surface card — the title/comment fields of
 /// the post-ride summary and the edit-ride dialog. [singleLine] pins it to one
@@ -26,7 +26,7 @@ class SheetInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return Container(
       decoration: BoxDecoration(

@@ -39,7 +39,7 @@ DarkMapTerrain       = 0xFF20292A   DarkMapTerrainGrid   = 0xFF2C3A3A
 // Route line colors are identical across themes.
 ```
 
-Tokens live in an `AppColors` `ThemeExtension`; access via `Theme.of(context).extension<AppColors>()!`. Dynamic color is OFF — Retrail uses brand colors on both themes. Theme mode (system/light/dark) is user-selectable and persisted.
+Tokens live in an `AppColors` `ThemeExtension`; access via `context.colors` (extension in `theme_context.dart`). Widgets without a `BuildContext` (e.g. PNG rendering) read `AppColors.light` / `AppColors.dark` directly. Dynamic color is OFF — Retrail uses brand colors on both themes. Theme mode (system/light/dark) is user-selectable and persisted.
 
 ## Shapes
 

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/activity_type_ui.dart';
 import '../../core/widgets/pill_button.dart';
 import '../../core/widgets/sheet_input_field.dart';
+import '../../core/theme/theme_context.dart';
 
 const _descMaxLength = 60;
 
@@ -49,7 +49,7 @@ class _EditRideDialogState extends State<EditRideDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return Dialog(
       backgroundColor: Colors.transparent,

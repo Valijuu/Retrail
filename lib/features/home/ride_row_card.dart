@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import 'recent_ride_ui.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Compact recent-ride / favorite row: place icon, title + date, optional
 /// favorite heart, distance, and a navigate-to-start button when a route exists.
@@ -24,7 +24,7 @@ class RideRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
     final canNavigate = ride.hasRoute && ride.startLat != null && ride.startLng != null;

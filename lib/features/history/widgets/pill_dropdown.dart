@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/theme_context.dart';
 
 /// A filled "pill"-styled dropdown: `surfaceContainer` background, rounded
 /// corners, a `primary`-colored chevron, no underline. Used for the history
@@ -33,7 +33,7 @@ class PillDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     // The selected-item highlight intentionally uses the M3 ColorScheme's
     // secondaryContainer/onSecondaryContainer, not the AppColors token set —
     // it matches the color Flutter renders for a selected FilterChip in this

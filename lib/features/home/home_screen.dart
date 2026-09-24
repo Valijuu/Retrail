@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../core/widgets/stacked_dialog_actions.dart';
 import '../../domain/stats_aggregation.dart';
@@ -21,6 +20,7 @@ import 'recent_ride_ui.dart';
 import 'ride_row_card.dart';
 import 'top_header.dart';
 import 'weekly_hero_card.dart';
+import '../../core/theme/theme_context.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
@@ -118,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final greetings = skaterGreetings(l10n);
     final template = greetings[_greetingIndex.clamp(0, greetings.length - 1)];
     final userName =
@@ -218,7 +218,7 @@ class _SectionLabel extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return Text(text,
         style: Theme.of(context)
             .textTheme
@@ -232,7 +232,7 @@ class _EmptyPlaceholderCard extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 36),

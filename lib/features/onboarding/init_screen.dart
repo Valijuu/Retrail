@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/routes.dart';
 import 'onboarding_providers.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Onboarding step 1: enter a name (optional). Both the primary button and Skip
 /// save the trimmed name (if any) and advance to the profile-picture step.
@@ -16,7 +16,7 @@ class InitScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final name = ref.watch(nameInputProvider);
 

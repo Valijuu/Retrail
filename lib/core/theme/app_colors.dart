@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// Retrail's semantic color tokens, carried over verbatim from the original
-/// Android app's `Color.kt`. Access via `Theme.of(context).extension<AppColors>()!`.
+/// Android app's `Color.kt`. Access via `context.colors` (see
+/// `theme_context.dart`).
 ///
 /// Dynamic color is intentionally OFF — Retrail uses its brand palette on both
 /// light and dark themes. Route line colors are identical across themes.

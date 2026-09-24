@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
@@ -14,6 +13,7 @@ import '../active_ride/active_ride_providers.dart';
 import '../home/navigation_launcher.dart';
 import '../onboarding/activity_type_ui.dart';
 import 'history_items.dart';
+import '../../core/theme/theme_context.dart';
 
 /// One ride row: cached-PNG thumbnail (no per-scroll tiles), navigate-to-start,
 /// favorite toggle (with pulse), title/distance/meta, chips and a 3-dot
@@ -80,7 +80,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final ride = widget.entry.ride;
     final stats = widget.entry.stats;
@@ -237,7 +237,7 @@ class _Thumbnail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return ClipRRect(
       // Independently round the thumbnail's top corners (as the original did),
@@ -333,7 +333,7 @@ class _OverflowMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return PopupMenuButton<int>(
       tooltip: l10n.a11yMoreOptions,
       icon: Icon(Icons.more_vert, size: 20, color: colors.onSurfaceVariant),

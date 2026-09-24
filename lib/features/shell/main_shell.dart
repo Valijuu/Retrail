@@ -8,6 +8,7 @@ import '../history/history_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_edit_sheet.dart';
 import '../settings/settings_screen.dart';
+import '../../core/theme/theme_context.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
 /// the History tab and the History screen scrolls to it, then clears this.
@@ -78,7 +79,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final tabs = <_TabSpec>[
       _TabSpec(Icons.home, l10n.navHome),
       _TabSpec(Icons.list, l10n.navHistory),

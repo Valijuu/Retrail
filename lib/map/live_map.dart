@@ -12,6 +12,7 @@ import '../domain/distance_calculator.dart';
 import '../features/onboarding/activity_type_ui.dart';
 import 'map_config.dart';
 import 'preview_projection.dart';
+import '../core/theme/theme_context.dart';
 
 /// What the camera should do on a [LiveMap] update. Pure, so the follow /
 /// recenter rules are unit-tested without pumping the map.
@@ -382,7 +383,7 @@ class _LiveMapState extends State<LiveMap>
     _markerReady = false;
     _sourcesReady = false;
     _markerImages.clear();
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final halo = _hex(colors.routeLineHalo);
     final blue = _hex(colors.routeLineBlue);
     final green = _hex(colors.markerStartGreen);
@@ -560,7 +561,7 @@ class _LiveMapState extends State<LiveMap>
   Future<void> _swapCurrentMarker() async {
     final style = _style;
     if (style == null || !mounted) return;
-    final blue = _hex(Theme.of(context).extension<AppColors>()!.routeLineBlue);
+    final blue = _hex(context.colors.routeLineBlue);
     await style.removeLayer('current-dot');
     await _addCurrentMarker(style, widget.activityType, blue);
   }
@@ -576,7 +577,7 @@ class _LiveMapState extends State<LiveMap>
     final override = LiveMap.debugMapBuilderOverride;
     if (override != null) return override(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return Stack(
       fit: StackFit.expand,
       children: [

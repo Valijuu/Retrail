@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import 'profile_providers.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Horizontal chooser: an upload slot plus the recent photos (selected = primary
 /// ring), each deletable via its corner ✕. Reused by onboarding + Settings.
@@ -14,7 +15,7 @@ class ProfilePhotoChooser extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final l10n = AppLocalizations.of(context);
     final manager = ref.read(profilePhotoManagerProvider);
     final current = ref.watch(currentProfilePhotoProvider).asData?.value;

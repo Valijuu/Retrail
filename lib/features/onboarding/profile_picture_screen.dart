@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../profile/profile_avatar.dart';
@@ -10,6 +9,7 @@ import '../profile/profile_photo_chooser.dart';
 import '../profile/profile_providers.dart';
 import '../shell/routes.dart';
 import 'onboarding_providers.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Onboarding step 2 (optional): set a profile photo, or keep it blank. The
 /// last 5 photos are selectable + deletable. Continue/Skip → activity picker.
@@ -19,7 +19,7 @@ class ProfilePictureScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final name = ref.watch(nameInputProvider).trim();
     final current = ref.watch(currentProfilePhotoProvider).asData?.value;

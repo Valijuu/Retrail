@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/activity_type_ui.dart';
@@ -10,6 +9,7 @@ import '../settings/settings_providers.dart';
 import 'history_filter.dart';
 import 'history_providers.dart';
 import 'widgets/pill_dropdown.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Year / month range / sort / activity / favorites filter sheet. Filters
 /// apply live via [historyFilterProvider] as soon as a chip/dropdown is
@@ -21,7 +21,7 @@ class HistoryFilterSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final filter = ref.watch(historyFilterProvider);
     final notifier = ref.read(historyFilterProvider.notifier);
@@ -160,7 +160,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return Text(text.toUpperCase(),
         style: Theme.of(context)
             .textTheme
@@ -186,7 +186,7 @@ class _MonthRangeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final monthFormat = DateFormat.MMMM(locale);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

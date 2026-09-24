@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../profile/profile_avatar.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Home header: the greeting (name styled in `primary`) plus a tappable avatar.
 class TopHeader extends StatelessWidget {
@@ -21,7 +21,7 @@ class TopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final base = Theme.of(context)
         .textTheme
         .titleLarge

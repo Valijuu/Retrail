@@ -6,7 +6,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/main_shell.dart';
@@ -23,6 +22,7 @@ import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
 import '../../map/preview_projection.dart';
 import '../active_ride/active_ride_providers.dart';
+import '../../core/theme/theme_context.dart';
 
 /// The history tab: filtered/sorted/date-grouped list of ride cards with search,
 /// a filter sheet, multi-select + batch delete, per-row edit/delete, a detail
@@ -196,7 +196,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         isScrollControlled: true,
         useSafeArea: true,
         backgroundColor:
-            Theme.of(context).extension<AppColors>()!.surface,
+            context.colors.surface,
         builder: (_) => const HistoryFilterSheet(),
       );
 
@@ -277,7 +277,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     });
 
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final items = ref.watch(historyItemsProvider).asData?.value ?? const [];
     final hasRides = items.any((i) => i is RideEntryItem);
 
@@ -356,7 +356,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     switch (item) {
       case DateHeaderItem(:final dayKey):
         final l10n = AppLocalizations.of(context);
-        final colors = Theme.of(context).extension<AppColors>()!;
+        final colors = context.colors;
         final label = formatDateLabel(dayKey,
             todayLabel: l10n.dateToday,
             yesterdayLabel: l10n.dateYesterday,
@@ -424,7 +424,7 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return Column(
       children: [
@@ -497,7 +497,7 @@ class _SelectionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return Container(
       color: colors.primaryContainer,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

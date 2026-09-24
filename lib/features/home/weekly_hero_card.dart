@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../domain/formatters.dart';
 import '../../domain/stats_aggregation.dart';
 import '../../l10n/app_localizations.dart';
 import 'home_providers.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Hero card: week/day/year distances on top — each a tappable period, the
 /// [selected] one highlighted — and the selected period's stats below
@@ -30,7 +30,7 @@ class WeeklyHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final l10n = AppLocalizations.of(context);
     final nf = NumberFormat('0.0');
     final stats = switch (selected) {
@@ -103,7 +103,7 @@ class _DistanceColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final ink = colors.onPrimaryContainer;
     return Expanded(
@@ -155,7 +155,7 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return Expanded(
       child: Container(

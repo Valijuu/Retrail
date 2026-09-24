@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../map/live_map.dart';
 import '../../../tracking/ride_tracking_state.dart';
 import '../../onboarding/activity_type_ui.dart';
+import '../../../core/theme/theme_context.dart';
 
 // Chrome (app bar + map backdrop) uses the original's fixed dark palette,
 // independent of theme — like the countdown. The stats panel + dialogs below
@@ -110,7 +111,7 @@ class RideWarningBanner extends StatelessWidget {
     // editActionText (#92400E) is the original banner amber — no new hex.
     // Text takes its paired editActionBg: fixed white was unreadable on the
     // light amber the dark theme uses for the fill.
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -157,7 +158,7 @@ class RideMapArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final loc = state.location;
     final current =
         loc != null ? (lat: loc.latitude, lng: loc.longitude) : null;

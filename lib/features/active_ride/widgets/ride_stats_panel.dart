@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_shapes.dart';
 import '../../../domain/formatters.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../tracking/ride_tracking_state.dart';
+import '../../../core/theme/theme_context.dart';
 
 /// The bottom sheet of live stats (speed, distance, duration, top speed) with
 /// the pause/resume + stop actions.
@@ -23,7 +23,7 @@ class RideStatsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final speed = state.speedKmh;
     return Container(
       width: double.infinity,
@@ -115,7 +115,7 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return Container(
       decoration: BoxDecoration(
@@ -150,7 +150,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final style = ButtonStyle(
       shape: const WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: AppShapes.pill)),

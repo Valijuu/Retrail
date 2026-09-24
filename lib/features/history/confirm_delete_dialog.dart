@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Single- or batch-delete confirmation. Ports `ConfirmDeleteDialog` — copy is
 /// count-aware via ICU plurals.
@@ -21,7 +21,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return Dialog(
       backgroundColor: Colors.transparent,

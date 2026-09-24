@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import 'preview_projection.dart';
+import '../core/theme/theme_context.dart';
 
 /// Proportionally scales [points] into a [w] × [h] box, centered. Tile-free
 /// fallback geometry (offline preview / no route data). Y is inverted so north
@@ -39,7 +40,7 @@ class RouteSketch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     return CustomPaint(painter: _RouteSketchPainter(points, colors), size: Size.infinite);
   }
 }

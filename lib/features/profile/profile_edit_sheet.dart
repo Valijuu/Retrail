@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../l10n/app_localizations.dart';
 import 'profile_avatar.dart';
 import 'profile_photo_chooser.dart';
 import 'profile_providers.dart';
+import '../../core/theme/theme_context.dart';
 
 const _nameMaxLength = 30;
 
@@ -42,7 +42,7 @@ class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final current = ref.watch(currentProfilePhotoProvider).asData?.value;
 

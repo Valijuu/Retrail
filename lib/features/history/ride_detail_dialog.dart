@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../map/live_map.dart';
 import '../../map/preview_projection.dart';
 import '../onboarding/activity_type_ui.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Read-only ride detail: interactive map (with fullscreen), date, activity,
 /// title, comment and the four stats. Ports `RideDetailDialog`.
@@ -35,7 +36,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     final ride = widget.rwt.ride;
     final points = <RoutePoint>[
@@ -191,7 +192,7 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

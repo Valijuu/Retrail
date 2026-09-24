@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/routes.dart';
 import 'activity_tile.dart';
 import 'onboarding_providers.dart';
+import '../../core/theme/theme_context.dart';
 
 /// Onboarding step 3 (final): pick the default activity type (Longboard
 /// preselected). Continue saves it + finishes onboarding → main shell.
@@ -32,7 +32,7 @@ class _ActivityInitScreenState extends ConsumerState<ActivityInitScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<AppColors>()!;
+    final colors = context.colors;
     final text = Theme.of(context).textTheme;
     const types = ActivityType.values;
 
