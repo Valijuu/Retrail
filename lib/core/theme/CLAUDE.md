@@ -50,9 +50,9 @@ Tokens live in an `AppColors` `ThemeExtension`; access via `context.colors` (ext
 ```
 RoundedRectangleBorder radius 14  // hero card, route maps
                        radius 12  // recent-ride cards, stat cells
-                       radius 50  // FAB / pill buttons
-                       radius 10  // GPS status line, dialog inputs
-                       radius 8   // small icon containers
+                       radius 50  // FAB / pill buttons, chips, nav indicator
+                       radius 10  // GPS status line, dialog inputs, small icon containers
+                       radius 20  // dialogs (stop / discard / summary / detail / edit)
 ```
 
 ## Typography (Material 3 mapping)

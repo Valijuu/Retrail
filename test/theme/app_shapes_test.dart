@@ -8,7 +8,7 @@ void main() {
       expect(AppShapes.card.topLeft.x, 12);
       expect(AppShapes.pill.topLeft.x, 50);
       expect(AppShapes.input.topLeft.x, 10);
-      expect(AppShapes.iconContainer.topLeft.x, 8);
+      expect(AppShapes.dialog.topLeft.x, 20);
     });
   });
 }

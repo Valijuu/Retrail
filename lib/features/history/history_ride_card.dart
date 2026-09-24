@@ -380,7 +380,7 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-          color: bg, borderRadius: const BorderRadius.all(Radius.circular(20))),
+          color: bg, borderRadius: AppShapes.pill),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: Row(
         mainAxisSize: MainAxisSize.min,

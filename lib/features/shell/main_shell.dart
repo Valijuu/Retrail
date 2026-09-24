@@ -8,6 +8,7 @@ import '../history/history_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_edit_sheet.dart';
 import '../settings/settings_screen.dart';
+import '../../core/theme/app_shapes.dart';
 import '../../core/theme/theme_context.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
@@ -208,7 +209,7 @@ class _NavItem extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: selected ? colors.primaryContainer : Colors.transparent,
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: AppShapes.pill,
             ),
             child: Icon(spec.icon, color: tint, semanticLabel: spec.label),
           ),

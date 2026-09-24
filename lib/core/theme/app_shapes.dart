@@ -11,15 +11,12 @@ abstract final class AppShapes {
   /// Recent-ride cards, stat cells.
   static const BorderRadius card = BorderRadius.all(Radius.circular(12));
 
-  /// FAB / pill buttons.
+  /// FAB / pill buttons, chips, the nav-bar selection indicator.
   static const BorderRadius pill = BorderRadius.all(Radius.circular(50));
 
-  /// GPS status line, dialog input fields.
+  /// GPS status line, dialog input fields, small icon containers.
   static const BorderRadius input = BorderRadius.all(Radius.circular(10));
 
-  /// Small icon containers.
-  static const BorderRadius iconContainer = BorderRadius.all(Radius.circular(8));
-
-  /// Ride dialogs (stop / discard / post-ride summary).
+  /// Dialogs (stop / discard / post-ride summary, ride detail, edit, delete).
   static const BorderRadius dialog = BorderRadius.all(Radius.circular(20));
 }
