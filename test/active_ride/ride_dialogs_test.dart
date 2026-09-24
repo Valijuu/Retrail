@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/features/active_ride/ride_dialogs.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -32,6 +34,18 @@ void main() {
     expect(dismissed, isTrue);
     await tester.tap(find.text('Stop'));
     expect(confirmed, isTrue);
+  });
+
+  testWidgets('confirm dialog buttons render their label in the given fg color',
+      (tester) async {
+    await tester.pumpWidget(_host(ConfirmStopDialog(
+      onDismiss: () {},
+      onConfirm: () {},
+    )));
+    Color? labelColor(String label) =>
+        tester.renderObject<RenderParagraph>(find.text(label)).text.style?.color;
+    expect(labelColor('Stop'), AppColors.light.onPrimary);
+    expect(labelColor('Keep riding'), AppColors.light.onSurface);
   });
 
   testWidgets('DiscardRideConfirmDialog renders and fires confirm',

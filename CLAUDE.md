@@ -72,12 +72,12 @@ lib/
 ├── core/
 │   ├── theme/                    # AppColors (ThemeExtension), typography, shapes, theme builder
 │   ├── connectivity/             # ConnectivityObserver (VPN-aware HTTP probe)
-│   └── util/                     # formatters, date/week/day/year bounds
+│   └── widgets/                  # shared widgets used by several features (PillButton, SheetInputField, …)
 ├── data/
 │   ├── db/                       # Drift database, tables (Ride, Trackpoint), DAOs
 │   ├── repositories/             # RideRepository, TrackpointRepository, PreferencesRepository
-│   └── models/                   # plain data models / DTOs
-├── domain/                       # DistanceCalculator (Haversine), RideStats, pure logic
+│   └── debug_seed_rides.dart     # debug-only sample rides for an empty DB
+├── domain/                       # DistanceCalculator (Haversine), RideStats, formatters, time bounds — pure logic
 ├── features/
 │   ├── onboarding/  home/  timer/  active_ride/  history/  settings/  profile/
 │   │     each: <feature>_screen.dart, <feature>_providers.dart, widgets/

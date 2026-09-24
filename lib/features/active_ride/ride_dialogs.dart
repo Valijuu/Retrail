@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/widgets/pill_button.dart';
+import '../../core/widgets/sheet_input_field.dart';
 
 const _descMaxLength = 60;
 
@@ -100,7 +102,7 @@ class _ConfirmScaffold extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _PillButton(
+                  child: PillButton(
                     label: dismissLabel,
                     bg: colors.surfaceContainer,
                     fg: colors.onSurface,
@@ -109,7 +111,7 @@ class _ConfirmScaffold extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _PillButton(
+                  child: PillButton(
                     label: confirmLabel,
                     bg: confirmBg,
                     fg: confirmFg,
@@ -179,14 +181,14 @@ class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
             Text(l10n.summarySubtitle,
                 style: text.bodyMedium?.copyWith(color: colors.onSurfaceVariant)),
             const SizedBox(height: 20),
-            _SheetInputField(
+            SheetInputField(
               label: l10n.summaryTitleLabel,
               controller: _titleController,
               singleLine: true,
               maxLength: _descMaxLength,
             ),
             const SizedBox(height: 12),
-            _SheetInputField(
+            SheetInputField(
               label: l10n.summaryCommentLabel,
               controller: _commentController,
               singleLine: false,
@@ -215,7 +217,7 @@ class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
             Row(
               children: [
                 Expanded(
-                  child: _PillButton(
+                  child: PillButton(
                     label: l10n.actionSkip,
                     bg: colors.surfaceContainer,
                     fg: colors.onSurfaceVariant,
@@ -224,7 +226,7 @@ class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _PillButton(
+                  child: PillButton(
                     label: l10n.actionSave,
                     bg: colors.primary,
                     fg: colors.onPrimary,
@@ -251,88 +253,6 @@ class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
           ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _PillButton extends StatelessWidget {
-  const _PillButton({
-    required this.label,
-    required this.bg,
-    required this.fg,
-    required this.onTap,
-  });
-
-  final String label;
-  final Color bg;
-  final Color fg;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: FilledButton(
-        onPressed: onTap,
-        style: FilledButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
-          shape: const RoundedRectangleBorder(borderRadius: AppShapes.pill),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-        ),
-        child: Text(label,
-            maxLines: 1,
-            softWrap: false,
-            style: Theme.of(context).textTheme.labelLarge),
-      ),
-    );
-  }
-}
-
-class _SheetInputField extends StatelessWidget {
-  const _SheetInputField({
-    required this.label,
-    required this.controller,
-    required this.singleLine,
-    this.minLines = 1,
-    this.maxLines = 1,
-    this.maxLength,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final bool singleLine;
-  final int minLines;
-  final int maxLines;
-  final int? maxLength;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final text = Theme.of(context).textTheme;
-    return Container(
-      decoration: BoxDecoration(color: colors.surfaceContainer, borderRadius: AppShapes.card),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: text.labelSmall?.copyWith(color: colors.primary)),
-          const SizedBox(height: 4),
-          TextField(
-            controller: controller,
-            minLines: singleLine ? 1 : minLines,
-            maxLines: singleLine ? 1 : maxLines,
-            maxLength: maxLength,
-            cursorColor: colors.primary,
-            style: text.bodyLarge?.copyWith(color: colors.onSurface),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              counterText: '',
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -5,6 +5,8 @@ import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/activity_type_ui.dart';
+import '../../core/widgets/pill_button.dart';
+import '../../core/widgets/sheet_input_field.dart';
 
 const _descMaxLength = 60;
 
@@ -76,7 +78,7 @@ class _EditRideDialogState extends State<EditRideDialog> {
                       text.bodyMedium?.copyWith(color: colors.onSurfaceVariant)),
             ),
             const SizedBox(height: 20),
-            _InputField(
+            SheetInputField(
               label: l10n.summaryTitleLabel,
               controller: _titleController,
               singleLine: true,
@@ -104,7 +106,7 @@ class _EditRideDialogState extends State<EditRideDialog> {
               ],
             ),
             const SizedBox(height: 12),
-            _InputField(
+            SheetInputField(
               label: l10n.summaryCommentLabel,
               controller: _commentController,
               singleLine: false,
@@ -115,7 +117,7 @@ class _EditRideDialogState extends State<EditRideDialog> {
             Row(
               children: [
                 Expanded(
-                  child: _PillButton(
+                  child: PillButton(
                     label: l10n.actionCancel,
                     bg: colors.surfaceContainer,
                     fg: colors.onSurface,
@@ -124,7 +126,7 @@ class _EditRideDialogState extends State<EditRideDialog> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _PillButton(
+                  child: PillButton(
                     label: l10n.actionSave,
                     bg: colors.primary,
                     fg: colors.onPrimary,
@@ -142,83 +144,6 @@ class _EditRideDialogState extends State<EditRideDialog> {
           ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _InputField extends StatelessWidget {
-  const _InputField({
-    required this.label,
-    required this.controller,
-    required this.singleLine,
-    this.minLines = 1,
-    this.maxLines = 1,
-    this.maxLength,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final bool singleLine;
-  final int minLines;
-  final int maxLines;
-  final int? maxLength;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    final text = Theme.of(context).textTheme;
-    return Container(
-      decoration: BoxDecoration(
-          color: colors.surfaceContainer, borderRadius: AppShapes.card),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: text.labelSmall?.copyWith(color: colors.primary)),
-          const SizedBox(height: 4),
-          TextField(
-            controller: controller,
-            minLines: singleLine ? 1 : minLines,
-            maxLines: singleLine ? 1 : maxLines,
-            maxLength: maxLength,
-            cursorColor: colors.primary,
-            style: text.bodyLarge?.copyWith(color: colors.onSurface),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              counterText: '',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PillButton extends StatelessWidget {
-  const _PillButton(
-      {required this.label,
-      required this.bg,
-      required this.fg,
-      required this.onTap});
-  final String label;
-  final Color bg;
-  final Color fg;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: FilledButton(
-        onPressed: onTap,
-        style: FilledButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
-          shape: const RoundedRectangleBorder(borderRadius: AppShapes.pill),
-        ),
-        child: Text(label, maxLines: 1, softWrap: false),
       ),
     );
   }
