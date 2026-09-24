@@ -46,13 +46,13 @@ Invoke the debugging skill (`.claude/skills/root-cause-debugging/SKILL.md`) when
 | Concern | Choice |
 |---|---|
 | UI | Flutter, Material 3 |
-| State management | **Riverpod** (`flutter_riverpod` / `riverpod_annotation`) — replaces Android ViewModel + StateFlow |
+| State management | **Riverpod** (`flutter_riverpod`, hand-written providers — no code generation) — replaces Android ViewModel + StateFlow |
 | Persistence | **Drift** (SQLite, reactive `Stream`s) — replaces Room |
-| Preferences | Drift table or `shared_preferences` — replaces DataStore |
+| Preferences | `shared_preferences` (behind `PreferencesRepository`) — replaces DataStore |
 | Maps (live) | **`maplibre`** (native MapLibre GL, vector style) |
 | Map previews | Pre-rendered PNG snapshots (`CustomPainter → toImage → PNG`), cached on disk — NO live map per list item |
 | Background GPS | **`flutter_foreground_task`** (Android service + notification) + **`geolocator`** (location + iOS background modes) |
-| Notifications | `flutter_local_notifications` (Android) + **iOS Live Activity** (Swift ActivityKit) for lock-screen controls |
+| Notifications | Android: the `flutter_foreground_task` service notification (title + Pause/Stop). iOS: **Live Activity** (Swift ActivityKit) planned; `flutter_local_notifications` is a dependency but not yet used — keep or drop decided with the iOS pass (issue #35) |
 | Images / crop | `image_picker` + `image_cropper` — replaces camera intent + uCrop |
 | Localization | `flutter_localizations` + `intl`, ARB files (`en` default, `de`) |
 | Tile source | **MapTiler** `topo-v2` / `basic-v2-dark` (existing API key) — vector style for the live map, `@2x` raster tiles for previews |

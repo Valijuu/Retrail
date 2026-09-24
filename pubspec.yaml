@@ -31,12 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
   collection: ^1.19.0 # Set equality for the multi-select history filter
   flutter_riverpod: ^3.3.2
-  riverpod_annotation: ^4.0.3
   drift: ^2.34.0
   sqlite3_flutter_libs: ^0.6.0+eol
   path_provider: ^2.1.6
@@ -68,7 +64,6 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   build_runner: ^2.15.0
-  riverpod_generator: ^4.0.4
   drift_dev: ^2.34.0
   mocktail: ^1.0.5
   integration_test:
