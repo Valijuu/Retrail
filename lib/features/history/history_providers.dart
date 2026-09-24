@@ -39,11 +39,6 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   /// Sets the selected calendar year, or resets to "All years" for `null`.
   /// Leaves any month range untouched — a month means the same thing
   /// regardless of year (or "All years"), see [HistoryFilter.monthFrom].
-  /// Since the default month range is "this month" (see [_defaultFilter]),
-  /// switching to a year other than the current one shows just that one
-  /// month within the new year unless the month range is widened too — e.g.
-  /// Von=January/Bis=December for the whole year (there's no "All" shortcut
-  /// for the month range).
   void setYear(int? year) => state = year == null
       ? state.copyWith(clearYear: true)
       : state.copyWith(year: year);

@@ -2,8 +2,13 @@
 
 **Status:** DONE — implemented test-first; 247 total tests green, analyze clean
 **Phase:** 13 of 15
-**Depends on:** Spec 3 (`RideRepository.getAllRidesWithTrackpoints`, delete/update/favorite), Spec 4 (`computeRideStats`, `rideDisplayTitle`, `formatRideDayKey`/`formatDateLabel`/`formatRideTime`/`formatDuration`/`formatRideDate`, week/year bounds), Spec 7 + 12 (`RoutePreview` + `routePreviewCacheProvider`; `LiveMap` for the detail map), Spec 9 (`ActivityTypeUi`), Spec 10 (`navigationLauncherProvider`; `historyTargetRideProvider` + history tab in `MainShell`)
+**Depends on:** Spec 3 (`RideRepository.getRidesInRange`/`getAllRides`, delete/update/favorite), Spec 4 (`storedRideStats`, `rideDisplayTitle`, `formatRideDayKey`/`formatDateLabel`/`formatRideTime`/`formatDuration`/`formatRideDate`, `yearBounds`/`monthRangeBounds`/`monthOfYearInRange`), Spec 7 + 12 + 16 (`RoutePreview` + `routePreviewCacheProvider`; MapLibre `LiveMap` for the detail map), Spec 9 (`ActivityTypeUi`), Spec 10 (`navigationLauncherProvider`; `historyTargetRideProvider` + history tab in `MainShell`)
 **Branch:** `phase/13-history`
+
+> **Kept current (issue #19).** The filter evolved after Phase 13: the single-select
+> `TimePeriod` was replaced by a **Year** dropdown + a **Von/Bis month range**, activities became
+> **multi-select**, and the list query stopped joining trackpoints (issue #21). The sections below
+> describe the **current** implementation, not the original Phase 13 plan.
 
 ---
 
@@ -19,7 +24,7 @@ navigate-to-start button, a ride-detail dialog (with fullscreen map), and an edi
 it briefly.
 
 Everything is fully `analyze` + `test` green — no device-gated pieces. (The detail/fullscreen map
-uses `flutter_map`, whose on-device feel is tuned in Spec 7/Part B, but it builds and renders here.)
+is the MapLibre `LiveMap` from Spec 16.)
 
 ---
 
@@ -30,65 +35,89 @@ MainShell tab 1 ──► HistoryScreen (ConsumerStatefulWidget)
    │ watches historyItemsProvider, historyFilterProvider, activeFilterCountProvider,
    │          historyTargetRideProvider
    ▼
-HistoryController (filter setters + ride mutations) ──► RideRepository (Spec 3)
-historyItemsProvider = StreamProvider: getAllRidesWithTrackpoints() × filter
+historyFilterProvider (HistoryFilterNotifier: filter setters)
+HistoryController (ride mutations) ──► RideRepository (Spec 3)
+historyItemsProvider = StreamProvider:
+   effectiveRange(filter) → getRidesInRange(startMs, endMs)   (Ride rows only, no trackpoints)
    → buildHistoryItems(...) pure pipeline (filter → stats → sort → group)
-Cards embed RoutePreview(routePreviewCacheProvider)  (Spec 12 — cached PNGs)
+Cards embed RoutePreview(routePreviewCacheProvider)  (Spec 12 — cached PNGs; a card fetches
+   its own trackpoints lazily only when its preview isn't cached yet)
 ```
 
 ### Domain — pure pipeline (`lib/features/history/history_items.dart`, test-first)
 
 The filter/sort/group logic is **pure Dart** (mirrors `RideHistoryViewModel.ridesWithStats`),
-extracted so it's unit-tested without widgets or Riverpod:
+extracted so it's unit-tested without widgets or Riverpod. The filter state lives in
+`history_filter.dart`, the DB window in `history_range.dart`, the pipeline in `history_items.dart`:
 
 ```dart
-enum TimePeriod { thisWeek, thisMonth, thisYear, all }
 enum SortOrder { date, distance, speed, duration }
 
-class HistoryFilter {            // immutable; equatable
-  TimePeriod period;             // default all
-  SortOrder sort;                // default date
-  String query;                  // default ''
-  bool favoritesOnly;            // default false
-  ActivityType? activity;        // default null (All)
+class HistoryFilter {                // immutable; ==/hashCode; copyWith with clearYear/clearMonthFrom/clearMonthTo
+  SortOrder sort;                    // default date
+  String query;                      // default ''
+  bool favoritesOnly;                // default false
+  Set<ActivityType> activities;      // default {} = all; multi-select, any-of
+  int? year;                         // default null = "All years"
+  int? monthFrom, monthTo;           // 1-12 inclusive; default null = unrestricted on that side
 }
 
 sealed class HistoryItem {}
-class DateHeaderItem extends HistoryItem { final String label; }      // localized Today/Yesterday/…
-class RideEntryItem  extends HistoryItem { final RideWithTrackpoints rwt; final RideStats stats; }
+class DateHeaderItem extends HistoryItem { final String dayKey; }     // UI localizes via formatDateLabel
+class RideEntryItem  extends HistoryItem { final Ride ride; final RideStats stats; }
 
-/// rides + filter (+ now/locale + a DistanceCalculator) → display list.
-List<HistoryItem> buildHistoryItems(
-  List<RideWithTrackpoints> rides, HistoryFilter f, { required int nowMs, ... });
+/// DB window for the filter; either side null = unbounded.
+(int? start, int? end) effectiveRange(HistoryFilter f);
 
-int activeFilterCount(HistoryFilter f);   // period≠all + sort≠date + favOnly + activity≠null (query excluded)
+/// rides + filter (+ optional now/locale) → display list.
+List<HistoryItem> buildHistoryItems(List<Ride> rides, HistoryFilter f, {int? nowMs, String? locale});
+
+int activeFilterCount(HistoryFilter f);   // sort≠date + favOnly + activities≠{} + year≠null + month range set (query excluded)
 bool isFilterActive(HistoryFilter f);     // any of the above OR query non-empty
 ```
 
+The default filter is fully unrestricted ("All years", no month range), so every set `year` /
+`monthFrom` / `monthTo` counts as a deviation — no "now" reference is needed for the badge.
+
+**Year + month range → DB window (`effectiveRange`):**
+- `year == null` ("All years") → `(null, null)`, unrestricted. The month range is **not** applied
+  here: at "All years" it means "these months, **every** year" (e.g. March–May of every year), which
+  a single `(start, end)` window can't express — see pipeline step 1.
+- `year` set + month range → `monthRangeBounds(year, monthFrom, monthTo)` (an unset side defaults to
+  January/December).
+- `year` set, no month range → `yearBounds(year)`.
+
 Pipeline, matched to the original:
-1. **Filter**: favoritesOnly → `ride.isFavorite`; activity → `ride.typ == activity.id`; period →
-   `(date ?? startTime ?? 0) >= periodStart`; query (trimmed, case-insensitive) → matches
+1. **Filter**: favoritesOnly → `ride.isFavorite`; activities → `activities.isEmpty ||
+   activities.contains(ride.typ)`; month range → `monthOfYearInRange(date ?? startTime, monthFrom,
+   monthTo)` (load-bearing for "All years", redundant-but-harmless when a year already narrowed the
+   DB window; rides without any timestamp are dropped); query (trimmed, case-insensitive) → matches
    `rideDisplayTitle(ride)` **or** `ride.comment`.
-2. **Stats**: `computeRideStats(rwt, calc)` per surviving ride (distance/maxSpeed/duration/avg).
+2. **Stats**: `storedRideStats(ride)` (denormalized onto the ride row at save time), falling back to
+   `statsWithoutTrackpoints(ride)` for a row without stored stats.
 3. **Sort/group**:
    - `date` → group by `formatRideDayKey(ride.date)`, **day keys descending**, insert a
      `DateHeaderItem(formatDateLabel(dayKey))`, rides within a day **date-descending**.
    - `distance` → flat, `stats.distanceMetres` desc.
    - `speed` → flat, `stats.maxSpeedKmh` desc.
    - `duration` → flat, `stats.durationMs` **asc** (shortest first — matches `sort_duration` = "Shortest duration").
-4. **Period start** (epoch ms, local): reuse the existing week-start (Monday 00:00) and year-start
-   helpers; **add `startOfMonth`** (1st 00:00) test-first. `all` → 0.
 
 ### Providers (`lib/features/history/history_providers.dart`)
 
 - **`historyFilterProvider`** — `NotifierProvider<HistoryFilterNotifier, HistoryFilter>` with
-  `setPeriod/setSort/setQuery/setFavoritesOnly/setActivity/reset`. (StateNotifier-style; the screen
-  reads/writes it.)
-- **`historyItemsProvider`** — `StreamProvider<List<HistoryItem>>` combining
-  `rideRepository.getAllRidesWithTrackpoints()` with `historyFilterProvider`, mapping through
-  `buildHistoryItems`. (Drift `.watch()` is fine in app/runtime; widget tests stub this provider
-  with a finite stream, per the established Drift-watch-in-tests rule.)
-- **`activeFilterCountProvider`** / **`isFilterActiveProvider`** — derived from the filter.
+  `setSort/setQuery/setFavoritesOnly/toggleActivity/clearActivities/setYear/setMonthFrom/setMonthTo/
+  reset`. `setYear(null)` = "All years". `setMonthFrom`/`setMonthTo` keep the range ordered: moving
+  one end past the other pulls the other end along (Von/Bis picker UX).
+- **`historyItemsProvider`** — `StreamProvider<List<HistoryItem>>`: `effectiveRange(filter)` →
+  `rideRepository.getRidesInRange(startMs:, endMs:)` (plain `Ride` rows, no trackpoint join — issue
+  #21) → `buildHistoryItems(rides, filter, locale: dateFormatLocaleProvider)`. (Drift `.watch()` is
+  fine in app/runtime; widget tests stub this provider with a finite stream, per the established
+  Drift-watch-in-tests rule.)
+- **`availableHistoryYearsProvider`** (`autoDispose`) — distinct years present in the ride history,
+  newest first, derived in Dart from `getAllRides()`.
+- **`yearPickerItemsProvider`** — the Year dropdown's items: available years ∪ current year ∪ the
+  selected year (so the dropdown never holds a stale value), descending.
+- **`activeFilterCountProvider`** — derived from the filter (badge count).
 - **`HistoryController`** (`Provider`) — ride mutations, delegating to `RideRepository` 1:1 (and
   evicting the preview cache on delete/route-affecting edit — see below):
   ```dart
@@ -110,20 +139,20 @@ Pipeline, matched to the original:
 (multi-select), `showBatchDelete`, `highlightRideId`, plus a `ScrollController` for jump-to-ride.
 
 - **Top bar — two modes:**
-  - **Normal** (`_HistoryFilterBar`): title `historyTitle`, a **search toggle** (search icon) that
+  - **Normal** (`_FilterBar`): title `historyTitle`, a **search toggle** (search icon) that
     reveals an `TextField` (`historySearchPlaceholder`, live `setQuery`, clear ✕), and a **filter
     icon with a count badge** (`activeFilterCount`) opening the filter sheet.
-  - **Selection** (`_HistorySelectionBar`, when `selectedIds` non-empty): close (✕) →
+  - **Selection** (`_SelectionBar`, when `selectedIds` non-empty): close (✕) →
     clear selection, `selectionCount` ("N selected"), and batch-delete (trash) → confirm. **Android
     back** while selecting clears the selection instead of leaving (`PopScope`).
 - **List**: `ListView` (keyed by header label / rideId), `DateHeaderItem` → uppercased dimmed label;
-  `RideEntryItem` → `_HistoryRideCard`. Empty state: centered `historyEmpty`.
+  `RideEntryItem` → `HistoryRideCard`. Empty state: centered `historyEmpty`.
 - **Dialogs** (overlaid): confirm-delete (single/batch), detail, edit, filter sheet.
 - **Jump-to-ride**: watch `historyTargetRideProvider`; when set, find the index (reset filters first
   if the ride is filtered out, then re-run on the next emission), `animateTo` it, set
   `highlightRideId` for 1.5 s, then clear the provider. Mirrors the original `LaunchedEffect`.
 
-### `_HistoryRideCard` (ports `RideHistoryListItem`)
+### `HistoryRideCard` (`history_ride_card.dart`, ports `RideHistoryListItem`)
 
 A 14dp rounded `surfaceContainer` card; **2dp primary border** when selected or highlighted;
 `onTap` (open detail, or toggle membership in selection mode), `onLongPress` (enter selection).
@@ -145,12 +174,21 @@ A 14dp rounded `surfaceContainer` card; **2dp primary border** when selected or 
 
 ## Dialogs
 
-### Filter bottom sheet — `_FilterSheet` (ports `FilterBottomSheet`)
-`showModalBottomSheet`. Header (title `historyFilterTitle` + **Reset** text button). Sections of
-`FilterChip`s (live-applying): **Period** (week/month/year/all), **Sort by**
-(newest/distance/speed/duration), **Activity type** (All + each `ActivityType` with icon), and a
-**Favorites-only** `Switch`. **Apply** pill just closes (filters already applied live). Selected
-chip uses `primaryContainer`/`onPrimaryContainer` + 1.5dp primary border.
+### Filter bottom sheet — `HistoryFilterSheet` (`filter_sheet.dart`, ports `FilterBottomSheet`)
+`showModalBottomSheet`. Header (title `historyFilterTitle` + **Reset** text button). Sections, all
+live-applying — there is **no Apply button**; the sheet is dismissed by dragging down or tapping
+outside:
+- **Year** — `PillDropdown<int?>`: "All years" (`historyYearAll`, `null`) + the
+  `yearPickerItemsProvider` years.
+- **Month range** — two `PillDropdown<int>`s side by side, **From/To** (`historyMonthFromLabel`/
+  `historyMonthToLabel`) over the 12 localized month names (`DateFormat.MMMM(locale)`). An unset
+  side displays January/December.
+- **Sort by** — `FilterChip`s newest/distance/speed/duration.
+- **Activity type** — `FilterChip`s: **All** (clears the set) + each `ActivityType` with icon,
+  multi-select.
+- **Favorites-only** `Switch`.
+
+Selected chip uses `primaryContainer`/`onPrimaryContainer` + 1.5dp primary border.
 
 ### Ride detail — `RideDetailDialog` (`lib/features/history/ride_detail_dialog.dart`)
 Full-width rounded dialog opened on row tap:
@@ -183,7 +221,7 @@ are unchanged; `HistoryScreen` consumes the target. No router changes.
 
 ## Localization — new ARB keys (`app_en.arb` + `app_de.arb`)
 
-Mirror the Android `history_*`, `period_*`, `sort_*`, `edit_ride_*`, `detail_*`, `chip_*`,
+Mirror the Android `history_*`, `sort_*`, `edit_ride_*`, `detail_*`, `chip_*`,
 `activity_all`, `selection_count`, `action_*`, `a11y_*`, and the `delete_rides_confirm_*` plurals.
 
 | Key | EN | DE |
@@ -194,14 +232,14 @@ Mirror the Android `history_*`, `period_*`, `sort_*`, `edit_ride_*`, `detail_*`,
 | `historySearchPlaceholder` | `Search rides…` | `Fahrt suchen…` |
 | `historyEmpty` | `No rides yet` | `Noch keine Fahrten` |
 | `historyFilterTitle` | `Filter` | `Filter` |
-| `historySectionPeriod` | `PERIOD` | `ZEITRAUM` |
+| `historySectionYear` | `YEAR` | `JAHR` |
+| `historyYearAll` | `All years` | `Alle Jahre` |
+| `historySectionMonthRange` | `MONTH RANGE` | `MONATSBEREICH` |
+| `historyMonthFromLabel` | `From` | `Von` |
+| `historyMonthToLabel` | `To` | `Bis` |
 | `historySectionSort` | `SORT BY` | `SORTIEREN NACH` |
 | `historySectionActivity` | `ACTIVITY TYPE` | `AKTIVITÄT` |
 | `historyFilterFavoritesOnly` | `Favorites only` | `Nur Favoriten` |
-| `periodThisWeek` | `This week` | `Diese Woche` |
-| `periodThisMonth` | `This month` | `Dieser Monat` |
-| `periodThisYear` | `This year` | `Dieses Jahr` |
-| `periodAll` | `All` | `Alle` |
 | `sortNewest` | `Newest` | `Neueste` |
 | `sortDistance` | `Longest distance` | `Längste Strecke` |
 | `sortSpeed` | `Top speed` | `Höchstes Tempo` |
@@ -241,12 +279,17 @@ yet). `chipGreatPace` = "Great pace" / "Gutes Tempo" per the German reference ta
 ## Test-first plan (`test/history/`)
 
 **`history_items_test.dart`** (pure pipeline — the core, heavily covered):
-- Filter: favorites-only; activity type; period (week/month/year/all) using a fixed `nowMs`; search
-  matches title and comment, case-insensitive, ignores blank.
+- Filter: favorites-only; multi-select activities (any-of, empty = all); cross-year month range;
+  search matches title and comment, case-insensitive, ignores blank.
 - Sort: distance desc, speed desc, duration **asc**; date → grouped with `DateHeaderItem`s, days
   descending, rides within a day descending.
-- `activeFilterCount` (query excluded) and `isFilterActive` (query included) across combinations.
-- `startOfMonth`/week/year boundary correctness.
+
+**`history_filter_test.dart`** / **`history_range_test.dart`** / **`history_providers_test.dart`**:
+`activeFilterCount` (query excluded) and `isFilterActive` (query included) across combinations;
+`effectiveRange` for all-years / year / year + month range; notifier setters (incl. the Von/Bis
+pull-along); year-picker items. Month/year boundary math lives in `test/domain/time_bounds_test.dart`.
+
+**`filter_sheet_test.dart`**: year + month dropdowns, chips and switch drive the notifier.
 
 **`history_controller_test.dart`** (real in-memory DB): `deleteRide`/`deleteRides` remove rows
 (cascade trackpoints) and call `cache.evict`; `updateRideDetails` writes description+comment+type;
@@ -271,7 +314,7 @@ All gated by `flutter analyze` clean + full suite green before the phase is done
 ## Acceptance
 
 - History tab shows the filtered/sorted/date-grouped list with **cached-PNG thumbnails** (no
-  per-scroll tiles), search, filter sheet (period/sort/activity/favorites + badge + reset), and the
+  per-scroll tiles), search, filter sheet (year/month range/sort/activity/favorites + badge + reset), and the
   empty state.
 - Per-row: favorite toggle (pulse), navigate-to-start, 3-dot edit/delete; long-press multi-select
   with selection bar + batch delete.
