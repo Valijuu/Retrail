@@ -137,8 +137,7 @@ class ForegroundTaskService implements RideForegroundService {
     required int elapsedSeconds,
     required double distanceMetres,
   }) =>
-      '${formatElapsed(elapsedSeconds)} · '
-      '${(distanceMetres / 1000.0).toStringAsFixed(2)} km';
+      '${formatElapsed(elapsedSeconds)} · ${formatDistanceKm(distanceMetres)}';
 
   // Toggle action reflects state: Resume when paused, Pause when recording.
   static List<NotificationButton> _buttons({

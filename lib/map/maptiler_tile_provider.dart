@@ -25,9 +25,10 @@ class MapTilerTileProvider implements PreviewTileProvider {
   @override
   Future<ui.Image?> tile(int z, int x, int y, ui.Brightness brightness) async {
     final mapId = MapStyle.mapId(brightness == ui.Brightness.dark);
-    // `@2x` (512px) tiles match the snapshot's 2.0 pixel-ratio canvas
-    // (`_previewPixelRatio` in active_ride_providers) — 1x tiles would be
-    // upscaled 2× into the PNG and look blurry.
+    // `@2x` (512px) tiles — MapTiler's sharpest raster. The snapshot canvas
+    // renders at `previewPixelRatio` (3.0, preview_projection.dart), so these
+    // get the mild 1.5× stretch described there; 1x tiles would be upscaled
+    // 3× and look blurry.
     final url =
         'https://api.maptiler.com/maps/$mapId/$z/$x/$y@2x.png?key=$apiKey';
     try {

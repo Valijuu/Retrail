@@ -7,7 +7,7 @@ import 'repositories/trackpoint_repository.dart';
 /// Debug-only sample rides: 15 routes spanning near-stationary (a couple of
 /// metres) up to cross-town (~19 km), across every [ActivityType], so the
 /// read-only detail/fullscreen map's whole-route framing (see
-/// `LiveMap._initialCamera`) can be checked against a real spread of
+/// `LiveMap.fitBounds`) can be checked against a real spread of
 /// bounding-box sizes and marker types.
 ///
 /// The rides are also spread over time (see [_SeedPeriod]) with differing
