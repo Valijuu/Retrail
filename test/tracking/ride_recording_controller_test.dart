@@ -179,6 +179,23 @@ void main() {
     expect(tracker.state.trackPoints.length, 2);
   });
 
+  test('start() while already tracking is a no-op — no second ride', () async {
+    final c = controller(_FakePermissions(
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+    ));
+
+    await c.start();
+    await pumpEventQueue(); // first ride inserted
+    // Guards the notification/deep-link reopen from orphaning the ride in
+    // progress by starting a second one (original `onPermissionResult`).
+    expect(await c.start(), LocationStartAction.proceed);
+    await pumpEventQueue();
+
+    expect(await db.rideDao.getAll().first, hasLength(1));
+    expect(service.starts, 1);
+  });
+
   test('stop() finalizes the ride SYNCHRONOUSLY — isTracking false and the '
       'completed ride id set before any async teardown', () async {
     final perms = _FakePermissions(

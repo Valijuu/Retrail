@@ -3,6 +3,7 @@ import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 
 import '../domain/domain_test_helpers.dart' show FixedDistanceCalculator;
+import '../support/ride_lookup.dart';
 
 void main() {
   late AppDatabase db;
@@ -42,11 +43,13 @@ void main() {
   test('updateEndTime stamps endTime and caches computed stats on the row',
       () async {
     final id = await repo.startRide(startedAtMs: 0);
-    await db.trackpointDao.insertAll([
+    for (final tp in [
       TrackpointsCompanion.insert(rideId: id, latitude: 0, longitude: 0, timestamp: 0),
       TrackpointsCompanion.insert(rideId: id, latitude: 0, longitude: 0, timestamp: 1000),
       TrackpointsCompanion.insert(rideId: id, latitude: 0, longitude: 0, timestamp: 2000),
-    ]);
+    ]) {
+      await db.trackpointDao.insert(tp);
+    }
 
     await repo.updateEndTime(id, 3600000); // 1 hour
 
@@ -72,10 +75,12 @@ void main() {
     test('closes an orphaned ride at its last trackpoint and caches its stats',
         () async {
       final id = await repo.startRide(startedAtMs: 0);
-      await db.trackpointDao.insertAll([
+      for (final tp in [
         TrackpointsCompanion.insert(rideId: id, latitude: 0, longitude: 0, timestamp: 0),
         TrackpointsCompanion.insert(rideId: id, latitude: 0, longitude: 0, timestamp: 5000),
-      ]);
+      ]) {
+        await db.trackpointDao.insert(tp);
+      }
 
       await repo.finalizeUnfinishedRides();
 

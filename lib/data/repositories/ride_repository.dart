@@ -24,8 +24,6 @@ class RideRepository {
 
   Stream<List<Ride>> getAllRides() => _dao.getAll();
 
-  Stream<Ride?> getById(int rideId) => _dao.getById(rideId);
-
   Stream<List<RideWithTrackpoints>> getAllRidesWithTrackpoints() =>
       _dao.getAllRidesWithTrackpoints();
 
@@ -37,11 +35,6 @@ class RideRepository {
   /// issue #21 / [RideDao.getRidesInRange]).
   Stream<List<Ride>> getRidesInRange({int? startMs, int? endMs}) =>
       _dao.getRidesInRange(startMs: startMs, endMs: endMs);
-
-  /// A single ride with its trackpoints, on demand (detail dialog, or a
-  /// History card's not-yet-cached route preview — see issue #21).
-  Stream<RideWithTrackpoints?> getRideWithTrackpointsById(int rideId) =>
-      _dao.getRideWithTrackpointsById(rideId);
 
   /// Opens a ride row at recording start and returns its id. Takes plain
   /// values so callers (the tracker) never touch Drift's companion types.

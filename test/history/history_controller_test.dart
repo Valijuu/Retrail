@@ -9,6 +9,7 @@ import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/features/history/history_controller.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
+import '../support/ride_lookup.dart';
 
 void main() {
   late AppDatabase db;

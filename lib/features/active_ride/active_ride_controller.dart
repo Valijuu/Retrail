@@ -19,16 +19,6 @@ class ActiveRideController {
   /// pre-generated in the theme the user is in. Defaults to light when unset.
   final Brightness Function() _currentBrightness;
 
-  /// Starts a ride unless one is already active. The guard mirrors the
-  /// original `MapViewModel.onPermissionResult` (`if (isTracking) return`) and
-  /// prevents the notification/deep-link reopen from orphaning the in-progress
-  /// ride and starting a second one.
-  void startRide() {
-    if (_tracker.state.isTracking) return;
-    _tracker.startTracking();
-  }
-
-  void stopRide() => _tracker.stopTracking();
   void discardRide() => _tracker.discardRide();
 
   /// Pause when running, resume when paused — given the current [isPaused].

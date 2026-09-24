@@ -104,8 +104,6 @@ class _FakeRecording extends RideRecordingController {
 class _FakeActiveRideController extends ActiveRideController {
   _FakeActiveRideController(super.tracker, super.cache);
   @override
-  void stopRide() {}
-  @override
   void discardRide() {}
   @override
   Future<void> saveRide({

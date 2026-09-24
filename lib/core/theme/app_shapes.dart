@@ -22,15 +22,4 @@ abstract final class AppShapes {
 
   /// Ride dialogs (stop / discard / post-ride summary).
   static const BorderRadius dialog = BorderRadius.all(Radius.circular(20));
-
-  static const RoundedRectangleBorder heroCardBorder =
-      RoundedRectangleBorder(borderRadius: heroCard);
-  static const RoundedRectangleBorder cardBorder =
-      RoundedRectangleBorder(borderRadius: card);
-  static const RoundedRectangleBorder pillBorder =
-      RoundedRectangleBorder(borderRadius: pill);
-  static const RoundedRectangleBorder inputBorder =
-      RoundedRectangleBorder(borderRadius: input);
-  static const RoundedRectangleBorder iconContainerBorder =
-      RoundedRectangleBorder(borderRadius: iconContainer);
 }

@@ -14,12 +14,6 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
 
   Stream<List<Ride>> getAll() => select(rides).watch();
 
-  Stream<List<Ride>> getAllByIds(List<int> rideIds) =>
-      (select(rides)..where((r) => r.rideId.isIn(rideIds))).watch();
-
-  Stream<Ride?> getById(int rideId) =>
-      (select(rides)..where((r) => r.rideId.equals(rideId))).watchSingleOrNull();
-
   Stream<List<RideWithTrackpoints>> getAllRidesWithTrackpoints() =>
       _joinedRides().watch().map(_group);
 
@@ -81,16 +75,6 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
   Future<int> insert(RidesCompanion ride) =>
       into(rides).insertOnConflictUpdate(ride);
 
-  Future<List<int>> insertAll(List<RidesCompanion> rideList) {
-    return transaction(() async {
-      final ids = <int>[];
-      for (final c in rideList) {
-        ids.add(await into(rides).insertOnConflictUpdate(c));
-      }
-      return ids;
-    });
-  }
-
   /// Rides whose row was opened but never stamped with an end time.
   Future<List<Ride>> getUnfinished() =>
       (select(rides)..where((r) => r.endTime.isNull())).get();
@@ -129,55 +113,6 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
   Future<void> updateFavorite(int rideId, bool isFavorite, int? favoritedAt) =>
       (update(rides)..where((r) => r.rideId.equals(rideId))).write(RidesCompanion(
           isFavorite: Value(isFavorite), favoritedAt: Value(favoritedAt)));
-
-  Stream<List<Ride>> getFavoriteRides() => (select(rides)
-        ..where((r) => r.isFavorite.equals(true))
-        ..orderBy(
-            [(r) => OrderingTerm(expression: r.startTime, mode: OrderingMode.desc)]))
-      .watch();
-
-  Stream<List<Ride>> getFilteredFavoriteRides(
-      {int startTime = 0, String sortBy = 'date'}) {
-    final query = select(rides)..where((r) => r.isFavorite.equals(true));
-    if (startTime != 0) {
-      query.where((r) => r.startTime.isBiggerOrEqualValue(startTime));
-    }
-    _applySort(query, sortBy);
-    return query.watch();
-  }
-
-  Stream<List<Ride>> getFilteredRides(
-      {int startTime = 0, String sortBy = 'date', String searchQuery = ''}) {
-    final query = select(rides);
-    if (startTime != 0) {
-      query.where((r) => r.startTime.isBiggerOrEqualValue(startTime));
-    }
-    if (searchQuery.isNotEmpty) {
-      final like = '%$searchQuery%';
-      query.where((r) => r.description.like(like) | r.comment.like(like));
-    }
-    _applySort(query, sortBy);
-    return query.watch();
-  }
-
-  // Mirrors the original ORDER BY: 'duration' sorts by (endTime - startTime) ASC,
-  // any other value (incl. 'date') falls back to startTime DESC. distance/speed
-  // are not SQL-sortable (computed from trackpoints); the ViewModel re-sorts those.
-  void _applySort(SimpleSelectStatement<$RidesTable, Ride> query, String sortBy) {
-    if (sortBy == 'duration') {
-      query.orderBy([
-        (r) => OrderingTerm(
-            expression: r.endTime - r.startTime, mode: OrderingMode.asc),
-        (r) => OrderingTerm(expression: r.startTime, mode: OrderingMode.desc),
-      ]);
-    } else {
-      query.orderBy(
-          [(r) => OrderingTerm(expression: r.startTime, mode: OrderingMode.desc)]);
-    }
-  }
-
-  // Named `deleteRide` to avoid clashing with Drift's `delete(table)` builder.
-  Future<void> deleteRide(Ride ride) => delete(rides).delete(ride);
 
   Future<void> deleteById(int rideId) =>
       (delete(rides)..where((r) => r.rideId.equals(rideId))).go();

@@ -21,42 +21,34 @@ void main() {
         speed: Value(speed),
       );
 
-  test('insert + getById round-trips', () async {
+  test('insert + getByRideId round-trips', () async {
     final rideId = await insertRide();
-    final id = await db.trackpointDao.insert(tp(rideId, 1.0, 2.0, ts: 5, speed: 3.5));
-    final fetched = await db.trackpointDao.getById(id).first;
-    expect(fetched!.latitude, 1.0);
+    await db.trackpointDao.insert(tp(rideId, 1.0, 2.0, ts: 5, speed: 3.5));
+    final fetched = (await db.trackpointDao.getByRideId(rideId).first).single;
+    expect(fetched.latitude, 1.0);
     expect(fetched.longitude, 2.0);
     expect(fetched.timestamp, 5);
     expect(fetched.speed, 3.5);
   });
 
-  test('insertAll inserts every point and getAllByIds reads them', () async {
-    final rideId = await insertRide();
-    final ids = await db.trackpointDao.insertAll([
-      tp(rideId, 1, 1),
-      tp(rideId, 2, 2),
-      tp(rideId, 3, 3),
-    ]);
-    expect(ids, hasLength(3));
-    final fetched = await db.trackpointDao.getAllByIds(ids).first;
-    expect(fetched, hasLength(3));
+  test('getByRideId returns only that ride\'s points', () async {
+    final a = await insertRide();
+    final b = await insertRide();
+    await db.trackpointDao.insert(tp(a, 1, 1));
+    await db.trackpointDao.insert(tp(a, 2, 2));
+    await db.trackpointDao.insert(tp(b, 3, 3));
+    expect(await db.trackpointDao.getByRideId(a).first, hasLength(2));
+    expect(await db.trackpointDao.getByRideId(b).first, hasLength(1));
   });
 
   test('deleting a ride CASCADE-deletes its trackpoints', () async {
     final rideId = await insertRide();
-    await db.trackpointDao.insertAll([tp(rideId, 1, 1), tp(rideId, 2, 2)]);
-    expect(await db.trackpointDao.getAll().first, hasLength(2));
+    await db.trackpointDao.insert(tp(rideId, 1, 1));
+    await db.trackpointDao.insert(tp(rideId, 2, 2));
+    expect(await db.trackpointDao.getByRideId(rideId).first, hasLength(2));
 
     await db.rideDao.deleteById(rideId);
 
-    expect(await db.trackpointDao.getAll().first, isEmpty);
-  });
-
-  test('deleteById removes a single trackpoint', () async {
-    final rideId = await insertRide();
-    final id = await db.trackpointDao.insert(tp(rideId, 1, 1));
-    await db.trackpointDao.deleteById(id);
-    expect(await db.trackpointDao.getById(id).first, isNull);
+    expect(await db.trackpointDao.getByRideId(rideId).first, isEmpty);
   });
 }

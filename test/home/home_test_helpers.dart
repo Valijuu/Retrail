@@ -28,14 +28,6 @@ import 'package:retrail/tracking/ride_tracking_state.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// A controller whose `startRide` is a no-op, for tests that mount `/ride` but
-/// don't drive recording — avoids the real ride's periodic elapsed timer.
-class NoopActiveRideController extends ActiveRideController {
-  NoopActiveRideController(super.tracker, super.cache);
-  @override
-  void startRide() {}
-}
-
 class _NoopSource implements LocationSource {
   @override
   Stream<bool> get serviceEnabled => const Stream.empty();
@@ -147,7 +139,7 @@ activeRideTestOverrides(AppDatabase db, {FakeRecordingController? recording}) {
     previewCacheDirProvider.overrideWithValue(dir),
     rideTrackingStateProvider
         .overrideWith((ref) => Stream.value(const RideTrackingState())),
-    activeRideControllerProvider.overrideWithValue(NoopActiveRideController(
+    activeRideControllerProvider.overrideWithValue(ActiveRideController(
       tracker,
       RoutePreviewCache(
           baseDir: dir,

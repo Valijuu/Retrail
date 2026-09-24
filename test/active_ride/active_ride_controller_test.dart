@@ -15,6 +15,7 @@ import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
+import '../support/ride_lookup.dart';
 
 LocationFix _fix(double lat, double lng, int ageNanos) => LocationFix(
       latitude: lat,
@@ -137,26 +138,6 @@ void main() {
 
     await controller.saveRide(title: 'Empty');
     expect(rendered, isFalse);
-  });
-
-  test('startRide does not start a second ride when already tracking',
-      () async {
-    final tmp = await Directory.systemTemp.createTemp('preview_test');
-    addTearDown(() => tmp.delete(recursive: true));
-    final controller = ActiveRideController(
-      tracker,
-      RoutePreviewCache(
-          baseDir: tmp,
-          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
-    );
-
-    controller.startRide();
-    await pumpEventQueue(); // first ride inserted
-    controller.startRide(); // already tracking → guarded no-op
-    await pumpEventQueue();
-
-    final rides = await db.rideDao.getAll().first;
-    expect(rides.length, 1);
   });
 
   test('discardRide deletes the stopped ride', () async {

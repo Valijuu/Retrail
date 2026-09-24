@@ -119,10 +119,6 @@ class RecordingController extends ActiveRideController {
   SaveArgs? saved;
 
   @override
-  void startRide() => calls.add('start');
-  @override
-  void stopRide() => calls.add('stop');
-  @override
   void discardRide() => calls.add('discard');
   @override
   void pauseOrResume(bool isPaused) => calls.add('pauseOrResume:$isPaused');
@@ -288,7 +284,7 @@ void main() {
     expect(find.textContaining('Location is off'), findsNothing);
   });
 
-  testWidgets('Stop → confirm opens the summary and calls stopRide',
+  testWidgets('Stop → confirm opens the summary and stops the recording',
       (tester) async {
     await pumpScreen(tester);
     await tester.tap(find.text('Stop ride'));

@@ -10,11 +10,6 @@ part 'trackpoint_dao.g.dart';
 class TrackpointDao extends DatabaseAccessor<AppDatabase> with _$TrackpointDaoMixin {
   TrackpointDao(super.db);
 
-  Stream<List<Trackpoint>> getAll() => select(trackpoints).watch();
-
-  Stream<List<Trackpoint>> getAllByIds(List<int> ids) =>
-      (select(trackpoints)..where((t) => t.trackpointId.isIn(ids))).watch();
-
   /// A single ride's trackpoints, indexed via `trackpoints_ride_id`. Used to
   /// lazily render a History card's route preview only for the (usually rare,
   /// post-first-render) cache miss — see issue #21 — instead of the History
@@ -22,26 +17,6 @@ class TrackpointDao extends DatabaseAccessor<AppDatabase> with _$TrackpointDaoMi
   Stream<List<Trackpoint>> getByRideId(int rideId) =>
       (select(trackpoints)..where((t) => t.rideId.equals(rideId))).watch();
 
-  Stream<Trackpoint?> getById(int id) =>
-      (select(trackpoints)..where((t) => t.trackpointId.equals(id)))
-          .watchSingleOrNull();
-
   Future<int> insert(TrackpointsCompanion tp) =>
       into(trackpoints).insertOnConflictUpdate(tp);
-
-  Future<List<int>> insertAll(List<TrackpointsCompanion> list) {
-    return transaction(() async {
-      final ids = <int>[];
-      for (final c in list) {
-        ids.add(await into(trackpoints).insertOnConflictUpdate(c));
-      }
-      return ids;
-    });
-  }
-
-  // Named `deleteRow` to avoid clashing with Drift's `delete(table)` builder.
-  Future<void> deleteRow(Trackpoint tp) => delete(trackpoints).delete(tp);
-
-  Future<void> deleteById(int id) =>
-      (delete(trackpoints)..where((t) => t.trackpointId.equals(id))).go();
 }

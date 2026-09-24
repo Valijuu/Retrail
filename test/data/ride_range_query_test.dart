@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
+import '../support/ride_lookup.dart';
 
 void main() {
   late AppDatabase db;
@@ -101,11 +102,13 @@ void main() {
     test('cascades trackpoint deletes for every deleted ride', () async {
       final a = await insertRideWithTrackpoint();
       final b = await insertRideWithTrackpoint();
-      expect(await db.trackpointDao.getAll().first, hasLength(2));
+      expect(await db.trackpointDao.getByRideId(a).first, hasLength(1));
+      expect(await db.trackpointDao.getByRideId(b).first, hasLength(1));
 
       await db.rideDao.deleteByIds([a, b]);
 
-      expect(await db.trackpointDao.getAll().first, isEmpty);
+      expect(await db.trackpointDao.getByRideId(a).first, isEmpty);
+      expect(await db.trackpointDao.getByRideId(b).first, isEmpty);
     });
   });
 }

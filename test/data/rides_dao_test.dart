@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
+import '../support/ride_lookup.dart';
 
 void main() {
   late AppDatabase db;
@@ -14,7 +15,7 @@ void main() {
         endTime: Value(end),
       );
 
-  test('insert returns an id and getById reads it back', () async {
+  test('insert returns an id and the row reads back', () async {
     final id = await db.rideDao.insert(ride(title: 'Morning cruise', start: 1000));
     final fetched = await db.rideDao.getById(id).first;
     expect(fetched, isNotNull);
@@ -62,16 +63,6 @@ void main() {
     r = await db.rideDao.getById(id).first;
     expect(r!.isFavorite, false);
     expect(r.favoritedAt, isNull);
-  });
-
-  test('getFavoriteRides returns only favorites, newest startTime first', () async {
-    final a = await db.rideDao.insert(ride(title: 'a', start: 100));
-    final b = await db.rideDao.insert(ride(title: 'b', start: 300));
-    await db.rideDao.insert(ride(title: 'c', start: 200)); // not favorite
-    await db.rideDao.updateFavorite(a, true, 1);
-    await db.rideDao.updateFavorite(b, true, 2);
-    final favs = await db.rideDao.getFavoriteRides().first;
-    expect(favs.map((r) => r.description), ['b', 'a']);
   });
 
   test('updateStats writes distance/duration/avg/max speed + hasRoute',

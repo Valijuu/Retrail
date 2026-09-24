@@ -30,15 +30,6 @@ Bounds weekBounds({int? nowMs}) {
   return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
 }
 
-/// First of the current month 00:00:00.000 → last day 23:59:59.999 (local).
-///
-/// A single-month case of [monthRangeBounds], for the month containing `now`.
-Bounds monthBounds({int? nowMs}) {
-  final now = DateTime.fromMillisecondsSinceEpoch(_nowMs(nowMs));
-  return monthRangeBounds(
-      year: now.year, monthFrom: now.month, monthTo: now.month);
-}
-
 /// Day-of-month component for the first day of a month.
 const _firstDayOfMonth = 1;
 
