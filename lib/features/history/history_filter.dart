@@ -96,15 +96,3 @@ int activeFilterCount(HistoryFilter f) {
   if (f.monthFrom != null || f.monthTo != null) count++;
   return count;
 }
-
-/// Whether any non-default filter (search included) is active. Mirrors
-/// `isFilterActive`. See [activeFilterCount].
-bool isFilterActive(HistoryFilter f) {
-  return f.sort != SortOrder.date ||
-      f.query.isNotEmpty ||
-      f.favoritesOnly ||
-      f.activities.isNotEmpty ||
-      f.year != null ||
-      f.monthFrom != null ||
-      f.monthTo != null;
-}

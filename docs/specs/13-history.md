@@ -73,7 +73,6 @@ class RideEntryItem  extends HistoryItem { final Ride ride; final RideStats stat
 List<HistoryItem> buildHistoryItems(List<Ride> rides, HistoryFilter f, {int? nowMs, String? locale});
 
 int activeFilterCount(HistoryFilter f);   // sort≠date + favOnly + activities≠{} + year≠null + month range set (query excluded)
-bool isFilterActive(HistoryFilter f);     // any of the above OR query non-empty
 ```
 
 The default filter is fully unrestricted ("All years", no month range), so every set `year` /
@@ -285,7 +284,7 @@ yet). `chipGreatPace` = "Great pace" / "Gutes Tempo" per the German reference ta
   descending, rides within a day descending.
 
 **`history_filter_test.dart`** / **`history_range_test.dart`** / **`history_providers_test.dart`**:
-`activeFilterCount` (query excluded) and `isFilterActive` (query included) across combinations;
+`activeFilterCount` (query excluded) across combinations;
 `effectiveRange` for all-years / year / year + month range; notifier setters (incl. the Von/Bis
 pull-along); year-picker items. Month/year boundary math lives in `test/domain/time_bounds_test.dart`.
 

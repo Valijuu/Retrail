@@ -266,10 +266,5 @@ void main() {
       // excluded (it has its own visible bar).
       expect(activeFilterCount(f), 5);
     });
-
-    test('isFilterActive includes the search query', () {
-      expect(isFilterActive(const HistoryFilter(query: 'x')), isTrue);
-      expect(isFilterActive(const HistoryFilter()), isFalse);
-    });
   });
 }

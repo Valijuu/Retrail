@@ -46,7 +46,7 @@ void main() {
 
   group('filter badges with year', () {
     // The app's default is "All years"/unrestricted (see
-    // HistoryFilterNotifier) — activeFilterCount/isFilterActive treat any
+    // HistoryFilterNotifier) — activeFilterCount treats any
     // set year as a deviation from that default, no "now" reference needed.
     test('activeFilterCount counts a set year', () {
       const f =
@@ -64,21 +64,10 @@ void main() {
       expect(activeFilterCount(f), 3);
     });
 
-    test('isFilterActive is true when a year is set', () {
-      const f = HistoryFilter(year: 2020);
-      expect(isFilterActive(f), isTrue);
-    });
-
     test('activeFilterCount is 0 for the unrestricted default (year and '
         'month range both null)', () {
       const f = HistoryFilter();
       expect(activeFilterCount(f), 0);
-    });
-
-    test('isFilterActive is false for the unrestricted default and nothing '
-        'else set', () {
-      const f = HistoryFilter();
-      expect(isFilterActive(f), isFalse);
     });
   });
 
@@ -145,11 +134,6 @@ void main() {
     test('activeFilterCount counts monthFrom alone as active', () {
       const f = HistoryFilter(monthFrom: 3);
       expect(activeFilterCount(f), 1);
-    });
-
-    test('isFilterActive is true when only the month range is set', () {
-      const f = HistoryFilter(monthFrom: 3, monthTo: 5);
-      expect(isFilterActive(f), isTrue);
     });
   });
 }
