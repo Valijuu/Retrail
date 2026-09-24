@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
@@ -11,7 +13,8 @@ import 'package:retrail/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<Widget> _app(WidgetTester tester,
-    {Map<String, Object> prefs = const {'last_activity_type': 'SCOOTER'}}) async {
+    {Map<String, Object> prefs = const {'last_activity_type': 'SCOOTER'},
+    Brightness brightness = Brightness.light}) async {
   tester.view.physicalSize = const Size(400, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -27,7 +30,7 @@ Future<Widget> _app(WidgetTester tester,
   return ProviderScope(
     overrides: [preferencesRepositoryProvider.overrideWithValue(repo)],
     child: MaterialApp.router(
-      theme: buildTheme(Brightness.light),
+      theme: buildTheme(brightness),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -89,4 +92,40 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('ride'), findsOneWidget);
   });
+
+  /// The ring's current sweep (0 = empty, 1 = full), read off its painter.
+  double ringProgress(WidgetTester tester) {
+    final paint = tester.widgetList<CustomPaint>(find.byType(CustomPaint))
+        .firstWhere((p) => p.painter.runtimeType.toString() == '_RingPainter');
+    return (paint.painter as dynamic).progress as double;
+  }
+
+  testWidgets('the ring drains in step with the digit and is empty at 0',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    expect(ringProgress(tester), moreOrLessEquals(1.0, epsilon: 0.01));
+
+    // Halfway through "5": the ring is on its way from 5/5 to 4/5.
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(ringProgress(tester), moreOrLessEquals(0.9, epsilon: 0.02));
+
+    // Halfway through "1" (4.5 s in): heading from 1/5 to empty. Pumped in
+    // frame-sized steps so each tick's glide starts on time, like on device.
+    for (var i = 0; i < 40; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('1'), findsOneWidget);
+    expect(ringProgress(tester), moreOrLessEquals(0.1, epsilon: 0.02));
+  });
+
+  for (final brightness in Brightness.values) {
+    testWidgets('$brightness app theme: Start now label stays onPrimary '
+        '(the countdown\'s fixed palette)', (tester) async {
+      await tester.pumpWidget(await _app(tester, brightness: brightness));
+      await tester.pump();
+      final label = tester.renderObject<RenderParagraph>(find.text('Start now'));
+      expect(label.text.style?.color, AppColors.light.onPrimary);
+    });
+  }
 }

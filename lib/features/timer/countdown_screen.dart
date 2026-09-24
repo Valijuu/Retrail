@@ -70,7 +70,13 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
     final text = Theme.of(context).textTheme;
     final activity = ref.watch(lastActivityTypeProvider).asData?.value ??
         ActivityType.defaultType;
-    final progress = _total > 0 ? _timer.value / _total : 0.0;
+    // The ring shows the current second draining: while the digit reads N it
+    // sweeps from N/total down to (N-1)/total, so it is empty exactly when the
+    // count hits 0 (sweeping to N/total instead lagged a second behind and
+    // left a fifth of the ring standing at 0).
+    final value = _timer.value;
+    final ringFrom = _total > 0 ? value / _total : 0.0;
+    final ringTo = _total > 0 && value > 0 ? (value - 1) / _total : 0.0;
 
     return Scaffold(
       backgroundColor: _surface.surface,
@@ -97,7 +103,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
                     const SizedBox(height: 16),
                     _ActivityChip(activity: activity),
                     const SizedBox(height: 32),
-                    _CountdownRing(progress: progress, value: _timer.value),
+                    _CountdownRing(from: ringFrom, to: ringTo, value: value),
                     const SizedBox(height: 20),
                     _AddTimeChip(
                         label: l10n.timerAddFiveSec,
@@ -129,11 +135,14 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
                           style: FilledButton.styleFrom(
                             backgroundColor: _accent.primary,
                             foregroundColor: _accent.onPrimary,
+                            // On the button style, not the Text: the
+                            // theme's titleMedium color would override
+                            // foregroundColor (and follow the app theme).
+                            textStyle: text.titleMedium,
                             shape: const RoundedRectangleBorder(
                                 borderRadius: AppShapes.pill),
                           ),
-                          child: Text(l10n.timerStartNow,
-                              style: text.titleMedium),
+                          child: Text(l10n.timerStartNow),
                         ),
                       ),
                     ],
@@ -232,8 +241,14 @@ class _GpsStatusRow extends StatelessWidget {
 }
 
 class _CountdownRing extends StatelessWidget {
-  const _CountdownRing({required this.progress, required this.value});
-  final double progress;
+  const _CountdownRing(
+      {required this.from, required this.to, required this.value});
+
+  /// Sweep at the start of the current second (only used on the first build).
+  final double from;
+
+  /// Sweep the ring glides to by the end of the current second.
+  final double to;
   final int value;
 
   @override
@@ -244,11 +259,11 @@ class _CountdownRing extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // End-only tween: the builder remembers the previous value and sweeps
-          // to the new `progress` linearly over the 1 s tick, so the arc glides
-          // instead of snapping each second (begin == end never interpolates).
+          // The builder starts at [from] on the first build, then on every
+          // tick glides from wherever it is to the new [to] linearly over the
+          // 1 s tick, so the arc drains smoothly instead of snapping.
           TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: progress),
+            tween: Tween<double>(begin: from, end: to),
             duration: const Duration(milliseconds: 1000),
             curve: Curves.linear,
             builder: (context, animated, _) => CustomPaint(

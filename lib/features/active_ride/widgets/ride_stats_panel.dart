@@ -162,11 +162,14 @@ class _ActionButton extends StatelessWidget {
           ? null
           : WidgetStatePropertyAll(
               BorderSide(color: colors.surfaceContainer, width: 1.5)),
+      // Size/weight only — set here rather than on the Text, where the
+      // theme's labelLarge color would override foregroundColor.
+      textStyle: WidgetStatePropertyAll(Theme.of(context).textTheme.labelLarge),
     );
     return TextButton(
       onPressed: onTap,
       style: style,
-      child: Text(label, style: Theme.of(context).textTheme.labelLarge),
+      child: Text(label),
     );
   }
 }
