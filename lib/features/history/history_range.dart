@@ -3,7 +3,7 @@ import 'history_filter.dart';
 
 /// Computes the `[start, end]` epoch-millisecond window (either bound
 /// nullable = unbounded that side) that a [HistoryFilter] restricts rides to.
-/// Feeds `RideRepository.getRidesWithTrackpointsInRange`.
+/// Feeds `RideRepository.getRidesInRange`.
 ///
 /// - `f.year == null` ("All years") → unrestricted (`null, null`). The month
 ///   range is deliberately ignored here — it becomes a cross-year "these
@@ -12,7 +12,7 @@ import 'history_filter.dart';
 ///   restriction is applied later, in `buildHistoryItems` (in-memory, via
 ///   `monthOfYearInRange`).
 /// - `f.year` set, month range set (`monthFrom`/`monthTo` non-null) →
-///   [monthRangeBounds] for that year, defaulting an unset side to Jan/Dec.
+///   [monthRangeBounds] for that year (which defaults an unset side to Jan/Dec).
 /// - `f.year` set, no month range → the full-year window from [yearBounds].
 ///
 /// Every value `f` carries is already concrete (no "now"-dependent
@@ -23,10 +23,7 @@ import 'history_filter.dart';
   final hasMonthRange = f.monthFrom != null || f.monthTo != null;
   if (hasMonthRange) {
     return monthRangeBounds(
-      year: f.year!,
-      monthFrom: f.monthFrom ?? 1,
-      monthTo: f.monthTo ?? 12,
-    );
+        year: f.year!, monthFrom: f.monthFrom, monthTo: f.monthTo);
   }
   return yearBounds(year: f.year);
 }

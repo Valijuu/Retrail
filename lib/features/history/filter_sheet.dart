@@ -74,7 +74,7 @@ class HistoryFilterSheet extends ConsumerWidget {
                 Expanded(
                   child: _MonthRangeDropdown(
                     label: l10n.historyMonthFromLabel,
-                    value: filter.monthFrom ?? 1,
+                    value: filter.monthFrom ?? DateTime.january,
                     locale: locale,
                     onChanged: notifier.setMonthFrom,
                   ),
@@ -83,7 +83,7 @@ class HistoryFilterSheet extends ConsumerWidget {
                 Expanded(
                   child: _MonthRangeDropdown(
                     label: l10n.historyMonthToLabel,
-                    value: filter.monthTo ?? 12,
+                    value: filter.monthTo ?? DateTime.december,
                     locale: locale,
                     onChanged: notifier.setMonthTo,
                   ),

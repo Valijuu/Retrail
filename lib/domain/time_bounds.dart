@@ -39,13 +39,20 @@ Bounds monthBounds({int? nowMs}) {
       year: now.year, monthFrom: now.month, monthTo: now.month);
 }
 
+/// Day-of-month component for the first day of a month.
+const _firstDayOfMonth = 1;
+
 /// First of [monthFrom] 00:00:00.000 → last day of [monthTo] 23:59:59.999
-/// (local), both within [year]. Caller guarantees `1 <= monthFrom <= monthTo
-/// <= 12`.
-Bounds monthRangeBounds(
-    {required int year, required int monthFrom, required int monthTo}) {
-  final start = DateTime(year, monthFrom, 1);
-  final endExclusive = DateTime(year, monthTo + 1, 1);
+/// (local), both within [year]. A missing bound defaults to the respective
+/// end of the year ([monthFrom] → January, [monthTo] → December), mirroring
+/// [monthOfYearInRange]. Caller guarantees `1 <= monthFrom <= monthTo <= 12`
+/// when both are given.
+Bounds monthRangeBounds({required int year, int? monthFrom, int? monthTo}) {
+  final firstMonth = monthFrom ?? DateTime.january;
+  final lastMonth = monthTo ?? DateTime.december;
+  final start = DateTime(year, firstMonth, _firstDayOfMonth);
+  // Month overflow (13) rolls into January of the next year.
+  final endExclusive = DateTime(year, lastMonth + 1, _firstDayOfMonth);
   return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
 }
 

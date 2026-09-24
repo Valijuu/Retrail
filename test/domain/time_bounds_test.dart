@@ -130,6 +130,35 @@ void main() {
         yearBounds(year: 2024));
   });
 
+  test('monthRangeBounds: monthFrom omitted (monthTo=5, 2024) → defaults to Jan 1 00:00 … May 31 23:59:59.999',
+      () {
+    final (s, e) = monthRangeBounds(year: 2024, monthTo: 5);
+    expect(DateTime.fromMillisecondsSinceEpoch(s), DateTime(2024, 1, 1));
+    expect(DateTime.fromMillisecondsSinceEpoch(e),
+        DateTime(2024, 5, 31, 23, 59, 59, 999));
+  });
+
+  test('monthRangeBounds: monthTo omitted (monthFrom=3, 2024) → defaults to Mar 1 00:00 … Dec 31 23:59:59.999',
+      () {
+    final (s, e) = monthRangeBounds(year: 2024, monthFrom: 3);
+    expect(DateTime.fromMillisecondsSinceEpoch(s), DateTime(2024, 3, 1));
+    expect(DateTime.fromMillisecondsSinceEpoch(e),
+        DateTime(2024, 12, 31, 23, 59, 59, 999));
+  });
+
+  test('monthRangeBounds: explicit null monthFrom/monthTo behave like omitted (Feb–Dec 2023, Jan–Oct 2023)',
+      () {
+    expect(monthRangeBounds(year: 2023, monthFrom: 2, monthTo: null),
+        monthRangeBounds(year: 2023, monthFrom: 2, monthTo: 12));
+    expect(monthRangeBounds(year: 2023, monthFrom: null, monthTo: 10),
+        monthRangeBounds(year: 2023, monthFrom: 1, monthTo: 10));
+  });
+
+  test('monthRangeBounds: both omitted → equals yearBounds(year:) for the same year',
+      () {
+    expect(monthRangeBounds(year: 2024), yearBounds(year: 2024));
+  });
+
   test('monthOfYearInRange: month exactly on the lower bound (monthFrom) → true',
       () {
     final ms = DateTime(2024, 5, 15).millisecondsSinceEpoch;
