@@ -294,7 +294,10 @@ class _Thumbnail extends ConsumerWidget {
                       : Border.all(color: colors.onSurfaceVariant, width: 1.5),
                 ),
                 child: selected
-                    ? Icon(Icons.check, size: 16, color: colors.onPrimary)
+                    ? Icon(Icons.check,
+                        size: 16,
+                        color: colors.onPrimary,
+                        semanticLabel: l10n.a11ySelected)
                     : null,
               ),
             ),

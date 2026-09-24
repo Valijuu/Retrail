@@ -383,6 +383,17 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
+  testWidgets('the selected card\'s check mark is announced as "Selected"',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pump(tester, [_entry(1), _entry(2)]);
+    expect(find.bySemanticsLabel(RegExp(r'\bSelected\b')), findsNothing);
+    await tester.longPress(find.byType(HistoryRideCard).first);
+    await tester.pump();
+    expect(find.bySemanticsLabel(RegExp(r'\bSelected\b')), findsOneWidget);
+    semantics.dispose();
+  });
+
   testWidgets('long-press enters selection; batch delete confirms',
       (tester) async {
     await pump(tester, [_entry(1), _entry(2)]);
