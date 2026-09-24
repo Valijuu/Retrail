@@ -58,4 +58,55 @@ void main() {
       expect(formatDistanceKm(4200.0), '4.20 km');
     });
   });
+
+  group('formatDecimal', () {
+    test("formatDecimal: no locale, 1 decimal — 18.8 → '18.8'", () {
+      expect(formatDecimal(18.8, 1), '18.8');
+    });
+    test("formatDecimal: German, 1 decimal — 18.8 → '18,8'", () {
+      expect(formatDecimal(18.8, 1, locale: 'de'), '18,8');
+    });
+    test("formatDecimal: English, 2 decimals — 3.5 → '3.50'", () {
+      expect(formatDecimal(3.5, 2, locale: 'en'), '3.50');
+    });
+    test("formatDecimal: German, 2 decimals — 3.5 → '3,50'", () {
+      expect(formatDecimal(3.5, 2, locale: 'de'), '3,50');
+    });
+    test("formatDecimal: 0 decimals rounds — 12.6 → '13', no separator", () {
+      expect(formatDecimal(12.6, 0, locale: 'de'), '13');
+    });
+    test("formatDecimal: no thousands grouping — 1234.5 (de, 1) → '1234,5'", () {
+      expect(formatDecimal(1234.5, 1, locale: 'de'), '1234,5');
+    });
+    test("formatDecimal: region-qualified locale — 'de_DE' → '18,8'", () {
+      expect(formatDecimal(18.8, 1, locale: 'de_DE'), '18,8');
+    });
+  });
+
+  group('formatDistanceKm / formatSpeedKmh with locale', () {
+    test("formatDistanceKm: German — 3500 m → '3,50 km'", () {
+      expect(formatDistanceKm(3500, locale: 'de'), '3,50 km');
+    });
+    test("formatSpeedKmh: German — 14.0 → '14,0 km/h'", () {
+      expect(formatSpeedKmh(14.0, locale: 'de'), '14,0 km/h');
+    });
+    test("formatSpeedKmh: German, null → '-- km/h' (placeholder unchanged)", () {
+      expect(formatSpeedKmh(null, locale: 'de'), '-- km/h');
+    });
+  });
+
+  group('formatShortDistanceKm', () {
+    test("formatShortDistanceKm: under 10 km one decimal — 3500 m (de) → '3,5 km'", () {
+      expect(formatShortDistanceKm(3500, locale: 'de'), '3,5 km');
+    });
+    test("formatShortDistanceKm: 10 km and up no decimals — 12600 m → '13 km'", () {
+      expect(formatShortDistanceKm(12600), '13 km');
+    });
+    test("formatShortDistanceKm: English — 3500 m → '3.5 km'", () {
+      expect(formatShortDistanceKm(3500, locale: 'en'), '3.5 km');
+    });
+    test("formatShortDistanceKm: 0 m → '0.0 km'", () {
+      expect(formatShortDistanceKm(0), '0.0 km');
+    });
+  });
 }

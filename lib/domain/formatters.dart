@@ -79,22 +79,68 @@ String formatDateLabel(
   }
 }
 
+/// `NumberFormat` pattern tokens: a mandatory digit and the (locale-mapped)
+/// decimal separator.
+const String _requiredDigit = '0';
+const String _patternDecimalSeparator = '.';
+
+/// Same rationale as [_dateFormatCache]: [formatDecimal] runs per ride card on
+/// every build, and a built `NumberFormat` is a stateless formatter for its
+/// (pattern, locale). A null [locale] is resolved to the current default
+/// locale for the key, so a later `Intl.defaultLocale` change isn't masked by
+/// a stale cached instance.
+final _numberFormatCache = <String, NumberFormat>{};
+NumberFormat _cachedNumberFormat(String pattern, String? locale) {
+  final resolvedLocale = locale ?? Intl.getCurrentLocale();
+  return _numberFormatCache.putIfAbsent(
+      '$pattern|$resolvedLocale', () => NumberFormat(pattern, resolvedLocale));
+}
+
+/// `NumberFormat` pattern for exactly [decimals] fraction digits, no grouping
+/// (e.g. `0`, `0.0`, `0.00`).
+String _fixedDecimalsPattern(int decimals) => decimals == 0
+    ? _requiredDigit
+    : '$_requiredDigit$_patternDecimalSeparator${_requiredDigit * decimals}';
+
+/// [value] with exactly [decimals] fraction digits, in [locale]'s decimal
+/// separator.
+String formatDecimal(double value, int decimals, {String? locale}) =>
+    _cachedNumberFormat(_fixedDecimalsPattern(decimals), locale).format(value);
+
 const double _metresPerKm = 1000;
 const int _distanceDecimalPlaces = 2;
 const String _kmUnit = 'km';
 
-/// `X.XX km` — converts [metres] to kilometres with two decimal places.
-String formatDistanceKm(double metres) =>
-    '${(metres / _metresPerKm).toStringAsFixed(_distanceDecimalPlaces)} $_kmUnit';
+/// `X.XX km` — converts [metres] to kilometres with two decimal places, using
+/// [locale]'s decimal separator (e.g. `1,23 km` in German).
+String formatDistanceKm(double metres, {String? locale}) =>
+    '${formatDecimal(metres / _metresPerKm, _distanceDecimalPlaces, locale: locale)} $_kmUnit';
+
+/// From this many kilometres on, the short distance drops its fraction digit.
+const double _shortDistanceWholeKmThreshold = 10;
+const int _shortDistanceDecimalPlaces = 1;
+const int _wholeKmDecimalPlaces = 0;
+
+/// Compact distance for the History ride card: `X.X km` under 10 km, whole
+/// kilometres (`XX km`) from there on, using [locale]'s decimal separator
+/// (e.g. `9,9 km` in German).
+String formatShortDistanceKm(double metres, {String? locale}) {
+  final km = metres / _metresPerKm;
+  final decimals = km < _shortDistanceWholeKmThreshold
+      ? _shortDistanceDecimalPlaces
+      : _wholeKmDecimalPlaces;
+  return '${formatDecimal(km, decimals, locale: locale)} $_kmUnit';
+}
 
 const int _speedDecimalPlaces = 1;
 const String _speedPlaceholder = '--';
 const String _kmhUnit = 'km/h';
 
-/// `X.X km/h`, or `-- km/h` when [kmh] is null.
-String formatSpeedKmh(double? kmh) {
+/// `X.X km/h` using [locale]'s decimal separator (e.g. `12,3 km/h` in
+/// German), or `-- km/h` when [kmh] is null.
+String formatSpeedKmh(double? kmh, {String? locale}) {
   final value = kmh == null
       ? _speedPlaceholder
-      : kmh.toStringAsFixed(_speedDecimalPlaces);
+      : formatDecimal(kmh, _speedDecimalPlaces, locale: locale);
   return '$value $_kmhUnit';
 }
