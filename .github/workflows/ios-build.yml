@@ -10,6 +10,16 @@ name: iOS build
 on:
   push:
     branches: [main, "phase/**"]
+    # Only when something that ends up in the app changed — docs/specs, Android
+    # and Dart tests don't need a 15-minute macOS build.
+    paths:
+      - "lib/**"
+      - "ios/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "l10n.yaml"
+      - ".github/workflows/ios-build.yml"
   workflow_dispatch:
 
 permissions:

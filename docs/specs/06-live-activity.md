@@ -218,7 +218,7 @@ Hand-written, mirroring Xcode's "Widget Extension" template:
 
 ## G. CI — `.github/workflows/ios-build.yml`
 
-- Runner `macos-15`; triggers: push to `main` and `phase/**` (so a phase branch is compile-checked before it lands) + `workflow_dispatch`. Also fails if the `.appex` was not embedded.
+- Runner `macos-15`; triggers: push to `main` and `phase/**` (so a phase branch is compile-checked before it lands) **when app code changed** (`lib/`, `ios/`, `assets/`, `pubspec.*`, `l10n.yaml`, the workflow itself) + `workflow_dispatch`. Also fails if the `.appex` was not embedded.
 - Steps: checkout → `subosito/flutter-action` (stable, cached) → `flutter pub get` →
   `flutter build ios --release --no-codesign --dart-define=MAPTILER_KEY=${{ secrets.MAPTILER_KEY }}`
   → package `build/ios/iphoneos/Runner.app` as `Payload/Runner.app` → zip to `Retrail.ipa` →

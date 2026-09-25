@@ -21,8 +21,8 @@ installing. Background: Spec 6 §G/§H.
 ## Each new build
 
 1. GitHub → **Actions** → **iOS build** → the latest green run → download the artifact
-   `Retrail-ios-<n>`. It runs on every push to `main` / `phase/**`, or manually via
-   "Run workflow".
+   `Retrail-ios-<n>`. It runs on every push to `main` / `phase/**` that changes app code
+   (`lib/`, `ios/`, `assets/`, `pubspec.*`), or manually via "Run workflow".
 2. Unpack: `unzip Retrail-ios-*.zip && 7z x Retrail.ipa.7z` (asks for `IPA_PASSWORD`).
 3. Install: `splice install Retrail.ipa`.
 4. The first time, trust your Apple ID on the iPhone: Settings → General → VPN & Device
