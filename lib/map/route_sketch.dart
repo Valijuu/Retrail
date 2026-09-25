@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import '../domain/route_markers.dart';
 import 'preview_projection.dart';
+import 'route_marker_painter.dart';
 import '../core/theme/theme_context.dart';
 
 /// Proportionally scales [points] into a [w] × [h] box, centered. Tile-free
@@ -62,10 +64,7 @@ class _RouteSketchPainter extends CustomPainter {
     }
     canvas.drawPath(path, _stroke(colors.routeLineHalo, 6));
     canvas.drawPath(path, _stroke(colors.routeLineBlue, 3.5));
-    canvas.drawCircle(Offset(offsets.first.x, offsets.first.y), 4,
-        Paint()..color = colors.markerStartGreen);
-    canvas.drawCircle(Offset(offsets.last.x, offsets.last.y), 4,
-        Paint()..color = colors.markerEndRed);
+    paintRouteDecorations(canvas, offsets, routeEndpointStyle(points), colors);
   }
 
   Paint _stroke(Color color, double width) => Paint()

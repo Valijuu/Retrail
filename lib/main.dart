@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,6 +66,11 @@ Future<void> main() async {
 
   // Debug-only sample rides for manually checking the history/detail map on
   // more than one route shape. No-ops once the rides table isn't empty.
+  // Drop preview PNGs cached by an older renderer version (each version bump
+  // leaves its predecessor's directory behind). Fire-and-forget: nothing
+  // waits on it, and the current version's directory is never touched.
+  unawaited(container.read(routePreviewCacheProvider).purgeOutdatedVersions());
+
   if (kDebugMode) {
     await seedSampleRidesIfEmpty(
       container.read(rideRepositoryProvider),

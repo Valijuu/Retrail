@@ -22,6 +22,15 @@ typedef PreviewRenderer = Future<PreviewResult> Function(
 /// served immediately but flagged with a `.stale` sidecar; the next
 /// [ensurePreview] re-renders it, upgrading to the full-tile PNG once online —
 /// "save flat sketch now, regenerate full tiles later".
+/// Bumped whenever cached PNGs must be re-rendered for every ride:
+/// v5 — previewPixelRatio 2.0 → 3.0 (sharper); v6 — start ring, finish flag,
+/// loop marker and direction arrows. A new directory makes existing rides
+/// re-render instead of serving the outdated PNG (`RoutePreviewCache.purgeOutdatedVersions`
+/// clears the old ones).
+const int _cacheVersion = 6;
+const String _versionDir = 'ride_previews_v$_cacheVersion';
+final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
+
 class RoutePreviewCache {
   RoutePreviewCache(
       {required this.baseDir,
@@ -64,10 +73,22 @@ class RoutePreviewCache {
 
   File fileFor(int rideId, {required Brightness brightness}) {
     final suffix = brightness == Brightness.dark ? '_dark' : '';
-    // `_v5`: previewPixelRatio raised 2.0 -> 3.0 (see preview_projection.dart)
-    // — a new directory forces existing rides to re-render at the sharper
-    // resolution instead of serving the old, now visibly blurry PNG.
-    return File('${baseDir.path}/ride_previews_v5/$rideId$suffix.png');
+    return File('${baseDir.path}/$_versionDir/$rideId$suffix.png');
+  }
+
+  /// Deletes preview directories left behind by earlier [_cacheVersion]s
+  /// (`ride_previews_v<N>` other than the current one) — each bump otherwise
+  /// orphans every cached PNG of the previous version on disk. Only touches
+  /// directories matching that exact pattern inside [baseDir].
+  Future<void> purgeOutdatedVersions() async {
+    if (!await baseDir.exists()) return;
+    await for (final entity in baseDir.list()) {
+      if (entity is! Directory) continue;
+      final name = entity.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
+      if (_versionDirPattern.hasMatch(name) && name != _versionDir) {
+        await entity.delete(recursive: true);
+      }
+    }
   }
 
   /// Sidecar flagging the cached PNG as a degraded fallback to be re-rendered.

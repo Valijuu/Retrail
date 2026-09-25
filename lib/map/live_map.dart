@@ -11,7 +11,9 @@ import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
 import '../features/onboarding/activity_type_ui.dart';
 import 'map_config.dart';
+import '../domain/route_markers.dart';
 import 'preview_projection.dart';
+import 'route_marker_painter.dart';
 import '../core/theme/theme_context.dart';
 
 /// What the camera should do on a [LiveMap] update. Pure, so the follow /
@@ -99,6 +101,20 @@ String _pointGeoJson(RoutePoint p) => jsonEncode({
       'geometry': {'type': 'Point', 'coordinates': [p.lng, p.lat]},
       'properties': <String, Object?>{},
     });
+
+/// MapLibre image id of the direction chevron.
+const _arrowImage = 'route-arrow';
+
+/// Screen distance between direction chevrons on the map's route line.
+const double _arrowSpacingPx = 70;
+
+/// The chevron PNG is sized for the 3.5dp preview line; the map's line is
+/// 4.5dp wide, so its chevrons are scaled up to match.
+const double _arrowIconSize = 1.3;
+
+/// Endpoint marker PNGs are sized for the preview; the map's markers read a
+/// little larger (they replace the old 7dp + 3dp-ring dots).
+const double _endpointIconSize = 1.3;
 
 /// `#RRGGBB` for a token [Color], the form MapLibre paint properties expect.
 /// `toARGB32()` is the non-deprecated 32-bit accessor (replaces `Color.value`).
@@ -384,11 +400,9 @@ class _LiveMapState extends State<LiveMap>
     _sourcesReady = false;
     _markerImages.clear();
     final colors = context.colors;
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final halo = _hex(colors.routeLineHalo);
-    final ring = _hex(colors.onMap);
     final blue = _hex(colors.routeLineBlue);
-    final green = _hex(colors.markerStartGreen);
-    final red = _hex(colors.markerEndRed);
 
     await style.addSource(
         GeoJsonSource(id: 'route', data: routeLineGeoJson(widget.points)));
@@ -404,40 +418,44 @@ class _LiveMapState extends State<LiveMap>
       layout: const {'line-cap': 'round', 'line-join': 'round'},
       paint: {'line-color': blue, 'line-width': 4.5},
     ));
+    // Direction chevrons, placed and rotated along the line by MapLibre.
+    await style.addImage(
+        _arrowImage, await routeArrowImagePng(colors, pixelRatio));
+    await style.addLayer(SymbolStyleLayer(
+      id: 'route-arrows',
+      sourceId: 'route',
+      layout: const {
+        'symbol-placement': 'line',
+        'symbol-spacing': _arrowSpacingPx,
+        'icon-image': _arrowImage,
+        'icon-size': _arrowIconSize,
+        'icon-rotation-alignment': 'map',
+        'icon-keep-upright': false,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+    ));
 
     // Marker mode mirrors the two original composables: the detail / fullscreen
-    // map (fitBounds) draws green start + red end dots and NO current marker;
-    // the live / active-ride map draws ONLY the current-position marker.
+    // map (fitBounds) draws the start ring + finish flag (or the combined loop
+    // marker) and NO current marker; the live / active-ride map draws ONLY
+    // the current-position marker.
     if (widget.fitBounds) {
-      if (widget.points.isNotEmpty) {
-        await style.addSource(GeoJsonSource(
-            id: 'start', data: _pointGeoJson(widget.points.first)));
-        await style.addLayer(CircleStyleLayer(
-          id: 'start-dot',
-          sourceId: 'start',
-          // Same dot styling as the blue current marker (radius 7 + 3px white
-          // ring), in the start colour.
-          paint: {
-            'circle-radius': 7.0,
-            'circle-color': green,
-            'circle-stroke-width': 3.0,
-            'circle-stroke-color': ring,
-          },
-        ));
-      }
-      if (widget.points.length >= 2) {
-        await style.addSource(GeoJsonSource(
-            id: 'end', data: _pointGeoJson(widget.points.last)));
-        await style.addLayer(CircleStyleLayer(
-          id: 'end-dot',
-          sourceId: 'end',
-          paint: {
-            'circle-radius': 7.0,
-            'circle-color': red,
-            'circle-stroke-width': 3.0,
-            'circle-stroke-color': ring,
-          },
-        ));
+      final points = widget.points;
+      switch (routeEndpointStyle(points)) {
+        case RouteEndpointStyle.none:
+          break;
+        case RouteEndpointStyle.startOnly:
+          await _addEndpointMarker(style, 'start', points.first,
+              RouteMarkerImage.start, colors, pixelRatio);
+        case RouteEndpointStyle.open:
+          await _addEndpointMarker(style, 'start', points.first,
+              RouteMarkerImage.start, colors, pixelRatio);
+          await _addEndpointMarker(style, 'end', points.last,
+              RouteMarkerImage.finish, colors, pixelRatio);
+        case RouteEndpointStyle.loop:
+          await _addEndpointMarker(style, 'start', points.first,
+              RouteMarkerImage.loop, colors, pixelRatio);
       }
     } else {
       // Current-position marker, updated per fix via updateGeoJsonSource (see
@@ -517,6 +535,31 @@ class _LiveMapState extends State<LiveMap>
   /// Adds the live `current-dot` marker layer for [type]: the amber activity
   /// badge (Android `makeIconBitmap` parity) for known types, or the plain blue
   /// dot ([blue]) for null/OTHER. Each badge image is rasterized once.
+  /// A start/finish/loop marker (see route_marker_painter.dart) as a symbol on
+  /// its own point source [id].
+  Future<void> _addEndpointMarker(
+      StyleController style,
+      String id,
+      RoutePoint at,
+      RouteMarkerImage kind,
+      AppColors colors,
+      double pixelRatio) async {
+    final imageId = 'endpoint-${kind.name}';
+    await style.addImage(
+        imageId, await routeMarkerImagePng(kind, colors, pixelRatio));
+    await style.addSource(GeoJsonSource(id: id, data: _pointGeoJson(at)));
+    await style.addLayer(SymbolStyleLayer(
+      id: '$id-marker',
+      sourceId: id,
+      layout: {
+        'icon-image': imageId,
+        'icon-size': _endpointIconSize,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+    ));
+  }
+
   Future<void> _addCurrentMarker(
       StyleController style, ActivityType? type, String blue) async {
     final ring = _hex(context.colors.onMap);

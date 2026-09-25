@@ -18,6 +18,28 @@ void main() {
 
   const points = <RoutePoint>[(lat: 1, lng: 2), (lat: 3, lng: 4)];
 
+  test('purgeOutdatedVersions deletes older preview dirs, keeps the current '
+      'one and anything unrelated', () async {
+    final cache =
+        RoutePreviewCache(baseDir: tempDir, render: (_, _) async => _png([1]));
+    await cache.ensurePreview(7, points, brightness: Brightness.light);
+    final current = cache.fileFor(7, brightness: Brightness.light).parent;
+    final old4 = Directory('${tempDir.path}/ride_previews_v4')..createSync();
+    final old5 = Directory('${tempDir.path}/ride_previews_v5')..createSync();
+    File('${old5.path}/7.png').writeAsBytesSync([1]);
+    final unrelated = Directory('${tempDir.path}/ride_previews_backup')
+      ..createSync();
+    final dbFile = File('${tempDir.path}/retrail.sqlite')..writeAsBytesSync([1]);
+
+    await cache.purgeOutdatedVersions();
+
+    expect(old4.existsSync(), isFalse);
+    expect(old5.existsSync(), isFalse);
+    expect(current.existsSync(), isTrue);
+    expect(unrelated.existsSync(), isTrue);
+    expect(dbFile.existsSync(), isTrue);
+  });
+
   test('generates the file once per brightness and reuses it', () async {
     var renders = 0;
     final cache = RoutePreviewCache(

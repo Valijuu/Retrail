@@ -2,7 +2,9 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import '../core/theme/app_colors.dart';
+import '../domain/route_markers.dart';
 import 'preview_projection.dart';
+import 'route_marker_painter.dart';
 import 'route_sketch.dart' show sketchOffsets;
 import 'tile_grid.dart';
 
@@ -72,34 +74,11 @@ Future<PreviewResult> renderPreviewPng({
     image.dispose();
   }
 
-  if (points.length >= 2) {
-    final path = ui.Path();
-    for (var i = 0; i < points.length; i++) {
-      final o = projectPoint(points[i], framing);
-      if (i == 0) {
-        path.moveTo(o.x, o.y);
-      } else {
-        path.lineTo(o.x, o.y);
-      }
-    }
-    canvas.drawPath(path, _stroke(colors.routeLineHalo, 6));
-    canvas.drawPath(path, _stroke(colors.routeLineBlue, 3.5));
-  }
-
-  // Start/end dots, matching the live detail map: a green start dot whenever
-  // there is a point (so a single-point / standstill ride still shows where it
-  // was), and a red end dot only once there are two — each styled with a white
-  // halo like the live map's markers.
-  if (points.isNotEmpty) {
-    final start = projectPoint(points.first, framing);
-    _styledDot(canvas, ui.Offset(start.x, start.y), colors.markerStartGreen,
-        colors.routeLineHalo);
-  }
-  if (points.length >= 2) {
-    final end = projectPoint(points.last, framing);
-    _styledDot(canvas, ui.Offset(end.x, end.y), colors.markerEndRed,
-        colors.routeLineHalo);
-  }
+  final offsets = [for (final p in points) projectPoint(p, framing)];
+  _paintRoute(canvas, offsets, colors);
+  // Arrows + start ring / finish flag (or the combined loop marker), matching
+  // the live detail map; a single-point ride still shows its start ring.
+  paintRouteDecorations(canvas, offsets, routeEndpointStyle(points), colors);
 
   final picture = recorder.endRecording();
   final image = await picture.toImage(
@@ -110,11 +89,16 @@ Future<PreviewResult> renderPreviewPng({
   return PreviewResult(bytes!.buffer.asUint8List(), complete: !missingTile);
 }
 
-/// A start/end dot styled like the live map's markers: a [color] disc on a white
-/// [halo] ring.
-void _styledDot(ui.Canvas canvas, ui.Offset c, ui.Color color, ui.Color halo) {
-  canvas.drawCircle(c, 6.5, ui.Paint()..color = halo);
-  canvas.drawCircle(c, 4.5, ui.Paint()..color = color);
+/// Halo + blue route line through [offsets] (nothing for fewer than two).
+void _paintRoute(
+    ui.Canvas canvas, List<PreviewOffset> offsets, AppColors colors) {
+  if (offsets.length < 2) return;
+  final path = ui.Path()..moveTo(offsets.first.x, offsets.first.y);
+  for (final o in offsets.skip(1)) {
+    path.lineTo(o.x, o.y);
+  }
+  canvas.drawPath(path, _stroke(colors.routeLineHalo, 6));
+  canvas.drawPath(path, _stroke(colors.routeLineBlue, 3.5));
 }
 
 ui.Paint _stroke(ui.Color color, double width) => ui.Paint()
@@ -147,22 +131,8 @@ Future<PreviewResult> renderSketchPng({
       ui.Rect.fromLTWH(0, 0, w, h), ui.Paint()..color = colors.mapTerrain);
 
   final offsets = sketchOffsets(points, w, h);
-  if (offsets.length >= 2) {
-    final path = ui.Path()..moveTo(offsets.first.x, offsets.first.y);
-    for (final o in offsets.skip(1)) {
-      path.lineTo(o.x, o.y);
-    }
-    canvas.drawPath(path, _stroke(colors.routeLineHalo, 6));
-    canvas.drawPath(path, _stroke(colors.routeLineBlue, 3.5));
-  }
-  if (offsets.isNotEmpty) {
-    _styledDot(canvas, ui.Offset(offsets.first.x, offsets.first.y),
-        colors.markerStartGreen, colors.routeLineHalo);
-  }
-  if (offsets.length >= 2) {
-    _styledDot(canvas, ui.Offset(offsets.last.x, offsets.last.y),
-        colors.markerEndRed, colors.routeLineHalo);
-  }
+  _paintRoute(canvas, offsets, colors);
+  paintRouteDecorations(canvas, offsets, routeEndpointStyle(points), colors);
 
   final picture = recorder.endRecording();
   final image = await picture.toImage(

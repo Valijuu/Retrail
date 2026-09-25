@@ -20,7 +20,7 @@ LiveIndicator      = 0xFFFFBB70
 // Map
 MapTerrain         = 0xFFDDE8DD   MapTerrainGrid     = 0xFFCCE0CC
 RouteLineBlue      = 0xFF2563EB   RouteLineHalo      = 0xFFFFFFFF
-MarkerStartGreen   = 0xFF16A34A   MarkerEndRed       = 0xFFDC2626
+MarkerStartGreen   = 0xFF16A34A   // start ring; the finish flag is Scrim/OnMap chequer
 // Overlays
 Scrim              = 0xFF000000   OnMap              = 0xFFFFFFFF
 ```
