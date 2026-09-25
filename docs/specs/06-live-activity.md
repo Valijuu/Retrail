@@ -203,18 +203,27 @@ Hand-written, mirroring Xcode's "Widget Extension" template:
 - Steps: checkout → `subosito/flutter-action` (stable, cached) → `flutter pub get` →
   `flutter build ios --release --no-codesign --dart-define=MAPTILER_KEY=${{ secrets.MAPTILER_KEY }}`
   → package `build/ios/iphoneos/Runner.app` as `Payload/Runner.app` → zip to `Retrail.ipa` →
-  `actions/upload-artifact` with **`retention-days: 3`**.
+  **encrypt**: `7z a -p"$IPA_PASSWORD" -mhe=on Retrail.ipa.7z Retrail.ipa` (AES-256, file names
+  hidden) → `actions/upload-artifact` of **only the `.7z`** with **`retention-days: 3`**.
 - **The green build is the automated gate for all Swift / pbxproj work in this spec.**
-- ⚠️ Public repo: workflow artifacts are downloadable by any signed-in GitHub user, and the
-  MapTiler key is embedded in the app. Mitigations: short retention; restrict the key to the app's
-  bundle id in the MapTiler dashboard (manual, outside the repo).
-- One-time setup (user): add the repository secret `MAPTILER_KEY`.
+- **Why encrypted:** the repo is public, so workflow artifacts are downloadable by any signed-in
+  GitHub user, and the MapTiler key is compiled into the app. With the encrypted archive only the
+  holder of `IPA_PASSWORD` can open the build. Secrets are masked in logs, and the workflow only
+  runs on pushes to `main` / manual dispatch (never on fork PRs), so secrets never reach
+  third-party code.
+- The key is still extractable from any build that *is* handed out (sideloaded or, later,
+  published) — normal for client-side map keys. Mitigation lives outside the repo: watch usage in
+  the MapTiler dashboard, apply whatever key restrictions MapTiler offers for native apps, rotate
+  the key if it is abused.
+- One-time setup (user): repository secrets `MAPTILER_KEY` and `IPA_PASSWORD` (a long random
+  passphrase).
 
 ## H. Installing on the iPhone (no Mac, no paid account)
 
 Documented in `docs/ios-sideloading.md` (new):
 
-1. Actions → latest `ios-build` run → download `Retrail.ipa` (unzip the artifact wrapper).
+1. Actions → latest `ios-build` run → download the artifact, then
+   `7z x Retrail.ipa.7z` with the `IPA_PASSWORD` passphrase → `Retrail.ipa`.
 2. Install [Splice](https://github.com/franklintra/splice) on Linux (needs `libimobiledevice`).
 3. `splice login` with an Apple ID (a secondary one is recommended by the tool's authors).
 4. iPhone: Settings → Privacy & Security → **Developer Mode** on; connect via USB, trust the PC.
