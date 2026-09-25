@@ -30,6 +30,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.mapTerrainGrid,
     required this.routeLineBlue,
     required this.routeLineHalo,
+    required this.routeArrow,
     required this.markerStartGreen,
     required this.scrim,
     required this.onMap,
@@ -56,6 +57,10 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color mapTerrainGrid;
   final Color routeLineBlue;
   final Color routeLineHalo;
+
+  /// Direction chevrons drawn inside the blue route line — a light grey that
+  /// reads on the blue without competing with the markers.
+  final Color routeArrow;
   final Color markerStartGreen;
 
   /// Opaque black behind modal content: the fullscreen map dialog's backdrop,
@@ -89,6 +94,7 @@ class AppColors extends ThemeExtension<AppColors> {
     mapTerrainGrid: Color(0xFFCCE0CC),
     routeLineBlue: Color(0xFF2563EB),
     routeLineHalo: Color(0xFFFFFFFF),
+    routeArrow: Color(0xFFE5E7EB),
     markerStartGreen: Color(0xFF16A34A),
     scrim: Color(0xFF000000),
     onMap: Color(0xFFFFFFFF),
@@ -116,6 +122,7 @@ class AppColors extends ThemeExtension<AppColors> {
     mapTerrainGrid: Color(0xFF2C3A3A),
     routeLineBlue: Color(0xFF2563EB),
     routeLineHalo: Color(0xFFFFFFFF),
+    routeArrow: Color(0xFFE5E7EB),
     markerStartGreen: Color(0xFF16A34A),
     scrim: Color(0xFF000000),
     onMap: Color(0xFFFFFFFF),
@@ -144,6 +151,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? mapTerrainGrid,
     Color? routeLineBlue,
     Color? routeLineHalo,
+    Color? routeArrow,
     Color? markerStartGreen,
     Color? scrim,
     Color? onMap,
@@ -170,6 +178,7 @@ class AppColors extends ThemeExtension<AppColors> {
       mapTerrainGrid: mapTerrainGrid ?? this.mapTerrainGrid,
       routeLineBlue: routeLineBlue ?? this.routeLineBlue,
       routeLineHalo: routeLineHalo ?? this.routeLineHalo,
+      routeArrow: routeArrow ?? this.routeArrow,
       markerStartGreen: markerStartGreen ?? this.markerStartGreen,
       scrim: scrim ?? this.scrim,
       onMap: onMap ?? this.onMap,
@@ -205,6 +214,7 @@ class AppColors extends ThemeExtension<AppColors> {
       mapTerrainGrid: Color.lerp(mapTerrainGrid, other.mapTerrainGrid, t)!,
       routeLineBlue: Color.lerp(routeLineBlue, other.routeLineBlue, t)!,
       routeLineHalo: Color.lerp(routeLineHalo, other.routeLineHalo, t)!,
+      routeArrow: Color.lerp(routeArrow, other.routeArrow, t)!,
       markerStartGreen: Color.lerp(markerStartGreen, other.markerStartGreen, t)!,
       scrim: Color.lerp(scrim, other.scrim, t)!,
       onMap: Color.lerp(onMap, other.onMap, t)!,

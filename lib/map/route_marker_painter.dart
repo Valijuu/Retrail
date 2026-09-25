@@ -16,25 +16,25 @@ import 'preview_projection.dart';
 /// - Loop (start and finish together, see [routeEndpointStyle]): the
 ///   chequered disc inside the green start ring — one marker, not two
 ///   stacked on top of each other.
-/// - Arrows: white-outlined blue chevrons on the line, pointing the way it
-///   was ridden.
+/// - Arrows: small light-grey arrowheads inside the blue line, pointing the way
+///   it was ridden.
 
 /// Room to leave between a route and the edge of a box it is fitted into, so
 /// the largest endpoint marker (the loop marker's halo) is never clipped.
 const double routeMarkerInset = _loopHaloRadius + 1;
 
 /// Distance between direction arrows along the drawn line.
-const double routeArrowSpacing = 48;
+const double routeArrowSpacing = 36;
 
 /// Keeps arrows clear of the start/finish markers.
-const double _arrowEndMargin = 16;
+const double _arrowEndMargin = 12;
 
-/// Half the chevron's height, its blue stroke, and the white outline around
-/// that stroke — sized to read at a glance on the 3.5dp route line, with the
-/// outline keeping the parts past the line visible on light and dark maps.
-const double _arrowHalfSize = 4;
-const double _arrowStroke = 2;
-const double _arrowOutline = 1.5;
+/// Half the arrowhead's width across the line, and its length along it: a
+/// filled 3dp-wide head sits inside the 3.5dp route line (it reads as part
+/// of the line) yet has enough area to stay legible at card size, where a
+/// stroked chevron that thin only read as a nick in the line.
+const double _arrowHalfWidth = 1.5;
+const double _arrowLength = 3.2;
 
 const double _haloRadius = 7.5;
 const double _ringRadius = 6;
@@ -72,7 +72,7 @@ void paintRouteDecorations(
   }
 }
 
-/// White-outlined blue chevrons along [offsets] (see [directionArrows]).
+/// Grey arrowheads along [offsets] (see [directionArrows]).
 void paintRouteArrows(
   ui.Canvas canvas,
   List<PreviewOffset> offsets,
@@ -86,33 +86,21 @@ void paintRouteArrows(
     canvas.save();
     canvas.translate(a.x, a.y);
     canvas.rotate(a.angle);
-    _paintChevron(canvas, colors);
+    _paintArrowhead(canvas, colors);
     canvas.restore();
   }
 }
 
-/// One chevron at the origin pointing along +x: white outline, blue stroke.
-void _paintChevron(ui.Canvas canvas, AppColors colors) {
-  final path = _chevron(_arrowHalfSize);
-  canvas.drawPath(
-    path,
-    _chevronPaint(colors.onMap, _arrowStroke + 2 * _arrowOutline),
-  );
-  canvas.drawPath(path, _chevronPaint(colors.routeLineBlue, _arrowStroke));
-}
-
-ui.Paint _chevronPaint(ui.Color color, double width) => ui.Paint()
-  ..color = color
-  ..style = ui.PaintingStyle.stroke
-  ..strokeWidth = width
-  ..strokeCap = ui.StrokeCap.round
-  ..strokeJoin = ui.StrokeJoin.round;
-
-/// A `>` pointing along +x, centred on the origin.
-ui.Path _chevron(double h) => ui.Path()
-  ..moveTo(-h * 0.6, -h)
-  ..lineTo(h * 0.6, 0)
-  ..lineTo(-h * 0.6, h);
+/// One filled arrowhead (`▶`) centred on the origin, pointing along +x, in
+/// [AppColors.routeArrow].
+void _paintArrowhead(ui.Canvas canvas, AppColors colors) => canvas.drawPath(
+      ui.Path()
+        ..moveTo(_arrowLength / 2, 0)
+        ..lineTo(-_arrowLength / 2, -_arrowHalfWidth)
+        ..lineTo(-_arrowLength / 2, _arrowHalfWidth)
+        ..close(),
+      ui.Paint()..color = colors.routeArrow,
+    );
 
 /// Hollow start ring: white halo, green ring, white hole.
 void paintStartRing(ui.Canvas canvas, ui.Offset c, AppColors colors) {
@@ -195,15 +183,15 @@ Future<Uint8List> routeMarkerImagePng(
   });
 }
 
-/// A single chevron pointing along +x (east) as a PNG, for MapLibre's
+/// A single arrowhead pointing along +x (east) as a PNG, for MapLibre's
 /// line-placed arrow symbols (the map rotates it along the line).
 Future<Uint8List> routeArrowImagePng(AppColors colors, double pixelRatio) =>
     _rasterise(
-      2 * (_arrowHalfSize + _arrowStroke + _arrowOutline),
+      _arrowLength + 1,
       pixelRatio,
       (canvas, c) {
         canvas.translate(c.dx, c.dy);
-        _paintChevron(canvas, colors);
+        _paintArrowhead(canvas, colors);
       },
     );
 

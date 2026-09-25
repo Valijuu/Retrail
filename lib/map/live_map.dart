@@ -102,19 +102,25 @@ String _pointGeoJson(RoutePoint p) => jsonEncode({
       'properties': <String, Object?>{},
     });
 
-/// MapLibre image id of the direction chevron.
+/// MapLibre image id of the direction arrowhead.
 const _arrowImage = 'route-arrow';
 
-/// Screen distance between direction chevrons on the map's route line.
-const double _arrowSpacingPx = 70;
+/// Screen distance between direction arrowheads on the map's route line.
+const double _arrowSpacingPx = 50;
 
-/// The chevron PNG is sized for the 3.5dp preview line; the map's line is
-/// 4.5dp wide, so its chevrons are scaled up to match.
-const double _arrowIconSize = 1.1;
+/// The arrowhead PNG is sized to sit inside the 3.5dp preview line; the map's
+/// line is 4.5dp wide, so its arrowheads scale by the same ratio.
+const double _arrowIconSize = 4.5 / 3.5;
 
 /// Endpoint marker PNGs are sized for the preview; the map's markers read a
 /// little larger (they replace the old 7dp + 3dp-ring dots).
 const double _endpointIconSize = 1.3;
+
+/// `icon-size` for a symbol image rasterised at [pixelRatio]: MapLibre sizes
+/// a registered image by its raw pixel count in dp (see the 0.19 note on the
+/// activity badge), so a dp-sized image drawn at the device pixel ratio is
+/// scaled back down by it — crisp, at its intended dp size × [scale].
+double _iconSize(double scale, double pixelRatio) => scale / pixelRatio;
 
 /// `#RRGGBB` for a token [Color], the form MapLibre paint properties expect.
 /// `toARGB32()` is the non-deprecated 32-bit accessor (replaces `Color.value`).
@@ -418,17 +424,17 @@ class _LiveMapState extends State<LiveMap>
       layout: const {'line-cap': 'round', 'line-join': 'round'},
       paint: {'line-color': blue, 'line-width': 4.5},
     ));
-    // Direction chevrons, placed and rotated along the line by MapLibre.
+    // Direction arrowheads, placed and rotated along the line by MapLibre.
     await style.addImage(
         _arrowImage, await routeArrowImagePng(colors, pixelRatio));
     await style.addLayer(SymbolStyleLayer(
       id: 'route-arrows',
       sourceId: 'route',
-      layout: const {
+      layout: {
         'symbol-placement': 'line',
         'symbol-spacing': _arrowSpacingPx,
         'icon-image': _arrowImage,
-        'icon-size': _arrowIconSize,
+        'icon-size': _iconSize(_arrowIconSize, pixelRatio),
         'icon-rotation-alignment': 'map',
         'icon-keep-upright': false,
         'icon-allow-overlap': true,
@@ -553,7 +559,7 @@ class _LiveMapState extends State<LiveMap>
       sourceId: id,
       layout: {
         'icon-image': imageId,
-        'icon-size': _endpointIconSize,
+        'icon-size': _iconSize(_endpointIconSize, pixelRatio),
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
       },
