@@ -58,14 +58,6 @@ void main() {
       expect(AppColors.dark.onMap, AppColors.light.onMap);
     });
 
-    test('routeArrow is a light grey that reads on the blue route line',
-        () {
-      expect(AppColors.light.routeArrow, const Color(0xFFE5E7EB));
-      expect(AppColors.dark.routeArrow, AppColors.light.routeArrow);
-      expect(AppColors.light.copyWith(routeArrow: const Color(0xFF000000))
-          .routeArrow, const Color(0xFF000000));
-    });
-
     test('copyWith and lerp carry the overlay tokens', () {
       const red = Color(0xFFFF0000);
       final changed = AppColors.light.copyWith(scrim: red, onMap: red);

@@ -59,14 +59,20 @@ void main() {
     expect(_pixel(rgba, 120, 20).a, 0);
   });
 
-  test('draws a direction chevron one spacing along the line', () async {
+  test('draws a blue, white-rimmed arrowhead one spacing along the line',
+      () async {
     final rgba = await _render(RouteEndpointStyle.none);
     final x = 20 + routeArrowSpacing.toInt();
+    expect(_close(_pixel(rgba, x, 20), _colors.routeLineBlue), isTrue);
     final around = [
-      for (var dx = -3; dx <= 3; dx++)
-        for (var dy = -3; dy <= 3; dy++) _pixel(rgba, x + dx, 20 + dy),
+      for (var dx = -5; dx <= 5; dx++)
+        for (var dy = -5; dy <= 5; dy++) _pixel(rgba, x + dx, 20 + dy),
     ];
-    expect(around.any((c) => c.a > 0.5), isTrue);
+    // The 1.6px rim is anti-aliased at 1× — look for a near-white, opaque
+    // pixel rather than an exact match.
+    expect(
+        around.any((c) => c.a > 0.9 && c.r > 0.8 && c.g > 0.8 && c.b > 0.8),
+        isTrue);
     // …and nothing where no arrow belongs (inside the start margin).
     expect(_pixel(rgba, 30, 20).a, 0);
   });

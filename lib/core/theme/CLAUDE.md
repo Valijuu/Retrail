@@ -20,7 +20,6 @@ LiveIndicator      = 0xFFFFBB70
 // Map
 MapTerrain         = 0xFFDDE8DD   MapTerrainGrid     = 0xFFCCE0CC
 RouteLineBlue      = 0xFF2563EB   RouteLineHalo      = 0xFFFFFFFF
-RouteArrow         = 0xFFE5E7EB   // direction chevrons inside the route line
 MarkerStartGreen   = 0xFF16A34A   // start ring; the finish flag is Scrim/OnMap chequer
 // Overlays
 Scrim              = 0xFF000000   OnMap              = 0xFFFFFFFF
@@ -39,7 +38,7 @@ DarkEditActionBg     = 0xFF3A2A12   DarkEditActionText   = 0xFFFCD9A6
 DarkDeleteActionBg   = 0xFF3A1A1A   DarkDeleteActionText = 0xFFFCA5A5
 DarkLiveIndicator    = 0xFFFFBB70
 DarkMapTerrain       = 0xFF20292A   DarkMapTerrainGrid   = 0xFF2C3A3A
-// Route line, RouteArrow and overlay colors (Scrim, OnMap) are identical across themes.
+// Route line and overlay colors (Scrim, OnMap) are identical across themes.
 // Scrim: modal backdrops (barriers use it at 54 % alpha). OnMap: white on top of
 // map content — marker rings, activity-badge glyph, floating map buttons.
 ```

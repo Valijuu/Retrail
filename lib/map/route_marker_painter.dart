@@ -16,7 +16,7 @@ import 'preview_projection.dart';
 /// - Loop (start and finish together, see [routeEndpointStyle]): the
 ///   chequered disc inside the green start ring — one marker, not two
 ///   stacked on top of each other.
-/// - Arrows: small light-grey arrowheads inside the blue line, pointing the way
+/// - Arrows: blue arrowheads with a white rim on the line, pointing the way
 ///   it was ridden.
 
 /// Room to leave between a route and the edge of a box it is fitted into, so
@@ -24,17 +24,19 @@ import 'preview_projection.dart';
 const double routeMarkerInset = _loopHaloRadius + 1;
 
 /// Distance between direction arrows along the drawn line.
-const double routeArrowSpacing = 36;
+const double routeArrowSpacing = 44;
 
 /// Keeps arrows clear of the start/finish markers.
 const double _arrowEndMargin = 12;
 
-/// Half the arrowhead's width across the line, and its length along it: a
-/// filled 3dp-wide head sits inside the 3.5dp route line (it reads as part
-/// of the line) yet has enough area to stay legible at card size, where a
-/// stroked chevron that thin only read as a nick in the line.
-const double _arrowHalfWidth = 1.5;
-const double _arrowLength = 3.2;
+/// Half the arrowhead's width across the line, its length along it, and its
+/// white rim: about twice the 3.5dp line's width, in the line's own blue with
+/// the line's white halo, so it reads as the route's own arrowhead — clearly
+/// visible at card size without looking pasted on. (Heads inside the line,
+/// or white ones on it, were too faint or read as gaps.)
+const double _arrowHalfWidth = 3.6;
+const double _arrowLength = 6;
+const double _arrowRim = 1.6;
 
 const double _haloRadius = 7.5;
 const double _ringRadius = 6;
@@ -91,16 +93,23 @@ void paintRouteArrows(
   }
 }
 
-/// One filled arrowhead (`▶`) centred on the origin, pointing along +x, in
-/// [AppColors.routeArrow].
-void _paintArrowhead(ui.Canvas canvas, AppColors colors) => canvas.drawPath(
-      ui.Path()
-        ..moveTo(_arrowLength / 2, 0)
-        ..lineTo(-_arrowLength / 2, -_arrowHalfWidth)
-        ..lineTo(-_arrowLength / 2, _arrowHalfWidth)
-        ..close(),
-      ui.Paint()..color = colors.routeArrow,
-    );
+/// One arrowhead (`▶`) centred on the origin, pointing along +x: a white rim
+/// (like the line's halo) around a [AppColors.routeLineBlue] fill.
+void _paintArrowhead(ui.Canvas canvas, AppColors colors) {
+  final head = ui.Path()
+    ..moveTo(_arrowLength / 2, 0)
+    ..lineTo(-_arrowLength / 2, -_arrowHalfWidth)
+    ..lineTo(-_arrowLength / 2, _arrowHalfWidth)
+    ..close();
+  canvas.drawPath(
+      head,
+      ui.Paint()
+        ..color = colors.routeLineHalo
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = _arrowRim
+        ..strokeJoin = ui.StrokeJoin.round);
+  canvas.drawPath(head, ui.Paint()..color = colors.routeLineBlue);
+}
 
 /// Hollow start ring: white halo, green ring, white hole.
 void paintStartRing(ui.Canvas canvas, ui.Offset c, AppColors colors) {
@@ -187,7 +196,7 @@ Future<Uint8List> routeMarkerImagePng(
 /// line-placed arrow symbols (the map rotates it along the line).
 Future<Uint8List> routeArrowImagePng(AppColors colors, double pixelRatio) =>
     _rasterise(
-      _arrowLength + 1,
+      2 * _arrowHalfWidth + _arrowRim,
       pixelRatio,
       (canvas, c) {
         canvas.translate(c.dx, c.dy);

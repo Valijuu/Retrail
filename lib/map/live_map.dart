@@ -106,10 +106,10 @@ String _pointGeoJson(RoutePoint p) => jsonEncode({
 const _arrowImage = 'route-arrow';
 
 /// Screen distance between direction arrowheads on the map's route line.
-const double _arrowSpacingPx = 50;
+const double _arrowSpacingPx = 60;
 
-/// The arrowhead PNG is sized to sit inside the 3.5dp preview line; the map's
-/// line is 4.5dp wide, so its arrowheads scale by the same ratio.
+/// The arrowhead PNG is sized for the 3.5dp preview line; the map's line is
+/// 4.5dp wide, so its arrowheads scale by the same ratio.
 const double _arrowIconSize = 4.5 / 3.5;
 
 /// Endpoint marker PNGs are sized for the preview; the map's markers read a
