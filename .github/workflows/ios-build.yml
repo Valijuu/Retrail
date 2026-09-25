@@ -31,10 +31,16 @@ concurrency:
 
 jobs:
   build-ios:
-    runs-on: macos-15
+    # macos-26 ships Xcode 26 (iOS 26 SDK) — current plugins (e.g.
+    # connectivity_plus's NWPath.isUltraConstrained) no longer build with the
+    # iOS 18 SDK of macos-15's default Xcode 16.
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
+      - name: Show Xcode
+        run: xcodebuild -version
 
       - uses: subosito/flutter-action@v2
         with:
