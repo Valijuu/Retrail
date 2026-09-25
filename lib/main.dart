@@ -15,9 +15,8 @@ import 'data/debug_seed_rides.dart';
 import 'data/repositories/data_providers.dart';
 import 'data/repositories/preferences_repository.dart';
 import 'features/active_ride/active_ride_providers.dart';
-import 'features/shell/startup_provider.dart';
 import 'tracking/foreground_task_service.dart';
-import 'tracking/ride_notification.dart';
+import 'tracking/ride_control_relay.dart';
 import 'tracking/tracking_providers.dart';
 
 Future<void> main() async {
@@ -80,25 +79,8 @@ Future<void> main() async {
 
   // Relay recording-notification interactions (which arrive on the main isolate
   // via sendDataToMain) to the recording controller / deep-link.
-  FlutterForegroundTask.addTaskDataCallback((data) {
-    final id = data is String ? data : '';
-    if (id == RideNotificationIds.open) {
-      // Body tap → route into the active ride (router redirect handles it).
-      container.read(pendingRideDeepLinkProvider.notifier).state = true;
-      return;
-    }
-    final controller = container.read(rideRecordingControllerProvider);
-    switch (rideActionFromId(id)) {
-      case RideAction.pause:
-        controller.pauseOrResume(false); // currently recording → pause
-      case RideAction.resume:
-        controller.pauseOrResume(true); // currently paused → resume
-      case RideAction.stop:
-        controller.stop(); // finalize the ride
-      case null:
-        break;
-    }
-  });
+  FlutterForegroundTask.addTaskDataCallback(
+      (data) => rideControlRelay(container, data is String ? data : ''));
 
   runApp(UncontrolledProviderScope(
     container: container,
