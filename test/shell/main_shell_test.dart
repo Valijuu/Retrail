@@ -118,6 +118,47 @@ void main() {
   });
 
   testWidgets(
+      'system back retraces the visited tabs: Settings → History → Home',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await settle(tester);
+    await tester.tap(find.text('History'));
+    await settle(tester);
+    await tester.tap(find.text('Settings'));
+    await settle(tester);
+    expect(find.text('THEME'), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await settle(tester);
+    expect(find.text('Ride history'), findsOneWidget); // back on History
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await settle(tester);
+    expect(find.text('Recent rides'), findsOneWidget); // then Home
+  });
+
+  testWidgets(
+      'revisiting a tab moves it to the top of the back history instead of '
+      'stacking duplicates', (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await settle(tester);
+    await tester.tap(find.text('History'));
+    await settle(tester);
+    await tester.tap(find.text('Settings'));
+    await settle(tester);
+    await tester.tap(find.text('History'));
+    await settle(tester);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await settle(tester);
+    expect(find.text('THEME'), findsOneWidget); // Settings, not History again
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await settle(tester);
+    expect(find.text('Recent rides'), findsOneWidget);
+  });
+
+  testWidgets(
       'system back in History selection mode only exits the selection '
       '(issue #32)', (tester) async {
     final ride = RideEntryItem(

@@ -40,17 +40,24 @@ class _MainShellState extends ConsumerState<MainShell> {
   final ValueNotifier<int> _homeVisits = ValueNotifier(1);
   int _lastSettledPage = 0;
 
+  /// Tabs visited since the last landing on Home, most recent last. Home is
+  /// always the root; revisiting a tab moves it to the top instead of
+  /// stacking a duplicate, so the stack never outgrows the tab count.
+  final List<int> _tabHistory = [0];
+
   /// The mounted History tab's back handler (see
   /// [HistoryScreen.onRegisterBackHandler]).
   bool Function()? _historyBack;
 
   /// The shell's single back handler, so the steps run in a fixed order
   /// (issue #32): the History tab may consume it (leaving selection mode),
-  /// then any tab but Home returns to Home. Only Home lets the route pop.
+  /// then back retraces [_tabHistory] towards Home. Only Home lets the route
+  /// pop.
   void _onBack(bool didPop) {
     if (didPop) return;
     if (_current.value == 1 && (_historyBack?.call() ?? false)) return;
-    _goToTab(0);
+    if (_tabHistory.length > 1) _tabHistory.removeLast();
+    _goToTab(_tabHistory.last);
   }
 
   void _goToTab(int index) => _controller.animateToPage(
@@ -67,6 +74,19 @@ class _MainShellState extends ConsumerState<MainShell> {
     final page = _controller.page?.round() ?? 0;
     if (page == 0 && _lastSettledPage != 0) _homeVisits.value++;
     _lastSettledPage = page;
+    _recordVisit(page);
+  }
+
+  void _recordVisit(int page) {
+    if (page == 0) {
+      _tabHistory
+        ..clear()
+        ..add(0);
+    } else if (_tabHistory.last != page) {
+      _tabHistory
+        ..remove(page)
+        ..add(page);
+    }
   }
 
   @override
