@@ -20,6 +20,22 @@ void main() {
       }
     });
 
+    test('inset keeps every offset at least that far from each edge', () {
+      const points = <RoutePoint>[
+        (lat: 49.40, lng: 11.00),
+        (lat: 49.50, lng: 11.20),
+        (lat: 49.45, lng: 11.10),
+      ];
+      for (final o in sketchOffsets(points, 200, 100, inset: 12)) {
+        expect(o.x, inClosedOpenRange(12, 188.0001));
+        expect(o.y, inClosedOpenRange(12, 88.0001));
+      }
+      // …and the route still spans the inset box on its limiting axis.
+      final ys = sketchOffsets(points, 200, 100, inset: 12).map((o) => o.y);
+      expect(ys.reduce((a, b) => a < b ? a : b), closeTo(12, 1e-6));
+      expect(ys.reduce((a, b) => a > b ? a : b), closeTo(88, 1e-6));
+    });
+
     test('eastern point is right of western; northern is above southern', () {
       const points = <RoutePoint>[
         (lat: 49.44, lng: 11.08), // SW

@@ -130,7 +130,7 @@ Future<PreviewResult> renderSketchPng({
   canvas.drawRect(
       ui.Rect.fromLTWH(0, 0, w, h), ui.Paint()..color = colors.mapTerrain);
 
-  final offsets = sketchOffsets(points, w, h);
+  final offsets = sketchOffsets(points, w, h, inset: routeMarkerInset);
   _paintRoute(canvas, offsets, colors);
   paintRouteDecorations(canvas, offsets, routeEndpointStyle(points), colors);
 

@@ -16,7 +16,12 @@ import 'preview_projection.dart';
 /// - Loop (start and finish together, see [routeEndpointStyle]): the
 ///   chequered disc inside the green start ring — one marker, not two
 ///   stacked on top of each other.
-/// - Arrows: small white chevrons on the line, pointing the way it was ridden.
+/// - Arrows: white-outlined blue chevrons on the line, pointing the way it
+///   was ridden.
+
+/// Room to leave between a route and the edge of a box it is fitted into, so
+/// the largest endpoint marker (the loop marker's halo) is never clipped.
+const double routeMarkerInset = _loopHaloRadius + 1;
 
 /// Distance between direction arrows along the drawn line.
 const double routeArrowSpacing = 48;
@@ -24,9 +29,12 @@ const double routeArrowSpacing = 48;
 /// Keeps arrows clear of the start/finish markers.
 const double _arrowEndMargin = 16;
 
-/// Half the chevron's length/width, and its stroke.
-const double _arrowHalfSize = 2.6;
-const double _arrowStroke = 1.6;
+/// Half the chevron's height, its blue stroke, and the white outline around
+/// that stroke — sized to read at a glance on the 3.5dp route line, with the
+/// outline keeping the parts past the line visible on light and dark maps.
+const double _arrowHalfSize = 4;
+const double _arrowStroke = 2;
+const double _arrowOutline = 1.5;
 
 const double _haloRadius = 7.5;
 const double _ringRadius = 6;
@@ -41,8 +49,12 @@ const int _checks = 4;
 
 /// Paints the direction arrows along [offsets], then the endpoint markers for
 /// [style] on top. Call after the route line has been drawn.
-void paintRouteDecorations(ui.Canvas canvas, List<PreviewOffset> offsets,
-    RouteEndpointStyle style, AppColors colors) {
+void paintRouteDecorations(
+  ui.Canvas canvas,
+  List<PreviewOffset> offsets,
+  RouteEndpointStyle style,
+  AppColors colors,
+) {
   paintRouteArrows(canvas, offsets, colors);
   if (offsets.isEmpty) return;
   final start = ui.Offset(offsets.first.x, offsets.first.y);
@@ -60,24 +72,41 @@ void paintRouteDecorations(ui.Canvas canvas, List<PreviewOffset> offsets,
   }
 }
 
-/// White chevrons along [offsets] (see [directionArrows]).
+/// White-outlined blue chevrons along [offsets] (see [directionArrows]).
 void paintRouteArrows(
-    ui.Canvas canvas, List<PreviewOffset> offsets, AppColors colors) {
-  final paint = ui.Paint()
-    ..color = colors.onMap
-    ..style = ui.PaintingStyle.stroke
-    ..strokeWidth = _arrowStroke
-    ..strokeCap = ui.StrokeCap.round
-    ..strokeJoin = ui.StrokeJoin.round;
-  for (final a in directionArrows(offsets,
-      spacing: routeArrowSpacing, endMargin: _arrowEndMargin)) {
+  ui.Canvas canvas,
+  List<PreviewOffset> offsets,
+  AppColors colors,
+) {
+  for (final a in directionArrows(
+    offsets,
+    spacing: routeArrowSpacing,
+    endMargin: _arrowEndMargin,
+  )) {
     canvas.save();
     canvas.translate(a.x, a.y);
     canvas.rotate(a.angle);
-    canvas.drawPath(_chevron(_arrowHalfSize), paint);
+    _paintChevron(canvas, colors);
     canvas.restore();
   }
 }
+
+/// One chevron at the origin pointing along +x: white outline, blue stroke.
+void _paintChevron(ui.Canvas canvas, AppColors colors) {
+  final path = _chevron(_arrowHalfSize);
+  canvas.drawPath(
+    path,
+    _chevronPaint(colors.onMap, _arrowStroke + 2 * _arrowOutline),
+  );
+  canvas.drawPath(path, _chevronPaint(colors.routeLineBlue, _arrowStroke));
+}
+
+ui.Paint _chevronPaint(ui.Color color, double width) => ui.Paint()
+  ..color = color
+  ..style = ui.PaintingStyle.stroke
+  ..strokeWidth = width
+  ..strokeCap = ui.StrokeCap.round
+  ..strokeJoin = ui.StrokeJoin.round;
 
 /// A `>` pointing along +x, centred on the origin.
 ui.Path _chevron(double h) => ui.Path()
@@ -88,7 +117,11 @@ ui.Path _chevron(double h) => ui.Path()
 /// Hollow start ring: white halo, green ring, white hole.
 void paintStartRing(ui.Canvas canvas, ui.Offset c, AppColors colors) {
   canvas.drawCircle(c, _haloRadius, ui.Paint()..color = colors.onMap);
-  canvas.drawCircle(c, _ringRadius, ui.Paint()..color = colors.markerStartGreen);
+  canvas.drawCircle(
+    c,
+    _ringRadius,
+    ui.Paint()..color = colors.markerStartGreen,
+  );
   canvas.drawCircle(c, _ringHoleRadius, ui.Paint()..color = colors.onMap);
 }
 
@@ -102,13 +135,20 @@ void paintFinishFlag(ui.Canvas canvas, ui.Offset c, AppColors colors) {
 void paintLoopMarker(ui.Canvas canvas, ui.Offset c, AppColors colors) {
   canvas.drawCircle(c, _loopHaloRadius, ui.Paint()..color = colors.onMap);
   canvas.drawCircle(
-      c, _loopRingRadius, ui.Paint()..color = colors.markerStartGreen);
+    c,
+    _loopRingRadius,
+    ui.Paint()..color = colors.markerStartGreen,
+  );
   canvas.drawCircle(c, _loopFlagRadius + 1, ui.Paint()..color = colors.onMap);
   _paintChequer(canvas, c, _loopFlagRadius, colors);
 }
 
 void _paintChequer(
-    ui.Canvas canvas, ui.Offset c, double radius, AppColors colors) {
+  ui.Canvas canvas,
+  ui.Offset c,
+  double radius,
+  AppColors colors,
+) {
   final box = ui.Rect.fromCircle(center: c, radius: radius);
   final cell = box.width / _checks;
   canvas.save();
@@ -119,9 +159,14 @@ void _paintChequer(
     for (var col = 0; col < _checks; col++) {
       if ((row + col).isOdd) continue;
       canvas.drawRect(
-          ui.Rect.fromLTWH(
-              box.left + col * cell, box.top + row * cell, cell, cell),
-          dark);
+        ui.Rect.fromLTWH(
+          box.left + col * cell,
+          box.top + row * cell,
+          cell,
+          cell,
+        ),
+        dark,
+      );
     }
   }
   canvas.restore();
@@ -133,9 +178,11 @@ enum RouteMarkerImage { start, finish, loop }
 /// [kind] rasterised to a PNG for a MapLibre symbol layer, at [pixelRatio]
 /// (the map scales icons by its own device pixel ratio, so pass the screen's).
 Future<Uint8List> routeMarkerImagePng(
-    RouteMarkerImage kind, AppColors colors, double pixelRatio) {
-  final radius =
-      kind == RouteMarkerImage.loop ? _loopHaloRadius : _haloRadius;
+  RouteMarkerImage kind,
+  AppColors colors,
+  double pixelRatio,
+) {
+  final radius = kind == RouteMarkerImage.loop ? _loopHaloRadius : _haloRadius;
   return _rasterise(radius * 2, pixelRatio, (canvas, c) {
     switch (kind) {
       case RouteMarkerImage.start:
@@ -148,24 +195,23 @@ Future<Uint8List> routeMarkerImagePng(
   });
 }
 
-/// A single white chevron pointing along +x (east) as a PNG, for MapLibre's
+/// A single chevron pointing along +x (east) as a PNG, for MapLibre's
 /// line-placed arrow symbols (the map rotates it along the line).
 Future<Uint8List> routeArrowImagePng(AppColors colors, double pixelRatio) =>
-    _rasterise(_arrowHalfSize * 2 + _arrowStroke * 2, pixelRatio,
-        (canvas, c) {
-      canvas.translate(c.dx, c.dy);
-      canvas.drawPath(
-          _chevron(_arrowHalfSize),
-          ui.Paint()
-            ..color = colors.onMap
-            ..style = ui.PaintingStyle.stroke
-            ..strokeWidth = _arrowStroke
-            ..strokeCap = ui.StrokeCap.round
-            ..strokeJoin = ui.StrokeJoin.round);
-    });
+    _rasterise(
+      2 * (_arrowHalfSize + _arrowStroke + _arrowOutline),
+      pixelRatio,
+      (canvas, c) {
+        canvas.translate(c.dx, c.dy);
+        _paintChevron(canvas, colors);
+      },
+    );
 
-Future<Uint8List> _rasterise(double sizeDp, double pixelRatio,
-    void Function(ui.Canvas canvas, ui.Offset centre) draw) async {
+Future<Uint8List> _rasterise(
+  double sizeDp,
+  double pixelRatio,
+  void Function(ui.Canvas canvas, ui.Offset centre) draw,
+) async {
   final px = (sizeDp * pixelRatio).ceil();
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder)..scale(pixelRatio);

@@ -10,9 +10,14 @@ import '../core/theme/theme_context.dart';
 
 /// Proportionally scales [points] into a [w] × [h] box, centered. Tile-free
 /// fallback geometry (offline preview / no route data). Y is inverted so north
-/// is up. Mirrors the original `RouteSketch` scaling.
-List<PreviewOffset> sketchOffsets(List<RoutePoint> points, double w, double h) {
+/// is up. Mirrors the original `RouteSketch` scaling. [inset] keeps the
+/// route that far from every edge, so endpoint markers drawn on it aren't
+/// clipped by the box.
+List<PreviewOffset> sketchOffsets(List<RoutePoint> points, double boxW,
+    double boxH, {double inset = 0}) {
   if (points.isEmpty) return const [];
+  final w = boxW - 2 * inset;
+  final h = boxH - 2 * inset;
   final lats = points.map((p) => p.lat);
   final lngs = points.map((p) => p.lng);
   final minLat = lats.reduce(math.min);
@@ -24,8 +29,8 @@ List<PreviewOffset> sketchOffsets(List<RoutePoint> points, double w, double h) {
   // route was pinned to the box's top/left edge (issue #31).
   final scale = math.min(w / math.max(maxLng - minLng, 0.0001),
       h / math.max(maxLat - minLat, 0.0001));
-  final padX = (w - (maxLng - minLng) * scale) / 2;
-  final padY = (h - (maxLat - minLat) * scale) / 2;
+  final padX = inset + (w - (maxLng - minLng) * scale) / 2;
+  final padY = inset + (h - (maxLat - minLat) * scale) / 2;
   return [
     for (final p in points)
       (x: padX + (p.lng - minLng) * scale, y: padY + (maxLat - p.lat) * scale),
@@ -57,7 +62,8 @@ class _RouteSketchPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = colors.mapTerrain);
     if (points.length < 2) return;
-    final offsets = sketchOffsets(points, size.width, size.height);
+    final offsets = sketchOffsets(points, size.width, size.height,
+        inset: routeMarkerInset);
     final path = Path()..moveTo(offsets.first.x, offsets.first.y);
     for (final o in offsets.skip(1)) {
       path.lineTo(o.x, o.y);

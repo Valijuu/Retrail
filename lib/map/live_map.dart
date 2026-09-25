@@ -110,7 +110,7 @@ const double _arrowSpacingPx = 70;
 
 /// The chevron PNG is sized for the 3.5dp preview line; the map's line is
 /// 4.5dp wide, so its chevrons are scaled up to match.
-const double _arrowIconSize = 1.3;
+const double _arrowIconSize = 1.1;
 
 /// Endpoint marker PNGs are sized for the preview; the map's markers read a
 /// little larger (they replace the old 7dp + 3dp-ring dots).
