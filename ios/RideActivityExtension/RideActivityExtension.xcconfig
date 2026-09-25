@@ -1,0 +1,6 @@
+// Base config for the Live Activity extension (Spec 6 §E). Deliberately NOT
+// Flutter/Debug|Release.xcconfig: `pod install` prepends the Pods-Runner
+// xcconfig there, which would link Flutter.framework and the plugin pods into
+// the widget extension. Generated.xcconfig only brings FLUTTER_BUILD_NAME /
+// FLUTTER_BUILD_NUMBER, so the extension's version always matches the app's.
+#include? "../Flutter/Generated.xcconfig"

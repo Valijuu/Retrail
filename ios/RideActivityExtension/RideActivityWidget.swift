@@ -31,7 +31,7 @@ struct RideActivityWidget: Widget {
         }
         DynamicIslandExpandedRegion(.bottom) {
           HStack {
-            ElapsedText(state: context.state)
+            ElapsedText(state: context.state, frozen: context.isShowingStale)
               .font(.title2.weight(.semibold))
             Spacer()
             RideControls(context: context, accent: accent)
@@ -40,7 +40,7 @@ struct RideActivityWidget: Widget {
       } compactLeading: {
         RetrailMark()
       } compactTrailing: {
-        ElapsedText(state: context.state)
+        ElapsedText(state: context.state, frozen: context.isShowingStale)
           .font(.caption.weight(.semibold))
           .frame(maxWidth: Layout.compactTimerWidth)
           .foregroundStyle(accent)
@@ -59,6 +59,17 @@ private enum Layout {
   static let compactTimerWidth: CGFloat = 52
   static let lockScreenPadding: CGFloat = 16
   static let controlSpacing: CGFloat = 8
+  static let staleOpacity: Double = 0.5
+}
+
+extension ActivityViewContext {
+  /// iOS marks the activity stale once its staleDate passes without an update
+  /// — which only happens when the recording app is gone (Dart keeps a live
+  /// ride fresh with a keep-alive push well inside that window).
+  var isShowingStale: Bool {
+    if #available(iOS 16.2, *) { return isStale }
+    return false
+  }
 }
 
 /// Lock screen / banner: mark + title, big timer + distance, controls.
@@ -78,7 +89,7 @@ private struct LockScreenView: View {
             .font(.subheadline.weight(.semibold))
             .lineLimit(1)
         }
-        ElapsedText(state: context.state)
+        ElapsedText(state: context.state, frozen: context.isShowingStale)
           .font(.system(.largeTitle, design: .rounded).weight(.bold))
         Text(context.state.distanceText)
           .font(.headline)
@@ -89,18 +100,21 @@ private struct LockScreenView: View {
       RideControls(context: context, accent: accent)
     }
     .padding(Layout.lockScreenPadding)
+    .opacity(context.isShowingStale ? Layout.staleOpacity : 1)
     .activityBackgroundTint(nil)
   }
 }
 
 /// Elapsed ride time. Running: iOS ticks it natively from the snapshot, so
-/// Dart doesn't push every second. Paused: frozen at the snapshot's value.
+/// Dart doesn't push every second. Paused or stale: frozen at the snapshot's
+/// value (a stale activity must not pretend the ride is still counting).
 private struct ElapsedText: View {
   let state: RideActivityAttributes.ContentState
+  var frozen = false
 
   var body: some View {
     Group {
-      if state.isPaused {
+      if state.isPaused || frozen {
         Text(Self.format(seconds: state.elapsedSeconds))
       } else {
         Text(timerInterval: state.timerStart...Date.distantFuture, countsDown: false)

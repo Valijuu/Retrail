@@ -94,8 +94,9 @@ EXACT** workflow.
   `distanceText` = `formatDistanceKm(state.distanceMetres, locale: copy.locale)` (same formatter
   and locale as the Android notification body).
 - `bool shouldPush(LiveActivityContent? last, LiveActivityContent next)` — true when there is no
-  `last`, or `isPaused`, `title` or `distanceText` differ. **Elapsed time alone never triggers a
-  push**: the widget counts it natively (below). Net effect: at most one update per 10 m of
+  `last`, or `isPaused`, `title` or `distanceText` differ, or ≥ 10 min passed since `last`
+  (keep-alive, see §D stale activities). **Elapsed time alone never triggers a push**: the widget
+  counts it natively (below). Net effect: at most one update per 10 m of
   distance (the `X.XX km` resolution) plus one per pause/resume — well inside ActivityKit's
   update budget, and no per-second channel traffic.
 
@@ -107,7 +108,10 @@ instead of the Android body's `formatElapsed` output.
 
 ## C. `LiveActivityService` (Riverpod/service layer — Red-Green-Refactor)
 
-- `start()`: `isSupported` false → remember "inactive", return (no throw). Else `start` with
+- `start()`: marks the activity as *wanted*; `isSupported` false → stays inactive, return (no
+  throw). A start that fails (ActivityKit refuses `request` while the app is not in the
+  foreground, e.g. phone locked during the countdown) is **retried on a later `update`, at most
+  every 30 s**, starting with the ride's current content. `stop()` clears *wanted*. Else `start` with
   attributes from `rideNotificationCopyProvider` + `AppColors.light/dark.primary`, and the initial
   content (`elapsedSeconds: 0`, `distanceMetres: 0`).
 - `update(isPaused, elapsedSeconds, distanceMetres)`: build content via §B from the current
@@ -133,7 +137,8 @@ ios/Runner/LiveActivityBridge.swift       # MethodChannel handler, ActivityKit c
 ios/RideActivityExtension/RideActivityBundle.swift   # @main WidgetBundle
 ios/RideActivityExtension/RideActivityWidget.swift   # ActivityConfiguration: lock screen + Dynamic Island
 ios/RideActivityExtension/Info.plist                 # NSExtensionPointIdentifier = com.apple.widgetkit-extension
-ios/RideActivityExtension/Assets.xcassets            # the Retrail mark (template image) only — no colors
+ios/RideActivityExtension/Assets.xcassets            # the Retrail mark (full-color pin, as in the app icon) — no color sets
+ios/RideActivityExtension/RideActivityExtension.xcconfig  # only Flutter/Generated.xcconfig (version numbers) — never the Pods xcconfig
 ```
 
 - **`RideActivityAttributes`**: static labels + accent colors; `ContentState` mirrors the channel
@@ -170,13 +175,27 @@ ios/RideActivityExtension/Assets.xcassets            # the Retrail mark (templat
   process otherwise leaves a frozen activity for up to 8 h. Pairs with
   `finalizeUnfinishedRides()` in `main.dart`.
 - `applicationWillTerminate`: best-effort `end` (not guaranteed to run).
-- Every push sets `staleDate = now + 15 min`, so an orphaned activity visibly goes stale instead
-  of pretending to record.
+- Every push sets `staleDate = now + 15 min`; the widget renders `isStale` (iOS 16.2+) with a frozen
+  timer and dimmed content, so an orphaned activity visibly goes stale instead of pretending to
+  record. A live ride never goes stale: `shouldPush` also fires a **keep-alive push every 10 min**
+  (§B) — otherwise a long pause or standstill (nothing visible changes) would trip the stale date.
+- Buttons on an **orphaned** activity (process killed; iOS relaunches the app in the background
+  just to run the intent, so no scene/engine exists): `RideControlIntent` sees
+  `RideControlSink.isAttached == false` and simply ends the activity.
+- All ActivityKit calls run through one serial task chain in the bridge, so an `end` can't
+  overtake a suspended `start` (and the launch-time cleanup can't race Dart's first `start`).
+- *Accepted:* tapping an orphaned activity cold-launches the app; the `retrail://ride` URL then
+  arrives before the bridge exists and falls through to the router (→ `/`). Harmless — no ride
+  can be running in a fresh process.
 
 ## E. Xcode project (`ios/Runner.xcodeproj/project.pbxproj`)
 
 Hand-written, mirroring Xcode's "Widget Extension" template:
 
+- Extension configs are based on `RideActivityExtension.xcconfig`, **not** `Flutter/*.xcconfig`:
+  `flutter_foreground_task` has no `Package.swift`, so CocoaPods is still in play and `pod install`
+  injects the Pods-Runner xcconfig (linking Flutter + pods) into the Flutter xcconfigs. CI fails
+  the build if the `.appex` links Flutter (`otool -L`).
 - New native target **`RideActivityExtension`**, product type
   `com.apple.product-type.app-extension`, bundle id `com.retrail.retrail.RideActivity`,
   `IPHONEOS_DEPLOYMENT_TARGET = 16.1`, `SWIFT_VERSION = 5.0`, `INFOPLIST_FILE =

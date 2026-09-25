@@ -12,6 +12,11 @@ const _isPausedKey = 'isPaused';
 const _elapsedSecondsKey = 'elapsedSeconds';
 const _snapshotEpochMsKey = 'snapshotEpochMs';
 
+// Longest gap between two pushes even when nothing visible changed — well
+// inside the Live Activity's 15-minute staleDate, so a long pause / standstill
+// never lets the lock-screen widget go stale.
+const _keepAlivePushInterval = Duration(minutes: 10);
+
 /// The content state of the ride Live Activity: everything the lock-screen /
 /// Dynamic Island widget renders for one snapshot of the active ride.
 class LiveActivityContent {
@@ -90,14 +95,18 @@ LiveActivityContent liveActivityContent({
 /// Whether [next] differs from the [last] pushed snapshot in something the
 /// widget can't derive on its own — i.e. whether it is worth an update.
 ///
-/// [LiveActivityContent.elapsedSeconds] and
-/// [LiveActivityContent.snapshotEpochMs] are deliberately ignored: the widget
+/// [LiveActivityContent.elapsedSeconds] is deliberately ignored: the widget
 /// counts elapsed time natively from the last snapshot, so ticking time alone
-/// never needs a push. Distance is compared by its formatted text (`X.XX km`),
-/// whose resolution caps distance-driven updates at roughly one per 10 m.
+/// never needs a push. [LiveActivityContent.snapshotEpochMs] only matters for
+/// the keep-alive: once [_keepAlivePushInterval] has passed since [last], a
+/// push is due even if nothing else changed, so the activity never reaches its
+/// staleDate. Distance is compared by its formatted text (`X.XX km`), whose
+/// resolution caps distance-driven updates at roughly one per 10 m.
 /// Always true when nothing has been pushed yet ([last] is null).
 bool shouldPush(LiveActivityContent? last, LiveActivityContent next) =>
     last == null ||
     last.distanceText != next.distanceText ||
     last.isPaused != next.isPaused ||
-    last.title != next.title;
+    last.title != next.title ||
+    next.snapshotEpochMs - last.snapshotEpochMs >=
+        _keepAlivePushInterval.inMilliseconds;

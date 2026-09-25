@@ -96,6 +96,7 @@
 		6A0600000000000000000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6A0600000000000000000008 /* RideActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RideActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0600000000000000000009 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		6A0600000000000000000100 /* RideActivityExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = RideActivityExtension.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -193,6 +194,7 @@
 				6A0600000000000000000005 /* RideActivityWidget.swift */,
 				6A0600000000000000000007 /* Assets.xcassets */,
 				6A0600000000000000000006 /* Info.plist */,
+				6A0600000000000000000100 /* RideActivityExtension.xcconfig */,
 			);
 			path = RideActivityExtension;
 			sourceTree = "<group>";
@@ -743,7 +745,7 @@
 		};
 		6A060000000000000000001F /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			baseConfigurationReference = 6A0600000000000000000100 /* RideActivityExtension.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;
@@ -770,7 +772,7 @@
 		};
 		6A0600000000000000000020 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = 6A0600000000000000000100 /* RideActivityExtension.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;
@@ -797,7 +799,7 @@
 		};
 		6A0600000000000000000021 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			baseConfigurationReference = 6A0600000000000000000100 /* RideActivityExtension.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;

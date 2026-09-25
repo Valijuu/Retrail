@@ -19,6 +19,11 @@ final class LiveActivityBridge: NSObject, FlutterPlugin, FlutterSceneLifeCycleDe
   private let channel: FlutterMethodChannel
   private var controlObserver: NSObjectProtocol?
 
+  /// The previous ActivityKit operation. Each call awaits it first, so e.g. an
+  /// `end` can never slip in while a `start` is suspended and leave an orphan.
+  /// Only touched on the main thread (channel calls arrive there).
+  private var pending: Task<Void, Never>?
+
   private init(channel: FlutterMethodChannel) {
     self.channel = channel
   }
@@ -35,9 +40,25 @@ final class LiveActivityBridge: NSObject, FlutterPlugin, FlutterSceneLifeCycleDe
     ) { [weak bridge] note in
       if let id = note.object as? String { bridge?.sendAction(id) }
     }
+    RideControlSink.isAttached = true
     // A fresh process can't be recording yet: anything still showing was left
     // behind by a killed process (pairs with finalizeUnfinishedRides()).
-    Task { await bridge.endAll() }
+    bridge.enqueue { await bridge.endAll() }
+  }
+
+  func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+    if let controlObserver { NotificationCenter.default.removeObserver(controlObserver) }
+    controlObserver = nil
+    RideControlSink.isAttached = false
+  }
+
+  /// Runs [work] after every previously enqueued operation has finished.
+  private func enqueue(_ work: @escaping @MainActor () async -> Void) {
+    let previous = pending
+    pending = Task { @MainActor in
+      await previous?.value
+      await work()
+    }
   }
 
   private func sendAction(_ id: String) {
@@ -59,7 +80,7 @@ final class LiveActivityBridge: NSObject, FlutterPlugin, FlutterSceneLifeCycleDe
         let attributes = Self.attributes(args["attributes"]),
         let state = Self.state(args["content"])
       else { return result(Self.badArguments(call)) }
-      Task { @MainActor in
+      enqueue {
         do {
           try await self.start(attributes: attributes, state: state)
           result(nil)
@@ -73,12 +94,12 @@ final class LiveActivityBridge: NSObject, FlutterPlugin, FlutterSceneLifeCycleDe
       guard let state = Self.state(call.arguments) else {
         return result(Self.badArguments(call))
       }
-      Task { @MainActor in
+      enqueue {
         await self.update(state: state)
         result(nil)
       }
     case "end":
-      Task { @MainActor in
+      enqueue {
         await self.endAll()
         result(nil)
       }

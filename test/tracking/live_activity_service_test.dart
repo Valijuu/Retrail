@@ -14,7 +14,7 @@ const _copy = RideNotificationCopy(
 );
 
 const _accents = LiveActivityAccents(light: 0xFFB45309, dark: 0xFFF59E42);
-const _now = 1700000000000;
+const _t0 = 1700000000000;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,15 +24,17 @@ void main() {
   late List<MethodCall> calls;
   late bool supported;
   late bool throwing;
+  late int nowMs;
 
   LiveActivityService service() =>
       LiveActivityService(liveActivityChannel, () => _copy, _accents,
-          now: () => _now);
+          now: () => nowMs);
 
   setUp(() {
     calls = [];
     supported = true;
     throwing = false;
+    nowMs = _t0;
     messenger.setMockMethodCallHandler(liveActivityChannel, (call) async {
       calls.add(call);
       if (throwing) throw PlatformException(code: 'boom');
@@ -63,7 +65,7 @@ void main() {
         'distanceText': '0.00 km',
         'isPaused': false,
         'elapsedSeconds': 0,
-        'snapshotEpochMs': _now,
+        'snapshotEpochMs': _t0,
       },
     });
   });
@@ -102,7 +104,7 @@ void main() {
       'distanceText': '0.02 km',
       'isPaused': false,
       'elapsedSeconds': 2,
-      'snapshotEpochMs': _now,
+      'snapshotEpochMs': _t0,
     });
 
     // Pause → push with the paused title.
@@ -151,6 +153,60 @@ void main() {
     calls.clear();
 
     await s.update(isPaused: true, elapsedSeconds: 1, distanceMetres: 100);
+    expect(calls, isEmpty);
+  });
+
+  test(
+      'a failed start is retried on a later update (e.g. phone was locked '
+      'when the ride began), throttled to once per 30 s', () async {
+    var failStart = true;
+    messenger.setMockMethodCallHandler(liveActivityChannel, (call) async {
+      calls.add(call);
+      if (call.method == 'isSupported') return true;
+      if (call.method == 'start' && failStart) {
+        throw PlatformException(code: 'start_failed');
+      }
+      return null;
+    });
+    final s = service();
+    await s.start();
+    failStart = false;
+    calls.clear();
+
+    nowMs = _t0 + 29 * 1000; // too soon — no retry yet
+    await s.update(isPaused: false, elapsedSeconds: 29, distanceMetres: 50);
+    expect(calls, isEmpty);
+
+    nowMs = _t0 + 30 * 1000; // retry, starting with the CURRENT ride state
+    await s.update(isPaused: false, elapsedSeconds: 30, distanceMetres: 60);
+    expect(methods(), ['isSupported', 'start']);
+    expect((calls.last.arguments as Map)['content'], {
+      'title': 'Recording ride',
+      'distanceText': '0.06 km',
+      'isPaused': false,
+      'elapsedSeconds': 30,
+      'snapshotEpochMs': _t0 + 30 * 1000,
+    });
+
+    // Now running: later changes are plain updates again.
+    calls.clear();
+    await s.update(isPaused: true, elapsedSeconds: 31, distanceMetres: 60);
+    expect(methods(), ['update']);
+  });
+
+  test('no retry after stop', () async {
+    messenger.setMockMethodCallHandler(liveActivityChannel, (call) async {
+      calls.add(call);
+      if (call.method == 'isSupported') return true;
+      throw PlatformException(code: 'start_failed');
+    });
+    final s = service();
+    await s.start();
+    await s.stop();
+    calls.clear();
+
+    nowMs = _t0 + 60 * 1000;
+    await s.update(isPaused: false, elapsedSeconds: 60, distanceMetres: 60);
     expect(calls, isEmpty);
   });
 

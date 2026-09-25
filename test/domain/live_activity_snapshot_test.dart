@@ -132,5 +132,20 @@ void main() {
       );
       expect(shouldPush(english, german), isTrue);
     });
+    test('keep-alive: nothing changed but 10 min since the last push → true '
+        '(keeps a long pause / standstill from going stale)', () {
+      const tenMinutesMs = 10 * 60 * 1000;
+      final last = _content(nowEpochMs: _snapshotEpochMs);
+      final next = _content(nowEpochMs: _snapshotEpochMs + tenMinutesMs);
+      expect(shouldPush(last, next), isTrue);
+    });
+    test('nothing changed, just under 10 min since the last push → false', () {
+      const justUnderTenMinutesMs = 10 * 60 * 1000 - 1;
+      final last = _content(nowEpochMs: _snapshotEpochMs);
+      final next = _content(
+        nowEpochMs: _snapshotEpochMs + justUnderTenMinutesMs,
+      );
+      expect(shouldPush(last, next), isFalse);
+    });
   });
 }

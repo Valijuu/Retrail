@@ -61,6 +61,13 @@ extension Notification.Name {
   static let rideControl = Notification.Name("com.retrail.rideControl")
 }
 
+/// Whether a Flutter engine is listening for ride controls in this process.
+/// False when iOS relaunched a killed app in the background just to run a
+/// button's intent: no scene, no engine, no ride — the activity is an orphan.
+enum RideControlSink {
+  static var isAttached = false
+}
+
 extension Color {
   /// A color from an ARGB int as produced by Flutter's `Color.toARGB32()`.
   init(argb: Int) {
