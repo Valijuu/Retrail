@@ -1,0 +1,72 @@
+# Unsigned iOS build on a macOS runner (free for public repos) — the compile
+# gate for all Swift / Xcode-project work, and the source of the .ipa that is
+# sideloaded onto a test iPhone (docs/ios-sideloading.md, Spec 6 §G/§H).
+#
+# The public repo makes workflow artifacts downloadable by any signed-in
+# GitHub user, and the MapTiler key is compiled into the app — so only an
+# AES-encrypted archive is uploaded, and only for a few days.
+name: iOS build
+
+on:
+  push:
+    branches: [main, "phase/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.3
+          cache: true
+
+      - name: Enable Swift Package Manager (the Xcode project uses it, no CocoaPods)
+        run: flutter config --enable-swift-package-manager
+
+      - run: flutter pub get
+
+      - name: Build Runner.app (release, unsigned)
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+        run: flutter build ios --release --no-codesign --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+
+      - name: Package Retrail.ipa and encrypt it
+        env:
+          IPA_PASSWORD: ${{ secrets.IPA_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${IPA_PASSWORD}" ]; then
+            echo "::error::IPA_PASSWORD secret is missing — refusing to upload an unencrypted build."
+            exit 1
+          fi
+          test -d build/ios/iphoneos/Runner.app/PlugIns/RideActivityExtension.appex \
+            || { echo "::error::Live Activity extension was not embedded."; exit 1; }
+          mkdir -p dist/Payload
+          cp -R build/ios/iphoneos/Runner.app dist/Payload/
+          (cd dist && zip -qry Retrail.ipa Payload)
+          SEVEN_ZIP="$(command -v 7z || command -v 7zz || true)"
+          if [ -z "${SEVEN_ZIP}" ]; then
+            brew install sevenzip >/dev/null
+            SEVEN_ZIP="$(command -v 7zz)"
+          fi
+          # -mhe=on also hides the file names inside the archive.
+          "${SEVEN_ZIP}" a -p"${IPA_PASSWORD}" -mhe=on dist/Retrail.ipa.7z dist/Retrail.ipa >/dev/null
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Retrail-ios-${{ github.run_number }}
+          path: dist/Retrail.ipa.7z
+          retention-days: 3
+          if-no-files-found: error

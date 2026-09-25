@@ -87,6 +87,19 @@
 	<array>
 		<string>location</string>
 	</array>
+	<!-- Spec 6: tapping the ride's Live Activity opens retrail://ride
+	     (handled by LiveActivityBridge → the active-ride deep link). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.retrail.retrail.ride</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>retrail</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 </dict>

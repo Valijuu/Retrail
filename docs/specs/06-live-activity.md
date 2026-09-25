@@ -1,6 +1,6 @@
 # Spec 6 — iOS Live Activity (lock screen + Dynamic Island)
 
-**Status:** SPEC — for review. Not implemented.
+**Status:** IMPLEMENTED (headless) — Dart side test-first (EXACT snapshot + RGR service/relay/provider), Swift + Xcode target written by hand; **awaiting the `ios-build` CI run and the device checklist** (§H, `docs/ios-sideloading.md`).
 **Phase:** 6 of 15 (the iOS counterpart to Spec 5B's Android notification)
 **Depends on:** Spec 5A (`RideTracker`, `RideTrackingState`), Spec 5B (`RideForegroundService`
 seam, `RideRecordingController`, the notification-action relay in `main.dart`,
@@ -199,7 +199,7 @@ Hand-written, mirroring Xcode's "Widget Extension" template:
 
 ## G. CI — `.github/workflows/ios-build.yml`
 
-- Runner `macos-latest`; triggers: push to `main` + `workflow_dispatch`.
+- Runner `macos-15`; triggers: push to `main` and `phase/**` (so a phase branch is compile-checked before it lands) + `workflow_dispatch`. Also fails if the `.appex` was not embedded.
 - Steps: checkout → `subosito/flutter-action` (stable, cached) → `flutter pub get` →
   `flutter build ios --release --no-codesign --dart-define=MAPTILER_KEY=${{ secrets.MAPTILER_KEY }}`
   → package `build/ios/iphoneos/Runner.app` as `Payload/Runner.app` → zip to `Retrail.ipa` →

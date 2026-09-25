@@ -52,7 +52,7 @@ Invoke the debugging skill (`.claude/skills/root-cause-debugging/SKILL.md`) when
 | Maps (live) | **`maplibre`** (native MapLibre GL, vector style) |
 | Map previews | Pre-rendered PNG snapshots (`CustomPainter → toImage → PNG`), cached on disk — NO live map per list item |
 | Background GPS | **`flutter_foreground_task`** (Android service + notification) + **`geolocator`** (location + iOS background modes) |
-| Notifications | Android: the `flutter_foreground_task` service notification (title + Pause/Stop). iOS: **Live Activity** (Swift ActivityKit) planned; `flutter_local_notifications` is a dependency but not yet used — keep or drop decided with the iOS pass (issue #35) |
+| Notifications | Android: the `flutter_foreground_task` service notification (title + Pause/Stop). iOS: **Live Activity** — ActivityKit widget extension `ios/RideActivityExtension` + `LiveActivityBridge.swift`, driven over the `retrail/live_activity` MethodChannel by `LiveActivityService` (Spec 6) |
 | Images / crop | `image_picker` + `image_cropper` — replaces camera intent + uCrop |
 | Localization | `flutter_localizations` + `intl`, ARB files (`en` default, `de`) |
 | Tile source | **MapTiler** `topo-v2` / `basic-v2-dark` (existing API key) — vector style for the live map, `@2x` raster tiles for previews |
@@ -82,9 +82,15 @@ lib/
 │   ├── onboarding/  home/  timer/  active_ride/  history/  settings/  profile/
 │   │     each: <feature>_screen.dart, <feature>_providers.dart, widgets/
 │   └── shell/                    # splash, main tabs + bottom nav, routing, deep-link
-├── tracking/                     # RideTracker (singleton provider), location pipeline, foreground task
+├── tracking/                     # RideTracker (singleton provider), location pipeline, foreground task / Live Activity
 └── map/                          # MapLibre live map, preview snapshot pipeline, projection math
+ios/
+├── Runner/LiveActivityBridge.swift   # retrail/live_activity channel ↔ ActivityKit
+├── Shared/                           # Swift shared by Runner + extension (attributes, LiveActivityIntent)
+└── RideActivityExtension/            # WidgetKit extension: lock screen + Dynamic Island UI
 ```
+
+**iOS builds** happen only on GitHub Actions (`.github/workflows/ios-build.yml`, macOS runner, unsigned, encrypted `.ipa` artifact) — there is no Mac. Swift/Xcode-project changes are verified by that workflow going green; device testing is sideloaded per `docs/ios-sideloading.md`. The Xcode project is edited by hand: keep "Embed Foundation Extensions" before "Run Script" in the Runner target (flutter/flutter#135056).
 
 **Conventions**
 - One Riverpod provider set per feature (`*_providers.dart`); expose read-only state, accept intents as methods. Mirrors the original ViewModels 1:1 (`HomeViewModel` → `homeProvider`, etc.).
