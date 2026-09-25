@@ -1,13 +1,18 @@
 import 'dart:ui' show Locale;
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/theme/app_colors.dart';
 import '../data/repositories/data_providers.dart';
 import '../domain/distance_calculator.dart';
 import '../features/settings/settings_providers.dart';
 import '../l10n/app_localizations.dart';
 import 'foreground_task_service.dart';
 import 'geolocator_permission_service.dart';
+import 'live_activity_service.dart';
 import 'location_source.dart';
 import 'ride_recording_controller.dart';
 import 'ride_tracker.dart';
@@ -72,10 +77,23 @@ final rideNotificationCopyProvider = Provider<RideNotificationCopy>((ref) {
   );
 });
 
-/// Foreground service (keep-alive + ongoing notification).
-final rideForegroundServiceProvider = Provider<RideForegroundService>(
-  (ref) => ForegroundTaskService(() => ref.read(rideNotificationCopyProvider)),
-);
+/// The recording's out-of-app surface: on iOS the Live Activity (Spec 6) —
+/// background GPS there comes from geolocator, not a service — elsewhere the
+/// Android foreground service (keep-alive + ongoing notification).
+final rideForegroundServiceProvider = Provider<RideForegroundService>((ref) {
+  RideNotificationCopy copy() => ref.read(rideNotificationCopyProvider);
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return LiveActivityService(
+      liveActivityChannel,
+      copy,
+      LiveActivityAccents(
+        light: AppColors.light.primary.toARGB32(),
+        dark: AppColors.dark.primary.toARGB32(),
+      ),
+    );
+  }
+  return ForegroundTaskService(copy);
+});
 
 /// Orchestrates permission gate → location source → tracker → foreground service.
 final rideRecordingControllerProvider = Provider<RideRecordingController>((ref) {

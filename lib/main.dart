@@ -16,6 +16,7 @@ import 'data/repositories/data_providers.dart';
 import 'data/repositories/preferences_repository.dart';
 import 'features/active_ride/active_ride_providers.dart';
 import 'tracking/foreground_task_service.dart';
+import 'tracking/live_activity_service.dart';
 import 'tracking/ride_control_relay.dart';
 import 'tracking/tracking_providers.dart';
 
@@ -81,6 +82,9 @@ Future<void> main() async {
   // via sendDataToMain) to the recording controller / deep-link.
   FlutterForegroundTask.addTaskDataCallback(
       (data) => rideControlRelay(container, data is String ? data : ''));
+  // Same relay for the iOS Live Activity's buttons and tap (Spec 6).
+  listenForLiveActivityActions(
+      liveActivityChannel, (id) => rideControlRelay(container, id));
 
   runApp(UncontrolledProviderScope(
     container: container,

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,8 @@ import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/features/settings/settings_providers.dart';
+import 'package:retrail/tracking/foreground_task_service.dart';
+import 'package:retrail/tracking/live_activity_service.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_source.dart';
 import 'package:retrail/tracking/ride_recording_controller.dart';
@@ -140,5 +143,25 @@ void main() {
     ]);
     addTearDown(german.dispose);
     expect(german.read(rideNotificationCopyProvider).locale, 'de_DE');
+  });
+
+  group('rideForegroundServiceProvider picks the platform implementation', () {
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    test('iOS → Live Activity', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      expect(container.read(rideForegroundServiceProvider),
+          isA<LiveActivityService>());
+    });
+
+    test('Android → foreground-task notification', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      expect(container.read(rideForegroundServiceProvider),
+          isA<ForegroundTaskService>());
+    });
   });
 }
