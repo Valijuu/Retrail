@@ -86,7 +86,8 @@ jobs:
             SEVEN_ZIP="$(command -v 7zz)"
           fi
           # -mhe=on also hides the file names inside the archive.
-          "${SEVEN_ZIP}" a -p"${IPA_PASSWORD}" -mhe=on dist/Retrail.ipa.7z dist/Retrail.ipa >/dev/null
+          # Run inside dist/ so the archive holds Retrail.ipa, not dist/Retrail.ipa.
+          (cd dist && "${SEVEN_ZIP}" a -p"${IPA_PASSWORD}" -mhe=on Retrail.ipa.7z Retrail.ipa >/dev/null)
 
       - uses: actions/upload-artifact@v4
         with:
