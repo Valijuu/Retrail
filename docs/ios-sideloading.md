@@ -1,126 +1,243 @@
 # Retrail on an iPhone — without a Mac or a paid Apple account
 
-The `iOS build` GitHub Actions workflow (`.github/workflows/ios-build.yml`) builds an
-**unsigned** app on a macOS runner. A free Apple ID signs it on your Linux PC while
-installing. Background: Spec 6 §G/§H.
+The **iOS build** GitHub Actions workflow (`.github/workflows/ios-build.yml`) builds an
+**unsigned** app on a macOS runner. `tool/ios_fetch_build.sh` downloads it to this Linux PC and
+installs it on an iPhone connected via USB. [Splice](https://github.com/franklintra/splice)
+signs it with a free Apple ID during the install. Background: Spec 6 §G/§H.
+
+```
+push app code to main ──► GitHub Actions: iOS build (~5–15 min, encrypted .ipa artifact)
+        │ .githooks/pre-push starts tool/ios_fetch_build.sh --wait in the background
+        ▼
+~/Downloads/retrail-ios/Retrail.ipa.7z ──► iPhone on USB? ── no ──► notification "not connected"
+                                                 │ yes
+                                                 ▼
+             unpack (password from keyring) ──► splice install ──► notification "installed"
+```
+
+---
 
 ## One-time setup
 
-1. **Repository secrets** (GitHub → Settings → Secrets and variables → Actions):
-   - `MAPTILER_KEY`: the key from your local `maptiler.json`
-   - `IPA_PASSWORD`: a long random passphrase (`openssl rand -base64 24`). Keep it in your
-     password manager, because GitHub never shows it again.
-2. **Sideloader on Linux:** install [Splice](https://github.com/franklintra/splice). It
-   needs `libimobiledevice` and, on Ubuntu, `sudo apt install libimobiledevice-utils usbmuxd`.
-   You also need 7-Zip (`sudo apt install 7zip`).
-3. **Apple ID:** `splice login` (in a real terminal; it prompts for Apple ID, password and
-   the 2FA code). It has to be an Apple ID with a **trusted device**, see "Troubleshooting".
-   Before logging in on Ubuntu, apply the two fixes under "Troubleshooting".
-4. **iPhone:** Settings → Privacy & Security → **Developer Mode** → on (the phone
-   restarts). Connect it via USB and confirm "Trust this computer".
+Do these steps in this order. Everything below was set up and verified on Ubuntu 26.04 with an
+iPhone 8 on iOS 16.7.
 
-## Each new build
+### 1. GitHub
 
-1. **Get the build** with `tool/ios_fetch_build.sh`. It downloads a green `main` build to
-   `~/Downloads/retrail-ios/Retrail.ipa.7z`, replaces the previous one (and anything unpacked
-   from it), and shows a desktop notification. It does nothing if that build is already there.
+- **Repository secrets** (GitHub → Settings → Secrets and variables → Actions):
+  - `MAPTILER_KEY`: the key from your local `maptiler.json`.
+  - `IPA_PASSWORD`: a long random passphrase (`openssl rand -base64 24`). Keep it in your
+    password manager, because GitHub never shows it again.
+- The `gh` CLI must be logged in with the `workflow` scope:
+  `gh auth refresh -h github.com -s workflow`.
 
-   | Situation | Command |
-   |---|---|
-   | You push app code to `main` | nothing: the git hook below runs `--wait` for you |
-   | You pushed app code without the hook | `tool/ios_fetch_build.sh --wait` |
-   | You clicked "Run workflow" on GitHub | `tool/ios_fetch_build.sh --wait` |
-   | You want to start a build from the terminal | `tool/ios_fetch_build.sh --trigger` |
-   | You just want the latest green build | `tool/ios_fetch_build.sh` |
+### 2. Packages
 
-   - `--wait` waits for the newest **running** build on `main`, whatever started it (about
-     15 min), then fetches it. A new build takes a few seconds to show up, so it looks for up
-     to a minute. If none is running, it fetches the latest green build instead.
-   - `--trigger` starts the workflow on `main` itself and waits for exactly that build.
-   - A failed build ends with a notification that links to the run.
-   - **Automatic after a push:** `.githooks/pre-push` starts `--wait` in the background whenever
-     a push to `main` changes app code (the same paths that start the build). The push is not
-     delayed. Enable it once per clone with `git config core.hooksPath .githooks`. Log:
-     `~/.cache/retrail-ios-fetch.log`. Skip it for one push with `RETRAIL_NO_IOS_FETCH=1 git push`.
-     A build started via "Run workflow" on the GitHub website isn't noticed locally; use
-     `--trigger` from the terminal instead, or `--wait` right after clicking.
-   - **By hand:** GitHub → **Actions** → **iOS build** → latest green run → artifact
-     `Retrail-ios-<n>`.
+```bash
+sudo apt install usbmuxd libimobiledevice-utils 7zip libsecret-tools
+```
 
-   Builds start automatically on every push to `main` / `phase/**` that changes app code
-   (`lib/`, `ios/`, `assets/`, `pubspec.*`).
-2. **Install — automatic when the iPhone is on USB.** Right after fetching (and when a
-   fetched build isn't installed yet), the script checks for an iPhone on USB
-   (`idevice_id -l`):
-   - **iPhone connected:** it unpacks the archive into a temp dir, makes sure the
-     `anisette-v3` container runs, installs with Splice, deletes the unpacked `.ipa`,
-     and notifies "Retrail installed".
-   - **No iPhone:** it installs nothing and notifies you. Connect the iPhone later and run
-     `tool/ios_fetch_build.sh --install`.
-   - It remembers the installed build (`.installed-id`), so nothing is installed twice.
+Docker is needed as well, for the anisette server in step 5.
 
-   One-time setup: `sudo apt install libsecret-tools`, then
-   `tool/ios_fetch_build.sh --store-password` puts `IPA_PASSWORD` into the login keyring.
-   Keep the iPhone **unlocked** while it installs.
+### 3. Splice (the sideloader)
 
-   By hand instead: `cd ~/Downloads/retrail-ios && 7z x Retrail.ipa.7z && splice install
-   Retrail.ipa`. If you downloaded from GitHub yourself, run `unzip Retrail-ios-*.zip` first.
-3. The first time, trust your Apple ID on the iPhone: Settings → General → VPN & Device
-   Management.
+```bash
+mkdir -p ~/.local/bin
+gh release download v1.0.0 -R franklintra/splice -p 'splice-cli-x86_64-linux-gnu' \
+  -O ~/.local/bin/splice
+chmod +x ~/.local/bin/splice
+ldd ~/.local/bin/splice | grep "not found"   # must print nothing
+```
 
-## Limits of the free signature
+### 4. Apple root certificate for Splice
 
-- **7 days:** after that the app no longer starts. Re-sign it with `splice refresh`, or let
-  Splice's background service (`splice service`) do that automatically.
-- **10 App IDs per 7 days:** the app and the Live Activity extension use 2 per install.
-- Community tooling, not an Apple product. It can lag behind new iOS versions.
+`gsa.apple.com` chains to Apple's private **Apple Root CA**, which Ubuntu's trust store doesn't
+include. Without it, Splice fails with `ssl connect failed: certificate verify failed`
+(splice issue [#23](https://github.com/franklintra/splice/issues/23)).
 
-## Troubleshooting Splice on Ubuntu (26.04, Splice v1.0.0)
+```bash
+mkdir -p ~/.config/splice
+curl -fsSL https://www.apple.com/appleca/AppleIncRootCertificate.cer \
+  | openssl x509 -inform DER > /tmp/apple-root-ca.pem
+openssl x509 -in /tmp/apple-root-ca.pem -noout -fingerprint -sha256
+# must print B0:B1:73:0E:CB:C7:FF:45:05:14:2C:49:F1:29:5E:6E:DA:6B:CA:ED:7E:2C:68:C5:BE:91:B5:A1:10:01:F0:24
+cat /etc/ssl/certs/ca-certificates.crt /tmp/apple-root-ca.pem > ~/.config/splice/ca-with-apple.crt
+echo "alias splice='SSL_CERT_FILE=\$HOME/.config/splice/ca-with-apple.crt splice'" >> ~/.bashrc
+```
 
-- **`ssl connect failed: certificate verify failed`** (splice issue
-  [#23](https://github.com/franklintra/splice/issues/23)): `gsa.apple.com` chains to
-  Apple's private **Apple Root CA**, and Ubuntu's trust store doesn't include it. Give
-  Splice a bundle that also contains Apple's root:
-  ```bash
-  mkdir -p ~/.config/splice
-  curl -fsSL https://www.apple.com/appleca/AppleIncRootCertificate.cer \
-    | openssl x509 -inform DER > /tmp/apple-root-ca.pem
-  openssl x509 -in /tmp/apple-root-ca.pem -noout -fingerprint -sha256
-  # must print B0:B1:73:0E:CB:C7:FF:45:05:14:2C:49:F1:29:5E:6E:DA:6B:CA:ED:7E:2C:68:C5:BE:91:B5:A1:10:01:F0:24
-  cat /etc/ssl/certs/ca-certificates.crt /tmp/apple-root-ca.pem > ~/.config/splice/ca-with-apple.crt
-  echo "alias splice='SSL_CERT_FILE=\$HOME/.config/splice/ca-with-apple.crt splice'" >> ~/.bashrc
-  ```
-  The background refresh service doesn't read the alias. If you want it, add the root
-  system-wide instead: copy the `.pem` to `/usr/local/share/ca-certificates/apple-root-ca.crt`
-  and run `sudo update-ca-certificates`.
-- **Segfault right after "Sending first auth request"**: Apple answers `503` because it
-  rejects Splice's locally emulated anisette data, and Splice crashes parsing the HTML.
-- **Endless 2FA loop (a new code after every code you enter)**: splice issue
-  [#25](https://github.com/franklintra/splice/issues/25). Public anisette servers such as
-  `ani.sidestore.io` hand out a **different device identity on every request**, so Apple
-  sees a new, unverified device after each code.
-- **Fix for both: a local anisette server with one stable identity** (Docker):
-  ```bash
-  docker run -d --name anisette-v3 -p 127.0.0.1:6969:6969 \
-    -v anisette-v3_data:/home/Alcoholic/.config/anisette-v3/lib/ dadoum/anisette-v3-server
-  splice --anisette-server http://127.0.0.1:6969 login   # remembered as the default
-  ```
-  It only needs to run while you use Splice: `docker start anisette-v3` after a reboot, or
-  `docker update --restart unless-stopped anisette-v3`. The volume keeps the identity, so
-  Apple doesn't ask for 2FA again. The anisette server never sees your Apple ID or password.
-- **Which Apple ID:** one with a trusted device (e.g. your main ID, signed in to iCloud on the
-  iPhone). Get the code via the push prompt or Settings → your name → Sign-In & Security →
-  Get Verification Code. An SMS-only ID also runs into the unfinished SMS path in Splice.
-- **Seeing what happens:** `splice --log-level debug login`.
+`tool/ios_fetch_build.sh` sets `SSL_CERT_FILE` itself, so the alias only matters when you
+run `splice` by hand.
+
+### 5. Local anisette server (Docker)
+
+Splice has to identify itself to Apple like a Mac ("anisette" data). Neither built-in option
+works here:
+
+- Splice's own emulation gets a `503` from Apple, and Splice then **segfaults**.
+- Public servers such as `ani.sidestore.io` return a **different device identity on every
+  request**. Apple then asks for 2FA again after every code, in an endless loop (splice issue
+  [#25](https://github.com/franklintra/splice/issues/25)).
+
+A local server keeps one stable identity:
+
+```bash
+docker run -d --name anisette-v3 -p 127.0.0.1:6969:6969 \
+  -v anisette-v3_data:/home/Alcoholic/.config/anisette-v3/lib/ dadoum/anisette-v3-server
+```
+
+The server is only reachable from this PC. It never sees your Apple ID or password. The volume
+keeps the identity, so Apple doesn't ask for 2FA on every run. The fetch script starts the
+container when it's stopped (e.g. after a reboot).
+
+### 6. Splice login
+
+Log in in a real terminal (it prompts for input):
+
+```bash
+splice --anisette-server http://127.0.0.1:6969 login   # the server is remembered as the default
+```
+
+- Use an Apple ID with a **trusted device**, e.g. your main ID, signed in to iCloud on the
+  iPhone. The 2FA code arrives as a push on that device. You can also get one via
+  Settings → your name → Sign-In & Security → Get Verification Code.
+- An **SMS-only** Apple ID (no Apple device signed in) doesn't work: Splice's SMS path is
+  unfinished (issue [#25](https://github.com/franklintra/splice/issues/25)).
+- To see what happens: `splice --log-level debug login`.
+
+### 7. IPA password in the keyring
+
+```bash
+tool/ios_fetch_build.sh --store-password   # asks for IPA_PASSWORD once
+```
+
+It is stored in the GNOME login keyring (`secret-tool`, attributes
+`service=retrail-ios key=ipa-password`), not in a file.
+
+### 8. Git hook (automatic fetch + install after a push)
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This is needed once per clone.
+
+### 9. iPhone
+
+1. Connect it via USB and confirm **Trust this computer**.
+2. Install the first build: `tool/ios_fetch_build.sh` (or `--install`).
+3. **Developer Mode:** on iOS 16 the switch only appears **after** the first developer-signed
+   app is installed, or when you first try to open it. Go to Settings → Privacy & Security →
+   Developer Mode → on. The phone restarts; confirm "Turn On".
+4. **Trust the Apple ID:** Settings → General → VPN & Device Management → your Apple ID →
+   Trust.
+
+---
+
+## Daily use
+
+**Normally: nothing to do.** Push app code to `main` (`lib/`, `ios/`, `assets/`, `pubspec.*`,
+`l10n.yaml`) and leave the iPhone connected and **unlocked**. About 5–15 minutes later the new
+build is installed, with a notification.
+
+| Situation | Command |
+|---|---|
+| You pushed app code to `main` | nothing: the hook runs `--wait` for you |
+| You pushed without the hook, or clicked "Run workflow" on GitHub | `tool/ios_fetch_build.sh --wait` |
+| Start a build from the terminal | `tool/ios_fetch_build.sh --trigger` |
+| Get the latest green build (and install it) | `tool/ios_fetch_build.sh` |
+| The iPhone wasn't connected, install now | `tool/ios_fetch_build.sh --install` |
+| Skip the hook for one push | `RETRAIL_NO_IOS_FETCH=1 git push` |
+
+- `--wait` waits for the newest **running** build on `main`, whatever started it. A new build
+  takes a few seconds to show up, so it looks for up to a minute; if none is running, it
+  fetches the latest green build instead.
+- `--trigger` starts the workflow on `main` itself and waits for exactly that build.
+- **Install step:** the script checks for an iPhone on USB (`idevice_id -l`).
+  - **Connected:** it unpacks into a temp dir, starts `anisette-v3` if needed, runs
+    `splice install`, deletes the unpacked `.ipa`, and notifies **"Retrail installed"**.
+  - **Not connected:** it installs nothing and notifies **"iPhone not connected"**.
+  - It remembers the installed build (`.installed-id`), so nothing is installed twice.
+- **Notifications:** "build #n ready", "Retrail installed", "iPhone not connected",
+  "install failed" (with the reason), and "build failed" (with a link to the run).
+- **By hand, without the script:** GitHub → Actions → iOS build → latest green run →
+  artifact `Retrail-ios-<n>`, then `unzip Retrail-ios-*.zip && 7z x Retrail.ipa.7z &&
+  splice install Retrail.ipa`. Artifacts expire after **3 days**.
+
+---
+
+## What lives where
+
+| What | Where |
+|---|---|
+| Fetch/install script | `tool/ios_fetch_build.sh` (repo) |
+| Git hook | `.githooks/pre-push` (repo), enabled via `git config core.hooksPath` |
+| CI workflow | `.github/workflows/ios-build.yml` (repo) |
+| Downloaded build (encrypted) | `~/Downloads/retrail-ios/Retrail.ipa.7z` |
+| Downloaded / installed build ids | `~/Downloads/retrail-ios/.artifact-id`, `.installed-id` |
+| Log of background runs | `~/.cache/retrail-ios-fetch.log` |
+| Splice binary | `~/.local/bin/splice` |
+| Splice state: login, certificates, anisette setting | `~/.config/Sideloader/` |
+| CA bundle with Apple's root | `~/.config/splice/ca-with-apple.crt` |
+| `splice` alias | `~/.bashrc` (last line) |
+| Anisette server | Docker container `anisette-v3`, volume `anisette-v3_data` |
+| IPA password | GNOME login keyring (`service=retrail-ios key=ipa-password`) |
+| GitHub secrets | `MAPTILER_KEY`, `IPA_PASSWORD` in the repo settings |
+
+---
+
+## Limits
+
+- **7-day signature:** a free Apple ID signs for 7 days; after that the app no longer starts.
+  Every automatic install re-signs it. Without a new build, re-sign with `splice refresh`
+  (iPhone on USB, `anisette-v3` running).
+- **10 App IDs per 7 days:** Splice reuses the existing ones. So far the app plus the Live
+  Activity extension use 2.
+- **iPhone 8 / iOS 16.7:**
+  - The Live Activity shows on the lock screen, but **without buttons** (they need iOS 17).
+  - There is **no Dynamic Island** (iPhone 14 Pro and later).
+  - TrollStore-style permanent installs don't work (only up to iOS 16.6.1).
+- **Keep the iPhone unlocked** while installing, or Splice fails ("install failed").
+- **Community tooling:** Splice and the anisette server aren't Apple products and can break
+  with new iOS versions.
+- **Public repo:** artifacts are downloadable by any GitHub user, which is why the `.ipa` is
+  AES-encrypted and only kept for 3 days. The MapTiler key is compiled into every build.
+
+---
+
+## Undoing it
+
+Remove whatever you no longer want; the steps are independent.
+
+| Undo | Command / action |
+|---|---|
+| Automatic fetch after a push | `git config --unset core.hooksPath` |
+| Retrail on the iPhone | long-press the app → Remove App (deletes its data) |
+| Trust in the Apple ID on the iPhone | Settings → General → VPN & Device Management → your ID → Delete App |
+| Developer Mode | Settings → Privacy & Security → Developer Mode → off |
+| "Trust this computer" | Settings → General → Transfer or Reset iPhone → Reset → Reset Location & Privacy |
+| IPA password in the keyring | `secret-tool clear service retrail-ios key ipa-password` |
+| Splice login | `splice logout` |
+| Splice entirely | `rm ~/.local/bin/splice` and `rm -rf ~/.config/Sideloader ~/.config/splice`, then remove the `alias splice=…` line from `~/.bashrc` |
+| Anisette server | `docker rm -f anisette-v3 && docker volume rm anisette-v3_data && docker rmi dadoum/anisette-v3-server` |
+| Downloaded builds and log | `rm -rf ~/Downloads/retrail-ios ~/.cache/retrail-ios-fetch.log` |
+| Apple development certificate | revoke it at developer.apple.com → Certificates (optional; it expires by itself) |
+| iOS builds on GitHub | delete or disable `.github/workflows/ios-build.yml`; remove the secrets in the repo settings |
+| Packages | `sudo apt remove libsecret-tools 7zip` (`usbmuxd` / `libimobiledevice-utils` may be used by other tools) |
+
+---
 
 ## What to test on the phone (Spec 6 device checklist)
 
-- Start a ride → the Live Activity appears on the lock screen and in the Dynamic Island.
+On an iPhone 8 / iOS 16.x, the items marked *(iOS 17+)* and *(Dynamic Island)* can't be tested.
+
+- Start a ride and lock the phone → the Live Activity appears on the lock screen (and in the
+  Dynamic Island).
 - The timer ticks with the phone locked. The distance updates while you move.
-- Lock-screen **Pause** → "Ride paused", timer stops. **Resume** continues without counting
-  the pause.
-- Lock-screen **Stop** → the ride appears in the history, and the activity disappears.
+- Pause in the app → "Ride paused", timer frozen. Lock-screen **Pause/Resume** *(iOS 17+)*.
+- Stop (in the app, or on the lock screen *(iOS 17+)*) → the ride appears in the history, and
+  the activity disappears.
 - Tapping the activity opens the running ride.
 - German phone language → German texts and a comma as decimal separator.
 - Live Activities switched off (Settings → Retrail) → the ride still records.
 - Force-quit the app during a ride and relaunch → no activity is left behind.
+- Background recording with the screen off keeps drawing the route (Spec 5B).
