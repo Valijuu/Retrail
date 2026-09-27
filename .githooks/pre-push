@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Pushing app code to main starts the "iOS build" workflow on GitHub. Start
+# `tool/ios_fetch_build.sh --wait` in the background so the green build lands in
+# ~/Downloads/retrail-ios/ by itself (about 15 min later, with a notification).
+# Never blocks or fails the push. Enable once per clone:
+#   git config core.hooksPath .githooks
+# Opt out for a single push: RETRAIL_NO_IOS_FETCH=1 git push
+
+[ -n "${RETRAIL_NO_IOS_FETCH:-}" ] && exit 0
+
+root="$(git rev-parse --show-toplevel)"
+fetcher="$root/tool/ios_fetch_build.sh"
+[ -x "$fetcher" ] || exit 0
+command -v gh >/dev/null 2>&1 || exit 0
+
+# Same paths as the workflow's `on.push.paths` (.github/workflows/ios-build.yml).
+app_paths=(lib ios assets pubspec.yaml pubspec.lock l10n.yaml .github/workflows/ios-build.yml)
+zero="0000000000000000000000000000000000000000"
+builds=false
+
+# stdin: <local ref> <local sha> <remote ref> <remote sha>, one line per ref.
+while read -r _local_ref local_sha remote_ref remote_sha; do
+  [ "$remote_ref" = "refs/heads/main" ] || continue
+  [ "$local_sha" = "$zero" ] && continue # deleting main — nothing to build
+  if [ "$remote_sha" = "$zero" ] || ! git cat-file -e "$remote_sha" 2>/dev/null; then
+    builds=true # new branch or unknown remote state: assume a build starts
+  elif ! git diff --quiet "$remote_sha" "$local_sha" -- "${app_paths[@]}"; then
+    builds=true
+  fi
+done
+
+if $builds; then
+  log="${XDG_CACHE_HOME:-$HOME/.cache}/retrail-ios-fetch.log"
+  mkdir -p "$(dirname "$log")"
+  # Detached from the push: it keeps running after git exits.
+  setsid nohup "$fetcher" --wait >>"$log" 2>&1 </dev/null &
+  echo "iOS build: fetching it automatically when green (log: $log)" >&2
+fi
+exit 0

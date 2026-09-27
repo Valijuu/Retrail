@@ -90,7 +90,7 @@ ios/
 └── RideActivityExtension/            # WidgetKit extension: lock screen + Dynamic Island UI
 ```
 
-**iOS builds** happen only on GitHub Actions (`.github/workflows/ios-build.yml`, macOS runner, unsigned, encrypted `.ipa` artifact) — there is no Mac. Swift/Xcode-project changes are verified by that workflow going green; device testing is sideloaded per `docs/ios-sideloading.md` (`tool/ios_fetch_build.sh [--wait|--trigger]` pulls a green build to `~/Downloads/retrail-ios/`). The Xcode project is edited by hand: keep "Embed Foundation Extensions" before "Run Script" in the Runner target (flutter/flutter#135056).
+**iOS builds** happen only on GitHub Actions (`.github/workflows/ios-build.yml`, macOS runner, unsigned, encrypted `.ipa` artifact) — there is no Mac. Swift/Xcode-project changes are verified by that workflow going green; device testing is sideloaded per `docs/ios-sideloading.md` (`tool/ios_fetch_build.sh [--wait|--trigger]` pulls a green build to `~/Downloads/retrail-ios/`; the `.githooks/pre-push` hook — enabled via `git config core.hooksPath .githooks` — starts `--wait` in the background on every push of app code to `main`). The Xcode project is edited by hand: keep "Embed Foundation Extensions" before "Run Script" in the Runner target (flutter/flutter#135056).
 
 **Conventions**
 - One Riverpod provider set per feature (`*_providers.dart`); expose read-only state, accept intents as methods. Mirrors the original ViewModels 1:1 (`HomeViewModel` → `homeProvider`, etc.).

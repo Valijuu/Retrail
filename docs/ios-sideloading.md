@@ -27,7 +27,8 @@ installing. Background: Spec 6 §G/§H.
 
    | Situation | Command |
    |---|---|
-   | You pushed app code (the build starts by itself) | `tool/ios_fetch_build.sh --wait` |
+   | You push app code to `main` | nothing: the git hook below runs `--wait` for you |
+   | You pushed app code without the hook | `tool/ios_fetch_build.sh --wait` |
    | You clicked "Run workflow" on GitHub | `tool/ios_fetch_build.sh --wait` |
    | You want to start a build from the terminal | `tool/ios_fetch_build.sh --trigger` |
    | You just want the latest green build | `tool/ios_fetch_build.sh` |
@@ -37,6 +38,12 @@ installing. Background: Spec 6 §G/§H.
      to a minute. If none is running, it fetches the latest green build instead.
    - `--trigger` starts the workflow on `main` itself and waits for exactly that build.
    - A failed build ends with a notification that links to the run.
+   - **Automatic after a push:** `.githooks/pre-push` starts `--wait` in the background whenever
+     a push to `main` changes app code (the same paths that start the build). The push is not
+     delayed. Enable it once per clone with `git config core.hooksPath .githooks`. Log:
+     `~/.cache/retrail-ios-fetch.log`. Skip it for one push with `RETRAIL_NO_IOS_FETCH=1 git push`.
+     A build started via "Run workflow" on the GitHub website isn't noticed locally; use
+     `--trigger` from the terminal instead, or `--wait` right after clicking.
    - **By hand:** GitHub → **Actions** → **iOS build** → latest green run → artifact
      `Retrail-ios-<n>`.
 
