@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart' show LocationPermission;
 import 'package:go_router/go_router.dart';
 import 'package:retrail/core/connectivity/connectivity_providers.dart';
+import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_dao.dart';
@@ -158,6 +159,7 @@ void main() {
     RideTrackingState state = const RideTrackingState(isTracking: true),
     Stream<RideTrackingState>? stateStream,
     bool online = true,
+    Brightness brightness = Brightness.light,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -180,7 +182,7 @@ void main() {
         rideRecordingControllerProvider.overrideWithValue(recording),
       ],
       child: MaterialApp.router(
-        theme: buildTheme(Brightness.light),
+        theme: buildTheme(brightness),
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -462,4 +464,22 @@ void main() {
     await tester.pump();
     expect(find.byIcon(Icons.refresh), findsNothing);
   });
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+        'recenter FAB matches the compass: round, app surface + primary icon '
+        '(${brightness.name} mode)', (tester) async {
+      await pumpScreen(tester, brightness: brightness);
+      tester.widget<LiveMap>(find.byType(LiveMap)).onGesture!();
+      await tester.pump();
+
+      final fab = tester.widget<FloatingActionButton>(
+          find.byType(FloatingActionButton));
+      final colors =
+          brightness == Brightness.dark ? AppColors.dark : AppColors.light;
+      expect(fab.backgroundColor, colors.surface);
+      expect(fab.foregroundColor, colors.primary);
+      expect(fab.shape, isA<CircleBorder>());
+    });
+  }
 }

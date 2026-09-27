@@ -181,15 +181,13 @@ class RideMapArea extends StatelessWidget {
             bottom: 12,
             child: FloatingActionButton.small(
               onPressed: onRecenter,
-              // The ride chrome ignores the app's light/dark theme (see the
-              // fixed-palette note above) — a plain white background here
-              // was a stray hardcoded color rather than an intentional match
-              // to that fixed palette. `rideChromeAccent` is the same
-              // light-on-dark accent already used for the rest of this
-              // chrome (app bar icons/title), so the FAB stays consistent
-              // with it instead of following the (irrelevant) app theme.
-              backgroundColor: rideChromeAccent.surface,
-              foregroundColor: rideChromeBg.surface,
+              // Sits ON the map (which follows the app theme), so it matches
+              // the map's compass (live_map.dart's _CompassButton) rather than
+              // the fixed-palette app bar: a round app-surface button with a
+              // primary icon, in light and dark mode alike.
+              backgroundColor: colors.surface,
+              foregroundColor: colors.primary,
+              shape: const CircleBorder(),
               tooltip: l10n.mapRecenterCd,
               child: const Icon(Icons.refresh),
             ),
