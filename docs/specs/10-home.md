@@ -2,7 +2,7 @@
 
 **Status:** DONE — merged to `main`; 177 total tests green, analyze clean
 **Phase:** 10 of 15
-**Depends on:** Spec 3 (repos), Spec 4 (`aggregateStats`, `time_bounds`, formatters, `rideDisplayTitle`), Spec 5A (`RideTracker`), Spec 8 (shell/greetingKey), Spec 9 (`ProfileAvatar`)
+**Depends on:** Spec 3 (repos), Spec 4 (`aggregateStats`, `time_bounds`, formatters, `rideDisplayTitle`), Spec 5A (`RideTracker`), Spec 8 (shell/greeting index), Spec 9 (`ProfileAvatar`)
 
 ## Goal
 Build the Home tab: greeting header + tappable avatar, the "This week" hero card (week/day/year distances + week stats), recent rides, favorites, and the start-tracking CTA. Replaces the Spec 8 home placeholder.
@@ -20,7 +20,7 @@ Build the Home tab: greeting header + tappable avatar, the "This week" hero card
 `{ int rideId; String title; String dateTime; double distanceKm; bool hasRoute; double? startLat; double? startLng }` — `title` via `rideDisplayTitle`, `dateTime` via `formatRideDate(ride.date)`, distance/start from `computeRideStats` + first trackpoint.
 
 ## Greeting — `lib/features/home/greeting_selector.dart` (the deferred Spec 4 piece)
-Shuffled-queue strategy ported from the original: show every greeting once per cycle before reshuffling; on reshuffle, avoid a back-to-back repeat across the cycle boundary. `GreetingSelector { int next(int size) }` with an **injectable `Random`** for tests. The Home widget keeps one selector and advances it when `greetingKey` (visit count from the shell) changes. The name is rendered in `primary` (rich text), so greeting templates carry a `%s` split token (see Localization).
+Shuffled-queue strategy ported from the original: show every greeting once per cycle before reshuffling; on reshuffle, avoid a back-to-back repeat across the cycle boundary. `GreetingSelector { int next(int size) }` with an **injectable `Random`** for tests. The shell keeps the one selector and passes the current `greetingIndex` to Home (see Spec 8) — Home itself holds no greeting state, since it is disposed while off-screen. The name is rendered in `primary` (rich text), so greeting templates carry a `%s` split token (see Localization).
 
 ## Widgets — `lib/features/home/`
 - `home_screen.dart` — scrollable column: `TopHeader`, `WeeklyHeroCard`, "recent rides" section, "favorites" section, start CTA pinned at bottom.
@@ -36,7 +36,7 @@ Shuffled-queue strategy ported from the original: show every greeting once per c
 - **`NavigationLauncher`** (`lib/features/home/navigation_launcher.dart`): `abstract interface class NavigationLauncher` — `availableApps()` + `launch(NavigationApp, …)`. Android offers only `NavigationApp.system` (`geo:` URI → OS maps-app chooser). iOS has no chooser, so it offers Apple Maps plus Google Maps / Waze when `canLaunchUrl` finds them (schemes in `LSApplicationQueriesSchemes`); `navigateTo` (`navigation_chooser.dart`) launches a single app directly, else shows a bottom-sheet picker. Deep links built by the pure `navigationUri`; fake in tests.
 
 ## Router/shell wiring
-Replace the `_PlaceholderTab('home:…')` in `MainShell` with `HomeScreen`, passing the `greetingKey` (visit counter) the shell already tracks.
+Replace the `_PlaceholderTab('home:…')` in `MainShell` with `HomeScreen`, passing the `greetingIndex` the shell re-rolls per Home visit.
 
 ## Localization
 Add: `homeDefaultName` ("Skater"), `sectionRecentRides`, `sectionRecentFavorites`, `homeEmptyNoRides`, `homeEmptyNoFavorites`, `homeWeekSection`/`homeDaySection`/`homeYearSection`, `statTempoKmh`, `statRides`, `statDurationLabel`, `homeStartTracking`, `offlineTrackingTitle`/`Body`/`Confirm`, `permissionLocationTitle`/`Body`, a11y (`navigateToStart`), and **15 greeting keys** `skaterGreeting1..15` as plain strings containing a literal `%s` token (split in code to color the name) — German per the reference. A `skaterGreetings(l10n)` helper returns the list.

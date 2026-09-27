@@ -99,7 +99,7 @@ matching the History header). Three sections, each a `_SectionHeader` (uppercase
 > last-5 recents, `ProfilePhotoManager`). The edit sheet reuses those exact widgets so onboarding and
 > settings stay consistent (`ProfilePhotoChooser`'s doc already says "Reused by onboarding + Settings").
 
-A `showModalBottomSheet` content (`ConsumerStatefulWidget`):
+Content of a `showAppScrollableSheet` (drag handle, 90 % height, drag-to-close; `ConsumerStatefulWidget`):
 - Title `profileEditTitle`.
 - **Name** field (≤30 chars) in a `surfaceContainer` rounded box, seeded from `userName`
   (`profileEditNameLabel` / reuse `initNameLabel`).
@@ -117,7 +117,7 @@ wrapper) keeps the name write testable.
 ## E. Shell wiring — `lib/features/shell/main_shell.dart`
 
 - Replace `const _PlaceholderTab(label: 'settings')` (tab 2) with `const SettingsScreen()`.
-- Pass `onAvatarTap` to `HomeScreen` → `showModalBottomSheet(... ProfileEditSheet())`. (The Home
+- Pass `onAvatarTap` to `HomeScreen` → `showAppScrollableSheet(... ProfileEditSheet(scrollController: …))`. (The Home
   top-header avatar already exposes `onAvatarTap`; it's currently unwired.)
 
 No router changes.

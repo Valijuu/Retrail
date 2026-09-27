@@ -97,6 +97,12 @@ A pure `PermissionGateDecision` function maps `(serviceEnabled, permission)` →
 `proceed | requestPermission | openLocationSettings | showRationale`, so the branching is unit-tested
 without the platform.
 
+**iOS (`servicesOffReportsDenied`, set by the provider):** while Location Services are off globally,
+iOS reports every app as denied and can't grant a request (geolocator's `requestPermission` would
+never resolve), so services off → `openLocationSettings` **before** any permission check. Its dialog
+spells out Settings → Privacy & Security → Location Services (`permissionEnableLocationBodyIos`),
+because iOS apps can only open their own settings page. Android keeps the order above.
+
 ### Wiring — where it hooks in
 - New `RideRecordingController` (or fold into `ActiveRideController`) owns: start the
   `LocationSource` subscription feeding `tracker.onLocationReceived`, seed `lastKnown()`, and cancel

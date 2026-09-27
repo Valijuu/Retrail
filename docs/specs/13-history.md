@@ -174,7 +174,7 @@ A 14dp rounded `surfaceContainer` card; **2dp primary border** when selected or 
 ## Dialogs
 
 ### Filter bottom sheet — `HistoryFilterSheet` (`filter_sheet.dart`, ports `FilterBottomSheet`)
-`showModalBottomSheet`. Header (title `historyFilterTitle` + **Reset** text button). Sections, all
+`showAppScrollableSheet` (shared with the edit and profile sheets). Header (title `historyFilterTitle` + **Reset** text button). Sections, all
 live-applying — there is **no Apply button**; the sheet is dismissed by dragging down or tapping
 outside:
 - **Year** — `PillDropdown<int?>`: "All years" (`historyYearAll`, `null`) + the

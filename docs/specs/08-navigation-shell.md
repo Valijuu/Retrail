@@ -38,7 +38,7 @@ Maps `PreferencesRepository.themeMode` (`"system"`/`"light"`/`"dark"`) → `Them
 - Tabs: **Home / History / Settings** (`nav_home`/`nav_history`/`nav_settings`).
 - Selected styling matches the original: selected icon sits in a `primaryContainer` pill (radius 50), `primary` icon+label; unselected `subtleText`; transparent indicator; 0.5dp top divider at `onSurfaceVariant @20%`.
 - Tab tap → `PageController.animateToPage`; swipe syncs selection.
-- **`homeVisits` counter:** increments each time the Home tab becomes current — passed to Home so the random greeting re-rolls per visit (original behavior).
+- **Greeting index:** the shell owns the `GreetingSelector` and re-rolls the current greeting each time the Home tab settles as current (scroll-settle, not mid-swipe) — passed to Home as `greetingIndex`, so the greeting changes once per visit (original behavior). Held in the shell because the `PageView` disposes Home while off-screen; a greeting picked inside Home re-rolled while Home was still sliding in.
 - **`targetRideId` hand-off:** tapping a ride on Home switches to the History tab and scrolls to that ride. Modeled as a small shared provider (`historyTargetRideProvider`) the History screen consumes and clears.
 
 ### 5. Screen placeholders
