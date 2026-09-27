@@ -87,6 +87,13 @@
 	<array>
 		<string>location</string>
 	</array>
+	<!-- Navigate-to-start chooser: third-party maps apps probed with
+	     canLaunchUrl (UrlNavigationLauncher._iosThirdParty). -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>waze</string>
+	</array>
 	<!-- Spec 6: tapping the ride's Live Activity opens retrail://ride
 	     (handled by LiveActivityBridge → the active-ride deep link). -->
 	<key>CFBundleURLTypes</key>

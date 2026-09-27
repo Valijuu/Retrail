@@ -2,31 +2,65 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// A maps app the navigate-to-start button can hand a coordinate to.
+/// [system] is Android's `geo:` intent, where the OS itself shows a chooser
+/// across installed maps apps. iOS has no such chooser, so there each app is
+/// offered by name (see `navigateTo`).
+enum NavigationApp { system, appleMaps, googleMaps, waze }
+
+/// Deep link that opens [app] at the labelled coordinate.
+Uri navigationUri(NavigationApp app, double lat, double lng, String label) =>
+    switch (app) {
+      NavigationApp.system => Uri.parse(
+          'geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(label)})'),
+      NavigationApp.appleMaps =>
+        Uri.https('maps.apple.com', '/', {'ll': '$lat,$lng', 'q': label}),
+      NavigationApp.googleMaps =>
+        Uri(scheme: 'comgooglemaps', queryParameters: {'q': '$lat,$lng'}),
+      NavigationApp.waze => Uri(
+          scheme: 'waze',
+          queryParameters: {'ll': '$lat,$lng', 'navigate': 'yes'}),
+    };
+
 /// Opens an external maps app navigating to a coordinate. Interface seam →
 /// fakeable in tests.
 abstract interface class NavigationLauncher {
-  Future<void> launchTo(double lat, double lng, String label);
+  /// Installed apps to offer, in display order (never empty).
+  Future<List<NavigationApp>> availableApps();
+
+  Future<void> launch(NavigationApp app, double lat, double lng, String label);
 }
 
-/// Android: a universal `geo:` URI (system chooser across installed maps
-/// apps). iOS has no `geo:` handler, so it gets an Apple Maps link instead.
-Uri navigationUri(
-    double lat, double lng, String label, TargetPlatform platform) {
-  if (platform == TargetPlatform.iOS) {
-    return Uri.https('maps.apple.com', '/', {'ll': '$lat,$lng', 'q': label});
-  }
-  return Uri.parse('geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(label)})');
-}
+class UrlNavigationLauncher implements NavigationLauncher {
+  const UrlNavigationLauncher();
 
-class GeoNavigationLauncher implements NavigationLauncher {
-  const GeoNavigationLauncher();
+  /// Third-party iOS apps probed by URL scheme. Each scheme must be listed
+  /// under `LSApplicationQueriesSchemes` in ios/Runner/Info.plist, or
+  /// `canLaunchUrl` always reports it missing.
+  static const _iosThirdParty = {
+    NavigationApp.googleMaps: 'comgooglemaps://',
+    NavigationApp.waze: 'waze://',
+  };
 
   @override
-  Future<void> launchTo(double lat, double lng, String label) async {
-    await launchUrl(navigationUri(lat, lng, label, defaultTargetPlatform),
+  Future<List<NavigationApp>> availableApps() async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      return const [NavigationApp.system];
+    }
+    return [
+      NavigationApp.appleMaps,
+      for (final MapEntry(key: app, value: scheme) in _iosThirdParty.entries)
+        if (await canLaunchUrl(Uri.parse(scheme))) app,
+    ];
+  }
+
+  @override
+  Future<void> launch(
+      NavigationApp app, double lat, double lng, String label) async {
+    await launchUrl(navigationUri(app, lat, lng, label),
         mode: LaunchMode.externalApplication);
   }
 }
 
 final navigationLauncherProvider =
-    Provider<NavigationLauncher>((ref) => const GeoNavigationLauncher());
+    Provider<NavigationLauncher>((ref) => const UrlNavigationLauncher());

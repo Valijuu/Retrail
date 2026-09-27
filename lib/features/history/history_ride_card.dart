@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../map/preview_projection.dart';
 import '../../map/route_preview.dart';
 import '../active_ride/active_ride_providers.dart';
+import '../home/navigation_chooser.dart';
 import '../home/navigation_launcher.dart';
 import '../onboarding/activity_type_ui.dart';
 import 'history_items.dart';
@@ -311,9 +312,13 @@ class _Thumbnail extends ConsumerWidget {
                   iconSize: 20,
                   onPressed: () async {
                     final points = await _loadPoints(ref);
-                    if (points.isEmpty) return;
-                    ref.read(navigationLauncherProvider).launchTo(
-                        points.first.lat, points.first.lng, title);
+                    if (points.isEmpty || !context.mounted) return;
+                    await navigateTo(
+                        context,
+                        ref.read(navigationLauncherProvider),
+                        points.first.lat,
+                        points.first.lng,
+                        title);
                   },
                   icon: Icon(Icons.directions, color: colors.primary),
                   tooltip: l10n.a11yNavigateToStartPoint,

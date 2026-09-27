@@ -71,7 +71,11 @@ class WarmSpyCache extends RoutePreviewCache {
 class FakeNavigationLauncher implements NavigationLauncher {
   final launches = <(double, double, String)>[];
   @override
-  Future<void> launchTo(double lat, double lng, String label) async =>
+  Future<List<NavigationApp>> availableApps() async =>
+      const [NavigationApp.system];
+  @override
+  Future<void> launch(
+          NavigationApp app, double lat, double lng, String label) async =>
       launches.add((lat, lng, label));
 }
 

@@ -15,6 +15,7 @@ import '../shell/routes.dart';
 import 'greeting_selector.dart';
 import 'greetings.dart';
 import 'home_providers.dart';
+import 'navigation_chooser.dart';
 import 'navigation_launcher.dart';
 import 'recent_ride_ui.dart';
 import 'ride_row_card.dart';
@@ -204,8 +205,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ride: rides[i],
             showFavorite: showFavorite,
             onTap: () => widget.onOpenRide?.call(rides[i].rideId),
-            onNavigate: () => ref.read(navigationLauncherProvider).launchTo(
-                rides[i].startLat!, rides[i].startLng!, rides[i].title),
+            onNavigate: () => navigateTo(
+                context,
+                ref.read(navigationLauncherProvider),
+                rides[i].startLat!,
+                rides[i].startLng!,
+                rides[i].title),
           ),
         ],
       ],
