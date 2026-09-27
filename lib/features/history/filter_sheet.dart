@@ -16,7 +16,11 @@ import '../../core/theme/theme_context.dart';
 /// touched — there is no separate "Apply" step; the sheet is dismissed by
 /// dragging down or tapping outside it. Ports `FilterBottomSheet`.
 class HistoryFilterSheet extends ConsumerWidget {
-  const HistoryFilterSheet({super.key});
+  const HistoryFilterSheet({super.key, this.scrollController});
+
+  /// The enclosing `DraggableScrollableSheet`'s controller, so dragging the
+  /// content down moves (and closes) the sheet instead of only scrolling.
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,6 +41,7 @@ class HistoryFilterSheet extends ConsumerWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
+        controller: scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,

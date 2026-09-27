@@ -19,6 +19,7 @@ import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/ride_stats.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_controller.dart';
+import 'package:retrail/features/history/filter_sheet.dart';
 import 'package:retrail/features/history/history_filter.dart';
 import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_providers.dart';
@@ -347,6 +348,35 @@ void main() {
     await tester.tap(find.text('Longest distance'));
     await tester.pumpAndSettle();
     expect(container.read(historyFilterProvider).sort, SortOrder.distance);
+  });
+
+  group('filter sheet on a small iPhone (iPhone 8, iOS scroll physics)', () {
+    Future<void> openSheetOnIPhone8(WidgetTester tester) async {
+      await pump(tester, [_entry(1)]);
+      tester.view.physicalSize = const Size(375, 667);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      expect(find.byType(HistoryFilterSheet), findsOneWidget);
+    }
+
+    testWidgets('dragging down on the sheet content closes it', (tester) async {
+      await openSheetOnIPhone8(tester);
+
+      // Drag on the content (the title), not on a dedicated handle: on iOS
+      // the scrollable content used to swallow the drag and just bounce.
+      await tester.fling(find.text('Filter'), const Offset(0, 600), 2000);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HistoryFilterSheet), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the sheet leaves the top of the screen free', (tester) async {
+      await openSheetOnIPhone8(tester);
+
+      final sheetTop = tester.getTopLeft(find.byType(HistoryFilterSheet)).dy;
+      expect(sheetTop, greaterThanOrEqualTo(667 * 0.1));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
   testWidgets('Reset clears the search query and the visible field',

@@ -191,14 +191,32 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
+  /// The filter sheet drags like one surface: its content scrolls while it
+  /// fits, and dragging down past the top shrinks the sheet and closes it at
+  /// the minimum size — on iOS the bouncing scroll content otherwise swallowed
+  /// the drag. Capped below the status area so the top stays reachable on
+  /// small screens (iPhone 8).
   Future<void> _openFilters() => showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        backgroundColor:
-            context.colors.surface,
-        builder: (_) => const HistoryFilterSheet(),
+        showDragHandle: true,
+        backgroundColor: context.colors.surface,
+        builder: (_) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: _filterSheetMaxSize,
+          maxChildSize: _filterSheetMaxSize,
+          minChildSize: _filterSheetCloseSize,
+          builder: (_, scrollController) =>
+              HistoryFilterSheet(scrollController: scrollController),
+        ),
       );
+
+  /// Share of the screen the filter sheet may cover at most.
+  static const _filterSheetMaxSize = 0.9;
+
+  /// Dragged down to this share of the screen, the sheet closes.
+  static const _filterSheetCloseSize = 0.25;
 
   Future<void> _confirmDelete({int? single, bool batch = false}) async {
     final ids = batch ? _selectedIds.toList() : [single!];
