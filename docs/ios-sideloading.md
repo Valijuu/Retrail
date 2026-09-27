@@ -103,6 +103,9 @@ splice --anisette-server http://127.0.0.1:6969 login   # the server is remembere
 - An **SMS-only** Apple ID (no Apple device signed in) doesn't work: Splice's SMS path is
   unfinished (issue [#25](https://github.com/franklintra/splice/issues/25)).
 - To see what happens: `splice --log-level debug login`.
+- Apple expires the session now and then. When an automatic install hits that, the fetch
+  script opens a terminal window running `splice login`: type the 2FA code from the iPhone
+  there, the window closes, and the install continues (it gives up after 10 minutes).
 
 ### 7. IPA password in the keyring
 

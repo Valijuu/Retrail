@@ -35,6 +35,8 @@ KEYRING_ATTRS=(service retrail-ios key ipa-password)
 # A build takes a few seconds to show up after a push / "Run workflow".
 APPEAR_TIMEOUT_S=60
 APPEAR_POLL_S=5
+# How long to wait for the 2FA login in the terminal window.
+LOGIN_TIMEOUT_S=600
 
 log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
 
@@ -157,16 +159,58 @@ unpack_and_install() {
     return 1
   fi
   ensure_anisette
-  log "Installing on the iPhone (keep it unlocked)…"
   local splice_ok=true
-  SSL_CERT_FILE="$SPLICE_CA_BUNDLE" "$SPLICE" install "$work/Retrail.ipa" \
-    </dev/null >"$work/splice.out" 2>&1 || splice_ok=false
-  summarize_splice_output "$work/splice.out"
+  splice_install "$work" || splice_ok=false
+  # An expired Apple session needs a 2FA code, which this unattended run can't
+  # read: log in in a terminal window, then try once more.
+  if ! $splice_ok && grep -qiE 'session has expired|log in|2FA' "$work/splice.out" &&
+     login_in_terminal "$work"; then
+    splice_ok=true
+    splice_install "$work" || splice_ok=false
+  fi
   if ! $splice_ok; then
     log "Splice failed — is the iPhone unlocked and still logged in (splice login)?"
     notify "Retrail: install failed" "Unlock the iPhone and run tool/ios_fetch_build.sh --install"
     return 1
   fi
+}
+
+splice_install() {
+  local work="$1"
+  log "Installing on the iPhone (keep it unlocked)…"
+  local rc=0
+  SSL_CERT_FILE="$SPLICE_CA_BUNDLE" "$SPLICE" install "$work/Retrail.ipa" \
+    </dev/null >"$work/splice.out" 2>&1 || rc=$?
+  summarize_splice_output "$work/splice.out"
+  return "$rc"
+}
+
+# Runs `splice login` in a new terminal window so the 2FA code sent to the
+# iPhone can be typed in, and waits until it's done. The terminal doesn't block,
+# so the window reports its exit code through a file.
+login_in_terminal() {
+  local work="$1" status="$1/login.status" waited=0
+  if [ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] || ! command -v x-terminal-emulator >/dev/null 2>&1; then
+    log "Apple login expired — run: splice login, then tool/ios_fetch_build.sh --install"
+    return 1
+  fi
+  log "Apple login expired — opening a terminal for splice login (enter the code there)…"
+  notify "Retrail: Apple login needed" "Enter the code from your iPhone in the terminal window"
+  x-terminal-emulator -- bash -c '
+    echo "Retrail: Apple login for Splice. Enter the 2FA code from your iPhone."
+    echo
+    SSL_CERT_FILE="$1" "$2" login; rc=$?
+    echo "$rc" > "$3"
+    if [ "$rc" -ne 0 ]; then read -rp "Login failed — press Enter to close."; fi
+  ' _ "$SPLICE_CA_BUNDLE" "$SPLICE" "$status" >/dev/null 2>&1 &
+  while [ ! -s "$status" ] && [ "$waited" -lt "$LOGIN_TIMEOUT_S" ]; do
+    sleep 2; waited=$((waited + 2))
+  done
+  if [ "$(cat "$status" 2>/dev/null)" != "0" ]; then
+    log "Splice login did not complete."
+    return 1
+  fi
+  log "Logged in — retrying the install."
 }
 
 # Splice redraws a progress bar in place (hundreds of "|###  | 88/100" frames).
