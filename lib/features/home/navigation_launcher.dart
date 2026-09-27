@@ -15,11 +15,10 @@ Uri navigationUri(NavigationApp app, double lat, double lng, String label) =>
           'geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(label)})'),
       NavigationApp.appleMaps =>
         Uri.https('maps.apple.com', '/', {'ll': '$lat,$lng', 'q': label}),
-      NavigationApp.googleMaps =>
-        Uri(scheme: 'comgooglemaps', queryParameters: {'q': '$lat,$lng'}),
-      NavigationApp.waze => Uri(
-          scheme: 'waze',
-          queryParameters: {'ll': '$lat,$lng', 'navigate': 'yes'}),
+      // Parsed from a literal string: both apps ignore the point unless it is
+      // the `scheme://?…` form with an unencoded comma, which Uri() won't emit.
+      NavigationApp.googleMaps => Uri.parse('comgooglemaps://?daddr=$lat,$lng'),
+      NavigationApp.waze => Uri.parse('waze://?ll=$lat,$lng&navigate=yes'),
     };
 
 /// Opens an external maps app navigating to a coordinate. Interface seam →

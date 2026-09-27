@@ -16,17 +16,16 @@ void main() {
     expect(uri.queryParameters['q'], 'Morning roll');
   });
 
-  test('Google Maps: the comgooglemaps: scheme pinning the point', () {
+  // Both apps only parse the `scheme://?…` form with a literal comma —
+  // `comgooglemaps:?q=52.5%2C13.4` opens the app but ignores the point.
+  test('Google Maps: a route to the point, ready to start', () {
     final uri =
         navigationUri(NavigationApp.googleMaps, 52.5, 13.4, 'Morning roll');
-    expect(uri.scheme, 'comgooglemaps');
-    expect(uri.queryParameters['q'], '52.5,13.4');
+    expect(uri.toString(), 'comgooglemaps://?daddr=52.5,13.4');
   });
 
-  test('Waze: the waze: scheme navigating to the point', () {
+  test('Waze: navigation to the point', () {
     final uri = navigationUri(NavigationApp.waze, 52.5, 13.4, 'Morning roll');
-    expect(uri.scheme, 'waze');
-    expect(uri.queryParameters['ll'], '52.5,13.4');
-    expect(uri.queryParameters['navigate'], 'yes');
+    expect(uri.toString(), 'waze://?ll=52.5,13.4&navigate=yes');
   });
 }
