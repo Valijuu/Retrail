@@ -75,8 +75,7 @@ lib/
 │   └── widgets/                  # shared widgets used by several features (PillButton, SheetInputField, …)
 ├── data/
 │   ├── db/                       # Drift database, tables (Ride, Trackpoint), DAOs
-│   ├── repositories/             # RideRepository, TrackpointRepository, PreferencesRepository
-│   └── debug_seed_rides.dart     # debug-only sample rides for an empty DB
+│   └── repositories/             # RideRepository, TrackpointRepository, PreferencesRepository
 ├── domain/                       # DistanceCalculator (Haversine), RideStats, formatters, time bounds — pure logic
 ├── features/
 │   ├── onboarding/  home/  timer/  active_ride/  history/  settings/  profile/
