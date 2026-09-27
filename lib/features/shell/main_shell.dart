@@ -129,6 +129,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 onAvatarTap: () => showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
+                  showDragHandle: true,
                   backgroundColor: colors.surface,
                   builder: (_) => const ProfileEditSheet(),
                 ),

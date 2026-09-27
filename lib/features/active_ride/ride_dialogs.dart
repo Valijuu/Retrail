@@ -167,9 +167,9 @@ class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
       child: Container(
         decoration: BoxDecoration(color: colors.surface, borderRadius: AppShapes.dialog),
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-        // Scroll INSIDE the card (same structure as EditRideDialog): when the
-        // keyboard shrinks the space, the card compresses and its content
-        // scrolls — no overflow stripe, dialog stays fully usable.
+        // Scroll INSIDE the card: when the keyboard shrinks the space, the
+        // card compresses and its content scrolls — no overflow stripe,
+        // dialog stays fully usable.
         child: SingleChildScrollView(
           child: Column(
           mainAxisSize: MainAxisSize.min,

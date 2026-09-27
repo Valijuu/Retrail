@@ -198,8 +198,9 @@ Full-width rounded dialog opened on row tap:
 - Divider, then **stat rows**: Distance (`%.2f km`), Duration, Top speed (`%.1f km/h`), Avg speed
   (`%.1f km/h`). **Close** button.
 
-### Edit ride — `EditRideDialog` (ports `EditRideDialog`)
-Rounded dialog: title `editRideTitle` + subtitle `editRideSubtitle`. **Title** field (≤60 chars),
+### Edit ride — `EditRideSheet` (ports `EditRideDialog`)
+Modal bottom sheet with a drag handle (the original's centered dialog; a sheet so it can be dragged
+away like the filters): title `editRideTitle` + subtitle `editRideSubtitle`. **Title** field (≤60 chars),
 **activity chips** (re-assignable; tapping the selected one clears to null), **comment** field
 (multi-line). Cancel / Save → `HistoryController.updateRideDetails(id, title, comment, type)`
 (writes details **and** type). Reuses the sheet-input styling from Spec 12's summary dialog.
@@ -303,7 +304,7 @@ stream, fake `HistoryController`, `routePreviewCacheProvider` over a temp dir, `
 - Row tap opens the detail dialog (stats rows shown); favorite heart toggles.
 - `historyTargetRideProvider` set → the target card gets the highlight border.
 
-**`ride_detail_dialog_test.dart`** / **`edit_ride_dialog_test.dart`**: render fields/stats; edit
+**`ride_detail_dialog_test.dart`** / **`edit_ride_sheet` tests (in `history_dialogs_test.dart`)**: render fields/stats; edit
 Save fires with entered title/comment/type; fullscreen open/close; no-route placeholder.
 
 All gated by `flutter analyze` clean + full suite green before the phase is done.

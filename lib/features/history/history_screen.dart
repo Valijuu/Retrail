@@ -10,7 +10,7 @@ import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/main_shell.dart';
 import 'confirm_delete_dialog.dart';
-import 'edit_ride_dialog.dart';
+import 'edit_ride_sheet.dart';
 import 'filter_sheet.dart';
 import 'history_items.dart';
 import 'history_providers.dart';
@@ -239,9 +239,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Future<void> _openEdit(Ride ride) => showDialog<void>(
+  Future<void> _openEdit(Ride ride) => showModalBottomSheet<void>(
         context: context,
-        builder: (_) => EditRideDialog(
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        backgroundColor: context.colors.surface,
+        builder: (_) => EditRideSheet(
           initialDescription: ride.description,
           initialComment: ride.comment,
           initialType: ActivityType.fromId(ride.typ),

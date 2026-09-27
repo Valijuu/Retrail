@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/activity_type_ui.dart';
@@ -10,9 +9,9 @@ import '../../core/theme/theme_context.dart';
 
 const _descMaxLength = 60;
 
-/// Edit a saved ride's title, activity type and comment. Ports `EditRideDialog`.
-class EditRideDialog extends StatefulWidget {
-  const EditRideDialog({
+/// Edit a saved ride's title, activity type and comment. Ports `EditRideSheet`.
+class EditRideSheet extends StatefulWidget {
+  const EditRideSheet({
     super.key,
     this.initialDescription,
     this.initialComment,
@@ -29,10 +28,10 @@ class EditRideDialog extends StatefulWidget {
       onSave;
 
   @override
-  State<EditRideDialog> createState() => _EditRideDialogState();
+  State<EditRideSheet> createState() => _EditRideSheetState();
 }
 
-class _EditRideDialogState extends State<EditRideDialog> {
+class _EditRideSheetState extends State<EditRideSheet> {
   late final _titleController =
       TextEditingController(text: widget.initialDescription ?? '');
   late final _commentController =
@@ -51,18 +50,13 @@ class _EditRideDialogState extends State<EditRideDialog> {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      // Wider than the M3 default (40dp side margins) so the activity chips
-      // and inputs get room.
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Container(
-        width: double.infinity,
-        decoration:
-            BoxDecoration(color: colors.surface, borderRadius: AppShapes.dialog),
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-        child: SingleChildScrollView(
-          child: Column(
+    return SafeArea(
+      child: SingleChildScrollView(
+        // Lift the sheet above the keyboard (viewInsets) so the inputs stay
+        // visible while typing.
+        padding: EdgeInsets.fromLTRB(
+            24, 0, 24, 20 + MediaQuery.viewInsetsOf(context).bottom),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -142,7 +136,6 @@ class _EditRideDialogState extends State<EditRideDialog> {
               ],
             ),
           ],
-          ),
         ),
       ),
     );

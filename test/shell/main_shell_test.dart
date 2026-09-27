@@ -97,6 +97,23 @@ void main() {
     expect(find.text('Edit profile'), findsOneWidget);
   });
 
+  testWidgets('the profile sheet has a drag handle and closes when dragged down',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byType(ProfileAvatar));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(tester.widget<BottomSheet>(find.byType(BottomSheet)).showDragHandle,
+        isTrue);
+    await tester.drag(find.text('Edit profile'), const Offset(0, 600));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(ProfileEditSheet), findsNothing);
+  });
+
   Future<void> settle(WidgetTester tester) async {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

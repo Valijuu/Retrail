@@ -472,6 +472,22 @@ void main() {
     expect(find.text('Edit ride'), findsOneWidget);
   });
 
+  testWidgets(
+      'the edit view is a bottom sheet with a drag handle that closes when '
+      'dragged down', (tester) async {
+    await pump(tester, [_entry(1, desc: 'Morning roll')]);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<BottomSheet>(find.byType(BottomSheet)).showDragHandle,
+        isTrue);
+    await tester.drag(find.text('Edit ride'), const Offset(0, 600));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit ride'), findsNothing);
+  });
+
   testWidgets('3-dot menu Delete confirms and calls the controller',
       (tester) async {
     await pump(tester, [_entry(7, desc: 'Morning roll')]);

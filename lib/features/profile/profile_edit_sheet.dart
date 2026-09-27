@@ -59,7 +59,8 @@ class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 24, bottom: 20),
+              // The sheet's drag handle already spaces the title from the top.
+              padding: const EdgeInsets.only(bottom: 20),
               child: Text(l10n.profileEditTitle,
                   style: text.titleLarge?.copyWith(color: colors.onSurface)),
             ),

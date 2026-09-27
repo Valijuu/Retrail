@@ -7,7 +7,7 @@ import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_with_trackpoints.dart';
 import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/ride_stats.dart';
-import 'package:retrail/features/history/edit_ride_dialog.dart';
+import 'package:retrail/features/history/edit_ride_sheet.dart';
 import 'package:retrail/features/history/ride_detail_dialog.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/live_map.dart';
@@ -43,7 +43,7 @@ Ride _ride() => const Ride(
 void main() {
   useStubLiveMap();
 
-  group('EditRideDialog', () {
+  group('EditRideSheet', () {
     testWidgets('renders and Save fires with entered values', (tester) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
@@ -52,7 +52,7 @@ void main() {
 
       String? savedTitle;
       ActivityType? savedType;
-      await tester.pumpWidget(_host(EditRideDialog(
+      await tester.pumpWidget(_host(EditRideSheet(
         initialDescription: 'Old title',
         initialType: ActivityType.longboard,
         onDismiss: () {},
@@ -80,7 +80,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_host(EditRideDialog(
+      await tester.pumpWidget(_host(EditRideSheet(
         initialType: ActivityType.skateboard,
         onDismiss: () {},
         onSave: (_, _, _) {},
