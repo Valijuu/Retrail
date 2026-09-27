@@ -421,11 +421,33 @@ void main() {
       });
     });
 
+    // Deviation from the original (which showed 100 m / 1 s = 360 km/h): the
+    // fallback now rejects physically impossible jumps, so this uses a
+    // plausible segment. The rules themselves: test/domain/fallback_speed_test.
     test('falls back to computed speed when provider omits it', () {
       runTracker((fa, t) {
         t.onLocationReceived(fix(52.0, 13.0, nanos: 0));
-        t.onLocationReceived(fix(52.1, 13.1, nanos: 1000000000)); // +1s, 100 m
-        expect(t.state.speedKmh, closeTo(360, 1e-6)); // 100 m/s × 3.6
+        t.onLocationReceived(fix(52.1, 13.1, nanos: 5000000000)); // +5s, 100 m
+        expect(t.state.speedKmh, closeTo(72, 1e-6)); // 20 m/s × 3.6
+      });
+    });
+
+    test(
+        'iPhone standing still indoors: no provider speed (-1) and vague '
+        'fixes jumping 100 m → no absurd speed (was ~360+ km/h)', () {
+      runTracker((fa, t) {
+        t.onLocationReceived(fix(52.0, 13.0, accuracy: 65, speed: -1));
+        t.onLocationReceived(
+            fix(52.1, 13.1, accuracy: 65, speed: -1, nanos: 1000000000));
+        expect(t.state.speedKmh, isNull);
+      });
+    });
+
+    test('an impossible jump between precise fixes shows no speed', () {
+      runTracker((fa, t) {
+        t.onLocationReceived(fix(52.0, 13.0, nanos: 0));
+        t.onLocationReceived(fix(52.1, 13.1, nanos: 1000000000)); // 100 m/s
+        expect(t.state.speedKmh, isNull);
       });
     });
 

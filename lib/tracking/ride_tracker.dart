@@ -4,6 +4,7 @@ import '../data/repositories/ride_repository.dart';
 import '../data/repositories/trackpoint_repository.dart';
 import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
+import '../domain/fallback_speed.dart';
 import '../domain/max_speed.dart';
 import 'gps_fix_filter.dart';
 import 'location_fix.dart';
@@ -329,17 +330,23 @@ class RideTracker {
   }
 
   /// Prefer the provider's speed; else fall back to displacement / time between
-  /// the last two fixes.
+  /// the last two fixes — guarded like the recording filter, because on iOS
+  /// the fallback is the norm while standing still (speed -1) and noisy indoor
+  /// fixes otherwise read as hundreds of km/h.
   double? _computeSpeedKmh(LocationFix fix) {
     if (fix.hasSpeed) return fix.speed * 3.6;
     final prev = _lastSpeedLocation;
     if (prev == null) return null;
-    final elapsedS =
-        (fix.elapsedRealtimeNanos - prev.elapsedRealtimeNanos) / 1000000000.0;
-    if (elapsedS <= 0.0) return null;
-    final distance = _calc.distanceBetween(
-        prev.latitude, prev.longitude, fix.latitude, fix.longitude);
-    return distance / elapsedS * 3.6;
+    return fallbackSpeedKmh(
+      distanceMetres: _calc.distanceBetween(
+          prev.latitude, prev.longitude, fix.latitude, fix.longitude),
+      elapsedSeconds:
+          (fix.elapsedRealtimeNanos - prev.elapsedRealtimeNanos) / 1000000000.0,
+      accuracyA: prev.accuracy,
+      accuracyB: fix.accuracy,
+      maxAccuracyM: GpsFixFilter.accuracyThresholdM,
+      maxSpeedMs: GpsFixFilter.maxSpeedMs,
+    );
   }
 
   void _startElapsedTimer() {
