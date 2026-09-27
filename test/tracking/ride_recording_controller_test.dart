@@ -77,9 +77,6 @@ class _FakePermissions implements LocationPermissionService {
   Future<void> ensureBackgroundPermission() async => backgroundCount++;
 
   @override
-  Future<bool> promptEnableLocationServices() async => false;
-
-  @override
   Future<void> openLocationSettings() async => openLocationSettingsCount++;
   @override
   Future<void> openAppSettings() async {}

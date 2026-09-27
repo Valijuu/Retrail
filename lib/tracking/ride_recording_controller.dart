@@ -28,12 +28,6 @@ abstract interface class LocationPermissionService {
   /// whileInUse → Always (the location FGS already covers Android). Best-effort.
   Future<void> ensureBackgroundPermission();
 
-  /// Asks the OS to show its own "Turn on Location Services" alert, whose
-  /// Settings button jumps straight to the Location Services switch — a page
-  /// iOS apps can't open themselves. True if the alert appeared; always false
-  /// on Android, where [openLocationSettings] already lands there.
-  Future<bool> promptEnableLocationServices();
-
   Future<void> openLocationSettings();
   Future<void> openAppSettings();
 }
@@ -226,8 +220,6 @@ class RideRecordingController {
     _serviceSub = null;
   }
 
-  Future<bool> promptEnableLocationServices() =>
-      _permissions.promptEnableLocationServices();
   Future<void> openLocationSettings() => _permissions.openLocationSettings();
   Future<void> openAppSettings() => _permissions.openAppSettings();
 
