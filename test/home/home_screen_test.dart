@@ -134,6 +134,17 @@ void main() {
     expect(find.text('42'), findsOneWidget);
   });
 
+  testWidgets(
+      'Start tracking sits 16dp below the scrolling list, matching the gap '
+      'below it', (tester) async {
+    await pumpHome(tester);
+    final button = find.widgetWithText(FilledButton, 'Start tracking');
+    expect(
+        tester.getTopLeft(button).dy -
+            tester.getBottomLeft(find.byType(ListView)).dy,
+        16);
+  });
+
   testWidgets('Start tracking routes to the countdown timer', (tester) async {
     await pumpHome(tester);
     await tester.tap(find.text('Start tracking'));
