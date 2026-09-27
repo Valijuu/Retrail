@@ -114,6 +114,25 @@ void main() {
     expect(find.byType(ProfileEditSheet), findsNothing);
   });
 
+  testWidgets(
+      'with the keyboard up the profile sheet stays capped below the top — '
+      'it never grows to the screen edge', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 350);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byType(ProfileAvatar));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // A clear strip stays free above the sheet (drag handle included).
+    expect(tester.getTopLeft(find.byType(BottomSheet)).dy,
+        greaterThanOrEqualTo(900 * 0.08));
+  });
+
   Future<void> settle(WidgetTester tester) async {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

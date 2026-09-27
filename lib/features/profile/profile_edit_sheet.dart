@@ -15,7 +15,11 @@ const _nameMaxLength = 30;
 /// [ProfilePhotoChooser] (photo persists live via the manager); Save writes the
 /// name. Ports `ProfileEditSheet` to the Flutter port's photo model.
 class ProfileEditSheet extends ConsumerStatefulWidget {
-  const ProfileEditSheet({super.key});
+  const ProfileEditSheet({super.key, this.scrollController});
+
+  /// The enclosing sheet's controller, so dragging the content down moves
+  /// (and closes) the sheet instead of only scrolling.
+  final ScrollController? scrollController;
 
   @override
   ConsumerState<ProfileEditSheet> createState() => _ProfileEditSheetState();
@@ -47,77 +51,78 @@ class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
     final current = ref.watch(currentProfilePhotoProvider).asData?.value;
 
     return SafeArea(
-      child: SingleChildScrollView(
-        // Lift the sheet above the keyboard (viewInsets) so the name field
-        // stays visible while typing — without this the keyboard covered it.
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              // The sheet's drag handle already spaces the title from the top.
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Text(l10n.profileEditTitle,
-                  style: text.titleLarge?.copyWith(color: colors.onSurface)),
-            ),
-            // Name field.
-            Container(
-              decoration: BoxDecoration(
-                  color: colors.surfaceContainer, borderRadius: AppShapes.card),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      // Keyboard inset outside the scroll view: the viewport ends above the
+      // keyboard, so the name field scrolls into sight instead of behind it.
+      child: Padding(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SingleChildScrollView(
+          controller: widget.scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                // The sheet's drag handle already spaces the title from the top.
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Text(l10n.profileEditTitle,
+                    style: text.titleLarge?.copyWith(color: colors.onSurface)),
+              ),
+              // Name field.
+              Container(
+                decoration: BoxDecoration(
+                    color: colors.surfaceContainer, borderRadius: AppShapes.card),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.initNameLabel,
+                        style:
+                            text.labelSmall?.copyWith(color: colors.primary)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: _name,
+                      maxLength: _nameMaxLength,
+                      cursorColor: colors.primary,
+                      style: text.bodyLarge?.copyWith(color: colors.onSurface),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        counterText: '',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(child: ProfileAvatar(photoPath: current, size: 96)),
+              const SizedBox(height: 16),
+              const ProfilePhotoChooser(),
+              const SizedBox(height: 24),
+              Row(
                 children: [
-                  Text(l10n.initNameLabel,
-                      style:
-                          text.labelSmall?.copyWith(color: colors.primary)),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: _name,
-                    maxLength: _nameMaxLength,
-                    cursorColor: colors.primary,
-                    style: text.bodyLarge?.copyWith(color: colors.onSurface),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      counterText: '',
+                  Expanded(
+                    child: _Pill(
+                      label: l10n.actionCancel,
+                      bg: colors.surfaceContainer,
+                      fg: colors.onSurfaceVariant,
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _Pill(
+                      label: l10n.actionSave,
+                      bg: colors.primary,
+                      fg: colors.onPrimary,
+                      onTap: _save,
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
-            Center(child: ProfileAvatar(photoPath: current, size: 96)),
-            const SizedBox(height: 16),
-            const ProfilePhotoChooser(),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _Pill(
-                    label: l10n.actionCancel,
-                    bg: colors.surfaceContainer,
-                    fg: colors.onSurfaceVariant,
-                    onTap: () => Navigator.of(context).pop(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _Pill(
-                    label: l10n.actionSave,
-                    bg: colors.primary,
-                    fg: colors.onPrimary,
-                    onTap: _save,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );

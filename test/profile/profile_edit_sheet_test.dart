@@ -71,10 +71,11 @@ void main() {
     addTearDown(tester.view.resetViewInsets);
     await tester.pump();
 
-    final scroll = tester.widget<SingleChildScrollView>(
-        find.byType(SingleChildScrollView).first);
-    final padding = scroll.padding!.resolve(TextDirection.ltr);
-    expect(padding.bottom, 500); // viewInsets applied → sheet rises
+    // The scroll viewport ends above the keyboard (900 - 500), so a focused
+    // field is scrolled into sight rather than behind the keyboard.
+    expect(
+        tester.getBottomLeft(find.byType(SingleChildScrollView).first).dy,
+        lessThanOrEqualTo(400));
     expect(tester.takeException(), isNull); // and nothing overflows
   });
 

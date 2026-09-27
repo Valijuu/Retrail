@@ -10,6 +10,7 @@ import '../profile/profile_edit_sheet.dart';
 import '../settings/settings_screen.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../core/theme/theme_context.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
 /// the History tab and the History screen scrolls to it, then clears this.
@@ -126,12 +127,10 @@ class _MainShellState extends ConsumerState<MainShell> {
                   ref.read(historyTargetRideProvider.notifier).state = rideId;
                   _goToTab(1);
                 },
-                onAvatarTap: () => showModalBottomSheet<void>(
+                onAvatarTap: () => showAppScrollableSheet<void>(
                   context: context,
-                  isScrollControlled: true,
-                  showDragHandle: true,
-                  backgroundColor: colors.surface,
-                  builder: (_) => const ProfileEditSheet(),
+                  builder: (_, scrollController) =>
+                      ProfileEditSheet(scrollController: scrollController),
                 ),
               ),
             ),

@@ -473,6 +473,22 @@ void main() {
   });
 
   testWidgets(
+      'with the keyboard up the edit sheet stays capped below the top',
+      (tester) async {
+    await pump(tester, [_entry(1, desc: 'Morning roll')]);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 350);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    // A clear strip stays free above the sheet (drag handle included).
+    expect(tester.getTopLeft(find.byType(BottomSheet)).dy,
+        greaterThanOrEqualTo(900 * 0.08));
+  });
+
+  testWidgets(
       'the edit view is a bottom sheet with a drag handle that closes when '
       'dragged down', (tester) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);

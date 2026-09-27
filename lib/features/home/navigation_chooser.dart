@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/theme_context.dart';
 import '../../l10n/app_localizations.dart';
 import 'navigation_launcher.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 
 /// Navigates to the labelled coordinate: launches straight away when only one
 /// app is available (Android's own chooser, or Apple Maps alone), otherwise
@@ -13,11 +14,8 @@ Future<void> navigateTo(BuildContext context, NavigationLauncher launcher,
   if (!context.mounted) return;
   final app = apps.length == 1
       ? apps.single
-      : await showModalBottomSheet<NavigationApp>(
+      : await showAppBottomSheet<NavigationApp>(
           context: context,
-          useSafeArea: true,
-          showDragHandle: true,
-          backgroundColor: context.colors.surface,
           builder: (_) => _NavigationAppSheet(apps),
         );
   if (app != null) await launcher.launch(app, lat, lng, label);

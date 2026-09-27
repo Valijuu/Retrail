@@ -16,6 +16,7 @@ class EditRideSheet extends StatefulWidget {
     this.initialDescription,
     this.initialComment,
     this.initialType,
+    this.scrollController,
     required this.onDismiss,
     required this.onSave,
   });
@@ -23,6 +24,10 @@ class EditRideSheet extends StatefulWidget {
   final String? initialDescription;
   final String? initialComment;
   final ActivityType? initialType;
+
+  /// The enclosing sheet's controller, so dragging the content down moves
+  /// (and closes) the sheet instead of only scrolling.
+  final ScrollController? scrollController;
   final VoidCallback onDismiss;
   final void Function(String? description, String? comment, ActivityType? type)
       onSave;
@@ -51,91 +56,95 @@ class _EditRideSheetState extends State<EditRideSheet> {
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
     return SafeArea(
-      child: SingleChildScrollView(
-        // Lift the sheet above the keyboard (viewInsets) so the inputs stay
-        // visible while typing.
-        padding: EdgeInsets.fromLTRB(
-            24, 0, 24, 20 + MediaQuery.viewInsetsOf(context).bottom),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Text(l10n.editRideTitle,
-                  style: text.titleLarge?.copyWith(color: colors.onSurface)),
-            ),
-            const SizedBox(height: 6),
-            Center(
-              child: Text(l10n.editRideSubtitle,
-                  textAlign: TextAlign.center,
-                  style:
-                      text.bodyMedium?.copyWith(color: colors.onSurfaceVariant)),
-            ),
-            const SizedBox(height: 20),
-            SheetInputField(
-              label: l10n.summaryTitleLabel,
-              controller: _titleController,
-              singleLine: true,
-              maxLength: _descMaxLength,
-            ),
-            const SizedBox(height: 12),
-            Text(l10n.editRideActivityLabel,
-                style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final option in ActivityType.values)
-                  FilterChip(
-                    selected: _type == option,
-                    onSelected: (_) => setState(
-                        () => _type = _type == option ? null : option),
-                    avatar: option.glyph(size: 18),
-                    // M3 draws the checkmark on top of the avatar glyph —
-                    // the fill already marks the selection (issue #29).
-                    showCheckmark: false,
-                    label: Text(option.label(l10n)),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SheetInputField(
-              label: l10n.summaryCommentLabel,
-              controller: _commentController,
-              singleLine: false,
-              minLines: 3,
-              maxLines: 5,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: PillButton(
-                    label: l10n.actionCancel,
-                    bg: colors.surfaceContainer,
-                    fg: colors.onSurface,
-                    onTap: widget.onDismiss,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: PillButton(
-                    label: l10n.actionSave,
-                    bg: colors.primary,
-                    fg: colors.onPrimary,
-                    onTap: () => widget.onSave(
-                      _titleController.text.isEmpty ? null : _titleController.text,
-                      _commentController.text.isEmpty
-                          ? null
-                          : _commentController.text,
-                      _type,
+      // Keyboard inset outside the scroll view: the viewport ends above the
+      // keyboard, so a focused input scrolls into sight instead of behind it.
+      child: Padding(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SingleChildScrollView(
+          controller: widget.scrollController,
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(l10n.editRideTitle,
+                    style: text.titleLarge?.copyWith(color: colors.onSurface)),
+              ),
+              const SizedBox(height: 6),
+              Center(
+                child: Text(l10n.editRideSubtitle,
+                    textAlign: TextAlign.center,
+                    style:
+                        text.bodyMedium?.copyWith(color: colors.onSurfaceVariant)),
+              ),
+              const SizedBox(height: 20),
+              SheetInputField(
+                label: l10n.summaryTitleLabel,
+                controller: _titleController,
+                singleLine: true,
+                maxLength: _descMaxLength,
+              ),
+              const SizedBox(height: 12),
+              Text(l10n.editRideActivityLabel,
+                  style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final option in ActivityType.values)
+                    FilterChip(
+                      selected: _type == option,
+                      onSelected: (_) => setState(
+                          () => _type = _type == option ? null : option),
+                      avatar: option.glyph(size: 18),
+                      // M3 draws the checkmark on top of the avatar glyph —
+                      // the fill already marks the selection (issue #29).
+                      showCheckmark: false,
+                      label: Text(option.label(l10n)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SheetInputField(
+                label: l10n.summaryCommentLabel,
+                controller: _commentController,
+                singleLine: false,
+                minLines: 3,
+                maxLines: 5,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: PillButton(
+                      label: l10n.actionCancel,
+                      bg: colors.surfaceContainer,
+                      fg: colors.onSurface,
+                      onTap: widget.onDismiss,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: PillButton(
+                      label: l10n.actionSave,
+                      bg: colors.primary,
+                      fg: colors.onPrimary,
+                      onTap: () => widget.onSave(
+                        _titleController.text.isEmpty ? null : _titleController.text,
+                        _commentController.text.isEmpty
+                            ? null
+                            : _commentController.text,
+                        _type,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -23,6 +23,7 @@ import '../../domain/activity_type.dart';
 import '../../map/preview_projection.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../../core/theme/theme_context.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 
 /// The history tab: filtered/sorted/date-grouped list of ride cards with search,
 /// a filter sheet, multi-select + batch delete, per-row edit/delete, a detail
@@ -191,32 +192,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
-  /// The filter sheet drags like one surface: its content scrolls while it
-  /// fits, and dragging down past the top shrinks the sheet and closes it at
-  /// the minimum size — on iOS the bouncing scroll content otherwise swallowed
-  /// the drag. Capped below the status area so the top stays reachable on
-  /// small screens (iPhone 8).
-  Future<void> _openFilters() => showModalBottomSheet<void>(
+  Future<void> _openFilters() => showAppScrollableSheet<void>(
         context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        showDragHandle: true,
-        backgroundColor: context.colors.surface,
-        builder: (_) => DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: _filterSheetMaxSize,
-          maxChildSize: _filterSheetMaxSize,
-          minChildSize: _filterSheetCloseSize,
-          builder: (_, scrollController) =>
-              HistoryFilterSheet(scrollController: scrollController),
-        ),
+        builder: (_, scrollController) =>
+            HistoryFilterSheet(scrollController: scrollController),
       );
-
-  /// Share of the screen the filter sheet may cover at most.
-  static const _filterSheetMaxSize = 0.9;
-
-  /// Dragged down to this share of the screen, the sheet closes.
-  static const _filterSheetCloseSize = 0.25;
 
   Future<void> _confirmDelete({int? single, bool batch = false}) async {
     final ids = batch ? _selectedIds.toList() : [single!];
@@ -239,13 +219,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Future<void> _openEdit(Ride ride) => showModalBottomSheet<void>(
+  Future<void> _openEdit(Ride ride) => showAppScrollableSheet<void>(
         context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        showDragHandle: true,
-        backgroundColor: context.colors.surface,
-        builder: (_) => EditRideSheet(
+        builder: (_, scrollController) => EditRideSheet(
+          scrollController: scrollController,
           initialDescription: ride.description,
           initialComment: ride.comment,
           initialType: ActivityType.fromId(ride.typ),
