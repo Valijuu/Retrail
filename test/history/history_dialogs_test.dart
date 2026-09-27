@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -117,6 +118,55 @@ void main() {
       expect(find.text('felt great'), findsOneWidget);
 
       await tester.tap(find.text('Close'));
+      expect(dismissed, isTrue);
+    });
+
+    testWidgets(
+        'on a small screen (iPhone 8) the Close button stays visible and '
+        'tappable', (tester) async {
+      tester.view.physicalSize = const Size(375, 667);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      var dismissed = false;
+      await tester.pumpWidget(_host(
+        RideDetailDialog(
+          rwt: RideWithTrackpoints(
+            ride: _ride().copyWith(
+                comment: const Value('Lange Runde am Rhein entlang, erst '
+                    'Rückenwind, dann Gegenwind, zweimal Pause am Kiosk.')),
+            trackpoints: const [
+              Trackpoint(
+                  trackpointId: 0,
+                  rideId: 1,
+                  latitude: 52.0,
+                  longitude: 13.0,
+                  timestamp: 0),
+              Trackpoint(
+                  trackpointId: 1,
+                  rideId: 1,
+                  latitude: 52.02,
+                  longitude: 13.0,
+                  timestamp: 1),
+            ],
+          ),
+          stats: const RideStats(
+              durationMs: 600000,
+              distanceMetres: 4200,
+              maxSpeedKmh: 22,
+              avgSpeedKmh: 15),
+          onDismiss: () => dismissed = true,
+        ),
+        locale: const Locale('de'),
+      ));
+
+      final close = find.text('Schließen');
+      expect(close, findsOneWidget);
+      final rect = tester.getRect(close);
+      expect(rect.bottom, lessThanOrEqualTo(667),
+          reason: 'Close must not be pushed below the screen');
+      await tester.tap(close);
       expect(dismissed, isTrue);
     });
 
