@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 # Downloads the newest green iOS build (GitHub Actions "iOS build" on main) to
-# ~/Downloads/retrail-ios/Retrail.ipa.7z, replacing the previous one, and shows a
-# desktop notification. Does nothing if that build is already there.
+# ~/Downloads/retrail-ios/Retrail.ipa.7z, replacing the previous one, and — if an
+# iPhone is connected via USB — unpacks and installs it with Splice. Desktop
+# notifications report each step. Does nothing that was already done.
 #
-#   tool/ios_fetch_build.sh            fetch the latest green build (if new)
+#   tool/ios_fetch_build.sh            fetch the latest green build (if new), install it
 #   tool/ios_fetch_build.sh --wait     wait for the build running on main (started by a
-#                                      push or "Run workflow" on GitHub), then fetch it
-#   tool/ios_fetch_build.sh --trigger  start a new build on main, wait, then fetch
+#                                      push or "Run workflow" on GitHub), fetch, install
+#   tool/ios_fetch_build.sh --trigger  start a new build on main, wait, fetch, install
+#   tool/ios_fetch_build.sh --install  only install the already downloaded build
+#   tool/ios_fetch_build.sh --store-password
+#                                      save IPA_PASSWORD in the login keyring (once)
 #
-# The archive stays encrypted: unpack with `7z x Retrail.ipa.7z` (IPA_PASSWORD),
-# then `splice install Retrail.ipa` — see docs/ios-sideloading.md.
+# Installing needs: the iPhone on USB (unlocked, this PC trusted), the password in
+# the keyring (`--store-password`, needs `secret-tool` from libsecret-tools), and a
+# Splice login — see docs/ios-sideloading.md.
 set -euo pipefail
 
 REPO="Valijuu/Retrail"
@@ -18,6 +23,14 @@ BRANCH="main"
 DEST="${RETRAIL_IOS_DIR:-$HOME/Downloads/retrail-ios}"
 STATE="$DEST/.artifact-id"
 SCRIPT="$(readlink -f "$0")"
+INSTALLED_STATE="$DEST/.installed-id"
+
+# Splice lives in ~/.local/bin, which a git hook's PATH may lack.
+SPLICE="$(command -v splice || echo "$HOME/.local/bin/splice")"
+# Apple's root CA for gsa.apple.com (see docs/ios-sideloading.md, Troubleshooting).
+SPLICE_CA_BUNDLE="$HOME/.config/splice/ca-with-apple.crt"
+ANISETTE_CONTAINER="anisette-v3"
+KEYRING_ATTRS=(service retrail-ios key ipa-password)
 
 # A build takes a few seconds to show up after a push / "Run workflow".
 APPEAR_TIMEOUT_S=60
@@ -48,22 +61,115 @@ fetch() {
   mkdir -p "$DEST"
   if [ "$(cat "$STATE" 2>/dev/null)" = "$artifact" ]; then
     log "Build #$run_no is already in $DEST."
-    return 0
+    install_build
+    return
   fi
 
   local tmp; tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' RETURN
-  gh api "repos/$REPO/actions/artifacts/$artifact/zip" > "$tmp/artifact.zip"
-  unzip -q -o "$tmp/artifact.zip" -d "$tmp"
-  [ -f "$tmp/Retrail.ipa.7z" ] || { log "Artifact has no Retrail.ipa.7z."; return 1; }
+  if ! gh api "repos/$REPO/actions/artifacts/$artifact/zip" > "$tmp/artifact.zip" ||
+     ! unzip -q -o "$tmp/artifact.zip" -d "$tmp" ||
+     [ ! -f "$tmp/Retrail.ipa.7z" ]; then
+    rm -rf "$tmp"
+    log "Downloading build #$run_no failed."
+    return 1
+  fi
 
   # Replace the old build: the encrypted archive and anything unpacked from it.
   rm -rf "$DEST/Retrail.ipa" "$DEST/dist"
   mv -f "$tmp/Retrail.ipa.7z" "$DEST/Retrail.ipa.7z"
+  rm -rf "$tmp"
   printf '%s\n' "$artifact" > "$STATE"
 
   log "Build #$run_no ($title) → $DEST/Retrail.ipa.7z"
   notify "Retrail iOS build #$run_no ready" "$title — $DEST/Retrail.ipa.7z"
+  install_build
+}
+
+# USB only (`-l`): installing over Wi-Fi is slower and flakier.
+iphone_connected() { [ -n "$(idevice_id -l 2>/dev/null)" ]; }
+
+# Empty when secret-tool is missing or nothing is stored (never fails: set -e).
+ipa_password() {
+  command -v secret-tool >/dev/null 2>&1 || return 0
+  secret-tool lookup "${KEYRING_ATTRS[@]}" 2>/dev/null || true
+}
+
+# Splice's local anisette server must run, or the Apple login fails / loops.
+ensure_anisette() {
+  command -v docker >/dev/null 2>&1 || return 0
+  if [ "$(docker inspect -f '{{.State.Running}}' "$ANISETTE_CONTAINER" 2>/dev/null)" = "false" ]; then
+    log "Starting $ANISETTE_CONTAINER…"
+    docker start "$ANISETTE_CONTAINER" >/dev/null && sleep 3
+  fi
+}
+
+# Unpacks the downloaded build and installs it with Splice — only if an iPhone is
+# on USB and this build isn't installed yet. Never touches the phone otherwise.
+install_build() {
+  local artifact work password
+  artifact="$(cat "$STATE" 2>/dev/null)"
+  if [ ! -f "$DEST/Retrail.ipa.7z" ] || [ -z "$artifact" ]; then
+    log "No downloaded build to install."
+    return 0
+  fi
+  if [ "$(cat "$INSTALLED_STATE" 2>/dev/null)" = "$artifact" ]; then
+    log "This build is already installed."
+    return 0
+  fi
+  if ! command -v idevice_id >/dev/null 2>&1 || ! iphone_connected; then
+    log "No iPhone on USB — not installing."
+    notify "Retrail: iPhone not connected" \
+      "Connect it via USB, then run tool/ios_fetch_build.sh --install"
+    return 0
+  fi
+  password="$(ipa_password)"
+  if [ -z "$password" ]; then
+    log "No IPA password in the keyring — run: tool/ios_fetch_build.sh --store-password"
+    notify "Retrail: install skipped" "No IPA password in the keyring (--store-password)"
+    return 1
+  fi
+  if [ ! -x "$SPLICE" ]; then
+    log "Splice not found at $SPLICE."
+    notify "Retrail: install skipped" "Splice is not installed"
+    return 1
+  fi
+
+  work="$(mktemp -d)"
+  if unpack_and_install "$password" "$work"; then
+    rm -rf "$work"
+    printf '%s\n' "$artifact" > "$INSTALLED_STATE"
+    log "Installed."
+    notify "Retrail installed" "The new build is on the iPhone."
+  else
+    rm -rf "$work"
+    return 1
+  fi
+}
+
+# Unpacks into [work] and runs Splice. The unpacked (unencrypted) .ipa only ever
+# lives in that temp dir, which the caller removes.
+unpack_and_install() {
+  local password="$1" work="$2"
+  log "Unpacking…"
+  if ! 7z x -p"$password" -y -o"$work" "$DEST/Retrail.ipa.7z" >/dev/null; then
+    log "Unpacking failed (wrong IPA password?)."
+    notify "Retrail: install failed" "Could not unpack Retrail.ipa.7z (wrong password?)"
+    return 1
+  fi
+  ensure_anisette
+  log "Installing on the iPhone (keep it unlocked)…"
+  if ! SSL_CERT_FILE="$SPLICE_CA_BUNDLE" "$SPLICE" install "$work/Retrail.ipa" </dev/null; then
+    log "Splice failed — is the iPhone unlocked and still logged in (splice login)?"
+    notify "Retrail: install failed" "Unlock the iPhone and run tool/ios_fetch_build.sh --install"
+    return 1
+  fi
+}
+
+store_password() {
+  command -v secret-tool >/dev/null 2>&1 \
+    || { log "secret-tool missing: sudo apt install libsecret-tools"; return 1; }
+  secret-tool store --label="Retrail IPA_PASSWORD" "${KEYRING_ATTRS[@]}"
+  log "Stored. The next build installs automatically when an iPhone is on USB."
 }
 
 # Waits for run [run_id] to finish; fetches it when green.
@@ -122,5 +228,7 @@ case "${1:-}" in
   "") fetch ;;
   --wait) wait_for_running ;;
   --trigger) trigger ;;
-  *) sed -n '2,12p' "$SCRIPT"; exit 2 ;;
+  --install) install_build ;;
+  --store-password) store_password ;;
+  *) sed -n '2,19p' "$SCRIPT"; exit 2 ;;
 esac

@@ -49,10 +49,23 @@ installing. Background: Spec 6 §G/§H.
 
    Builds start automatically on every push to `main` / `phase/**` that changes app code
    (`lib/`, `ios/`, `assets/`, `pubspec.*`).
-2. Unpack: `cd ~/Downloads/retrail-ios && 7z x Retrail.ipa.7z` (asks for `IPA_PASSWORD`).
-   Only if you downloaded by hand, run `unzip Retrail-ios-*.zip` first.
-3. Install: `splice install Retrail.ipa`.
-4. The first time, trust your Apple ID on the iPhone: Settings → General → VPN & Device
+2. **Install — automatic when the iPhone is on USB.** Right after fetching (and when a
+   fetched build isn't installed yet), the script checks for an iPhone on USB
+   (`idevice_id -l`):
+   - **iPhone connected:** it unpacks the archive into a temp dir, makes sure the
+     `anisette-v3` container runs, installs with Splice, deletes the unpacked `.ipa`,
+     and notifies "Retrail installed".
+   - **No iPhone:** it installs nothing and notifies you. Connect the iPhone later and run
+     `tool/ios_fetch_build.sh --install`.
+   - It remembers the installed build (`.installed-id`), so nothing is installed twice.
+
+   One-time setup: `sudo apt install libsecret-tools`, then
+   `tool/ios_fetch_build.sh --store-password` puts `IPA_PASSWORD` into the login keyring.
+   Keep the iPhone **unlocked** while it installs.
+
+   By hand instead: `cd ~/Downloads/retrail-ios && 7z x Retrail.ipa.7z && splice install
+   Retrail.ipa`. If you downloaded from GitHub yourself, run `unzip Retrail-ios-*.zip` first.
+3. The first time, trust your Apple ID on the iPhone: Settings → General → VPN & Device
    Management.
 
 ## Limits of the free signature
