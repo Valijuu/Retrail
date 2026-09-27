@@ -21,10 +21,22 @@ installing. Background: Spec 6 §G/§H.
 
 ## Each new build
 
-1. GitHub → **Actions** → **iOS build** → the latest green run → download the artifact
-   `Retrail-ios-<n>`. It runs on every push to `main` / `phase/**` that changes app code
-   (`lib/`, `ios/`, `assets/`, `pubspec.*`), or manually via "Run workflow".
-2. Unpack: `unzip Retrail-ios-*.zip && 7z x Retrail.ipa.7z` (asks for `IPA_PASSWORD`).
+1. **Get the build.** `tool/ios_fetch_build.sh` downloads the newest green `main` build to
+   `~/Downloads/retrail-ios/Retrail.ipa.7z` and replaces the previous one, then shows a desktop
+   notification. It does nothing if that build is already there.
+   - **Automatically:** `tool/ios_fetch_build.sh --install-timer` sets up a systemd user timer
+     that checks every 5 min. Every green build then arrives by itself, whether a push started
+     it or someone clicked "Run workflow" on GitHub. Log: `journalctl --user -u retrail-ios-fetch`.
+     Remove it with `--remove-timer`.
+   - **Start a build on demand:** `tool/ios_fetch_build.sh --trigger` runs the workflow on
+     `main`, waits about 15 min, then fetches the result.
+   - **By hand:** GitHub → **Actions** → **iOS build** → latest green run → artifact
+     `Retrail-ios-<n>`.
+
+   Builds run on every push to `main` / `phase/**` that changes app code (`lib/`, `ios/`,
+   `assets/`, `pubspec.*`).
+2. Unpack: `cd ~/Downloads/retrail-ios && 7z x Retrail.ipa.7z` (asks for `IPA_PASSWORD`).
+   Only if you downloaded by hand, run `unzip Retrail-ios-*.zip` first.
 3. Install: `splice install Retrail.ipa`.
 4. The first time, trust your Apple ID on the iPhone: Settings → General → VPN & Device
    Management.
