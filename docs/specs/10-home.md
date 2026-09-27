@@ -33,7 +33,7 @@ Shuffled-queue strategy ported from the original: show every greeting once per c
 - If `isTracking` → navigate to `/ride` (reopen the running ride, don't start a second).
 - Else → `beginTracking(lastActivityType)`; if `isOnline` → `RideStartGate.ensureReady()` then go `/timer`; else show the offline-warning dialog (confirm → proceed).
 - **`RideStartGate`** (`lib/features/home/ride_start_gate.dart`): `abstract interface class RideStartGate { Future<bool> ensureReady(); }`. The permission/GPS-settings checks are **device-specific (Part B)** — default impl returns true (straight to timer); the real impl (location permission + GPS-on check) lands with Spec 5 Part B. Interface seam → tests use a fake.
-- **`NavigationLauncher`** (`lib/features/home/navigation_launcher.dart`): `abstract interface class NavigationLauncher { Future<void> launchTo(double lat, double lng, String label); }` — real impl uses `url_launcher` with a `geo:` URI (device-verified); fake in tests.
+- **`NavigationLauncher`** (`lib/features/home/navigation_launcher.dart`): `abstract interface class NavigationLauncher { Future<void> launchTo(double lat, double lng, String label); }` — real impl uses `url_launcher` with a `geo:` URI on Android (system maps-app chooser) and an `https://maps.apple.com/?ll=…&q=…` link on iOS (no `geo:` handler there); URI built by the pure `navigationUri`; fake in tests.
 
 ## Router/shell wiring
 Replace the `_PlaceholderTab('home:…')` in `MainShell` with `HomeScreen`, passing the `greetingKey` (visit counter) the shell already tracks.

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -53,5 +54,26 @@ void main() {
     expect(open.width, cancel.width); // same full width, one per row
     expect(tester.getTopLeft(find.byType(FilledButton)).dy,
         lessThan(tester.getTopLeft(find.byType(TextButton)).dy));
+  });
+
+  testWidgets(
+      'location services off on iOS spells out the Settings path — apps can '
+      'only deep-link to their own settings page there', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    await pumpDialog(tester, LocationStartAction.openLocationSettings);
+    debugDefaultTargetPlatformOverride = null;
+
+    expect(find.text('Turn on location'), findsOneWidget);
+    expect(
+        find.text('Location Services are off. Turn them on in Settings → '
+            'Privacy & Security → Location Services.'),
+        findsOneWidget);
+  });
+
+  testWidgets('location services off on Android keeps the short copy',
+      (tester) async {
+    await pumpDialog(tester, LocationStartAction.openLocationSettings);
+    expect(find.text('Turn on location to start recording your ride.'),
+        findsOneWidget);
   });
 }

@@ -170,6 +170,7 @@
   "permissionOpenSettings": "Open settings",
   "permissionEnableLocationTitle": "Turn on location",
   "permissionEnableLocationBody": "Turn on location to start recording your ride.",
+  "permissionEnableLocationBodyIos": "Location Services are off. Turn them on in Settings → Privacy & Security → Location Services.",
   "permissionPreciseLocationTitle": "Precise location needed",
   "permissionPreciseLocationBody": "With approximate location Retrail can't record your route. Allow precise location in the app settings."
 }

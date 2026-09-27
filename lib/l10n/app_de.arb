@@ -169,6 +169,7 @@
   "permissionOpenSettings": "Einstellungen öffnen",
   "permissionEnableLocationTitle": "Standort aktivieren",
   "permissionEnableLocationBody": "Aktiviere den Standort, um die Aufzeichnung zu starten.",
+  "permissionEnableLocationBodyIos": "Die Ortungsdienste sind aus. Schalte sie unter Einstellungen → Datenschutz & Sicherheit → Ortungsdienste ein.",
   "permissionPreciseLocationTitle": "Genauer Standort benötigt",
   "permissionPreciseLocationBody": "Mit ungefährem Standort kann Retrail deine Strecke nicht aufzeichnen. Erlaube den genauen Standort in den App-Einstellungen."
 }

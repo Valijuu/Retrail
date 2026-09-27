@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/widgets/stacked_dialog_actions.dart';
@@ -28,7 +29,11 @@ class PermissionGateDialog extends StatelessWidget {
     final (title, body) = switch (action) {
       LocationStartAction.openLocationSettings => (
           l10n.permissionEnableLocationTitle,
-          l10n.permissionEnableLocationBody
+          // iOS only lets apps open their own settings page, not Location
+          // Services — so name the path the user has to take from there.
+          defaultTargetPlatform == TargetPlatform.iOS
+              ? l10n.permissionEnableLocationBodyIos
+              : l10n.permissionEnableLocationBody
         ),
       LocationStartAction.requestPreciseLocation => (
           l10n.permissionPreciseLocationTitle,
