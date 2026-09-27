@@ -12,7 +12,6 @@ import '../../tracking/permission_gate_dialog.dart';
 import '../../tracking/tracking_providers.dart';
 import '../profile/profile_providers.dart';
 import '../shell/routes.dart';
-import 'greeting_selector.dart';
 import 'greetings.dart';
 import 'home_providers.dart';
 import 'navigation_chooser.dart';
@@ -26,12 +25,15 @@ import '../../core/theme/theme_context.dart';
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
     super.key,
-    required this.greetingKey,
+    required this.greetingIndex,
     this.onOpenRide,
     this.onAvatarTap,
   });
 
-  final int greetingKey;
+  /// Which of the skater greetings to show. Owned by the shell: this screen is
+  /// disposed while off-screen, so a greeting picked here re-rolled whenever
+  /// Home slid back into view — before the user had arrived.
+  final int greetingIndex;
   final void Function(int rideId)? onOpenRide;
   final VoidCallback? onAvatarTap;
 
@@ -40,17 +42,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final GreetingSelector _greeting = GreetingSelector();
-  late int _greetingIndex = _greeting.next(skaterGreetingCount);
-
-  @override
-  void didUpdateWidget(HomeScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.greetingKey != widget.greetingKey) {
-      setState(() => _greetingIndex = _greeting.next(skaterGreetingCount));
-    }
-  }
-
   Future<void> _start() async {
     if (ref.read(isTrackingProvider)) {
       context.go(AppRoutes.ride);
@@ -121,7 +112,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final greetings = skaterGreetings(l10n);
-    final template = greetings[_greetingIndex.clamp(0, greetings.length - 1)];
+    final template = greetings[widget.greetingIndex.clamp(0, greetings.length - 1)];
     final userName =
         ref.watch(userNameProvider).asData?.value ?? l10n.homeDefaultName;
     final photo = ref.watch(currentProfilePhotoProvider).asData?.value;

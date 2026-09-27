@@ -11,6 +11,8 @@ import '../settings/settings_screen.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../core/theme/theme_context.dart';
 import '../../core/widgets/app_bottom_sheet.dart';
+import '../home/greeting_selector.dart';
+import '../home/greetings.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
 /// the History tab and the History screen scrolls to it, then clears this.
@@ -35,10 +37,15 @@ class _MainShellState extends ConsumerState<MainShell> {
   // the greeting re-roll ONLY the Home subtree — after the swipe has settled.
   final ValueNotifier<int> _current = ValueNotifier(0);
 
-  // Counts each landing on Home so the greeting re-rolls per visit; the first
-  // view counts as visit 1. Bumped on scroll-settle (not onPageChanged, which
-  // fires mid-animation) so Home rebuilds after the swipe finishes, not during.
-  final ValueNotifier<int> _homeVisits = ValueNotifier(1);
+  // The Home greeting, re-rolled on each landing on Home. Held here, not in
+  // HomeScreen: the PageView disposes Home while it's off-screen, and a fresh
+  // HomeScreen picking its own greeting showed a new one while Home was still
+  // sliding in (and lost the selector's no-repeat cycle). Re-rolled on
+  // scroll-settle (not onPageChanged, which fires mid-animation) so Home
+  // rebuilds after the swipe finishes, not during.
+  final GreetingSelector _greetings = GreetingSelector();
+  late final ValueNotifier<int> _greetingIndex =
+      ValueNotifier(_greetings.next(skaterGreetingCount));
   int _lastSettledPage = 0;
 
   /// Tabs visited since the last landing on Home, most recent last. Home is
@@ -73,7 +80,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   /// scrolling doesn't bubble in as a page change).
   void _onPageSettled() {
     final page = _controller.page?.round() ?? 0;
-    if (page == 0 && _lastSettledPage != 0) _homeVisits.value++;
+    if (page == 0 && _lastSettledPage != 0) {
+      _greetingIndex.value = _greetings.next(skaterGreetingCount);
+    }
     _lastSettledPage = page;
     _recordVisit(page);
   }
@@ -94,7 +103,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   void dispose() {
     _controller.dispose();
     _current.dispose();
-    _homeVisits.dispose();
+    _greetingIndex.dispose();
     super.dispose();
   }
 
@@ -120,9 +129,9 @@ class _MainShellState extends ConsumerState<MainShell> {
           onPageChanged: _onPageChanged,
           children: [
             ValueListenableBuilder<int>(
-              valueListenable: _homeVisits,
-              builder: (_, visits, _) => HomeScreen(
-                greetingKey: visits,
+              valueListenable: _greetingIndex,
+              builder: (_, greetingIndex, _) => HomeScreen(
+                greetingIndex: greetingIndex,
                 onOpenRide: (rideId) {
                   ref.read(historyTargetRideProvider.notifier).state = rideId;
                   _goToTab(1);

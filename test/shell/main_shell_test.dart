@@ -16,6 +16,7 @@ import 'package:retrail/domain/ride_stats.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_ride_card.dart';
+import 'package:retrail/features/home/top_header.dart';
 import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -233,5 +234,38 @@ void main() {
     expect(await tester.binding.handlePopRoute(), isTrue);
     await settle(tester);
     expect(find.text('Recent rides'), findsOneWidget); // now back on Home
+  });
+
+  testWidgets(
+      'the greeting stays put while leaving and returning to Home, and '
+      're-rolls once on arrival', (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    // The greeting as rendered — not HomeScreen's prop — so state re-rolling
+    // inside Home would be caught too.
+    String shown() => tester
+        .widget<RichText>(find
+            .descendant(
+                of: find.byType(TopHeader), matching: find.byType(RichText))
+            .first)
+        .text
+        .toPlainText();
+    final before = shown();
+
+    await tester.tap(find.text('History'));
+    await tester.pump(const Duration(milliseconds: 100)); // Home sliding out
+    expect(shown(), before);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.text('Home'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150)); // Home sliding in
+    expect(shown(), before); // still the text the user left
+    await tester.pump(const Duration(milliseconds: 400));
+    final arrived = shown();
+    expect(arrived, isNot(before)); // re-rolled on arrival…
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(shown(), arrived); // …and only once
   });
 }
