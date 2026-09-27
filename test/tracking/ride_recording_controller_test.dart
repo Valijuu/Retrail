@@ -77,6 +77,9 @@ class _FakePermissions implements LocationPermissionService {
   Future<void> ensureBackgroundPermission() async => backgroundCount++;
 
   @override
+  Future<bool> promptEnableLocationServices() async => false;
+
+  @override
   Future<void> openLocationSettings() async => openLocationSettingsCount++;
   @override
   Future<void> openAppSettings() async {}
@@ -292,6 +295,23 @@ void main() {
     )).start();
     expect(action, LocationStartAction.openLocationSettings);
     expect(tracker.state.isTracking, isFalse);
+    expect(service.starts, 0);
+  });
+
+  test(
+      'iOS: services off reads as denied → openLocationSettings, not the '
+      'rationale', () async {
+    final action = await RideRecordingController(
+      tracker: tracker,
+      source: source,
+      permissions: _FakePermissions(
+        serviceEnabled: false,
+        permission: LocationPermission.deniedForever,
+      ),
+      service: service,
+      servicesOffReportsDenied: true,
+    ).start();
+    expect(action, LocationStartAction.openLocationSettings);
     expect(service.starts, 0);
   });
 

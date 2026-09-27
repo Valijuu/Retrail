@@ -102,6 +102,7 @@ final rideRecordingControllerProvider = Provider<RideRecordingController>((ref) 
     source: ref.watch(locationSourceProvider),
     permissions: ref.watch(locationPermissionServiceProvider),
     service: ref.watch(rideForegroundServiceProvider),
+    servicesOffReportsDenied: defaultTargetPlatform == TargetPlatform.iOS,
   );
   // Without this, a container torn down mid-ride (no stop() ever runs) leaked
   // the GPS subscription into a disposed tracker — same contract as

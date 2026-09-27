@@ -12,6 +12,9 @@
 #   tool/ios_fetch_build.sh --store-password
 #                                      save IPA_PASSWORD in the login keyring (once)
 #
+# RETRAIL_IOS_BRANCH=<branch> builds/fetches that branch instead of main — to try
+# Swift changes on a device before they reach main.
+#
 # Installing needs: the iPhone on USB (unlocked, this PC trusted), the password in
 # the keyring (`--store-password`, needs `secret-tool` from libsecret-tools), and a
 # Splice login — see docs/ios-sideloading.md.
@@ -19,7 +22,7 @@ set -euo pipefail
 
 REPO="Valijuu/Retrail"
 WORKFLOW="ios-build.yml"
-BRANCH="main"
+BRANCH="${RETRAIL_IOS_BRANCH:-main}"
 DEST="${RETRAIL_IOS_DIR:-$HOME/Downloads/retrail-ios}"
 STATE="$DEST/.artifact-id"
 SCRIPT="$(readlink -f "$0")"

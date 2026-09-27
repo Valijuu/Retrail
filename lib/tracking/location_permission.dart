@@ -10,7 +10,9 @@ enum LocationStartAction {
   /// Permission not yet decided → ask for it.
   requestPermission,
 
-  /// Granted, but device location services are off → prompt to turn them on.
+  /// Device location services are off → prompt to turn them on. On iOS reached
+  /// whenever services are off, whatever the permission; on Android only once
+  /// permission is granted.
   openLocationSettings,
 
   /// Permanently denied → show the rationale dialog with an app-settings path.
@@ -23,15 +25,28 @@ enum LocationStartAction {
   requestPreciseLocation,
 }
 
-/// Resolves permission FIRST, then the GPS-on check (only when granted) —
-/// mirroring the original: request location permission, then check that location
-/// services are enabled before recording — and finally that the grant is for
-/// PRECISE location ([precise]).
+/// Where [servicesOffReportsDenied] (iOS), services off ALWAYS resolves to
+/// [LocationStartAction.openLocationSettings], checked before the permission:
+/// while Location Services are off globally, iOS reports every app as denied
+/// and no permission can be granted (the request would never resolve), so the
+/// reported permission is meaningless until services are back on.
+///
+/// Otherwise (Android, false) permission is resolved FIRST, then the GPS-on
+/// check once granted — mirroring the original: request location permission,
+/// then check that location services are enabled before recording. A
+/// permanent denial always shows the rationale.
+///
+/// A grant with services on is finally checked for PRECISE location
+/// ([precise]).
 LocationStartAction permissionGateDecision({
   required bool serviceEnabled,
   required LocationPermission permission,
   bool precise = true,
+  bool servicesOffReportsDenied = false,
 }) {
+  if (servicesOffReportsDenied && !serviceEnabled) {
+    return LocationStartAction.openLocationSettings;
+  }
   switch (permission) {
     case LocationPermission.denied:
     case LocationPermission.unableToDetermine:

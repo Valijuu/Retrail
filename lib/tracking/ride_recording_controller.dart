@@ -28,6 +28,12 @@ abstract interface class LocationPermissionService {
   /// whileInUse → Always (the location FGS already covers Android). Best-effort.
   Future<void> ensureBackgroundPermission();
 
+  /// Asks the OS to show its own "Turn on Location Services" alert, whose
+  /// Settings button jumps straight to the Location Services switch — a page
+  /// iOS apps can't open themselves. True if the alert appeared; always false
+  /// on Android, where [openLocationSettings] already lands there.
+  Future<bool> promptEnableLocationServices();
+
   Future<void> openLocationSettings();
   Future<void> openAppSettings();
 }
@@ -57,10 +63,12 @@ class RideRecordingController {
     required LocationSource source,
     required LocationPermissionService permissions,
     required RideForegroundService service,
+    bool servicesOffReportsDenied = false,
   })  : _tracker = tracker,
         _source = source,
         _permissions = permissions,
-        _service = service;
+        _service = service,
+        _servicesOffReportsDenied = servicesOffReportsDenied;
 
   // ignore_for_file: prefer_initializing_formals — public named params kept
   // (callers shouldn't pass private field names like `_tracker:`).
@@ -68,6 +76,9 @@ class RideRecordingController {
   final LocationSource _source;
   final LocationPermissionService _permissions;
   final RideForegroundService _service;
+
+  /// See `permissionGateDecision`: true on iOS.
+  final bool _servicesOffReportsDenied;
 
   StreamSubscription<void>? _fixSub;
   StreamSubscription<void>? _stateSub;
@@ -97,13 +108,17 @@ class RideRecordingController {
 
     final serviceEnabled = await _permissions.isLocationServiceEnabled();
     var permission = await _permissions.checkPermission();
-    var action =
-        permissionGateDecision(serviceEnabled: serviceEnabled, permission: permission);
+    var action = permissionGateDecision(
+        serviceEnabled: serviceEnabled,
+        permission: permission,
+        servicesOffReportsDenied: _servicesOffReportsDenied);
 
     if (action == LocationStartAction.requestPermission) {
       permission = await _permissions.requestPermission();
       action = permissionGateDecision(
-          serviceEnabled: serviceEnabled, permission: permission);
+          serviceEnabled: serviceEnabled,
+          permission: permission,
+          servicesOffReportsDenied: _servicesOffReportsDenied);
     }
     if (action == LocationStartAction.proceed) {
       action = permissionGateDecision(
@@ -211,6 +226,8 @@ class RideRecordingController {
     _serviceSub = null;
   }
 
+  Future<bool> promptEnableLocationServices() =>
+      _permissions.promptEnableLocationServices();
   Future<void> openLocationSettings() => _permissions.openLocationSettings();
   Future<void> openAppSettings() => _permissions.openAppSettings();
 
