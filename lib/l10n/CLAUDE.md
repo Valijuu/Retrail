@@ -35,5 +35,6 @@ English is the default and should read naturally (not a literal back-translation
 | Swipe hint | ← wischen zum Bearbeiten oder Löschen |
 | Edit / Delete | Bearbeiten / Löschen |
 | Navigation-app chooser title | Navigieren mit |
+| Map compass tooltip | Karte nach Norden ausrichten |
 | Apple Maps / Google Maps / Waze | Apple Karten / Google Maps / Waze |
 | Location off (iOS dialog body) | Die Ortungsdienste sind aus. Schalte sie unter Einstellungen → Datenschutz & Sicherheit → Ortungsdienste ein. |

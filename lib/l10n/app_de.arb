@@ -128,6 +128,7 @@
   "a11ySelected": "Ausgewählt",
   "a11yFullscreen": "Vollbild",
   "a11yNavigateToStartPoint": "Zum Startpunkt navigieren",
+  "a11yCompassNorth": "Karte nach Norden ausrichten",
   "navigateWithTitle": "Navigieren mit",
   "navigationAppAppleMaps": "Apple Karten",
   "navigationAppGoogleMaps": "Google Maps",

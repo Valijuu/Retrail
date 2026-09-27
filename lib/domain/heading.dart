@@ -1,6 +1,7 @@
 /// Heading-up helpers for the live ride map: the travel bearing the map
-/// rotates to, and the route-line split that lets the line's tip follow the
-/// gliding position marker.
+/// rotates to, [nextHeading] (which decides when that bearing may change so
+/// GPS noise doesn't swing the map), and the route-line split that lets the
+/// line's tip follow the gliding position marker.
 library;
 
 import 'dart:math' as math;
@@ -13,6 +14,7 @@ typedef LatLng = ({double lat, double lng});
 const double _radiansPerDegree = math.pi / 180;
 const double _degreesPerRadian = 180 / math.pi;
 const double _fullCircleDegrees = 360;
+const double _halfCircleDegrees = _fullCircleDegrees / 2;
 
 /// Initial great-circle bearing from [from] towards [to], in degrees clockwise
 /// from north, normalized to `[0, 360)` — north 0°, east 90°, south 180°,
@@ -75,4 +77,55 @@ RouteTailSplit splitRouteTail(List<LatLng> points, LatLng? current) {
     );
   }
   return (body: points, tailStart: null);
+}
+
+/// Minimum distance the rider must travel from the heading anchor before
+/// [nextHeading] re-measures the direction. Larger than
+/// [_minHeadingTravelMetres]: recorded points are already GPS-filtered, but a
+/// bearing over a longer baseline is steadier, so the map turns less often.
+const double _defaultHeadingBaselineMetres = 10;
+
+/// Turns smaller than this are treated as noise (a slight weave or GPS
+/// scatter) and keep the current heading, so the map doesn't wobble on
+/// every fix while riding straight.
+const double _defaultMinTurnDegrees = 10;
+
+/// The heading-up map's rotation state: [anchor] is the recorded point the
+/// next travel direction is measured from (`null` before the first point),
+/// [bearing] the heading the map currently shows (`null` until the rider has
+/// really moved, i.e. "don't rotate yet").
+typedef HeadingState = ({LatLng? anchor, double? bearing});
+
+/// Advances [state] by one newly recorded route [point].
+///
+/// Feed it only RECORDED (already GPS-filtered) points. The first point just
+/// becomes the anchor — one position has no direction. After that, the
+/// direction is re-measured only once the rider is at least [minMetres] from
+/// the anchor (closer fixes keep [state] untouched, so the anchor doesn't
+/// creep along with jitter). A re-measured direction that differs from the
+/// current bearing by less than [minTurnDegrees] (shortest angle) is ignored
+/// — the anchor still moves on, but the map keeps its heading — so per-fix
+/// noise doesn't make the map swing.
+HeadingState nextHeading(HeadingState state, LatLng point,
+    {double minMetres = _defaultHeadingBaselineMetres,
+    double minTurnDegrees = _defaultMinTurnDegrees}) {
+  final anchor = state.anchor;
+  if (anchor == null) return (anchor: point, bearing: state.bearing);
+  final travel = travelBearing(anchor, point, minMetres: minMetres);
+  if (travel == null) return state;
+  final bearing = state.bearing;
+  if (bearing != null && _turnDegrees(bearing, travel) < minTurnDegrees) {
+    return (anchor: point, bearing: bearing);
+  }
+  return (anchor: point, bearing: travel);
+}
+
+/// The shortest angle between two bearings, in `[0, 180]` degrees.
+///
+/// Wrap-aware: bearings live on a circle, so 358° → 3° is a 5° turn, not
+/// 355° — a plain difference would make every crossing of north look like a
+/// U-turn and spin the map.
+double _turnDegrees(double from, double to) {
+  final diff = (to - from).abs() % _fullCircleDegrees;
+  return diff > _halfCircleDegrees ? _fullCircleDegrees - diff : diff;
 }

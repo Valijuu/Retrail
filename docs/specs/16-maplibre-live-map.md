@@ -22,7 +22,7 @@ Replace the live/active-ride map's renderer from `flutter_map` (raster tiles on 
 ## Non-goals / preserved invariants
 - **No change to `LiveMap`'s public API** — same constructor params, same call sites (`active_ride_screen`, history detail/fullscreen dialog). Additive only: an optional `@visibleForTesting` map-builder seam (below).
 - **Preview snapshot pipeline (Spec 7 §A) is untouched** — it never used `flutter_map` (pure projection math + `ui.Canvas` + a `TileProvider` interface). History/home thumbnails stay static PNGs.
-- **Heading-up rotation (follow-up, done):** while following, `animateCamera(bearing:)` turns the map to the travel direction (`travelBearing`, `lib/domain/heading.dart`, ≥ 5 m of movement per re-measure). A user gesture drops follow and keeps the rotation; `MapCompass(hideIfRotatedNorth)` then shows (tap → north); recenter resumes heading-up. The live line's tip trails the gliding marker through a `route-tail` source (`splitRouteTail`). Detail map stays north-up.
+- **Heading-up rotation (follow-up, done):** while following, `animateCamera(bearing:)` turns the map to the travel direction (`nextHeading`, `lib/domain/heading.dart`: recorded points only, re-measured every ≥ 10 m, turns < 10° ignored). A user gesture drops follow and keeps the rotation; `MapCompass(hideIfRotatedNorth)` then shows (tap → north); recenter resumes heading-up. The live line's tip trails the gliding marker through a `route-tail` source (`splitRouteTail`). Detail map stays north-up.
 
 ## A. Public API to keep byte-for-byte
 `LiveMap({ key, required points, current, isFollowing = true, initialZoom = 16.5, fitBounds = false, onGesture })` — unchanged.
@@ -77,7 +77,7 @@ A `MapLibreMap` is a native platform view: in `flutter test` it renders an empty
 - Done: merged via `spike/maplibre-live-map` → `main`; `lib/dev/maplibre_demo.dart` deleted before merge (verified, no `lib/dev/` left in the tree).
 
 ## Out of scope / follow-ups
-- **Heading-up rotation** (>1.5 m/s) — not in current `LiveMap`; a clean follow-up via `animateCamera(bearing:)`.
+- ~~**Heading-up rotation**~~ — done (see the heading-up note above).
 - **Plugin 0.3.5 upgrade** — may expose deeper GeoJSON tuning; evaluate separately.
 - **Custom dark "topo" style** in MapTiler Cloud — if a terrain-matching dark is later wanted instead of `basic-v2-dark`.
 - Preview pipeline, GPS engine, Live Activities — untouched.

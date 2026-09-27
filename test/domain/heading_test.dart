@@ -15,6 +15,13 @@ void main() {
       expect(bearingDegrees((lat: 52.01, lng: 13.0), (lat: 52.0, lng: 13.0)),
           closeTo(180, 1e-9));
     });
+    test('north-north-west → ≈ 337.5°, in the wrap region below 360', () {
+      // At the equator a tiny step's bearing is atan2(dLng, dLat).
+      expect(
+          bearingDegrees((lat: 0.0, lng: 0.0),
+              (lat: 0.00092388, lng: -0.00038268)),
+          closeTo(337.5, 0.01));
+    });
     test('due west → 270°, never negative', () {
       expect(bearingDegrees((lat: 52.0, lng: 13.01), (lat: 52.0, lng: 13.0)),
           closeTo(270, 0.01));
@@ -58,6 +65,13 @@ void main() {
       expect(split.body, [a, b]);
       expect(split.tailStart, b);
     });
+    test('no current position → full body, no tail', () {
+      const a = (lat: 52.0, lng: 13.0);
+      const b = (lat: 52.001, lng: 13.0);
+      final split = splitRouteTail(const [a, b], null);
+      expect(split.body, [a, b]);
+      expect(split.tailStart, isNull);
+    });
     test('current is not the newest point (filtered fix) → full body, no tail',
         () {
       const a = (lat: 52.0, lng: 13.0);
@@ -66,6 +80,58 @@ void main() {
       final split = splitRouteTail(const [a, b], filtered);
       expect(split.body, [a, b]);
       expect(split.tailStart, isNull);
+    });
+  });
+
+  group('nextHeading', () {
+    test('no anchor yet → the point becomes the anchor, bearing unchanged',
+        () {
+      const p = (lat: 52.0, lng: 13.0);
+      final next = nextHeading((anchor: null, bearing: null), p);
+      expect(next.anchor, p);
+      expect(next.bearing, isNull);
+    });
+    test('moved less than minMetres (10 m) → state unchanged', () {
+      const anchor = (lat: 52.0, lng: 13.0);
+      // ~6.9 m east — over travelBearing's own 5 m, under nextHeading's 10 m.
+      final next = nextHeading(
+          (anchor: anchor, bearing: 42.0), (lat: 52.0, lng: 13.0001));
+      expect(next.anchor, anchor);
+      expect(next.bearing, 42.0);
+    });
+    test(
+        'moved at least minMetres with no bearing yet → bearing = travel '
+        'direction (east → 90°), anchor moves to the point', () {
+      const anchor = (lat: 52.0, lng: 13.0);
+      const moved = (lat: 52.0, lng: 13.0002); // ~13.7 m east
+      final next = nextHeading((anchor: anchor, bearing: null), moved);
+      expect(next.anchor, moved);
+      expect(next.bearing, closeTo(90, 0.01));
+    });
+    test(
+        'moved far enough but turned less than minTurnDegrees (10°) → anchor '
+        'moves, bearing kept', () {
+      // Equator: ~22 m east with a slight southward drift ≈ 95°.
+      const anchor = (lat: 0.0, lng: 0.0);
+      const moved = (lat: -0.0000175, lng: 0.0002);
+      final next = nextHeading((anchor: anchor, bearing: 90.0), moved);
+      expect(next.anchor, moved);
+      expect(next.bearing, 90.0);
+    });
+    test('turned at least minTurnDegrees → new bearing (90° → 180°)', () {
+      const anchor = (lat: 52.0, lng: 13.0);
+      const south = (lat: 51.9998, lng: 13.0); // ~22 m south
+      final next = nextHeading((anchor: anchor, bearing: 90.0), south);
+      expect(next.bearing, closeTo(180, 0.01));
+    });
+    test(
+        'turn across north is wrap-aware: 358° → ≈ 3° is a ≈ 5° turn, so the '
+        'bearing is kept', () {
+      // Equator: ~22 m north with a slight eastward drift ≈ 3°.
+      const anchor = (lat: 0.0, lng: 0.0);
+      const moved = (lat: 0.0002, lng: 0.0000105);
+      final next = nextHeading((anchor: anchor, bearing: 358.0), moved);
+      expect(next.bearing, 358.0);
     });
   });
 }

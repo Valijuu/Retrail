@@ -9,7 +9,9 @@ import 'package:maplibre/maplibre.dart';
 import '../core/theme/app_colors.dart';
 import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
-import '../domain/heading.dart' show splitRouteTail, travelBearing;
+import '../domain/heading.dart'
+    show HeadingState, nextHeading, splitRouteTail;
+import '../l10n/app_localizations.dart';
 import '../features/onboarding/activity_type_ui.dart';
 import 'map_config.dart';
 import '../domain/route_markers.dart';
@@ -245,8 +247,10 @@ class _LiveMapState extends State<LiveMap>
   /// where the TickerMode ancestor lookup throws on the deactivated element.
   late final AnimationController _glide;
 
-  /// Where the marker is currently drawn (the glide's moving position), so a
-  /// fix arriving mid-glide restarts from here — no lag buildup, no jump back.
+  /// Where the marker is currently drawn (the glide's moving position). A fix
+  /// arriving mid-glide first lands the marker on the previous target (a small
+  /// hop forward, see [_landGlide]) — otherwise the line, which already runs
+  /// to that target, would sit ahead of the marker for the rest of the glide.
   RoutePoint? _renderedCurrent;
   RoutePoint? _glideFrom;
   RoutePoint? _glideTo;
@@ -261,12 +265,15 @@ class _LiveMapState extends State<LiveMap>
   /// it. Null when there is no tail to draw.
   RoutePoint? _tailStart;
 
-  /// Heading-up follow: the camera bearing (degrees from north) the rider is
-  /// travelling in, re-measured from [_headingAnchor] once they've moved far
-  /// enough ([travelBearing]) so GPS jitter doesn't spin the map. Null until
-  /// the first real movement (the camera stays as it is until then).
-  double? _bearing;
-  RoutePoint? _headingAnchor;
+  /// Heading-up follow: the travel direction the camera turns to, advanced by
+  /// [nextHeading] from RECORDED points only (already GPS-filtered — the seed
+  /// fix and rejected outliers never rotate the map). Its bearing is null
+  /// until the rider has really moved.
+  HeadingState _heading = (anchor: null, bearing: null);
+
+  /// The `points` list last pushed into the `route` source, so a fix that
+  /// adds no point only redraws the short tail, not the whole line.
+  List<RoutePoint>? _pushedPoints;
 
   @override
   void initState() {
@@ -287,7 +294,8 @@ class _LiveMapState extends State<LiveMap>
   bool _markerReady = false;
 
   /// True once every GeoJSON source this style load creates (`route`, plus
-  /// `current` or `start`/`end` depending on [LiveMap.fitBounds]) has actually
+  /// `route-tail` + `current` or `start`/`end` depending on
+  /// [LiveMap.fitBounds]) has actually
   /// been added natively. Gates every `updateGeoJsonSource` call so none of
   /// them can race [_onStyleLoaded]'s sequential, awaited source-creation —
   /// `_style` is assigned before any source exists, so a GPS-driven
@@ -324,13 +332,16 @@ class _LiveMapState extends State<LiveMap>
     // _sourcesReady's doc comment for why that's a native crash, not just a
     // no-op.
     final currentChanged = widget.current != oldWidget.current;
+    if (_sourcesReady && !widget.fitBounds && currentChanged) _landGlide();
     if (_sourcesReady &&
         (widget.points != oldWidget.points ||
             (!widget.fitBounds && currentChanged))) {
       _pushRoute();
     }
-    if (!widget.fitBounds && currentChanged && widget.current != null) {
-      _updateHeading(widget.current!);
+    if (!widget.fitBounds &&
+        widget.points != oldWidget.points &&
+        widget.points.isNotEmpty) {
+      _heading = nextHeading(_heading, widget.points.last);
     }
     if (_sourcesReady &&
         !widget.fitBounds &&
@@ -359,26 +370,27 @@ class _LiveMapState extends State<LiveMap>
         zoom: decision.resetZoom
             ? widget.initialZoom
             : (_controller?.camera?.zoom ?? widget.initialZoom),
-        // Heading-up while following; null keeps the camera's bearing (the
-        // read-only detail map, or no movement measured yet).
-        bearing: widget.fitBounds ? null : _bearing,
+        // Heading-up while following. Null keeps the camera's bearing (the
+        // read-only detail map, or no movement measured yet on a passive
+        // follow); a recenter before any movement turns the map north.
+        bearing: widget.fitBounds
+            ? null
+            : (decision.resetZoom
+                ? (_heading.bearing ?? 0)
+                : _heading.bearing),
         nativeDuration: const Duration(milliseconds: 600),
       ));
     }
   }
 
-  /// Re-measures the travel direction for heading-up follow. Tracked even
-  /// while not following, so a recenter turns straight to the current heading.
-  void _updateHeading(RoutePoint current) {
-    final anchor = _headingAnchor;
-    if (anchor == null) {
-      _headingAnchor = current;
-      return;
-    }
-    final bearing = travelBearing(anchor, current);
-    if (bearing == null) return; // too little movement: keep the heading
-    _bearing = bearing;
-    _headingAnchor = current;
+  /// Ends an in-flight glide at its target before the next one starts, so the
+  /// marker is never behind the point the line already reaches.
+  void _landGlide() {
+    final target = _glideTo;
+    if (!_glide.isAnimating || target == null) return;
+    _glide.stop();
+    _renderedCurrent = target;
+    _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(target));
   }
 
   /// Pushes [LiveMap.points] into the `route` source. Shared by
@@ -392,9 +404,13 @@ class _LiveMapState extends State<LiveMap>
       return;
     }
     final split = splitRouteTail(widget.points, widget.current);
-    _tailStart = split.tailStart;
-    _style?.updateGeoJsonSource(
-        id: 'route', data: routeLineGeoJson(split.body));
+    if (!identical(widget.points, _pushedPoints) ||
+        split.tailStart != _tailStart) {
+      _pushedPoints = widget.points;
+      _tailStart = split.tailStart;
+      _style?.updateGeoJsonSource(
+          id: 'route', data: routeLineGeoJson(split.body));
+    }
     _pushTail(_renderedCurrent);
   }
 
@@ -467,6 +483,7 @@ class _LiveMapState extends State<LiveMap>
     _glideTo = null;
     _markerReady = false;
     _sourcesReady = false;
+    _pushedPoints = null; // the fresh style's `route` source starts over
     _markerImages.clear();
     final colors = context.colors;
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
@@ -506,15 +523,20 @@ class _LiveMapState extends State<LiveMap>
     ));
     if (!widget.fitBounds) {
       // The live line's last stretch, drawn up to the gliding marker (see
-      // _pushTail) in the route's own halo + blue so no seam shows.
+      // _pushTail) in the route's own halo + blue.
       await style.addSource(
           const GeoJsonSource(id: 'route-tail', data: _emptyGeoJson));
-      await style.addLayer(LineStyleLayer(
-        id: 'route-tail-halo',
-        sourceId: 'route-tail',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {'line-color': halo, 'line-width': 8.0},
-      ));
+      // Halo BELOW the route's blue line: on top, its wider white cap would
+      // cut a white crescent into the blue where body and tail meet.
+      await style.addLayer(
+        LineStyleLayer(
+          id: 'route-tail-halo',
+          sourceId: 'route-tail',
+          layout: const {'line-cap': 'round', 'line-join': 'round'},
+          paint: {'line-color': halo, 'line-width': 8.0},
+        ),
+        belowLayerId: 'route-line',
+      );
       await style.addLayer(LineStyleLayer(
         id: 'route-tail-line',
         sourceId: 'route-tail',
@@ -605,7 +627,7 @@ class _LiveMapState extends State<LiveMap>
         _ignoreCancel(_controller?.moveCamera(
           center: Geographic(lon: c.lng, lat: c.lat),
           zoom: widget.initialZoom,
-          bearing: _bearing,
+          bearing: _heading.bearing,
         ));
       }
     }
@@ -735,7 +757,16 @@ class _LiveMapState extends State<LiveMap>
             androidTextureMode: true,
             androidMode: AndroidPlatformViewMode.tlhc_vd,
           ),
-          onMapCreated: (c) => _controller = c,
+          onMapCreated: (c) {
+            // A brightness rebuild creates a new native map: until its style
+            // loads, the old StyleController is disposed — stop every source
+            // update (and the glide feeding them) from reaching it.
+            _controller = c;
+            _style = null;
+            _sourcesReady = false;
+            _markerReady = false;
+            _glide.stop();
+          },
           onStyleLoaded: _onStyleLoaded,
           onEvent: (e) {
             // Drop follow only on a real user gesture — programmatic moves
@@ -751,7 +782,13 @@ class _LiveMapState extends State<LiveMap>
           // it back north. While following, the map is heading-up on purpose.
           children: [
             if (widget.fitBounds || !widget.isFollowing)
-              const MapCompass(hideIfRotatedNorth: true),
+              MapCompass(
+                hideIfRotatedNorth: true,
+                // Top-left: the detail dialog's fullscreen / close buttons sit
+                // top-right.
+                alignment: Alignment.topLeft,
+                child: _CompassButton(colors: colors),
+              ),
           ],
         ),
         // Terrain-colored placeholder over the map until the style has loaded
@@ -769,6 +806,30 @@ class _LiveMapState extends State<LiveMap>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The compass face: an app-token circle with a north-pointing arrow, which
+/// [MapCompass] rotates with the camera; tapping it turns the map north.
+class _CompassButton extends StatelessWidget {
+  const _CompassButton({required this.colors});
+
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: AppLocalizations.of(context).a11yCompassNorth,
+      child: Material(
+        color: colors.surface,
+        shape: const CircleBorder(),
+        elevation: 2,
+        child: SizedBox.square(
+          dimension: 40,
+          child: Icon(Icons.navigation, color: colors.primary, size: 22),
+        ),
+      ),
     );
   }
 }
