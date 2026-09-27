@@ -96,6 +96,7 @@ ios/
 - Repositories return Drift `Stream`s; providers transform them (stats, filtering, grouping) exactly as the Kotlin ViewModels did.
 - `RideTracker` is a process-lifetime singleton provider (survives screen disposal), exposing live `location`, `trackPoints`, `distance`, `speed`, `elapsed`, `isPaused`, `activityType`. Recording is fully local and works offline.
 - Naming: files `snake_case.dart`, types `UpperCamelCase`, providers `camelCaseProvider`.
+- Bottom sheets open through `core/widgets/app_bottom_sheet.dart`: `showAppScrollableSheet` for forms/filters (drag handle, 90 % height, drag-to-close from scrolled content), `showAppBottomSheet` for short pickers. Confirmations stay dialogs.
 
 ---
 

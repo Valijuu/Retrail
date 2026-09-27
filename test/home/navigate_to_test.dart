@@ -71,6 +71,20 @@ void main() {
     expect(find.byType(BottomSheet), findsNothing);
   });
 
+  testWidgets('the chooser keeps its last entry clear of the home indicator',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.padding = const FakeViewPadding(bottom: 34);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 34);
+    addTearDown(tester.view.reset);
+    await pumpAndTap(tester,
+        _FakeLauncher([NavigationApp.appleMaps, NavigationApp.waze]));
+
+    expect(tester.getBottomLeft(find.byType(ListTile).last).dy,
+        lessThanOrEqualTo(900 - 34));
+  });
+
   testWidgets('dismissing the chooser launches nothing', (tester) async {
     final launcher =
         _FakeLauncher([NavigationApp.appleMaps, NavigationApp.waze]);

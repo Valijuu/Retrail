@@ -15,8 +15,9 @@ const _sheetCloseFactor = 0.25;
 const _sheetMaxWidth = 640.0;
 
 /// Compact modal bottom sheet in the app's style (short, non-scrolling
-/// content such as a picker): drag handle, safe-area aware, height capped at
-/// [sheetMaxHeightFactor].
+/// content such as a picker): drag handle, height capped at
+/// [sheetMaxHeightFactor], clear of notches and the home indicator —
+/// `useSafeArea` only guards the top and sides, so the bottom is added here.
 Future<T?> showAppBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -31,7 +32,7 @@ Future<T?> showAppBottomSheet<T>({
         maxWidth: _sheetMaxWidth,
         maxHeight: MediaQuery.sizeOf(context).height * sheetMaxHeightFactor,
       ),
-      builder: builder,
+      builder: (context) => SafeArea(top: false, child: builder(context)),
     );
 
 /// Sheet for taller, scrolling content (forms, filters) that drags like one
