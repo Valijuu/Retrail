@@ -9,6 +9,7 @@ import 'package:maplibre/maplibre.dart';
 import '../core/theme/app_colors.dart';
 import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
+import '../domain/heading.dart' show splitRouteTail, travelBearing;
 import '../features/onboarding/activity_type_ui.dart';
 import 'map_config.dart';
 import '../domain/route_markers.dart';
@@ -181,8 +182,9 @@ const double kLiveMapMaxZoom = 19.0;
 /// with the halo + blue route line and start/end + current-position dots drawn as
 /// GeoJSON source layers. The camera follows the current position.
 ///
-/// Heading-up rotation and follow smoothness are tuned/verified on-device
-/// (Spec 5 Part B); this builds the widget and renders the route.
+/// While following, the camera is heading-up (rotated to the travel
+/// direction); the line's tip follows the gliding marker via a `route-tail`
+/// segment. Follow feel is tuned/verified on-device.
 class LiveMap extends StatefulWidget {
   const LiveMap({
     super.key,
@@ -253,6 +255,19 @@ class _LiveMapState extends State<LiveMap>
   /// platform-channel updates to ~25 fps instead of display rate.
   int _lastGlidePushMs = 0;
 
+  /// Where the live line's `route-tail` segment starts (see [splitRouteTail]):
+  /// the route source stops one fix short and the tail runs from here to the
+  /// gliding marker, so the line's tip follows the marker instead of leading
+  /// it. Null when there is no tail to draw.
+  RoutePoint? _tailStart;
+
+  /// Heading-up follow: the camera bearing (degrees from north) the rider is
+  /// travelling in, re-measured from [_headingAnchor] once they've moved far
+  /// enough ([travelBearing]) so GPS jitter doesn't spin the map. Null until
+  /// the first real movement (the camera stays as it is until then).
+  double? _bearing;
+  RoutePoint? _headingAnchor;
+
   @override
   void initState() {
     super.initState();
@@ -308,8 +323,14 @@ class _LiveMapState extends State<LiveMap>
     // land before _onStyleLoaded has finished creating these sources — see
     // _sourcesReady's doc comment for why that's a native crash, not just a
     // no-op.
-    if (_sourcesReady && widget.points != oldWidget.points) {
+    final currentChanged = widget.current != oldWidget.current;
+    if (_sourcesReady &&
+        (widget.points != oldWidget.points ||
+            (!widget.fitBounds && currentChanged))) {
       _pushRoute();
+    }
+    if (!widget.fitBounds && currentChanged && widget.current != null) {
+      _updateHeading(widget.current!);
     }
     if (_sourcesReady &&
         !widget.fitBounds &&
@@ -330,7 +351,7 @@ class _LiveMapState extends State<LiveMap>
       wasFollowing: oldWidget.isFollowing,
       isFollowing: widget.isFollowing,
       hasCurrent: widget.current != null,
-      currentChanged: widget.current != oldWidget.current,
+      currentChanged: currentChanged,
     );
     if (decision != null) {
       _ignoreCancel(_controller?.animateCamera(
@@ -338,16 +359,56 @@ class _LiveMapState extends State<LiveMap>
         zoom: decision.resetZoom
             ? widget.initialZoom
             : (_controller?.camera?.zoom ?? widget.initialZoom),
+        // Heading-up while following; null keeps the camera's bearing (the
+        // read-only detail map, or no movement measured yet).
+        bearing: widget.fitBounds ? null : _bearing,
         nativeDuration: const Duration(milliseconds: 600),
       ));
     }
   }
 
+  /// Re-measures the travel direction for heading-up follow. Tracked even
+  /// while not following, so a recenter turns straight to the current heading.
+  void _updateHeading(RoutePoint current) {
+    final anchor = _headingAnchor;
+    if (anchor == null) {
+      _headingAnchor = current;
+      return;
+    }
+    final bearing = travelBearing(anchor, current);
+    if (bearing == null) return; // too little movement: keep the heading
+    _bearing = bearing;
+    _headingAnchor = current;
+  }
+
   /// Pushes [LiveMap.points] into the `route` source. Shared by
   /// [didUpdateWidget] and [_onStyleLoaded]'s catch-up push, both gated on
-  /// [_sourcesReady].
-  void _pushRoute() => _style?.updateGeoJsonSource(
-      id: 'route', data: routeLineGeoJson(widget.points));
+  /// [_sourcesReady]. The live map holds the newest fix back for the
+  /// `route-tail` segment, which [_pushTail] keeps attached to the marker.
+  void _pushRoute() {
+    if (widget.fitBounds) {
+      _style?.updateGeoJsonSource(
+          id: 'route', data: routeLineGeoJson(widget.points));
+      return;
+    }
+    final split = splitRouteTail(widget.points, widget.current);
+    _tailStart = split.tailStart;
+    _style?.updateGeoJsonSource(
+        id: 'route', data: routeLineGeoJson(split.body));
+    _pushTail(_renderedCurrent);
+  }
+
+  /// Draws the `route-tail` segment from [_tailStart] to [tip] (the marker's
+  /// drawn position), or clears it when there is no tail.
+  void _pushTail(RoutePoint? tip) {
+    final start = _tailStart;
+    _style?.updateGeoJsonSource(
+      id: 'route-tail',
+      data: start != null && tip != null
+          ? routeLineGeoJson([start, tip])
+          : _emptyGeoJson,
+    );
+  }
 
   /// Moves the `current` marker to [next]: a glide from where it is drawn now,
   /// or a direct snap when there is no previous position, or the jump is big
@@ -362,6 +423,7 @@ class _LiveMapState extends State<LiveMap>
       _glide.stop();
       _renderedCurrent = next;
       _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(next));
+      _pushTail(next);
       return;
     }
     _glideFrom = from; // mid-glide restart begins at the interpolated position
@@ -384,6 +446,7 @@ class _LiveMapState extends State<LiveMap>
     final p = lerpPoint(from, to, _glide.value);
     _renderedCurrent = p;
     _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(p));
+    _pushTail(p);
   }
 
   /// A camera move can be superseded by the next one (every fix recenters),
@@ -441,6 +504,24 @@ class _LiveMapState extends State<LiveMap>
         'icon-ignore-placement': true,
       },
     ));
+    if (!widget.fitBounds) {
+      // The live line's last stretch, drawn up to the gliding marker (see
+      // _pushTail) in the route's own halo + blue so no seam shows.
+      await style.addSource(
+          const GeoJsonSource(id: 'route-tail', data: _emptyGeoJson));
+      await style.addLayer(LineStyleLayer(
+        id: 'route-tail-halo',
+        sourceId: 'route-tail',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {'line-color': halo, 'line-width': 8.0},
+      ));
+      await style.addLayer(LineStyleLayer(
+        id: 'route-tail-line',
+        sourceId: 'route-tail',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {'line-color': blue, 'line-width': 4.5},
+      ));
+    }
 
     // Marker mode mirrors the two original composables: the detail / fullscreen
     // map (fitBounds) draws the start ring + finish flag (or the combined loop
@@ -524,6 +605,7 @@ class _LiveMapState extends State<LiveMap>
         _ignoreCancel(_controller?.moveCamera(
           center: Geographic(lon: c.lng, lat: c.lat),
           zoom: widget.initialZoom,
+          bearing: _bearing,
         ));
       }
     }
@@ -664,6 +746,13 @@ class _LiveMapState extends State<LiveMap>
               widget.onGesture?.call();
             }
           },
+          // Shown once the map is turned away from north and not following
+          // (hand-panned / rotated, or the read-only detail map): a tap turns
+          // it back north. While following, the map is heading-up on purpose.
+          children: [
+            if (widget.fitBounds || !widget.isFollowing)
+              const MapCompass(hideIfRotatedNorth: true),
+          ],
         ),
         // Terrain-colored placeholder over the map until the style has loaded
         // and centered, then crossfade it out — so the reveal is a smooth fade
