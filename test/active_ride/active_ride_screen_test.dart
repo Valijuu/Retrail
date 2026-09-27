@@ -482,4 +482,19 @@ void main() {
       expect(fab.shape, isA<CircleBorder>());
     });
   }
+
+  testWidgets(
+      'the live map keeps the compass clear of the recenter button: it stacks '
+      'directly above it, one control plus one gap up', (tester) async {
+    await pumpScreen(tester);
+    final map = tester.widget<LiveMap>(find.byType(LiveMap));
+    expect(map.compassClearance, kMapControlSize + kMapControlInset);
+
+    map.onGesture!(); // drop follow → recenter shows
+    await tester.pump();
+    final fab = find.byType(FloatingActionButton);
+    final mapRect = tester.getRect(find.byType(LiveMap));
+    expect(tester.getBottomLeft(fab).dy, mapRect.bottom - kMapControlInset);
+    expect(tester.getBottomLeft(fab).dx, mapRect.left + kMapControlInset);
+  });
 }

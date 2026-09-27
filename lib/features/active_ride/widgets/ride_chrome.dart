@@ -171,14 +171,16 @@ class RideMapArea extends StatelessWidget {
             isFollowing: isFollowing,
             activityType: state.activityType,
             onGesture: onGesture,
+            // The compass stacks right above the recenter button below.
+            compassClearance: kMapControlSize + kMapControlInset,
           ),
         ),
         if (masked)
           Positioned.fill(child: ColoredBox(color: colors.mapTerrain)),
         if (!masked && !isFollowing)
           Positioned(
-            left: 12,
-            bottom: 12,
+            left: kMapControlInset,
+            bottom: kMapControlInset,
             child: FloatingActionButton.small(
               onPressed: onRecenter,
               // Sits ON the map (which follows the app theme), so it matches

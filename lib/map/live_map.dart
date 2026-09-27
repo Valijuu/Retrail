@@ -177,6 +177,12 @@ Future<Uint8List> _activityBadgePng(ActivityType type) =>
 /// limit to a tiny repeated-world speck that janks the frame and makes the ride
 /// controls hard to hit; the ceiling caps it at useful street detail. Low enough
 /// that [LiveMap.fitBounds] still frames any realistic ride.
+/// Distance of the round map controls (compass, recenter) from the map edge.
+const double kMapControlInset = 12.0;
+
+/// Diameter of the round map controls (a small FAB / the compass face).
+const double kMapControlSize = 40.0;
+
 const double kLiveMapMinZoom = 3.0;
 const double kLiveMapMaxZoom = 19.0;
 
@@ -197,6 +203,7 @@ class LiveMap extends StatefulWidget {
     this.fitBounds = false,
     this.activityType,
     this.onGesture,
+    this.compassClearance = 0,
   });
 
   final List<RoutePoint> points;
@@ -222,6 +229,11 @@ class LiveMap extends StatefulWidget {
   /// camera-follow (and show the recenter control). Mirrors the original's
   /// `onGestureDetected`.
   final VoidCallback? onGesture;
+
+  /// Space the compass leaves free below it for controls the screen stacks in
+  /// the map's bottom-left corner (the active ride's recenter button), so it
+  /// sits directly above them. 0 puts it in the corner itself.
+  final double compassClearance;
 
   /// Test seam: when non-null, every [LiveMap] (built directly OR inside a
   /// screen) renders this instead of the native [MapLibreMap]. The native map
@@ -784,9 +796,13 @@ class _LiveMapState extends State<LiveMap>
             if (widget.fitBounds || !widget.isFollowing)
               MapCompass(
                 hideIfRotatedNorth: true,
-                // Top-left: the detail dialog's fullscreen / close buttons sit
-                // top-right.
-                alignment: Alignment.topLeft,
+                // Bottom-left, stacked above the recenter button: both appear
+                // once the map is moved by hand, and both are in thumb reach.
+                alignment: Alignment.bottomLeft,
+                padding: EdgeInsets.only(
+                  left: kMapControlInset,
+                  bottom: kMapControlInset + widget.compassClearance,
+                ),
                 child: _CompassButton(colors: colors),
               ),
           ],
@@ -826,7 +842,7 @@ class _CompassButton extends StatelessWidget {
         shape: const CircleBorder(),
         elevation: 2,
         child: SizedBox.square(
-          dimension: 40,
+          dimension: kMapControlSize,
           child: Icon(Icons.navigation, color: colors.primary, size: 22),
         ),
       ),
