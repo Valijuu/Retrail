@@ -21,20 +21,27 @@ installing. Background: Spec 6 §G/§H.
 
 ## Each new build
 
-1. **Get the build.** `tool/ios_fetch_build.sh` downloads the newest green `main` build to
-   `~/Downloads/retrail-ios/Retrail.ipa.7z` and replaces the previous one, then shows a desktop
-   notification. It does nothing if that build is already there.
-   - **Automatically:** `tool/ios_fetch_build.sh --install-timer` sets up a systemd user timer
-     that checks every 5 min. Every green build then arrives by itself, whether a push started
-     it or someone clicked "Run workflow" on GitHub. Log: `journalctl --user -u retrail-ios-fetch`.
-     Remove it with `--remove-timer`.
-   - **Start a build on demand:** `tool/ios_fetch_build.sh --trigger` runs the workflow on
-     `main`, waits about 15 min, then fetches the result.
+1. **Get the build** with `tool/ios_fetch_build.sh`. It downloads a green `main` build to
+   `~/Downloads/retrail-ios/Retrail.ipa.7z`, replaces the previous one (and anything unpacked
+   from it), and shows a desktop notification. It does nothing if that build is already there.
+
+   | Situation | Command |
+   |---|---|
+   | You pushed app code (the build starts by itself) | `tool/ios_fetch_build.sh --wait` |
+   | You clicked "Run workflow" on GitHub | `tool/ios_fetch_build.sh --wait` |
+   | You want to start a build from the terminal | `tool/ios_fetch_build.sh --trigger` |
+   | You just want the latest green build | `tool/ios_fetch_build.sh` |
+
+   - `--wait` waits for the newest **running** build on `main`, whatever started it (about
+     15 min), then fetches it. A new build takes a few seconds to show up, so it looks for up
+     to a minute. If none is running, it fetches the latest green build instead.
+   - `--trigger` starts the workflow on `main` itself and waits for exactly that build.
+   - A failed build ends with a notification that links to the run.
    - **By hand:** GitHub → **Actions** → **iOS build** → latest green run → artifact
      `Retrail-ios-<n>`.
 
-   Builds run on every push to `main` / `phase/**` that changes app code (`lib/`, `ios/`,
-   `assets/`, `pubspec.*`).
+   Builds start automatically on every push to `main` / `phase/**` that changes app code
+   (`lib/`, `ios/`, `assets/`, `pubspec.*`).
 2. Unpack: `cd ~/Downloads/retrail-ios && 7z x Retrail.ipa.7z` (asks for `IPA_PASSWORD`).
    Only if you downloaded by hand, run `unzip Retrail-ios-*.zip` first.
 3. Install: `splice install Retrail.ipa`.

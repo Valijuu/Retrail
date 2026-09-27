@@ -4,9 +4,9 @@
 # desktop notification. Does nothing if that build is already there.
 #
 #   tool/ios_fetch_build.sh            fetch the latest green build (if new)
+#   tool/ios_fetch_build.sh --wait     wait for the build running on main (started by a
+#                                      push or "Run workflow" on GitHub), then fetch it
 #   tool/ios_fetch_build.sh --trigger  start a new build on main, wait, then fetch
-#   tool/ios_fetch_build.sh --install-timer / --remove-timer
-#                                      check automatically every 5 min (systemd user timer)
 #
 # The archive stays encrypted: unpack with `7z x Retrail.ipa.7z` (IPA_PASSWORD),
 # then `splice install Retrail.ipa` — see docs/ios-sideloading.md.
@@ -18,8 +18,10 @@ BRANCH="main"
 DEST="${RETRAIL_IOS_DIR:-$HOME/Downloads/retrail-ios}"
 STATE="$DEST/.artifact-id"
 SCRIPT="$(readlink -f "$0")"
-UNIT_DIR="$HOME/.config/systemd/user"
-UNIT_NAME="retrail-ios-fetch"
+
+# A build takes a few seconds to show up after a push / "Run workflow".
+APPEAR_TIMEOUT_S=60
+APPEAR_POLL_S=5
 
 log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
 
@@ -64,19 +66,9 @@ fetch() {
   notify "Retrail iOS build #$run_no ready" "$title — $DEST/Retrail.ipa.7z"
 }
 
-trigger() {
-  local started run_id
-  started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  gh workflow run "$WORKFLOW" -R "$REPO" --ref "$BRANCH"
-  log "Build started on $BRANCH, waiting for it to show up…"
-  for _ in $(seq 1 30); do
-    run_id="$(gh run list -R "$REPO" --workflow "$WORKFLOW" --event workflow_dispatch \
-      --limit 5 --json databaseId,createdAt \
-      --jq "[.[] | select(.createdAt >= \"$started\")][0].databaseId // empty")"
-    [ -n "$run_id" ] && break
-    sleep 5
-  done
-  [ -n "${run_id:-}" ] || { log "The started build did not appear."; return 1; }
+# Waits for run [run_id] to finish; fetches it when green.
+watch_and_fetch() {
+  local run_id="$1"
   log "Waiting for build $run_id (about 15 min)…"
   if gh run watch "$run_id" -R "$REPO" --exit-status --interval 30 >/dev/null; then
     fetch
@@ -87,27 +79,48 @@ trigger() {
   fi
 }
 
-install_timer() {
-  mkdir -p "$UNIT_DIR"
-  sed "s#@SCRIPT@#$SCRIPT#" "$(dirname "$SCRIPT")/systemd/$UNIT_NAME.service" \
-    > "$UNIT_DIR/$UNIT_NAME.service"
-  cp "$(dirname "$SCRIPT")/systemd/$UNIT_NAME.timer" "$UNIT_DIR/$UNIT_NAME.timer"
-  systemctl --user daemon-reload
-  systemctl --user enable --now "$UNIT_NAME.timer"
-  log "Timer active — checks every 5 min. Log: journalctl --user -u $UNIT_NAME"
+# Prints the id of the newest queued / running build on $BRANCH that matches the
+# extra jq filter [$1] (e.g. a creation-time bound), polling until one appears or
+# APPEAR_TIMEOUT_S passes. Prints nothing if none shows up.
+find_running_run() {
+  local filter="${1:-true}" run_id=""
+  for _ in $(seq 1 $((APPEAR_TIMEOUT_S / APPEAR_POLL_S))); do
+    run_id="$(gh run list -R "$REPO" --workflow "$WORKFLOW" --branch "$BRANCH" \
+      --limit 5 --json databaseId,status,createdAt \
+      --jq "[.[] | select(.status != \"completed\") | select($filter)][0].databaseId // empty")"
+    [ -n "$run_id" ] && break
+    sleep "$APPEAR_POLL_S"
+  done
+  printf '%s' "$run_id"
 }
 
-remove_timer() {
-  systemctl --user disable --now "$UNIT_NAME.timer" 2>/dev/null || true
-  rm -f "$UNIT_DIR/$UNIT_NAME.service" "$UNIT_DIR/$UNIT_NAME.timer"
-  systemctl --user daemon-reload
-  log "Timer removed."
+# --wait: the build a push or GitHub's "Run workflow" started, whatever triggered it.
+wait_for_running() {
+  local run_id
+  log "Looking for a running iOS build on $BRANCH…"
+  run_id="$(find_running_run)"
+  if [ -z "$run_id" ]; then
+    log "No build is running — fetching the latest green one."
+    fetch
+    return
+  fi
+  watch_and_fetch "$run_id"
+}
+
+# --trigger: start a build ourselves, then wait for exactly that one.
+trigger() {
+  local started run_id
+  started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  gh workflow run "$WORKFLOW" -R "$REPO" --ref "$BRANCH"
+  log "Build started on $BRANCH."
+  run_id="$(find_running_run ".createdAt >= \"$started\"")"
+  [ -n "$run_id" ] || { log "The started build did not appear."; return 1; }
+  watch_and_fetch "$run_id"
 }
 
 case "${1:-}" in
   "") fetch ;;
+  --wait) wait_for_running ;;
   --trigger) trigger ;;
-  --install-timer) install_timer ;;
-  --remove-timer) remove_timer ;;
-  *) sed -n '2,14p' "$SCRIPT"; exit 2 ;;
+  *) sed -n '2,12p' "$SCRIPT"; exit 2 ;;
 esac
