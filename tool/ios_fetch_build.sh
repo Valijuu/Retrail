@@ -158,11 +158,23 @@ unpack_and_install() {
   fi
   ensure_anisette
   log "Installing on the iPhone (keep it unlocked)…"
-  if ! SSL_CERT_FILE="$SPLICE_CA_BUNDLE" "$SPLICE" install "$work/Retrail.ipa" </dev/null; then
+  local splice_ok=true
+  SSL_CERT_FILE="$SPLICE_CA_BUNDLE" "$SPLICE" install "$work/Retrail.ipa" \
+    </dev/null >"$work/splice.out" 2>&1 || splice_ok=false
+  summarize_splice_output "$work/splice.out"
+  if ! $splice_ok; then
     log "Splice failed — is the iPhone unlocked and still logged in (splice login)?"
     notify "Retrail: install failed" "Unlock the iPhone and run tool/ios_fetch_build.sh --install"
     return 1
   fi
+}
+
+# Splice redraws a progress bar in place (hundreds of "|###  | 88/100" frames).
+# Log each step once instead: strip ANSI codes and bars, drop repeats.
+summarize_splice_output() {
+  sed -E -e 's/\x1b\[[0-9;?]*[A-Za-z]/\n/g' -e 's/\r/\n/g' -e 's/·/\n·/g' "$1" \
+    | sed -E -e 's/ *\|[# ]*\| *[0-9]+\/100//' -e 's/^[[:space:]]+|[[:space:]]+$//g' \
+    | awk 'NF && !seen[$0]++ { print "  splice: " $0 }'
 }
 
 store_password() {
