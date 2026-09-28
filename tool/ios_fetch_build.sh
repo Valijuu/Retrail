@@ -40,6 +40,11 @@ APPEAR_TIMEOUT_S=60
 APPEAR_POLL_S=5
 # How long to wait for the 2FA login in the terminal window.
 LOGIN_TIMEOUT_S=600
+# While waiting for a build, a gh call can fail on a network blip (Wi-Fi drop,
+# connection reset) — that is not the build failing (#39). Retry this often,
+# this far apart, before giving up on reaching GitHub.
+GH_RETRIES=20
+GH_RETRY_S=30
 
 log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
 
@@ -231,17 +236,46 @@ store_password() {
   log "Stored. The next build installs automatically when an iPhone is on USB."
 }
 
-# Waits for run [run_id] to finish; fetches it when green.
+# Prints "<status> <conclusion>" of run [run_id] (e.g. "completed success"),
+# retrying gh on errors. Fails only when GitHub stayed unreachable throughout.
+run_state() {
+  local run_id="$1" state
+  for _ in $(seq 1 "$GH_RETRIES"); do
+    if state="$(gh run view "$run_id" -R "$REPO" --json status,conclusion \
+        --jq '"\(.status) \(.conclusion)"')"; then
+      printf '%s' "$state"
+      return 0
+    fi
+    log "GitHub not reachable — retrying in ${GH_RETRY_S}s…" >&2
+    sleep "$GH_RETRY_S"
+  done
+  return 1
+}
+
+# Waits for run [run_id] to finish; fetches it when green. `gh run watch` also
+# exits non-zero when its connection drops, so its exit code alone never decides
+# "failed" — the run's own conclusion does (#39).
 watch_and_fetch() {
-  local run_id="$1"
+  local run_id="$1" state
   log "Waiting for build $run_id (about 15 min)…"
-  if gh run watch "$run_id" -R "$REPO" --exit-status --interval 30 >/dev/null; then
-    fetch
-  else
-    log "Build $run_id failed: https://github.com/$REPO/actions/runs/$run_id"
-    notify "Retrail iOS build failed" "https://github.com/$REPO/actions/runs/$run_id"
-    return 1
-  fi
+  while :; do
+    gh run watch "$run_id" -R "$REPO" --interval 30 >/dev/null 2>&1 || true
+    if ! state="$(run_state "$run_id")"; then
+      log "Lost contact with GitHub — build $run_id: https://github.com/$REPO/actions/runs/$run_id"
+      notify "Retrail: GitHub not reachable" \
+        "Run tool/ios_fetch_build.sh once build $run_id is done"
+      return 1
+    fi
+    case "$state" in
+      "completed success") fetch; return ;;
+      completed\ *) break ;;
+    esac
+    # Still queued / running: the watch only dropped out — keep waiting.
+    sleep "$GH_RETRY_S"
+  done
+  log "Build $run_id failed (${state#completed }): https://github.com/$REPO/actions/runs/$run_id"
+  notify "Retrail iOS build failed" "https://github.com/$REPO/actions/runs/$run_id"
+  return 1
 }
 
 # Prints the id of the newest queued / running build on $BRANCH that matches the
