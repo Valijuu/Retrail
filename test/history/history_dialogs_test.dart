@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_with_trackpoints.dart';
@@ -14,9 +15,11 @@ import 'package:retrail/map/live_map.dart';
 
 import '../support/live_map_stub.dart';
 
-Widget _host(Widget child, {Locale? locale}) => MaterialApp(
+Widget _host(Widget child,
+        {Locale? locale, Brightness brightness = Brightness.light}) =>
+    MaterialApp(
       locale: locale,
-      theme: buildTheme(Brightness.light),
+      theme: buildTheme(brightness),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -203,6 +206,64 @@ void main() {
       final map = tester.widget<LiveMap>(find.byType(LiveMap));
       expect(map.fitBounds, isTrue); // whole route, not centred on the last point
     });
+
+    for (final (brightness, palette) in [
+      (Brightness.light, AppColors.light),
+      (Brightness.dark, AppColors.dark),
+    ]) {
+      testWidgets(
+          'fullscreen / close map buttons follow the theme '
+          '(${brightness.name}), translucent over the map', (tester) async {
+        tester.view.physicalSize = const Size(400, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(_host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+              Trackpoint(
+                  trackpointId: 0,
+                  rideId: 1,
+                  latitude: 52.0,
+                  longitude: 13.0,
+                  timestamp: 0),
+              Trackpoint(
+                  trackpointId: 1,
+                  rideId: 1,
+                  latitude: 52.02,
+                  longitude: 13.0,
+                  timestamp: 1),
+            ]),
+            stats: const RideStats(
+                durationMs: 600000,
+                distanceMetres: 4200,
+                maxSpeedKmh: 22,
+                avgSpeedKmh: 15),
+            onDismiss: () {},
+          ),
+          brightness: brightness,
+        ));
+
+        void expectThemed(IconData icon) {
+          final button = find.byIcon(icon);
+          final face = tester.widget<Material>(find.ancestor(
+              of: button,
+              matching: find.byWidgetPredicate(
+                  (w) => w is Material && w.shape is CircleBorder)));
+          // App-surface face like the live map's recenter button and compass —
+          // but see-through, so it doesn't hide the map corner beneath it.
+          expect(face.color!.withValues(alpha: 1), palette.surface);
+          expect(face.color!.a, lessThan(1));
+          expect(tester.widget<Icon>(button).color, palette.primary);
+        }
+
+        expectThemed(Icons.fullscreen);
+        await tester.tap(find.byIcon(Icons.fullscreen));
+        await tester.pump();
+        expectThemed(Icons.close);
+      });
+    }
   });
 
   testWidgets('RideDetailDialog: German uses the decimal comma in its stats',

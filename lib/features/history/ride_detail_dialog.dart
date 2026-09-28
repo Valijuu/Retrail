@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../domain/activity_type.dart';
@@ -295,12 +294,15 @@ class _CircleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    // Themed like the live map's recenter button and compass (app surface,
+    // primary icon) — but translucent, so it doesn't hide the map corner.
     return Material(
-      color: context.colors.onMap.withValues(alpha: 0.6),
+      color: colors.surface.withValues(alpha: 0.6),
       shape: const CircleBorder(),
       child: IconButton(
         onPressed: onTap,
-        icon: Icon(icon, color: AppColors.dark.surface),
+        icon: Icon(icon, color: colors.primary),
         tooltip: tooltip,
       ),
     );
