@@ -155,13 +155,18 @@ build is installed, with a notification.
   takes a few seconds to show up, so it looks for up to a minute; if none is running, it
   fetches the latest green build instead.
 - `--trigger` starts the workflow on `main` itself and waits for exactly that build.
+- **Network blips while waiting** (Wi-Fi drop, connection reset) don't count as a failed
+  build: the run's own result decides, GitHub is re-asked every 30 s (up to ~10 min), and a
+  still-running build is watched again. Only if GitHub stays unreachable does it give up with
+  **"GitHub not reachable"** — run `tool/ios_fetch_build.sh` once the build is done.
 - **Install step:** the script checks for an iPhone on USB (`idevice_id -l`).
   - **Connected:** it unpacks into a temp dir, starts `anisette-v3` if needed, runs
     `splice install`, deletes the unpacked `.ipa`, and notifies **"Retrail installed"**.
   - **Not connected:** it installs nothing and notifies **"iPhone not connected"**.
   - It remembers the installed build (`.installed-id`), so nothing is installed twice.
 - **Notifications:** "build #n ready", "Retrail installed", "iPhone not connected",
-  "install failed" (with the reason), and "build failed" (with a link to the run).
+  "install failed" (with the reason), "build failed" (with the reason and a link to the run),
+  and "GitHub not reachable".
 - **By hand, without the script:** GitHub → Actions → iOS build → latest green run →
   artifact `Retrail-ios-<n>`, then `unzip Retrail-ios-*.zip && 7z x Retrail.ipa.7z &&
   splice install Retrail.ipa`. Artifacts expire after **3 days**.

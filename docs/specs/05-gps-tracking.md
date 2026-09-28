@@ -29,7 +29,7 @@ RideTrackingState {
 > **Adjustment:** the original exposed 8 separate `StateFlow`s; we consolidate into one immutable state (same data, selected per-field by the UI). Ported tests assert `tracker.state.<field>`.
 
 Constructor injects `RideRepository`, `TrackpointRepository`, `DistanceCalculator`, and an overridable `nowNanos` clock (default monotonic). Methods mirror the original exactly:
-- `setPendingActivityType(String? id)`
+- `setPendingActivityType(String? id)` — also commits `activityType` right away and emits, so the ride screen's map (which builds before `startTracking`) shows the chosen activity's marker from the first frame, not the previous ride's.
 - `startTracking()` — sets tracking/activityType synchronously, then async-inserts the `Ride` (typ = pending, startTime/date = now) → `activeRideId`; resets trackPoints/distance/speed/elapsed; starts the 1s elapsed timer.
 - `stopTracking()` — records `lastCompletedRideId`, cancels timer, sets endTime = now, clears tracking/paused.
 - `pause()` / `resume()` — freeze/continue timer; `resume` clears `lastRecordedLocation` so the break gap isn't counted as distance. No-ops per the guards.

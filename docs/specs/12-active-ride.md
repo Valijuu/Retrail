@@ -138,7 +138,7 @@ Also clear the pending ride deep-link flag like the current `RidePlaceholder` do
    `EditActionText`/`DeleteActionText` family already in tokens; **no new hex**) with white text
    `mapOfflineBanner`.
 3. **Map area** — `LiveMap(points: state.trackPoints, current: state.location?.toRoutePoint())`,
-   taking ~65 % height while tracking (else full). A **recenter FAB** (small, white, `Icons.refresh`,
+   taking ~65 % height while tracking (else full). A **recenter FAB** (small, round, app-`surface` face + `primary` icon like the map compass, `Icons.refresh`,
    `mapRecenterCd`) overlays the bottom-start **only when `!_isFollowing`**; tapping sets following
    true. Map gestures set `_isFollowing = false` (panel-driven; `LiveMap` exposes an `onGesture`
    callback — small addition to the Spec 7 widget, no behavior change otherwise).
