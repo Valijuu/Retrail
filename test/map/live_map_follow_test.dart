@@ -3,7 +3,7 @@ import 'package:retrail/map/live_map.dart';
 
 void main() {
   group('followCameraUpdate', () {
-    test('recenter pressed (follow off→on) moves and restores zoom', () {
+    test('recenter pressed (follow off→on) moves, turns north without heading', () {
       final r = followCameraUpdate(
         wasFollowing: false,
         isFollowing: true,
@@ -11,10 +11,10 @@ void main() {
         currentChanged: false, // no new fix needed — recenter acts immediately
       );
       expect(r, isNotNull);
-      expect(r!.resetZoom, isTrue);
+      expect(r!.resetBearing, isTrue);
     });
 
-    test('following + new fix keeps the camera on the rider (current zoom)', () {
+    test('following + new fix keeps the camera on the rider (keeps bearing)', () {
       final r = followCameraUpdate(
         wasFollowing: true,
         isFollowing: true,
@@ -22,7 +22,7 @@ void main() {
         currentChanged: true,
       );
       expect(r, isNotNull);
-      expect(r!.resetZoom, isFalse);
+      expect(r!.resetBearing, isFalse);
     });
 
     test('not following: a new fix does NOT move (respects the user pan)', () {
@@ -61,7 +61,7 @@ void main() {
       );
     });
 
-    test('following + first position (none before) → move, restore zoom', () {
+    test('following + first position (none before) → move, turns north without heading', () {
       final r = followCameraUpdate(
         wasFollowing: true,
         isFollowing: true,
@@ -70,7 +70,7 @@ void main() {
         currentChanged: true,
       );
       expect(r, isNotNull);
-      expect(r!.resetZoom, isTrue);
+      expect(r!.resetBearing, isTrue);
     });
     test('following + first position → instant jump, not an animated fly', () {
       // Flying in from null island, iOS reports the mid-flight (zoomed-out)

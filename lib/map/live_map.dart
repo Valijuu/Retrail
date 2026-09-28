@@ -22,17 +22,18 @@ import '../core/theme/theme_context.dart';
 /// What the camera should do on a [LiveMap] update. Pure, so the follow /
 /// recenter rules are unit-tested without pumping the map.
 class CameraFollow {
-  const CameraFollow({required this.resetZoom, this.instant = false});
+  const CameraFollow({required this.resetBearing, this.instant = false});
 
-  /// True when the move should also restore the ride zoom (an explicit recenter
-  /// tap or the first position arriving), false to keep the user's current
-  /// zoom (passive follow on a new fix).
-  final bool resetZoom;
+  /// True when, with no travel direction measured yet, the move turns the map
+  /// north (an explicit recenter tap or the first position arriving); false
+  /// keeps the camera's bearing until one is measured (passive follow on a
+  /// new fix).
+  final bool resetBearing;
 
   /// True to jump straight to the target instead of animating — only for the
   /// first position, where the camera still sits at the (0,0) init center and
   /// a fly-to would report a mid-flight, zoomed-out camera (iOS) that the next
-  /// passive follow then keeps. Always paired with [resetZoom].
+  /// passive follow then keeps. Always paired with [resetBearing].
   final bool instant;
 }
 
@@ -40,15 +41,17 @@ class CameraFollow {
 const Duration _followAnimationDuration = Duration(milliseconds: 600);
 
 /// Decides whether to move the camera to the current position on a widget
-/// update. Null means leave the camera alone; the first matching rule wins:
+/// update. Every move lands at ride zoom: any zoom gesture drops follow, so
+/// while following the zoom only ever changes through these moves (and iOS
+/// reports a mid-flight zoom that must not be carried over, #40). Null means
+/// leave the camera alone; the first matching rule wins:
 /// - **No current position**: never move — there is nothing to center on.
 /// - **First position while following** ([hadCurrent] false): jump
 ///   ([CameraFollow.instant]) to the rider at ride zoom — the map had nothing
 ///   to keep, and an animated flight from (0,0) would land zoomed out.
-/// - **Recenter just pressed** (follow off→on): animate there now and restore
-///   zoom, even without a new fix — this makes the recenter button responsive.
-/// - **Following + a new fix**: animate to keep the rider centered at the
-///   current zoom.
+/// - **Recenter just pressed** (follow off→on): animate there now, even
+///   without a new fix — this makes the recenter button responsive.
+/// - **Following + a new fix**: animate to keep the rider centered.
 /// - **Not following**: never move (respect the user's pan/zoom) — this also
 ///   holds for a first position.
 CameraFollow? followCameraUpdate({
@@ -61,9 +64,13 @@ CameraFollow? followCameraUpdate({
   if (!hasCurrent) return null;
   final justRecentered = isFollowing && !wasFollowing;
   final firstPosition = isFollowing && !hadCurrent;
-  if (firstPosition) return const CameraFollow(resetZoom: true, instant: true);
-  if (justRecentered) return const CameraFollow(resetZoom: true);
-  if (isFollowing && currentChanged) return const CameraFollow(resetZoom: false);
+  if (firstPosition) {
+    return const CameraFollow(resetBearing: true, instant: true);
+  }
+  if (justRecentered) return const CameraFollow(resetBearing: true);
+  if (isFollowing && currentChanged) {
+    return const CameraFollow(resetBearing: false);
+  }
   return null;
 }
 
@@ -411,15 +418,15 @@ class _LiveMapState extends State<LiveMap>
     } else {
       _ignoreCancel(_controller?.animateCamera(
         center: _centerPosition,
-        zoom: decision.resetZoom
-            ? widget.initialZoom
-            : (_controller?.camera?.zoom ?? widget.initialZoom),
+        // Always ride zoom, never controller.camera.zoom: mid-flight on iOS
+        // that is the zoomed-out fly-to arc, which would then stick (#40).
+        zoom: widget.initialZoom,
         // Heading-up while following. Null keeps the camera's bearing (the
         // read-only detail map, or no movement measured yet on a passive
         // follow); a recenter before any movement turns the map north.
         bearing: widget.fitBounds
             ? null
-            : (decision.resetZoom
+            : (decision.resetBearing
                 ? (_heading.bearing ?? 0)
                 : _heading.bearing),
         nativeDuration: _followAnimationDuration,
