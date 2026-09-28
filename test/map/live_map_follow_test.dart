@@ -60,5 +60,61 @@ void main() {
         isNull,
       );
     });
+
+    test('following + first position (none before) → move, restore zoom', () {
+      final r = followCameraUpdate(
+        wasFollowing: true,
+        isFollowing: true,
+        hasCurrent: true,
+        hadCurrent: false,
+        currentChanged: true,
+      );
+      expect(r, isNotNull);
+      expect(r!.resetZoom, isTrue);
+    });
+    test('following + first position → instant jump, not an animated fly', () {
+      // Flying in from null island, iOS reports the mid-flight (zoomed-out)
+      // camera — which the next passive follow would then keep.
+      final r = followCameraUpdate(
+        wasFollowing: true,
+        isFollowing: true,
+        hasCurrent: true,
+        hadCurrent: false,
+        currentChanged: true,
+      );
+      expect(r!.instant, isTrue);
+    });
+    test('following + a later fix → animated (instant false)', () {
+      final r = followCameraUpdate(
+        wasFollowing: true,
+        isFollowing: true,
+        hasCurrent: true,
+        hadCurrent: true,
+        currentChanged: true,
+      );
+      expect(r!.instant, isFalse);
+    });
+    test('recenter pressed → animated (instant false)', () {
+      final r = followCameraUpdate(
+        wasFollowing: false,
+        isFollowing: true,
+        hasCurrent: true,
+        hadCurrent: true,
+        currentChanged: false,
+      );
+      expect(r!.instant, isFalse);
+    });
+    test('not following + first position → no move (respects the pan)', () {
+      expect(
+        followCameraUpdate(
+          wasFollowing: false,
+          isFollowing: false,
+          hasCurrent: true,
+          hadCurrent: false,
+          currentChanged: true,
+        ),
+        isNull,
+      );
+    });
   });
 }

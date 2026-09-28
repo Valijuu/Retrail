@@ -22,26 +22,46 @@ import '../core/theme/theme_context.dart';
 /// What the camera should do on a [LiveMap] update. Pure, so the follow /
 /// recenter rules are unit-tested without pumping the map.
 class CameraFollow {
-  const CameraFollow({required this.resetZoom});
+  const CameraFollow({required this.resetZoom, this.instant = false});
 
   /// True when the move should also restore the ride zoom (an explicit recenter
-  /// tap), false to keep the user's current zoom (passive follow on a new fix).
+  /// tap or the first position arriving), false to keep the user's current
+  /// zoom (passive follow on a new fix).
   final bool resetZoom;
+
+  /// True to jump straight to the target instead of animating — only for the
+  /// first position, where the camera still sits at the (0,0) init center and
+  /// a fly-to would report a mid-flight, zoomed-out camera (iOS) that the next
+  /// passive follow then keeps. Always paired with [resetZoom].
+  final bool instant;
 }
 
-/// Decides whether to move the camera to the current position on a widget update:
-/// - **Recenter just pressed** (follow off→on): move now and restore zoom, even
-///   without a new fix — this is what makes the recenter button responsive.
-/// - **Following + a new fix**: keep the rider centered at the current zoom.
-/// - **Not following**: never move (respect the user's pan/zoom).
+/// How long an animated follow / recenter camera move takes.
+const Duration _followAnimationDuration = Duration(milliseconds: 600);
+
+/// Decides whether to move the camera to the current position on a widget
+/// update. Null means leave the camera alone; the first matching rule wins:
+/// - **No current position**: never move — there is nothing to center on.
+/// - **First position while following** ([hadCurrent] false): jump
+///   ([CameraFollow.instant]) to the rider at ride zoom — the map had nothing
+///   to keep, and an animated flight from (0,0) would land zoomed out.
+/// - **Recenter just pressed** (follow off→on): animate there now and restore
+///   zoom, even without a new fix — this makes the recenter button responsive.
+/// - **Following + a new fix**: animate to keep the rider centered at the
+///   current zoom.
+/// - **Not following**: never move (respect the user's pan/zoom) — this also
+///   holds for a first position.
 CameraFollow? followCameraUpdate({
   required bool wasFollowing,
   required bool isFollowing,
   required bool hasCurrent,
+  bool hadCurrent = true,
   required bool currentChanged,
 }) {
   if (!hasCurrent) return null;
   final justRecentered = isFollowing && !wasFollowing;
+  final firstPosition = isFollowing && !hadCurrent;
+  if (firstPosition) return const CameraFollow(resetZoom: true, instant: true);
   if (justRecentered) return const CameraFollow(resetZoom: true);
   if (isFollowing && currentChanged) return const CameraFollow(resetZoom: false);
   return null;
@@ -292,7 +312,7 @@ class _LiveMapState extends State<LiveMap>
     super.initState();
     _glide = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: _followAnimationDuration,
     )..addListener(_onGlideTick);
   }
 
@@ -374,9 +394,21 @@ class _LiveMapState extends State<LiveMap>
       wasFollowing: oldWidget.isFollowing,
       isFollowing: widget.isFollowing,
       hasCurrent: widget.current != null,
+      // No fix and no route yet: the camera still sits at the (0,0) init
+      // center — the very first ride, before any position was ever known.
+      hadCurrent: oldWidget.current != null || oldWidget.points.isNotEmpty,
       currentChanged: currentChanged,
     );
-    if (decision != null) {
+    if (decision == null) return;
+    if (decision.instant) {
+      // Jump, don't fly: iOS flies (0,0)→rider zoomed far out and reports that
+      // mid-flight zoom, which the next passive follow would then keep.
+      _ignoreCancel(_controller?.moveCamera(
+        center: _centerPosition,
+        zoom: widget.initialZoom,
+        bearing: _heading.bearing ?? 0,
+      ));
+    } else {
       _ignoreCancel(_controller?.animateCamera(
         center: _centerPosition,
         zoom: decision.resetZoom
@@ -390,7 +422,7 @@ class _LiveMapState extends State<LiveMap>
             : (decision.resetZoom
                 ? (_heading.bearing ?? 0)
                 : _heading.bearing),
-        nativeDuration: const Duration(milliseconds: 600),
+        nativeDuration: _followAnimationDuration,
       ));
     }
   }
