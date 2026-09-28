@@ -125,9 +125,12 @@ class RideTracker {
   /// immediately (not only in [startTracking]) so the active-ride map renders
   /// the chosen activity's marker from the first frame — the ride screen builds
   /// before [startTracking] runs, so a late commit shows the previous activity.
+  /// Emits too: the ride screen reads the state provider, which only follows
+  /// [changes] — without it the map still got the previous ride's activity.
   void setPendingActivityType(String? typeId) {
     _pendingActivityType = typeId;
     _activityType = ActivityType.fromId(typeId);
+    _emit();
   }
 
   void startTracking() {

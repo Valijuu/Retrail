@@ -587,8 +587,12 @@ class _LiveMapState extends State<LiveMap>
         id: 'current',
         data: cur != null ? _pointGeoJson(cur) : _emptyGeoJson,
       ));
-      await _addCurrentMarker(style, widget.activityType, blue);
+      final markerType = widget.activityType;
+      await _addCurrentMarker(style, markerType, blue);
       _markerReady = true;
+      // An activity change landing while the badge rendered was skipped by
+      // didUpdateWidget's _markerReady gate — catch up now.
+      if (widget.activityType != markerType) await _swapCurrentMarker();
     }
 
     _sourcesReady = true;

@@ -7,6 +7,7 @@ import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
+import 'package:retrail/tracking/ride_tracking_state.dart';
 
 class _MockRideRepo extends Mock implements RideRepository {}
 
@@ -211,6 +212,20 @@ void main() {
       runTracker((fa, t) {
         t.setPendingActivityType(ActivityType.mountainboard.id);
         expect(t.state.activityType, ActivityType.mountainboard);
+      });
+    });
+
+    test('setPendingActivityType publishes the new activity on changes', () {
+      // The ride screen reads rideTrackingStateProvider, which only follows
+      // `changes`. Without an emission it keeps the previous ride's activity
+      // until startTracking — after the map already registered its marker.
+      runTracker((fa, t) {
+        final emitted = <RideTrackingState>[];
+        t.changes.listen(emitted.add);
+        t.setPendingActivityType(ActivityType.mountainboard.id);
+        fa.flushMicrotasks();
+        expect(emitted.map((s) => s.activityType),
+            [ActivityType.mountainboard]);
       });
     });
   });
