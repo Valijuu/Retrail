@@ -14,12 +14,11 @@ const _nameMaxLength = 30;
 /// Bottom-sheet to edit the profile name + photo. Reuses [ProfileAvatar] +
 /// [ProfilePhotoChooser] (photo persists live via the manager); Save writes the
 /// name. Ports `ProfileEditSheet` to the Flutter port's photo model.
+///
+/// Opened with `showAppBottomSheet`, so the sheet hugs this content: on a tall
+/// phone Save sits at the bottom instead of above an empty band.
 class ProfileEditSheet extends ConsumerStatefulWidget {
-  const ProfileEditSheet({super.key, this.scrollController});
-
-  /// The enclosing sheet's controller, so dragging the content down moves
-  /// (and closes) the sheet instead of only scrolling.
-  final ScrollController? scrollController;
+  const ProfileEditSheet({super.key});
 
   @override
   ConsumerState<ProfileEditSheet> createState() => _ProfileEditSheetState();
@@ -57,7 +56,6 @@ class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
         padding:
             EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: SingleChildScrollView(
-          controller: widget.scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

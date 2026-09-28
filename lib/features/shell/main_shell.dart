@@ -136,10 +136,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                   ref.read(historyTargetRideProvider.notifier).state = rideId;
                   _goToTab(1);
                 },
-                onAvatarTap: () => showAppScrollableSheet<void>(
+                onAvatarTap: () => showAppBottomSheet<void>(
                   context: context,
-                  builder: (_, scrollController) =>
-                      ProfileEditSheet(scrollController: scrollController),
+                  builder: (_) => const ProfileEditSheet(),
                 ),
               ),
             ),

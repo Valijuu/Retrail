@@ -113,7 +113,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(ProfileEditSheet), findsNothing);
-  });
+    // iOS too: while the content fits, even bouncing physics claim no drag.
+  }, variant: const TargetPlatformVariant(
+      {TargetPlatform.android, TargetPlatform.iOS}));
 
   testWidgets(
       'with the keyboard up the profile sheet stays capped below the top — '
@@ -132,6 +134,25 @@ void main() {
     // A clear strip stays free above the sheet (drag handle included).
     expect(tester.getTopLeft(find.byType(BottomSheet)).dy,
         greaterThanOrEqualTo(900 * 0.08));
+  });
+
+  testWidgets(
+      'on a tall phone the profile sheet hugs its content — Save sits at the '
+      'bottom, no empty band below the buttons', (tester) async {
+    tester.view.physicalSize = const Size(400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byType(ProfileAvatar));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // Only the content's own bottom spacing is left below Save, whatever the
+    // screen height — not the rest of a fixed 90 %-tall sheet.
+    final save = find.widgetWithText(FilledButton, 'Save');
+    expect(1000 - tester.getBottomLeft(save).dy, lessThanOrEqualTo(24));
   });
 
   Future<void> settle(WidgetTester tester) async {
