@@ -1,10 +1,9 @@
 # Spec 16 — Live map: swap `flutter_map` → native MapLibre
 
-**Status:** IMPLEMENTED (Android-verified) — merged to `main`. Android acceptance passed (Pixel 7:
-dense-route recording, fractional zoom/pan/world-fit, light/dark styles, recenter/follow). **iOS
-acceptance still ⬜ pending** (never run on a real iPhone) and the **airplane-mode/ambient-cache
-offline behavior is still ⬜ unverified** (see Acceptance below) — both are hard gates per this
-spec's own standing rule and are not yet closed.
+**Status:** DONE — merged to `main`, on-device acceptance passed on both platforms: Android (Pixel 7:
+dense-route recording, fractional zoom/pan/world-fit, light/dark styles, recenter/follow) and iOS
+(iPhone 8 live tests, 2026-09-29), including the airplane-mode / ambient-cache offline behavior
+(see Acceptance below).
 **Phase:** post-roadmap revision of Spec 7 §B (live map). Previews (Spec 7 §A) untouched.
 **Depends on:** Spec 7 (LiveMap API + preview pipeline), Spec 12 (active-ride screen embeds LiveMap), Spec 5A (`RideTracker`/`ConnectivityObserver`), Spec 5B (location perms / platform setup).
 
@@ -71,9 +70,9 @@ A `MapLibreMap` is a native platform view: in `flutter test` it renders an empty
 - `LiveMap`'s public constructor is unchanged; all existing call sites compile untouched.
 - Preview thumbnails unaffected (still raster PNGs, no per-scroll work).
 - **On-device (required before merge, both platforms per standing rule):**
-  - **Long dense route while actively recording** — smooth pan + per-fix `updateGeoJsonSource` + follow. ✅ verified on Android (Pixel 7) in the spike; ⬜ iOS pending.
-  - Android (Pixel ✅) **and** iOS (iPhone ⬜): smooth fractional zoom / world-fit / pan; route + dots crisp; light & dark styles load (`topo-v2` / `basic-v2-dark`); recenter + follow behave; hand-pan drops follow.
-  - ⬜ Airplane mode mid-ride: previously-viewed tiles still render (ambient cache — see §C, must be verified, not assumed); recording continues; offline banner shows.
+  - **Long dense route while actively recording** — smooth pan + per-fix `updateGeoJsonSource` + follow. ✅ verified on Android (Pixel 7) in the spike; ✅ iOS (iPhone 8, 2026-09-29).
+  - Android (Pixel ✅) **and** iOS (iPhone 8 ✅): smooth fractional zoom / world-fit / pan; route + dots crisp; light & dark styles load (`topo-v2` / `basic-v2-dark`); recenter + follow behave; hand-pan drops follow.
+  - ✅ Airplane mode mid-ride (verified in the 2026-09-29 live tests): previously-viewed tiles still render (ambient cache — see §C, must be verified, not assumed); recording continues; offline banner shows.
 - Done: merged via `spike/maplibre-live-map` → `main`; `lib/dev/maplibre_demo.dart` deleted before merge (verified, no `lib/dev/` left in the tree).
 
 ## Out of scope / follow-ups
