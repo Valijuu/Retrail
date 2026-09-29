@@ -166,6 +166,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// decode-ahead covers it.
   static const _precacheDecodes = 60;
 
+  static Brightness _other(Brightness b) =>
+      b == Brightness.light ? Brightness.dark : Brightness.light;
+
   void _warmPreviews(List<HistoryItem> items) {
     final cache = ref.read(routePreviewCacheProvider);
     final trackpoints = ref.read(trackpointRepositoryProvider);
@@ -182,6 +185,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ];
         final file =
             await cache.ensurePreview(rideId, points, brightness: brightness);
+        // Then the other theme's variant, behind the active one, so a
+        // light/dark switch finds its previews already rendered instead of
+        // re-rendering every card (tiles + PNG) on the spot.
+        unawaited(cache
+            .ensurePreview(rideId, points, brightness: _other(brightness))
+            .then((_) {}, onError: (Object _) {}));
         if (!mounted || !precache) return;
         // Same provider shape as the card's Image.file(cacheWidth: ...) so the
         // decoded frame is an exact ImageCache hit when the card builds.

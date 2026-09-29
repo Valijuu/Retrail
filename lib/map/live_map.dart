@@ -810,6 +810,33 @@ class _LiveMapState extends State<LiveMap>
     await _addCurrentMarker(style, widget.activityType, blue);
   }
 
+  /// The brightness the current native map was built for (see `ValueKey(dark)`
+  /// in [build]).
+  Brightness? _mapBrightness;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A light/dark switch rebuilds the native map. Cut the old one off NOW,
+    // not when the new one reports in: in between, a camera move (the live
+    // map's follow on a new fix, the detail map's refit) or a source update
+    // would otherwise reach the already disposed map (issue #43).
+    final brightness = Theme.of(context).brightness;
+    if (_mapBrightness != null && brightness != _mapBrightness) _detachMap();
+    _mapBrightness = brightness;
+  }
+
+  /// Forgets the native map: no controller, style or sources until the next
+  /// map's [MapLibreMap.onMapCreated] / [_onStyleLoaded], and the marker glide
+  /// feeding the sources stops.
+  void _detachMap() {
+    _controller = null;
+    _style = null;
+    _sourcesReady = false;
+    _markerReady = false;
+    _glide.stop();
+  }
+
   @override
   void dispose() {
     _glide.dispose();
@@ -862,14 +889,8 @@ class _LiveMapState extends State<LiveMap>
               androidMode: AndroidPlatformViewMode.tlhc_vd,
             ),
             onMapCreated: (c) {
-              // A brightness rebuild creates a new native map: until its style
-              // loads, the old StyleController is disposed — stop every source
-              // update (and the glide feeding them) from reaching it.
+              _detachMap(); // the new map's style hasn't loaded yet
               _controller = c;
-              _style = null;
-              _sourcesReady = false;
-              _markerReady = false;
-              _glide.stop();
             },
             onStyleLoaded: _onStyleLoaded,
             onEvent: (e) {

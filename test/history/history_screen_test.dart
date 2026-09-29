@@ -59,11 +59,13 @@ class WarmSpyCache extends RoutePreviewCache {
                 PreviewResult(Uint8List(0), complete: true));
 
   final warmed = <int>[];
+  final warmedVariants = <(int, Brightness)>[];
 
   @override
   Future<File> ensurePreview(int rideId, List<RoutePoint> points,
       {required Brightness brightness}) async {
     warmed.add(rideId);
+    warmedVariants.add((rideId, brightness));
     return File('${Directory.systemTemp.path}/warm_$rideId.png');
   }
 }
@@ -299,7 +301,28 @@ void main() {
     online.add(true);
     await tester.pump();
     await tester.pump();
-    expect(spy.warmed, [1]);
+    expect(spy.warmed.toSet(), {1});
+  });
+
+  testWidgets(
+      'pre-warms BOTH theme variants, the active one first — so a light/dark '
+      'switch finds its previews already rendered', (tester) async {
+    final spy = WarmSpyCache();
+    await pump(
+      tester,
+      [_routedEntry(1)],
+      previewCache: spy,
+      trackpoints: {
+        1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
+      },
+    );
+    await tester.pump(); // post-frame warm pass
+    await tester.pump(); // lazy per-ride trackpoints fetch lands
+    await tester.pump(); // the other variant follows the active one
+    final variants = spy.warmedVariants;
+    expect(variants, contains((1, Brightness.dark)));
+    expect(variants.indexOf((1, Brightness.light)),
+        lessThan(variants.indexOf((1, Brightness.dark))));
   });
 
   testWidgets(

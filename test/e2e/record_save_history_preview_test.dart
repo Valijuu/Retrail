@@ -109,7 +109,7 @@ void main() {
       await pumpEventQueue(); // saveRideDetails is fire-and-forget — let it land
 
       // Preview rendered exactly once, with the recorded route, to disk by rideId.
-      expect(renders, 1);
+      expect(renders, 2); // once per theme variant (active first)
       expect(capturedRoute, hasLength(2));
       final previewFile = cache.fileFor(rideId, brightness: Brightness.light);
       expect(await previewFile.exists(), isTrue);
@@ -172,7 +172,7 @@ void main() {
       final servedAgain =
           await cache.ensurePreview(rideId, route, brightness: Brightness.light);
       expect(servedAgain.path, previewFile.path);
-      expect(renders, 1, reason: 'cached PNG reused — no per-scroll render');
+      expect(renders, 2, reason: 'cached PNG reused — no per-scroll render');
     },
   );
 }

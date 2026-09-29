@@ -98,11 +98,11 @@ void main() {
     final tmp = await Directory.systemTemp.createTemp('preview_test');
     addTearDown(() => tmp.delete(recursive: true));
 
-    Brightness? renderedWith;
+    final renderedWith = <Brightness>[];
     final cache = RoutePreviewCache(
       baseDir: tmp,
       render: (points, b) async {
-        renderedWith = b;
+        renderedWith.add(b);
         return PreviewResult(Uint8List.fromList([1]), complete: true);
       },
     );
@@ -112,7 +112,32 @@ void main() {
 
     await controller.saveRide();
 
-    expect(renderedWith, Brightness.dark); // rendered for the active theme
+    expect(renderedWith.first, Brightness.dark); // the active theme first
+    expect(await cache.fileFor(rideId, brightness: Brightness.dark).exists(),
+        isTrue);
+  });
+
+  test(
+      'saveRide renders the other theme\'s variant too, after the active one '
+      '— a later light/dark switch needs no re-render', () async {
+    await recordShortRide();
+    final tmp = await Directory.systemTemp.createTemp('preview_test');
+    addTearDown(() => tmp.delete(recursive: true));
+
+    final renderedWith = <Brightness>[];
+    final cache = RoutePreviewCache(
+      baseDir: tmp,
+      render: (points, b) async {
+        renderedWith.add(b);
+        return PreviewResult(Uint8List.fromList([1]), complete: true);
+      },
+    );
+    final controller = ActiveRideController(tracker, cache);
+    final rideId = tracker.lastCompletedRideId!;
+
+    await controller.saveRide();
+
+    expect(renderedWith, [Brightness.light, Brightness.dark]);
     expect(await cache.fileFor(rideId, brightness: Brightness.dark).exists(),
         isTrue);
   });

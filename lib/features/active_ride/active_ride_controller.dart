@@ -32,8 +32,8 @@ class ActiveRideController {
   /// to the cache-warm path on first view anyway.
   static const previewDelay = Duration(milliseconds: 450);
 
-  /// Persists ride details, then generates the preview PNG once for the
-  /// just-stopped ride (online snapshot or offline flat sketch — the cache's
+  /// Persists ride details, then generates the preview PNGs (active theme
+  /// first, then the other) once for the just-stopped ride (online snapshot or offline flat sketch — the cache's
   /// renderer decides), deferred by [previewDelay] so the render never
   /// competes with the exit transition. No-op preview when there is no
   /// completed ride or route.
@@ -47,8 +47,14 @@ class ActiveRideController {
     _tracker.saveRideDetails(title, comment, isFavorite: favorite);
     if (rideId != null && points.isNotEmpty) {
       await Future<void>.delayed(previewDelay);
+      final brightness = _currentBrightness();
+      await _cache.ensurePreview(rideId, points, brightness: brightness);
+      // The other theme's variant right behind it, so switching light/dark
+      // later finds this ride's preview ready instead of rendering it then.
       await _cache.ensurePreview(rideId, points,
-          brightness: _currentBrightness());
+          brightness: brightness == Brightness.light
+              ? Brightness.dark
+              : Brightness.light);
     }
   }
 }
