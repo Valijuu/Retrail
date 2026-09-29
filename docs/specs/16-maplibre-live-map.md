@@ -22,12 +22,12 @@ Replace the live/active-ride map's renderer from `flutter_map` (raster tiles on 
 ## Non-goals / preserved invariants
 - **No change to `LiveMap`'s public API** — same constructor params, same call sites (`active_ride_screen`, history detail/fullscreen dialog). Additive only: an optional `@visibleForTesting` map-builder seam (below).
 - **Preview snapshot pipeline (Spec 7 §A) is untouched** — it never used `flutter_map` (pure projection math + `ui.Canvas` + a `TileProvider` interface). History/home thumbnails stay static PNGs.
-- **Heading-up rotation (follow-up, done):** while following, `animateCamera(bearing:)` turns the map to the travel direction (`nextHeading`, `lib/domain/heading.dart`: recorded points only, re-measured every ≥ 10 m, turns < 10° ignored). A user gesture drops follow and keeps the rotation; `MapCompass(hideIfRotatedNorth)` then shows (tap → north); recenter resumes heading-up. The live line's tip trails the gliding marker through a `route-tail` source (`splitRouteTail`). Detail map stays north-up.
+- **Heading-up rotation (follow-up, done):** while following, `animateCamera(bearing:)` turns the map to the travel direction (`nextHeading`, `lib/domain/heading.dart`: recorded points only, re-measured every ≥ 10 m, turns < 10° ignored). A user gesture drops follow and keeps the rotation; `MapCompass(hideIfRotatedNorth)` then shows (tap → north); recenter resumes heading-up. The live line's tip trails the gliding marker through a `route-tail` source (`splitRouteTail`). Detail / fullscreen map opens north-up and has no compass.
 
 ## A. Public API to keep byte-for-byte
 `LiveMap({ key, required points, current, isFollowing = true, initialZoom = 16.5, fitBounds = false, onGesture })` — unchanged.
 Pure helpers stay (their unit tests stay green): `CameraFollow`, `followCameraUpdate({wasFollowing, isFollowing, hasCurrent, currentChanged})`, `kLiveMapMinZoom = 3.0`, `kLiveMapMaxZoom = 19.0`.
-`routeBounds(points)` keeps its name/role but **changes return type** from `flutter_map`'s `LatLngBounds` to maplibre's `LngLatBounds` (feeds `controller.fitBounds` directly). `live_map_fit_test.dart` updates its type references; the three assertions (null-for-empty, encloses-every-point, single-point degenerate) are preserved in meaning.
+~~`routeBounds(points)`~~ — superseded: the detail map's framing is now `fitRouteCamera(points, width:, height:)` in `lib/map/route_camera.dart` (tested in `route_camera_test.dart`), see §B fitBounds.
 
 ## B. Renderer (the swap) — `lib/map/live_map.dart`
 Replace the `FlutterMap(... TileLayer/PolylineLayer/MarkerLayer ...)` build with a `MapLibreMap`:
@@ -38,7 +38,7 @@ Replace the `FlutterMap(... TileLayer/PolylineLayer/MarkerLayer ...)` build with
 - **Live updates:** push new fixes via `style.updateGeoJsonSource(id:'route', data: …)` (grow the line) — verified smooth on the dense-route recording sim. Do **not** rebuild the map per fix.
 - **Markers:** start (green) and end (red) via `CircleStyleLayer` (`circle-radius 9`); current position via a third `CircleStyleLayer` — blue fill + white `circle-stroke-width 3` ring. Update the current-position source on each new fix (`updateGeoJsonSource`) rather than rebuilding the map.
 - **Camera follow / recenter:** in `didUpdateWidget`, use `followCameraUpdate(...)`; on a non-null decision move to the rider at **ride zoom** (`initialZoom`) — never `controller.camera.zoom`: any zoom gesture drops follow, and mid-flight iOS reports the fly-to arc's zoomed-out value, which would stick (#40). The first position (no fix and no route before — map still at its (0,0) init center) is an instant `moveCamera` (`CameraFollow.instant`); recenter and later fixes use `animateCamera`. `CameraFollow.resetBearing` turns the map north when no heading was measured yet. (`MapController` from `onMapCreated`.)
-- **fitBounds:** when `widget.fitBounds && points.isNotEmpty`, after style load call `controller.fitBounds(bounds: routeBounds(points)!, padding: EdgeInsets.all(24))`.
+- **fitBounds:** when `widget.fitBounds && points.isNotEmpty`, the map starts on `fitRouteCamera(points, …)` of its laid-out size (init center/zoom) and re-applies it with one `moveCamera` after style load (24 px padding, zoom ≤ `maxPreviewZoom`). Not `controller.fitBounds`: on iOS it only starts an animation and returns, and the follow-up zoom cap cancelled it — the detail map then showed only the route's end.
 - **onGesture:** subscribe via `onEvent` (or map gesture callback) and fire `widget.onGesture?.call()` on a user-initiated move/zoom, so the screen drops follow and shows the recenter control. Must distinguish user gestures from programmatic camera moves (guard with a flag around `animateCamera`/`fitBounds`).
 - **Attribution:** drop the explicit `RichAttributionWidget` — maplibre-native renders MapTiler/OSM attribution itself (as the original Android app relied on). Remove the `url_launcher` import from this file (still used by `navigation_launcher.dart`).
 
@@ -53,7 +53,7 @@ Recording itself continues regardless — GPS is local (Spec 5A). No bulk pre-do
 A `MapLibreMap` is a native platform view: in `flutter test` it renders an empty placeholder and its `onMapCreated`/`onStyleLoaded` channels never fire. So the strategy moves from "assert rendered map internals" to "unit-test pure builders + smoke-test the widget."
 
 1. **Stays green unchanged:** `live_map_follow_test.dart` (`followCameraUpdate`) — pure bools, no map types.
-2. **Minor edit:** `live_map_fit_test.dart` — `routeBounds` now returns `LngLatBounds`; update type references, keep the three assertions.
+2. **Replaced:** `live_map_fit_test.dart` (`routeBounds`) → `route_camera_test.dart` (`fitRouteCamera`).
 3. **New pure units** (replace the flutter_map-internal assertions in `widgets_test.dart`):
    - `liveMapStyleUrl(bool dark)` → asserts `topo-v2` light / `basic-v2-dark` dark, key injected.
    - `routeLineGeoJson(points)` → valid GeoJSON `LineString`, lng/lat order, empty/short-route handling.

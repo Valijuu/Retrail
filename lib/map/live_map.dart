@@ -16,6 +16,7 @@ import '../features/onboarding/activity_type_ui.dart';
 import 'map_config.dart';
 import '../domain/route_markers.dart';
 import 'preview_projection.dart';
+import 'route_camera.dart';
 import 'route_marker_painter.dart';
 import '../core/theme/theme_context.dart';
 
@@ -72,16 +73,6 @@ CameraFollow? followCameraUpdate({
     return const CameraFollow(resetBearing: false);
   }
   return null;
-}
-
-/// Bounding box enclosing every point of [points], or null when empty. Feeds
-/// MapLibre's `controller.fitBounds` directly, so the read-only detail /
-/// fullscreen map frames the whole route instead of centring on the last point.
-/// Pure, so the framing is unit-tested without pumping the map.
-LngLatBounds? routeBounds(List<RoutePoint> points) {
-  if (points.isEmpty) return null;
-  return LngLatBounds.fromPoints(
-      [for (final p in points) Geographic(lon: p.lng, lat: p.lat)]);
 }
 
 /// Live-map MapLibre style URL for the current brightness. Pure, so the
@@ -359,6 +350,17 @@ class _LiveMapState extends State<LiveMap>
         ? Geographic(lon: c.lng, lat: c.lat)
         : Geographic(lon: 0, lat: 0);
   }
+
+  /// The map's laid-out size, captured in [build] so the detail map can fit
+  /// the route to the real viewport (see [_fitCamera]).
+  Size _viewportSize = Size.zero;
+
+  /// The whole-route framing for the read-only detail / fullscreen map, or
+  /// null before layout / for an empty route.
+  RouteCamera? get _fitCamera => _viewportSize.isEmpty
+      ? null
+      : fitRouteCamera(widget.points,
+          width: _viewportSize.width, height: _viewportSize.height);
 
   @override
   void didUpdateWidget(LiveMap oldWidget) {
@@ -645,29 +647,21 @@ class _LiveMapState extends State<LiveMap>
       _glideMarkerTo(widget.current!);
     }
 
-    if (widget.fitBounds && widget.points.isNotEmpty) {
-      // Awaited (not fire-and-forget like the live map's moves below) so this
-      // finishes — hidden behind the terrain placeholder — before the reveal
-      // check runs: the map used to appear already visible and then visibly
-      // animate/zoom into its fitted framing on every open. A short duration
-      // just keeps that hidden wait brief; it's never seen either way.
+    final fit = widget.fitBounds ? _fitCamera : null;
+    if (fit != null) {
+      // Frame the whole route with ONE instant move computed here, not the
+      // package's fitBounds(): on iOS that only STARTS an animation and
+      // returns, so the zoom-cap moveCamera that used to follow it cancelled
+      // the fit mid-flight and left the camera on the route's end (the map's
+      // init center). Same framing on both platforms, applied before reveal.
       try {
-        await _controller?.fitBounds(
-          bounds: routeBounds(widget.points)!,
-          padding: const EdgeInsets.all(24),
-          nativeDuration: const Duration(milliseconds: 300),
+        await _controller?.moveCamera(
+          center: Geographic(lon: fit.lng, lat: fit.lat),
+          zoom: fit.zoom,
         );
-        // fitBounds() has no zoom ceiling — a short/near-stationary route's
-        // tiny bounding box can fit at an arbitrarily high, street-level
-        // zoom. Cap it at the same zoom the ride-preview thumbnails use, so
-        // a short ride doesn't end up zoomed in absurdly close.
-        final zoom = _controller?.camera?.zoom;
-        if (zoom != null && zoom > maxPreviewZoom) {
-          await _controller?.moveCamera(zoom: maxPreviewZoom);
-        }
       } catch (_) {
-        // A cancelled/aborted fit still reveals the map below — a slightly
-        // off camera beats a placeholder stuck on screen forever.
+        // A failed move still reveals the map below — a slightly off camera
+        // beats a placeholder stuck on screen forever.
       }
     } else if (!widget.fitBounds && widget.isFollowing) {
       // Recenter once the style is ready. The map is created with initCenter
@@ -788,84 +782,93 @@ class _LiveMapState extends State<LiveMap>
     if (override != null) return override(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
     final colors = context.colors;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        MapLibreMap(
-          // Rebuild on brightness change to reload topo-v2/basic-v2-dark.
-          key: ValueKey(dark),
-          options: MapOptions(
-            initStyle: liveMapStyleUrl(dark),
-            initCenter: _centerPosition,
-            initZoom: widget.initialZoom,
-            minZoom: kLiveMapMinZoom,
-            maxZoom: kLiveMapMaxZoom,
-            // Texture-based composition (trial, issue #11): Hybrid
-            // Composition rendered the native map via its own independent
-            // Android Surface, and on a real device that surface could get
-            // recomposited mid-navigation-transition showing a stale buffer
-            // from an unrelated earlier screen (a one-frame flash of the
-            // countdown page when leaving /ride). Texture mode routes the
-            // map's output through Flutter's own Skia/Impeller frame instead,
-            // so there's no separate native surface left to go stale — at
-            // the cost of touch/animation smoothness vs. Hybrid Composition.
-            androidTextureMode: true,
-            androidMode: AndroidPlatformViewMode.tlhc_vd,
-          ),
-          onMapCreated: (c) {
-            // A brightness rebuild creates a new native map: until its style
-            // loads, the old StyleController is disposed — stop every source
-            // update (and the glide feeding them) from reaching it.
-            _controller = c;
-            _style = null;
-            _sourcesReady = false;
-            _markerReady = false;
-            _glide.stop();
-          },
-          onStyleLoaded: _onStyleLoaded,
-          onEvent: (e) {
-            // Drop follow only on a real user gesture — programmatic moves
-            // report developerAnimation/apiAnimation, so our own camera
-            // animations don't trip this.
-            if (e is MapEventStartMoveCamera &&
-                e.reason == CameraChangeReason.apiGesture) {
-              widget.onGesture?.call();
-            }
-          },
-          // Shown once the map is turned away from north and not following
-          // (hand-panned / rotated, or the read-only detail map): a tap turns
-          // it back north. While following, the map is heading-up on purpose.
-          children: [
-            if (widget.fitBounds || !widget.isFollowing)
-              MapCompass(
-                hideIfRotatedNorth: true,
-                // Bottom-left, stacked above the recenter button: both appear
-                // once the map is moved by hand, and both are in thumb reach.
-                alignment: Alignment.bottomLeft,
-                padding: EdgeInsets.only(
-                  left: kMapControlInset,
-                  bottom: kMapControlInset + widget.compassClearance,
+    return LayoutBuilder(builder: (context, constraints) {
+      _viewportSize = constraints.biggest;
+      final fit = widget.fitBounds ? _fitCamera : null;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          MapLibreMap(
+            // Rebuild on brightness change to reload topo-v2/basic-v2-dark.
+            key: ValueKey(dark),
+            options: MapOptions(
+              initStyle: liveMapStyleUrl(dark),
+              // The detail map starts on its whole-route framing already, so
+              // even the first native frame shows the full ride.
+              initCenter: fit != null
+                  ? Geographic(lon: fit.lng, lat: fit.lat)
+                  : _centerPosition,
+              initZoom: fit?.zoom ?? widget.initialZoom,
+              minZoom: kLiveMapMinZoom,
+              maxZoom: kLiveMapMaxZoom,
+              // Texture-based composition (trial, issue #11): Hybrid
+              // Composition rendered the native map via its own independent
+              // Android Surface, and on a real device that surface could get
+              // recomposited mid-navigation-transition showing a stale buffer
+              // from an unrelated earlier screen (a one-frame flash of the
+              // countdown page when leaving /ride). Texture mode routes the
+              // map's output through Flutter's own Skia/Impeller frame instead,
+              // so there's no separate native surface left to go stale — at
+              // the cost of touch/animation smoothness vs. Hybrid Composition.
+              androidTextureMode: true,
+              androidMode: AndroidPlatformViewMode.tlhc_vd,
+            ),
+            onMapCreated: (c) {
+              // A brightness rebuild creates a new native map: until its style
+              // loads, the old StyleController is disposed — stop every source
+              // update (and the glide feeding them) from reaching it.
+              _controller = c;
+              _style = null;
+              _sourcesReady = false;
+              _markerReady = false;
+              _glide.stop();
+            },
+            onStyleLoaded: _onStyleLoaded,
+            onEvent: (e) {
+              // Drop follow only on a real user gesture — programmatic moves
+              // report developerAnimation/apiAnimation, so our own camera
+              // animations don't trip this.
+              if (e is MapEventStartMoveCamera &&
+                  e.reason == CameraChangeReason.apiGesture) {
+                widget.onGesture?.call();
+              }
+            },
+            // Live map only: shown once the map is turned away from north and
+            // not following (hand-panned / rotated); a tap turns it back
+            // north. While following, the map is heading-up on purpose. The
+            // read-only detail / fullscreen map has no compass.
+            children: [
+              if (!widget.fitBounds && !widget.isFollowing)
+                MapCompass(
+                  hideIfRotatedNorth: true,
+                  // Bottom-left, stacked above the recenter button: both appear
+                  // once the map is moved by hand, and both are in thumb reach.
+                  alignment: Alignment.bottomLeft,
+                  padding: EdgeInsets.only(
+                    left: kMapControlInset,
+                    bottom: kMapControlInset + widget.compassClearance,
+                  ),
+                  child: _CompassButton(colors: colors),
                 ),
-                child: _CompassButton(colors: colors),
-              ),
-          ],
-        ),
-        // Terrain-colored placeholder over the map until the style has loaded
-        // and centered, then crossfade it out — so the reveal is a smooth fade
-        // to an already-positioned map instead of a flash of the (0,0) ocean or
-        // tiles popping in. Fading a plain widget avoids platform-view opacity
-        // quirks; IgnorePointer lets gestures through once revealed.
-        IgnorePointer(
-          ignoring: _styleReady,
-          child: AnimatedOpacity(
-            opacity: _styleReady ? 0.0 : 1.0,
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeOut,
-            child: ColoredBox(color: colors.mapTerrain),
+            ],
           ),
-        ),
-      ],
-    );
+          // Terrain-colored placeholder over the map until the style has loaded
+          // and centered, then crossfade it out — so the reveal is a smooth fade
+          // to an already-positioned map instead of a flash of the (0,0) ocean or
+          // tiles popping in. Fading a plain widget avoids platform-view opacity
+          // quirks; IgnorePointer lets gestures through once revealed.
+          IgnorePointer(
+            ignoring: _styleReady,
+            child: AnimatedOpacity(
+              opacity: _styleReady ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOut,
+              child: ColoredBox(color: colors.mapTerrain),
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 
