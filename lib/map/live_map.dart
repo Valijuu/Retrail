@@ -18,6 +18,7 @@ import '../domain/route_markers.dart';
 import 'preview_projection.dart';
 import 'route_camera.dart';
 import 'route_marker_painter.dart';
+import 'route_sketch.dart';
 import '../core/theme/theme_context.dart';
 
 /// What the camera should do on a [LiveMap] update. Pure, so the follow /
@@ -133,9 +134,6 @@ const double _arrowSpacingPx = 60;
 /// 4.5dp wide, so its arrowheads scale by the same ratio.
 const double _arrowIconSize = 4.5 / 3.5;
 
-/// Endpoint marker PNGs are sized for the preview; the map's markers read a
-/// little larger (they replace the old 7dp + 3dp-ring dots).
-const double _endpointIconSize = 1.3;
 
 /// `icon-size` for a symbol image rasterised at [pixelRatio]: MapLibre sizes
 /// a registered image by its raw pixel count in dp (see the 0.19 note on the
@@ -351,6 +349,11 @@ class _LiveMapState extends State<LiveMap>
         : Geographic(lon: 0, lat: 0);
   }
 
+  /// True while the detail map is being re-framed for a new size (dialog ↔
+  /// fullscreen): the placeholder sketch — already at the new framing —
+  /// covers the native view's resize and camera jump, then fades out.
+  bool _resizeCovered = false;
+
   /// The map's laid-out size, captured in [build] so the detail map can fit
   /// the route to the real viewport (see [_fitCamera]).
   Size _viewportSize = Size.zero;
@@ -523,6 +526,26 @@ class _LiveMapState extends State<LiveMap>
   /// That's expected — attach a handler so it isn't an unhandled exception.
   void _ignoreCancel(Future<void>? future) {
     future?.catchError((Object _) {});
+  }
+
+  /// Re-applies the whole-route framing (north-up, like the first one) after
+  /// the viewport changed size, then lifts the placeholder that covered the
+  /// resize one frame later, once the native view has caught up.
+  Future<void> _refit() async {
+    final fit = _fitCamera;
+    if (!mounted || fit == null) return;
+    try {
+      await _jumpCamera(
+        center: Geographic(lon: fit.lng, lat: fit.lat),
+        zoom: fit.zoom,
+        bearing: 0,
+      );
+    } catch (_) {
+      // Uncover regardless — a slightly off camera beats a stuck placeholder.
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _resizeCovered = false);
+    });
   }
 
   /// An instant camera jump that lands on [zoom] exactly, on iOS too: there
@@ -729,7 +752,7 @@ class _LiveMapState extends State<LiveMap>
       sourceId: id,
       layout: {
         'icon-image': imageId,
-        'icon-size': _iconSize(_endpointIconSize, pixelRatio),
+        'icon-size': _iconSize(mapEndpointMarkerScale, pixelRatio),
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
       },
@@ -800,7 +823,15 @@ class _LiveMapState extends State<LiveMap>
     final dark = Theme.of(context).brightness == Brightness.dark;
     final colors = context.colors;
     return LayoutBuilder(builder: (context, constraints) {
-      _viewportSize = constraints.biggest;
+      final size = constraints.biggest;
+      // The detail dialog moves this same map into fullscreen and back (one
+      // GlobalKey): re-frame the whole route for the new size once laid out.
+      if (widget.fitBounds && _sourcesReady && size != _viewportSize) {
+        _resizeCovered = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _refit());
+      }
+      final covered = !_styleReady || _resizeCovered;
+      _viewportSize = size;
       final fit = widget.fitBounds ? _fitCamera : null;
       return Stack(
         fit: StackFit.expand,
@@ -875,12 +906,21 @@ class _LiveMapState extends State<LiveMap>
           // tiles popping in. Fading a plain widget avoids platform-view opacity
           // quirks; IgnorePointer lets gestures through once revealed.
           IgnorePointer(
-            ignoring: _styleReady,
+            ignoring: !covered,
             child: AnimatedOpacity(
-              opacity: _styleReady ? 0.0 : 1.0,
-              duration: const Duration(milliseconds: 350),
+              opacity: covered ? 1.0 : 0.0,
+              // Covering is instant (a resize must not show through); only
+              // the reveal fades.
+              duration: covered
+                  ? Duration.zero
+                  : const Duration(milliseconds: 350),
               curve: Curves.easeOut,
-              child: ColoredBox(color: colors.mapTerrain),
+              // The detail map shows its route as a flat sketch right away —
+              // framed exactly like the map it fades into — and keeps it if
+              // the style never loads (offline with nothing cached).
+              child: fit != null
+                  ? RouteSketch(points: widget.points, camera: fit)
+                  : ColoredBox(color: colors.mapTerrain),
             ),
           ),
         ],

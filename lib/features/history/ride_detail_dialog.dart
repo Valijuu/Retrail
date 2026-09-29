@@ -34,6 +34,11 @@ class RideDetailDialog extends StatefulWidget {
 class _RideDetailDialogState extends State<RideDetailDialog> {
   bool _fullscreen = false;
 
+  /// Keys the ONE map this dialog owns, so toggling fullscreen moves it
+  /// (state + native view, style and tiles already loaded) between the two
+  /// layouts instead of starting a second native map each time.
+  final _mapKey = GlobalKey();
+
   /// The map's height on roomy screens (the original's fixed size).
   static const double _mapMaxHeight = 330;
 
@@ -70,19 +75,19 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
     final comment = (ride.comment?.trim().isNotEmpty ?? false)
         ? ride.comment!
         : null;
+    final map = LiveMap(
+      key: _mapKey,
+      points: points,
+      fitBounds: true,
+      activityType: activity,
+    );
 
     if (_fullscreen && points.isNotEmpty) {
       return Dialog.fullscreen(
         backgroundColor: context.colors.scrim,
         child: Stack(
           children: [
-            Positioned.fill(
-              child: LiveMap(
-                points: points,
-                fitBounds: true,
-                activityType: activity,
-              ),
-            ),
+            Positioned.fill(child: map),
             Positioned(
               top: 16,
               right: 16,
@@ -136,11 +141,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                                   ),
                                 ),
                               )
-                            : LiveMap(
-                                points: points,
-                                fitBounds: true,
-                                activityType: activity,
-                              ),
+                            : map,
                       ),
                     ),
                     if (points.isNotEmpty)

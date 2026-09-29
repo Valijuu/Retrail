@@ -27,8 +27,8 @@ Future<void> main() async {
       [DeviceOrientation.portraitUp]);
 
   // Match the removed 256 MB raster tile cache so revisited basemap tiles
-  // render offline mid-ride. Never block app start on cache config — the call
-  // throws UnimplementedError on non-Android (same as the map widget).
+  // render offline mid-ride (Android and iOS). Never block app start on cache
+  // config — it throws on platforms without a native map (e.g. tests).
   try {
     final offline = await OfflineManager.createInstance();
     await offline.setMaximumAmbientCacheSize(bytes: 256 * 1024 * 1024);

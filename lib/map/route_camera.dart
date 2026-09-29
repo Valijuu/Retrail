@@ -66,3 +66,27 @@ RouteCamera? fitRouteCamera(
     zoom: math.min(zoom, maxPreviewZoom),
   );
 }
+
+/// Projects [points] into a [width] × [height] box exactly where a MapLibre
+/// map of that size at [camera] draws them: the camera centre lands on the
+/// box centre, x grows east, y grows south (Web-Mercator via [latYFrac]), all
+/// scaled by MapLibre's 512-px world at `camera.zoom`. Keeps route order.
+///
+/// Used by the ride detail map's terrain placeholder sketch, so the sketch
+/// lines up with the live map it cross-fades into.
+List<PreviewOffset> cameraOffsets(
+  List<RoutePoint> points,
+  RouteCamera camera, {
+  required double width,
+  required double height,
+}) {
+  final worldPx =
+      _mapLibreWorldSizeAtZoom0Px * math.pow(2, camera.zoom).toDouble();
+  return [
+    for (final p in points)
+      (
+        x: width / 2 + worldPx * (p.lng - camera.lng) / _degreesOfLongitude,
+        y: height / 2 + worldPx * (latYFrac(p.lat) - latYFrac(camera.lat)),
+      ),
+  ];
+}

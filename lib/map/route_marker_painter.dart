@@ -49,28 +49,46 @@ const double _loopFlagRadius = 5;
 /// Squares per side of the chequered finish pattern.
 const int _checks = 4;
 
-/// Paints the direction arrows along [offsets], then the endpoint markers for
-/// [style] on top. Call after the route line has been drawn.
+/// How much larger the live map draws the endpoint markers than the preview
+/// does (they replace the old 7dp + 3dp-ring dots). Shared with the detail
+/// map's placeholder sketch so it matches the map it fades into.
+const double mapEndpointMarkerScale = 1.3;
+
+/// Paints the direction arrows along [offsets] (unless [arrows] is false),
+/// then the endpoint markers for [style] on top, scaled by [markerScale].
+/// Call after the route line has been drawn.
 void paintRouteDecorations(
   ui.Canvas canvas,
   List<PreviewOffset> offsets,
   RouteEndpointStyle style,
-  AppColors colors,
-) {
-  paintRouteArrows(canvas, offsets, colors);
+  AppColors colors, {
+  bool arrows = true,
+  double markerScale = 1,
+}) {
+  if (arrows) paintRouteArrows(canvas, offsets, colors);
   if (offsets.isEmpty) return;
   final start = ui.Offset(offsets.first.x, offsets.first.y);
   final end = ui.Offset(offsets.last.x, offsets.last.y);
+  void marker(
+      ui.Offset at, void Function(ui.Canvas, ui.Offset, AppColors) paint) {
+    canvas
+      ..save()
+      ..translate(at.dx, at.dy)
+      ..scale(markerScale);
+    paint(canvas, ui.Offset.zero, colors);
+    canvas.restore();
+  }
+
   switch (style) {
     case RouteEndpointStyle.none:
       break;
     case RouteEndpointStyle.startOnly:
-      paintStartRing(canvas, start, colors);
+      marker(start, paintStartRing);
     case RouteEndpointStyle.open:
-      paintStartRing(canvas, start, colors);
-      paintFinishFlag(canvas, end, colors);
+      marker(start, paintStartRing);
+      marker(end, paintFinishFlag);
     case RouteEndpointStyle.loop:
-      paintLoopMarker(canvas, start, colors);
+      marker(start, paintLoopMarker);
   }
 }
 

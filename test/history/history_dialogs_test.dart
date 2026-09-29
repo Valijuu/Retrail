@@ -208,6 +208,49 @@ void main() {
     });
 
     testWidgets(
+        'fullscreen keeps the SAME map (state moves, no second native map '
+        'to start) — there and back', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+          Trackpoint(
+              trackpointId: 0,
+              rideId: 1,
+              latitude: 52.0,
+              longitude: 13.0,
+              timestamp: 0),
+          Trackpoint(
+              trackpointId: 1,
+              rideId: 1,
+              latitude: 52.02,
+              longitude: 13.0,
+              timestamp: 1),
+        ]),
+        stats: const RideStats(
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15),
+        onDismiss: () {},
+      )));
+      final dialogMap = tester.state(find.byType(LiveMap));
+
+      await tester.tap(find.byIcon(Icons.fullscreen));
+      await tester.pump();
+      expect(identical(tester.state(find.byType(LiveMap)), dialogMap), isTrue,
+          reason: 'fullscreen must reuse the dialog map');
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pump();
+      expect(identical(tester.state(find.byType(LiveMap)), dialogMap), isTrue,
+          reason: 'closing fullscreen must keep the same map');
+    });
+
+    testWidgets(
         'a rebuild hands the map (dialog and fullscreen) the SAME points '
         'list, so it does not re-push the route source (issue #42)',
         (tester) async {
