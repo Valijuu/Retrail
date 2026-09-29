@@ -193,7 +193,10 @@ Selected chip uses `primaryContainer`/`onPrimaryContainer` + 1.5dp primary borde
 Full-width rounded dialog opened on row tap:
 - **Map preview** (330dp, top-rounded): `LiveMap(points: …)` with gestures, **start green / end red**
   markers (no live/current marker). A **fullscreen** button (top-end) opens a black full-screen
-  dialog with the same gesture-enabled `LiveMap` + a close button. Both buttons are round, with a
+  dialog with the same gesture-enabled `LiveMap` + a close button — the SAME map instance (one
+  `GlobalKey`), moved, not a second native map, so fullscreen opens instantly. The map frames the
+  whole route (`fitRouteCamera`), has no compass, and shows the route as a terrain sketch while it
+  loads / when offline without a cached style (see `lib/map/CLAUDE.md`). Both buttons are round, with a
   translucent app-surface face (`surface` at 60 % — the map shows through) and a `primary` icon,
   following light/dark mode like the live map's recenter button. "No route" placeholder when empty.
 - Date/time (`formatRideDate`), activity (icon+label) when set, title (when set), italic comment.
