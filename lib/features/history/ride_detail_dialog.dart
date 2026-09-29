@@ -41,6 +41,20 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
   /// leaving room for the details and the Close button.
   static const double _mapMaxHeightShare = 0.4;
 
+  /// The route, built once per ride: a fresh list on every build made the map
+  /// re-push its route source on each dialog rebuild (issue #42).
+  late List<RoutePoint> _points = _routeOf(widget.rwt);
+
+  static List<RoutePoint> _routeOf(RideWithTrackpoints rwt) => [
+        for (final tp in rwt.trackpoints) (lat: tp.latitude, lng: tp.longitude),
+      ];
+
+  @override
+  void didUpdateWidget(RideDetailDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.rwt != oldWidget.rwt) _points = _routeOf(widget.rwt);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -48,10 +62,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
     final text = Theme.of(context).textTheme;
     final locale = Localizations.localeOf(context).toString();
     final ride = widget.rwt.ride;
-    final points = <RoutePoint>[
-      for (final tp in widget.rwt.trackpoints)
-        (lat: tp.latitude, lng: tp.longitude),
-    ];
+    final points = _points;
     final activity = ActivityType.fromId(ride.typ);
     final title = (ride.description?.trim().isNotEmpty ?? false)
         ? ride.description!

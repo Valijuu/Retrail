@@ -412,7 +412,7 @@ class _LiveMapState extends State<LiveMap>
     if (decision.instant) {
       // Jump, don't fly: iOS flies (0,0)→rider zoomed far out and reports that
       // mid-flight zoom, which the next passive follow would then keep.
-      _ignoreCancel(_controller?.moveCamera(
+      _ignoreCancel(_jumpCamera(
         center: _centerPosition,
         zoom: widget.initialZoom,
         bearing: _heading.bearing ?? 0,
@@ -523,6 +523,23 @@ class _LiveMapState extends State<LiveMap>
   /// That's expected — attach a handler so it isn't an unhandled exception.
   void _ignoreCancel(Future<void>? future) {
     future?.catchError((Object _) {});
+  }
+
+  /// An instant camera jump that lands on [zoom] exactly, on iOS too: there
+  /// maplibre's moveCamera applies the zoom at the OLD centre (as an altitude)
+  /// before moving, so a jump across latitudes — (0,0) init → rider at 49° N —
+  /// came out ~0.6 zoom levels short (issue #41). Moving first and zooming
+  /// second sets the zoom at the new centre (the centre is repeated so neither
+  /// move relies on unset fields); on Android it is just two moves.
+  Future<void> _jumpCamera({
+    required Geographic center,
+    required double zoom,
+    double? bearing,
+  }) async {
+    final controller = _controller;
+    if (controller == null) return;
+    await controller.moveCamera(center: center, bearing: bearing);
+    await controller.moveCamera(center: center, zoom: zoom);
   }
 
   Future<void> _onStyleLoaded(StyleController style) async {
@@ -655,7 +672,7 @@ class _LiveMapState extends State<LiveMap>
       // the fit mid-flight and left the camera on the route's end (the map's
       // init center). Same framing on both platforms, applied before reveal.
       try {
-        await _controller?.moveCamera(
+        await _jumpCamera(
           center: Geographic(lon: fit.lng, lat: fit.lat),
           zoom: fit.zoom,
         );
@@ -673,7 +690,7 @@ class _LiveMapState extends State<LiveMap>
       final c = widget.current ??
           (widget.points.isNotEmpty ? widget.points.last : null);
       if (c != null) {
-        _ignoreCancel(_controller?.moveCamera(
+        _ignoreCancel(_jumpCamera(
           center: Geographic(lon: c.lng, lat: c.lat),
           zoom: widget.initialZoom,
           bearing: _heading.bearing,

@@ -207,6 +207,45 @@ void main() {
       expect(map.fitBounds, isTrue); // whole route, not centred on the last point
     });
 
+    testWidgets(
+        'a rebuild hands the map the SAME points list, so it does not '
+        're-push the route source (issue #42)', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+          Trackpoint(
+              trackpointId: 0,
+              rideId: 1,
+              latitude: 52.0,
+              longitude: 13.0,
+              timestamp: 0),
+          Trackpoint(
+              trackpointId: 1,
+              rideId: 1,
+              latitude: 52.02,
+              longitude: 13.0,
+              timestamp: 1),
+        ]),
+        stats: const RideStats(
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15),
+        onDismiss: () {},
+      )));
+      final before = tester.widget<LiveMap>(find.byType(LiveMap)).points;
+
+      tester.element(find.byType(RideDetailDialog)).markNeedsBuild();
+      await tester.pump();
+
+      final after = tester.widget<LiveMap>(find.byType(LiveMap)).points;
+      expect(identical(before, after), isTrue);
+    });
+
     for (final (brightness, palette) in [
       (Brightness.light, AppColors.light),
       (Brightness.dark, AppColors.dark),
