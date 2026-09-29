@@ -208,8 +208,9 @@ void main() {
     });
 
     testWidgets(
-        'a rebuild hands the map the SAME points list, so it does not '
-        're-push the route source (issue #42)', (tester) async {
+        'a rebuild hands the map (dialog and fullscreen) the SAME points '
+        'list, so it does not re-push the route source (issue #42)',
+        (tester) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -244,6 +245,19 @@ void main() {
 
       final after = tester.widget<LiveMap>(find.byType(LiveMap)).points;
       expect(identical(before, after), isTrue);
+
+      // Fullscreen: same list as the dialog map, and stable across rebuilds.
+      await tester.tap(find.byIcon(Icons.fullscreen));
+      await tester.pump();
+      final fullscreen = tester.widget<LiveMap>(find.byType(LiveMap)).points;
+      expect(identical(before, fullscreen), isTrue);
+
+      tester.element(find.byType(RideDetailDialog)).markNeedsBuild();
+      await tester.pump();
+      expect(
+          identical(
+              fullscreen, tester.widget<LiveMap>(find.byType(LiveMap)).points),
+          isTrue);
     });
 
     for (final (brightness, palette) in [
