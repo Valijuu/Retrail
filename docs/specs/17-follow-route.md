@@ -23,16 +23,16 @@ memorise the route. Recording the repeat ride is **optional**: the rider chooses
 - Riding a route in reverse as a supported mode (progress assumes the recorded direction).
 
 ## A. Entry flow
-Two entry points, both shown only when the ride has a route (≥ 2 points; the launcher additionally ignores references with < 2 points) and both leading into the same flow:
+Two entry points, both leading into the same flow. The detail button needs a route with ≥ 2 points; the card menu entry needs a route with distance > 0 (a positive distance implies ≥ 2 distinct points). The launcher additionally ignores references with < 2 points.
 - **Ride detail dialog:** a `FilledButton.tonal` with a route icon, **"Follow route"** (`followRouteAction`), in the bottom action row, an `OverflowBar` with Follow route + the existing "Close" `TextButton` (they stack on narrow widths). It is **not** shown in the detail map's fullscreen view.
-- **History card ⋮ menu:** a new **first** entry "Follow route" (same icon, same label) above Edit / Delete, gated on the ride having a route.
+- **History card ⋮ menu:** a new **first** entry "Follow route" (same icon, same label) above Edit / Delete, gated on the ride having a route with distance > 0.
 - Not added: a separate card icon (it would be easy to confuse with the existing ↱ "navigate to start" icon, which stays unchanged), and no entry on the Home "recent rides" rows (they have no menu; the path there is via the detail).
 
 Flow:
 1. The rider taps either entry point.
 2. That opens a confirmation dialog **"Record this ride?"** (`followRouteRecordTitle` / `…Body`) with two actions:
    - **Record** → the normal start path (`/main/timer` → `/main/ride`) with the location permission gate as today; `routeFollowProvider.start(reference)` runs only after the gate grants, right before the countdown. While a ride is already recording, the entry goes straight to that ride with no reference.
-   - **Just follow** → `routeFollowProvider.start(reference)` → `/main/follow` (new child route of `main`, next to `timer`/`ride`). Location permission gate as today (foreground permission is enough).
+   - **Just follow** → `routeFollowProvider.start(reference)` → `/main/follow` (new child route of `main`, next to `timer`/`ride`). The same permission gate as recording (`prepare()`: location, the notification permission and, on iOS, the background escalation).
    - Dismissing the dialog does nothing.
 
 ## B. Domain — `lib/domain/route_progress.dart` (pure, EXACT via `tdd-dart`)
@@ -58,11 +58,11 @@ Test list (minimum): straight line; join mid-route; position beside the route (o
 - `RouteFollowState` (immutable, `copyWith`): `reference` (points), `rideTitle`, `progress` (`RouteProgress?`), `recording` (bool), `lastFix`, `trail` and `locationServiceEnabled`.
 - `start(reference, title, {required bool recording})`, `stop()`.
 - Position source:
-  - **Recording:** listens to `RideTracker`'s published location (read-only). The tracker itself is not touched.
-  - **Follow-only:** uses the same permission gate as recording (`RideRecordingController.prepare()`), then subscribes to `LocationSource` while `FollowRouteScreen` is mounted and in the foreground. Pauses on `AppLifecycleState.paused`, resumes on `resumed`; the location-service flag is seeded on resume.
+  - **Recording:** listens to `RideTracker`'s published location (read-only), only while `isTracking` is true — the tracker's display-only seed location never counts as progress. The tracker itself is not touched.
+  - **Follow-only:** uses the same permission gate as recording (`RideRecordingController.prepare()`), then subscribes to `LocationSource` while `FollowRouteScreen` is mounted and in the foreground. Pauses on `AppLifecycleState.paused` (not on `inactive` alone) and when the screen is disposed, resumes on `resumed`; the location-service flag is seeded on resume. The `lastKnown` seed is ignored when older than `followMaxSeedAge` (2 minutes, by its capture time). A fix-stream error sets `locationServiceEnabled: false`, so the rider sees the location banner; the next accepted fix sets it back.
 - Fixes with accuracy worse than 30 m are ignored. Recorder re-emits of the same fix are skipped.
 - Each fix → `RouteProgress.next(...)` → new state.
-- Cleared by: Home's normal start, the ride screen's exit, and the follow screen's End. It is **not** cleared on widget disposal.
+- Cleared by: Home's normal start, the ride screen's exit, and the follow screen's End. It is **not** cleared on widget disposal (the follow screen's disposal only pauses the feed).
 
 ## D. Map — `LiveMap` (additive)
 New optional params `reference` (`RouteTrack?`, default null), `referenceProgressM` (`double?`) and `headingTrail` (heading-up input for the follow-only screen, no line drawn), plus the constant `kReferenceRouteOpacity`.
@@ -77,20 +77,20 @@ All strings via ARB (en + de); colours from `AppColors`.
 
 ### E1. Recording — existing `ActiveRideScreen`
 - The map gets `reference` / `referenceProgressM` from `routeFollowProvider`.
-- Above `RideStatsPanel`, a slim line **"X km to go"** (`followRemaining`, formatted like the other distances) shows only while a reference is set.
-- Banner **"Off route"** (`followOffRouteBanner`, reuses `RideWarningBanner`) below the existing offline/location banners. At the start, while the rider hasn't reached the route yet, it reads **"X m to the route"** (`followDistanceToRoute`).
+- Above `RideStatsPanel`, a slim line **"X km to go"** (`followRemaining`, formatted like the other distances) shows only while a reference is set. Before the first fix it shows the whole route's length.
+- Banner **"Off route"** (`followOffRouteBanner`, reuses `RideWarningBanner`) below the existing offline/location banners. At the start, while the rider hasn't reached the route yet, it reads **"X m to the route"** / „X m bis zur Strecke" (`followDistanceToRoute`, `formatDistanceToRoute`: whole metres under 1 km, `X.XX km` from there on).
 - Near the finish: no auto-stop; the rider stops the ride as always.
 - The follow chrome is frozen during the exit transition.
 - Without a reference: pixel-identical to today.
 
 ### E2. Follow-only — new `FollowRouteScreen` (`lib/features/follow/`)
-- Reuses `RideAppBar` (title **"Follow route"**, `followRouteTitle`), the banners, and `RideMapArea` (heading-up follow, recenter, compass).
+- Builds its own header row (back arrow, title **"Follow route"**, `followRouteTitle`). It does **not** reuse `RideAppBar`, whose title and Live badge are fixed. Reuses the banners and `RideMapArea` (heading-up follow, recenter, compass).
 - **Ride title** shown under the app-bar title: `ride.description` (the title set in the ride edit sheet). When it's empty the line is hidden, the same as the detail dialog does (`ride_detail_dialog.dart`).
-- Bottom panel: **"X km to go"** + **End** button.
+- Bottom panel: **"X km to go"** (the route's length before the first fix) + **End** button.
 - **End** asks first: dialog **"End following?"** (`followEndConfirmTitle`, Cancel / End). Back/system-back opens the same dialog.
 - Not on the route yet (> 30 m): banner "X m to the route" plus a **"Navigate to start"** button in the panel → the existing `navigateTo(...)` from `navigation_chooser.dart` (external app). Both disappear once the rider is on the route.
 - Finish reached: a "Finish reached" hint in the panel (`followFinished`). Ending stays manual.
-- Location off: the existing location-off banner, the reference stays visible, progress freezes.
+- Location off: its own location-off banner (`followLocationOffBanner`, "your position can't be shown" — nothing is recorded here), the reference stays visible, progress freezes. Tapping it opens the location settings.
 - Offline: the existing offline banner; the reference is drawn as in the detail map.
 - The follow chrome is frozen during the exit transition.
 
@@ -100,6 +100,10 @@ All strings via ARB (en + de); colours from `AppColors`.
 - Widgets (Red-Green-Refactor): detail "Follow route" button (hidden < 2 points, absent in fullscreen) and history-card ⋮ entry, both → record dialog → routing; `FollowRouteScreen` (title, ride title, remaining, end confirmation, navigate-to-start visibility, finished hint); `ActiveRideScreen` with a reference (remaining line, off-route banner) **and without one (unchanged)**.
 - `LiveMap` reference layers → alongside the implementation (platform view).
 - On-device acceptance, Android + iOS: follow-only and recording, joining mid-route, a loop route, off-route and back, offline.
+
+## Open follow-ups
+- #48 — keep the screen on while following.
+- #49 — on-device checks: reference markers, reveal cross-fade, long-route performance.
 
 ## Later — Ghost rider (not in this spec)
 Compare the repeat ride against the reference in real time: a second "ghost" marker moves along the
