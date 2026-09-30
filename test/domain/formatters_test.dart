@@ -109,4 +109,22 @@ void main() {
       expect(formatShortDistanceKm(0), '0.0 km');
     });
   });
+
+  group('formatDistanceToRoute', () {
+    test("formatDistanceToRoute: 0 m → '0 m'", () {
+      expect(formatDistanceToRoute(0), '0 m');
+    });
+    test("formatDistanceToRoute: under 1 km rounds to whole metres — 249.6 m → '250 m'", () {
+      expect(formatDistanceToRoute(249.6), '250 m');
+    });
+    test("formatDistanceToRoute: just under 1 km stays in metres — 999.4 m → '999 m'", () {
+      expect(formatDistanceToRoute(999.4), '999 m');
+    });
+    test("formatDistanceToRoute: 1 km and up uses km — 1000 m → '1.00 km'", () {
+      expect(formatDistanceToRoute(1000), '1.00 km');
+    });
+    test("formatDistanceToRoute: German — 1500 m → '1,50 km'", () {
+      expect(formatDistanceToRoute(1500, locale: 'de'), '1,50 km');
+    });
+  });
 }

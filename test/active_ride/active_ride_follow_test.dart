@@ -259,7 +259,7 @@ void main() {
         state: tracking,
         follow: followState(
             progress: progress(joined: false, off: true, offset: 250)));
-    expect(find.text('0.25 km to the route'), findsOneWidget);
+    expect(find.text('250 m to the route'), findsOneWidget);
   });
 
   testWidgets('off route after joining: off-route banner', (tester) async {

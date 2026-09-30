@@ -135,7 +135,7 @@ void main() {
   testWidgets('not on the route yet: banner + Navigate to start',
       (tester) async {
     await pump(tester, _state(progress: _p(joined: false, off: true, offset: 250)));
-    expect(find.text('0.25 km to the route'), findsOneWidget);
+    expect(find.text('250 m to the route'), findsOneWidget);
     await tester.tap(find.text('Navigate to start'));
     await tester.pump();
     expect(launcher.launches.first.$1, 48.0);

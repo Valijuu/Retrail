@@ -144,3 +144,13 @@ String formatSpeedKmh(double? kmh, {String? locale}) {
       : formatDecimal(kmh, _speedDecimalPlaces, locale: locale);
   return '$value $_kmhUnit';
 }
+
+const int _wholeMetreDecimalPlaces = 0;
+const String _metresUnit = 'm';
+
+/// Distance to the followed route for the follow banner (Spec 17): whole
+/// metres under 1 km (`250 m`), [formatDistanceKm] from there on.
+String formatDistanceToRoute(double metres, {String? locale}) =>
+    metres < _metresPerKm
+        ? '${formatDecimal(metres, _wholeMetreDecimalPlaces, locale: locale)} $_metresUnit'
+        : formatDistanceKm(metres, locale: locale);

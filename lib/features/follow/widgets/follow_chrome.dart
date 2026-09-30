@@ -47,6 +47,6 @@ Widget? followBanner(BuildContext context, RouteProgress? progress) {
     label: progress.hasJoined
         ? l10n.followOffRouteBanner
         : l10n.followDistanceToRoute(
-            formatDistanceKm(progress.offsetM, locale: locale)),
+            formatDistanceToRoute(progress.offsetM, locale: locale)),
   );
 }
