@@ -31,8 +31,17 @@ FollowDirection directionAtJoin(
   return FollowDirection.undecided;
 }
 
+/// Forward advance at which reverse reaching [followDirectionDecisionM] still
+/// decides forward.
+const double followDirectionTieBandM = 15;
+
 /// Forward/reverse once either advance reaches [followDirectionDecisionM]
 /// (forward wins when both reach it in the same fix), else undecided.
+///
+/// On a stretch where the route runs both ways along the same road (an
+/// out-and-back, a lollipop's stem) both trackers advance, so reverse
+/// reaching the threshold while forward has advanced [followDirectionTieBandM]
+/// or more is a tie, and forward is the default.
 FollowDirection decideDirection({
   required double forwardAdvanceM,
   required double reverseAdvanceM,
@@ -41,7 +50,9 @@ FollowDirection decideDirection({
     return FollowDirection.forward;
   }
   if (reverseAdvanceM >= followDirectionDecisionM) {
-    return FollowDirection.reverse;
+    return forwardAdvanceM >= followDirectionTieBandM
+        ? FollowDirection.forward
+        : FollowDirection.reverse;
   }
   return FollowDirection.undecided;
 }

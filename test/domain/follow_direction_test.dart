@@ -107,6 +107,22 @@ void main() {
         FollowDirection.forward,
       );
     });
+
+    test('reverse reaching the threshold while forward is at 15 is forward',
+        () {
+      expect(
+        decideDirection(forwardAdvanceM: 15, reverseAdvanceM: 25),
+        FollowDirection.forward,
+      );
+    });
+
+    test('reverse reaching the threshold while forward is at 14.9 is reverse',
+        () {
+      expect(
+        decideDirection(forwardAdvanceM: 14.9, reverseAdvanceM: 25),
+        FollowDirection.reverse,
+      );
+    });
   });
 
   group('RiddenRange', () {

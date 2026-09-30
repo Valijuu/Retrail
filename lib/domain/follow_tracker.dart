@@ -39,9 +39,13 @@ class FollowTracker {
     this._reverseRange,
     double forwardJoinM = 0,
     double reverseJoinM = 0,
+    double forwardAdvanceM = 0,
+    double reverseAdvanceM = 0,
     this._lapFinished = false,
   }) : _fwdJoinM = forwardJoinM,
-       _revJoinM = reverseJoinM;
+       _revJoinM = reverseJoinM,
+       _fwdAdvM = forwardAdvanceM,
+       _revAdvM = reverseAdvanceM;
 
   factory FollowTracker.start(
     RouteTrack track, {
@@ -83,6 +87,10 @@ class FollowTracker {
 
   /// Both along values at the join (moved by pass jumps while undecided).
   final double _fwdJoinM, _revJoinM;
+
+  /// While undecided: how far each tracker has advanced since the join,
+  /// fix by fix and never more than the rider moved (Spec 18).
+  final double _fwdAdvM, _revAdvM;
 
   /// On a loop: the lap from the join has been finished. It stays finished
   /// until a [flip] starts a fresh lap.
@@ -190,9 +198,12 @@ class FollowTracker {
     final revRange = revJumped
         ? RiddenRange.at(revOriginalM)
         : _grown(_reverseRange!, rev, revOriginalM);
-    // A jump is re-based into the join value, so it adds no advance.
+    // A jump is re-based into the join value: it counts nothing towards a
+    // loop's lap.
     final fwdJoinM = fwdJumped ? _fwdJoinM + fwdDelta : _fwdJoinM;
     final revJoinM = revJumped ? _revJoinM + revDelta : _revJoinM;
+    final fwdAdvM = _fwdAdvM + _advancedM(fwdDelta, moved);
+    final revAdvM = _revAdvM + _advancedM(revDelta, moved);
     final next = _with(
       progress: fwd,
       reverseProgress: rev,
@@ -200,13 +211,12 @@ class FollowTracker {
       reverseRange: revRange,
       forwardJoinM: fwdJoinM,
       reverseJoinM: revJoinM,
+      forwardAdvanceM: fwdAdvM,
+      reverseAdvanceM: revAdvM,
       lastPoint: p,
     );
     return next._decide(
-      decideDirection(
-        forwardAdvanceM: fwd.alongM - fwdJoinM,
-        reverseAdvanceM: rev.alongM - revJoinM,
-      ),
+      decideDirection(forwardAdvanceM: fwdAdvM, reverseAdvanceM: revAdvM),
     );
   }
 
@@ -253,6 +263,12 @@ class FollowTracker {
     RouteProgress at,
     double originalM,
   ) => at.isOffRoute ? range : range.extend(originalM);
+
+  /// The advance a progress change of [deltaM] adds: none backwards or on a
+  /// jump, and at most [movedM], so moving to another pass of a road ridden
+  /// both ways adds no more than the rider moved.
+  static double _advancedM(double deltaM, double movedM) =>
+      _isJump(deltaM, movedM) ? 0 : math.min(math.max(deltaM, 0), movedM);
 
   static bool _isJump(double deltaM, double movedM) =>
       deltaM.abs() > movedM + _jumpSlackM;
@@ -337,6 +353,8 @@ class FollowTracker {
     RiddenRange? range,
     double? forwardJoinM,
     double? reverseJoinM,
+    double? forwardAdvanceM,
+    double? reverseAdvanceM,
     RiddenRange? forwardRange,
     RiddenRange? reverseRange,
     LatLng? lastPoint,
@@ -354,6 +372,8 @@ class FollowTracker {
     reverseProgress: reverseProgress ?? _reverseProgress,
     forwardJoinM: forwardJoinM ?? _fwdJoinM,
     reverseJoinM: reverseJoinM ?? _revJoinM,
+    forwardAdvanceM: forwardAdvanceM ?? _fwdAdvM,
+    reverseAdvanceM: reverseAdvanceM ?? _revAdvM,
     forwardRange: forwardRange ?? _forwardRange,
     reverseRange: reverseRange ?? _reverseRange,
     lapFinished: lapFinished ?? _lapFinished,

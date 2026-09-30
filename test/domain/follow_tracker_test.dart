@@ -52,6 +52,31 @@ final _fullLap = [
   for (var e = 90.0; e >= 60; e -= 10) at(0, e),
 ];
 
+/// An out-and-back: 200 m north, then back south 3 m east of the way out.
+final _outAndBack = [at(0, 0), at(200, 0), at(0, 3)];
+
+/// A lollipop: a 300 m stem north, a 200 m square loop east at its top, then
+/// the stem back to the start. L = 1400 m.
+final _lollipop = [
+  at(0, 0),
+  at(300, 0),
+  at(500, 0),
+  at(500, 200),
+  at(300, 200),
+  at(300, 0),
+  at(0, 0),
+];
+
+/// Joins [_lollipop] at north 10 and rides it all the way round back to the
+/// join, 10 m per fix.
+final _lollipopLap = [
+  for (var n = 10.0; n <= 500; n += 10) at(n, 0),
+  for (var e = 10.0; e <= 200; e += 10) at(500, e),
+  for (var n = 490.0; n >= 300; n -= 10) at(n, 200),
+  for (var e = 190.0; e >= 0; e -= 10) at(300, e),
+  for (var n = 290.0; n >= 10; n -= 10) at(n, 0),
+];
+
 void main() {
   group('FollowTracker', () {
     test('join at the start of an open route → forward', () {
@@ -462,5 +487,32 @@ void main() {
       // The jump is re-based into the join: the lap less the 30 m ridden.
       expect(j.progress!.remainingM, closeTo(365, 0.5));
     });
+
+    for (final joinM in <double>[2, 5, 8, 12, 20]) {
+      test('out-and-back joined ${joinM.round()} m past its start and ridden forward to '
+          '50 → never reverse, forward', () {
+        final trace = _trace(_outAndBack, [
+          at(joinM, 0),
+          for (final n in <double>[20, 30, 40, 50])
+            if (n > joinM) at(n, 0),
+        ]);
+        for (final t in trace) {
+          expect(t.direction, isNot(FollowDirection.reverse));
+        }
+        expect(trace.last.direction, FollowDirection.forward);
+      });
+    }
+
+    test('lollipop joined at north 10 and ridden round → forward, remaining '
+        'at most one lap, finished back at the join', () {
+      final trace = _trace(_lollipop, _lollipopLap);
+      final lengthM = trace.first.track.lengthM;
+      for (final t in trace) {
+        expect(t.direction, isNot(FollowDirection.reverse));
+        expect(t.progress!.remainingM, lessThanOrEqualTo(lengthM));
+      }
+      expect(trace.last.progress!.isFinished, isTrue);
+    });
+
   });
 }
