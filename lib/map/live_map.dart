@@ -150,8 +150,8 @@ String _multiLineGeoJson(List<List<RoutePoint>> segments) {
 /// nothing. [drawn] is the reference whose sources the current style load
 /// created (null = none exist, so any push would hit a missing source — a
 /// native crash on Android, see `_sourcesReady`); [current] is the widget's
-/// reference now. A replaced reference (a flip) redraws the existing sources; one that
-/// went away pushes nothing (the screen is leaving).
+/// reference now. A replaced reference (a flip) redraws the existing sources;
+/// one that went away pushes nothing (the screen is leaving).
 RouteTrack? referencePushTarget({
   required RouteTrack? drawn,
   required RouteTrack? current,
@@ -699,7 +699,8 @@ class _LiveMapState extends State<LiveMap>
   /// (`_style` nulled) or a newer style loaded meanwhile (brightness rebuild).
   /// [_onStyleLoaded] and its helpers check this after every await, so an
   /// old load can't add layers to a dead map or set the ready flags
-  /// (`_sourcesReady`, `_markerReady`, `_drawnReference`, `_styleReady`)
+  /// (`_sourcesReady`, `_markerReady`, `_drawnReference`,
+  /// `_drawnReferenceMarkers`, `_styleReady`)
   /// against the new style before its sources exist.
   bool _superseded(StyleController style) =>
       !mounted || !identical(_style, style);

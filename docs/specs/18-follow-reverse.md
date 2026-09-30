@@ -1,6 +1,6 @@
 # Spec 18: Follow a route in either direction
 
-**Status:** DRAFT. Approved in conversation on 2026-09-30.
+**Status:** IMPLEMENTED on branch feature/follow-reverse — on-device check pending (#49). Approved in conversation on 2026-09-30.
 **Depends on:** Spec 17 (follow a saved route: `RouteTrack`/`RouteProgress`, `routeFollowProvider`, reference layers in `LiveMap`, ride screen and follow screen).
 
 ## Goal
@@ -41,8 +41,25 @@ A route is a **loop** when its first and last points are within `followFinishRad
 2. **One lap from the join.** For a loop:
    - "X km to go" is the distance left to complete **one full lap from where the rider joined**: `joinAlong + L − along`, never negative.
    - "Finish reached" means the rider has ridden at least `followFinishMinShare` (90 %) of the loop's length since joining **and** is within `followFinishRadiusM` of the join point.
-3. **Ridden parts may wrap.** The ridden range is kept on the doubled route. It is drawn as **up to two segments** on the single-lap route (a range that crosses the seam splits in two), or as the whole loop once a full lap is ridden. This closes the wrap-around case of issue #51.
+3. **Ridden parts may wrap.** The ridden range is kept on the doubled route. It is drawn as **up to two segments** on the single-lap route (a range that crosses the seam splits in two), or as the whole loop once a full lap is ridden. This closes the wrap-around case of issue #51 (the shortcut case stays open).
 4. Open routes (not loops) behave exactly as described above; nothing changes for them.
+
+## Implementation
+- The logic is the pure `lib/domain/follow_tracker.dart` (`FollowTracker`, no Flutter imports); `lib/domain/follow_direction.dart` holds the helpers (`directionAtJoin`, `decideDirection`, ...). `routeFollowProvider` only feeds it fixes and exposes its state.
+- **Reverse tracker join.** The reverse tracker joins at the mirrored forward join (the same physical point seen from the other end), so both trackers start on the same spot.
+- **Pass jumps.** A progress change with `|Δalong| > moved + 60 m` is a jump to another pass of the route (a shortcut, or a loop wrap). It re-bases that tracker's join value and does **not** extend the ridden range.
+- **One ridden range per tracker** until the direction is decided. Deciding keeps the winner's range; a flip converts the range to the new orientation.
+- **Doubled laps on loops.** A finished lap is **latched** until a flip. A flip on a loop starts a fresh lap and shifts the kept range by the lap offset.
+- `RouteFollowState.displayProgress` returns null while the direction is undecided, so the remaining text shows the route's total length.
+
+## UI layout
+- On the ride screen the banners and the follow line sit in the **map area**, so the stats panel keeps a constant height with any banner (checked at iPhone 8 size).
+- The follow-only screen has a merged bottom bar: progress on the left, End on the right, and a full-width "Navigate to start" before the rider joins.
+
+## Known limitations
+- #51: the ridden overlay is one interval; loop wrap-around is handled here, but the skipped part after an accepted shortcut stays a limitation.
+- #52: a join near an out-and-back turnaround greys the unridden tip.
+- #53: approximations on gap loops and after a pass jump.
 
 ## Model
 - `RouteFollowState.track` stays the **original** route. It is the session identity that `pauseFeedFor` relies on (#50).

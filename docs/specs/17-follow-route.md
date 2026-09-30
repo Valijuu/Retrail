@@ -20,7 +20,7 @@ memorise the route. Recording the repeat ride is **optional**: the rider chooses
 - Vibration or sound when off-route (banner only).
 - GPS while backgrounded in follow-only mode (foreground only).
 - The ghost rider (see **Later**). No DB/schema change in this spec.
-- Riding a route in reverse as a supported mode (progress assumes the recorded direction).
+- Reverse riding: see Spec 18.
 
 ## A. Entry flow
 Two entry points, both leading into the same flow. Both entries are shown for any ride that has at least one trackpoint (rides with no trackpoints, "No route", show none). The launcher is the single place that decides followability: a reference with < 2 points, or with zero length (all points identical), is not followed — an `AlertDialog` (`followRouteUnavailableTitle` / `followRouteUnavailableBody`, one Close button) explains why instead. This check runs before the record question and before the "already recording" short-circuit, and sets no reference.
