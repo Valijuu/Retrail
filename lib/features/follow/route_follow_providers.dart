@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/follow_direction.dart';
+import '../../domain/follow_tracker.dart';
 import '../../domain/heading.dart' show LatLng;
 import '../../domain/route_progress.dart';
 import '../../tracking/location_fix.dart';
@@ -98,16 +99,8 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   /// clears it and turns the location banner off again.
   bool _feedFailed = false;
 
-  /// The session's route reversed, built once at [start].
-  RouteTrack? _reversedTrack;
-
-  /// While undecided: progress on the original and on the reversed route,
-  /// and their along values at the join (Spec 18).
-  RouteProgress? _fwdPrev, _revPrev;
-  double _fwdJoin = 0, _revJoin = 0;
-
-  /// The ridden stretch in original-route metres; null before the join.
-  RiddenRange? _ridden;
+  /// The session's direction and ridden-range state machine (Spec 18).
+  FollowTracker? _tracker;
 
   /// The range [RouteFollowState.ridden] was last cut from.
   RiddenRange? _drawnRidden;
@@ -133,12 +126,10 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     required bool recording,
   }) {
     _cancelFeed();
-    _resetDirection();
-    final track = RouteTrack(
-      reference,
-      distance: ref.read(distanceCalculatorProvider),
-    );
-    _reversedTrack = track.reversed();
+    final distance = ref.read(distanceCalculatorProvider);
+    final track = RouteTrack(reference, distance: distance);
+    _tracker = FollowTracker.start(track, distance: distance);
+    _drawnRidden = null;
     state = RouteFollowState(
       track: track,
       recording: recording,
@@ -148,7 +139,8 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
 
   void stop() {
     _cancelFeed();
-    _resetDirection();
+    _tracker = null;
+    _drawnRidden = null;
     state = null;
   }
 
@@ -208,10 +200,9 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     final trail = [...s.trail, p];
     final recovered = _feedFailed;
     _feedFailed = false;
-    final located = s.direction == FollowDirection.undecided
-        ? _locateUndecided(s, p)
-        : _locateDecided(s, p);
-    state = located.copyWith(
+    final tracker = _tracker!.next(p);
+    _tracker = tracker;
+    state = _following(s, tracker).copyWith(
       locationServiceEnabled: recovered ? true : null,
       lastFix: fix,
       trail: trail.length > _trailLength
@@ -220,123 +211,40 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     );
   }
 
-  /// Tracks both directions until the join zone or 25 m of movement decides.
-  RouteFollowState _locateUndecided(RouteFollowState s, LatLng p) {
-    final track = s.track, reversed = _reversedTrack!;
-    final wasJoined = _fwdPrev?.hasJoined ?? false;
-    final fwd = track.locate(p, previous: _fwdPrev);
-    final rev = reversed.locate(p, previous: _revPrev);
-    _fwdPrev = fwd;
-    _revPrev = rev;
-    if (fwd == null || rev == null || !fwd.hasJoined) {
-      return s.copyWith(progress: fwd);
-    }
-    var direction = FollowDirection.undecided;
-    if (!wasJoined) {
-      _fwdJoin = fwd.alongM;
-      _revJoin = rev.alongM;
-      _ridden = RiddenRange.at(fwd.alongM);
-      direction = directionAtJoin(
-        track,
-        p,
-        distance: ref.read(distanceCalculatorProvider),
-      );
-    } else {
-      var range = _ridden!;
-      if (!fwd.isOffRoute) range = range.extend(fwd.alongM);
-      if (!rev.isOffRoute) range = range.extend(track.lengthM - rev.alongM);
-      _ridden = range;
-      direction = decideDirection(
-        forwardAdvanceM: fwd.alongM - _fwdJoin,
-        reverseAdvanceM: rev.alongM - _revJoin,
-      );
-    }
-    if (direction == FollowDirection.undecided) {
-      return s.copyWith(progress: fwd);
-    }
-    _fwdPrev = null;
-    _revPrev = null;
-    return _oriented(
-      s,
-      direction,
-      direction == FollowDirection.reverse ? rev : fwd,
-    );
-  }
-
-  /// Follows the decided direction and grows the ridden range while on route.
-  RouteFollowState _locateDecided(RouteFollowState s, LatLng p) {
-    final progress = s.orientedTrack.locate(p, previous: s.progress);
-    if (progress != null && !progress.isOffRoute) {
-      _ridden = _ridden!.extend(
-        s.isReversed ? s.track.lengthM - progress.alongM : progress.alongM,
-      );
-    }
-    return _oriented(s, s.direction, progress);
-  }
-
-  /// [s] riding [direction] at [progress], with the ridden segment drawn from
-  /// the current range (the list is reused while the range is unchanged).
-  RouteFollowState _oriented(
-    RouteFollowState s,
-    FollowDirection direction,
-    RouteProgress? progress,
-  ) {
-    final range = _ridden!;
-    final isReverse = direction == FollowDirection.reverse;
-    var ridden = s.ridden;
-    if (direction != s.direction ||
-        range.loM != _drawnRidden?.loM ||
-        range.hiM != _drawnRidden?.hiM) {
-      final segment = s.track.segmentBetween(range.loM, range.hiM);
-      ridden = isReverse ? segment.reversed.toList() : segment;
-      _drawnRidden = range;
-    }
-    return s.copyWith(
-      direction: direction,
-      orientedTrack: isReverse ? _reversedTrack : s.track,
-      progress: progress,
-      ridden: ridden,
-    );
-  }
-
   /// Rides the route the other way from the current position. Only once the
   /// rider has joined; while undecided it forces reverse.
   void flipDirection() {
     final s = state;
-    final old = s?.progress;
-    final lastFix = s?.lastFix;
-    if (s == null || old == null || !old.hasJoined || lastFix == null) return;
-    final direction = s.isReversed
-        ? FollowDirection.forward
-        : FollowDirection.reverse;
-    final newTrack = direction == FollowDirection.reverse
-        ? _reversedTrack!
-        : s.track;
-    final lengthM = s.track.lengthM;
-    final progress = newTrack.locate(
-      (lat: lastFix.latitude, lng: lastFix.longitude),
-      previous: RouteProgress(
-        alongM: lengthM - old.alongM,
-        remainingM: old.alongM,
-        offsetM: old.offsetM,
-        isOffRoute: false,
-        isFinished: false,
-        hasJoined: true,
-      ),
-    );
-    _fwdPrev = null;
-    _revPrev = null;
-    state = _oriented(s, direction, progress);
+    final tracker = _tracker;
+    if (s == null || tracker == null) return;
+    final flipped = tracker.flip();
+    if (identical(flipped, tracker)) return;
+    _tracker = flipped;
+    state = _following(s, flipped);
   }
 
-  void _resetDirection() {
-    _reversedTrack = null;
-    _fwdPrev = null;
-    _revPrev = null;
-    _fwdJoin = 0;
-    _revJoin = 0;
-    _ridden = null;
-    _drawnRidden = null;
+  /// [s] with [tracker]'s direction and progress, and the ridden segment cut
+  /// from its range once decided (reused while the range is unchanged).
+  RouteFollowState _following(RouteFollowState s, FollowTracker tracker) {
+    final range = tracker.range;
+    var ridden = s.ridden;
+    if (tracker.direction == FollowDirection.undecided || range == null) {
+      ridden = const [];
+    } else if (tracker.direction != s.direction ||
+        range.loM != _drawnRidden?.loM ||
+        range.hiM != _drawnRidden?.hiM) {
+      final segment = s.track.segmentBetween(range.loM, range.hiM);
+      ridden = tracker.direction == FollowDirection.reverse
+          ? segment.reversed.toList()
+          : segment;
+      _drawnRidden = range;
+    }
+    return s.copyWith(
+      direction: tracker.direction,
+      orientedTrack: tracker.orientedTrack,
+      progress: tracker.progress,
+      ridden: ridden,
+    );
   }
 
   void _cancelFeed() {
