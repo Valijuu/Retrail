@@ -28,6 +28,10 @@ const double _passGapM = 2 * followOffRouteThresholdM;
 /// along the route wins.
 const double _offsetTieM = 1;
 
+/// A cut this close to a vertex (float noise from summed Haversine legs)
+/// lands on the vertex instead of adding a duplicate point.
+const double _vertexSnapM = 1e-6;
+
 /// Where the rider is relative to the reference route.
 class RouteProgress {
   const RouteProgress({
@@ -53,18 +57,24 @@ class RouteProgress {
   final bool hasJoined;
 
   @override
-  String toString() => 'RouteProgress(along: $alongM, remaining: $remainingM, '
+  String toString() =>
+      'RouteProgress(along: $alongM, remaining: $remainingM, '
       'offset: $offsetM, off: $isOffRoute, finished: $isFinished, '
       'joined: $hasJoined)';
 }
 
+/// A route cut at a distance along it: the part behind and the part ahead,
+/// sharing the cut point.
+typedef RouteSplit = ({List<LatLng> done, List<LatLng> ahead});
+
 /// A reference route with its cumulative distances, locating positions on it.
 class RouteTrack {
-  RouteTrack(List<LatLng> points,
-      {DistanceCalculator distance = const HaversineDistanceCalculator()})
-      : points = List.unmodifiable(points),
-        _distance = distance,
-        cumulativeM = List.unmodifiable(_cumulative(points, distance));
+  RouteTrack(
+    List<LatLng> points, {
+    DistanceCalculator distance = const HaversineDistanceCalculator(),
+  }) : points = List.unmodifiable(points),
+       _distance = distance,
+       cumulativeM = List.unmodifiable(_cumulative(points, distance));
 
   final List<LatLng> points;
 
@@ -94,15 +104,21 @@ class RouteTrack {
   RouteProgress? locate(LatLng position, {RouteProgress? previous}) {
     if (lengthM <= 0) return null;
     if (previous != null && previous.hasJoined && !previous.isOffRoute) {
-      final best = _closest(_candidates(position, previous.alongM,
-          math.min(lengthM, previous.alongM + followLookAheadM)));
+      final best = _closest(
+        _candidates(
+          position,
+          previous.alongM,
+          math.min(lengthM, previous.alongM + followLookAheadM),
+        ),
+      );
       if (best != null && best.offsetM <= followOffRouteThresholdM) {
         return _onRoute(position, best);
       }
     }
     final all = _candidates(position, 0, lengthM);
-    final onRoute =
-        all.where((c) => c.offsetM <= followOffRouteThresholdM).toList();
+    final onRoute = all
+        .where((c) => c.offsetM <= followOffRouteThresholdM)
+        .toList();
     if (onRoute.isEmpty) {
       final along = previous?.alongM ?? 0;
       return RouteProgress(
@@ -116,22 +132,50 @@ class RouteTrack {
     }
     final passes = _passes(onRoute);
     final pick = previous != null && previous.hasJoined
-        ? passes.firstWhere((c) => c.alongM >= previous.alongM,
-            orElse: () => passes.first)
+        ? passes.firstWhere(
+            (c) => c.alongM >= previous.alongM,
+            orElse: () => passes.first,
+          )
         : passes.first;
     return _onRoute(position, pick);
   }
 
+  /// Cuts the route [alongM] metres from the start (clamped to the route).
+  RouteSplit splitAt(double alongM) {
+    if (lengthM <= 0 || alongM <= 0) return (done: const [], ahead: points);
+    if (alongM >= lengthM) return (done: points, ahead: const []);
+    var i = 0;
+    while (i < points.length - 2 && cumulativeM[i + 1] < alongM) {
+      i++;
+    }
+    // A cut within float noise of the segment's end is that vertex itself.
+    if (cumulativeM[i + 1] - alongM <= _vertexSnapM) {
+      return (done: points.sublist(0, i + 2), ahead: points.sublist(i + 1));
+    }
+    final len = cumulativeM[i + 1] - cumulativeM[i];
+    final t = len == 0 ? 0.0 : (alongM - cumulativeM[i]) / len;
+    final cut = _lerp(points[i], points[i + 1], t);
+    return (
+      done: [...points.sublist(0, i + 1), if (t > 0) cut],
+      ahead: [cut, ...points.sublist(i + 1)],
+    );
+  }
+
   RouteProgress _onRoute(LatLng position, _Candidate c) {
     final end = points.last;
-    final toEnd =
-        _distance.distanceBetween(position.lat, position.lng, end.lat, end.lng);
+    final toEnd = _distance.distanceBetween(
+      position.lat,
+      position.lng,
+      end.lat,
+      end.lng,
+    );
     return RouteProgress(
       alongM: c.alongM,
       remainingM: math.max(0, lengthM - c.alongM),
       offsetM: c.offsetM,
       isOffRoute: false,
-      isFinished: toEnd <= followFinishRadiusM &&
+      isFinished:
+          toEnd <= followFinishRadiusM &&
           c.alongM >= followFinishMinShare * lengthM,
       hasJoined: true,
     );
@@ -150,10 +194,12 @@ class RouteTrack {
       if (tMin > tMax) continue;
       final t = _projectT(points[i], points[i + 1], p).clamp(tMin, tMax);
       final q = _lerp(points[i], points[i + 1], t);
-      out.add(_Candidate(
-        alongM: start + t * len,
-        offsetM: _distance.distanceBetween(p.lat, p.lng, q.lat, q.lng),
-      ));
+      out.add(
+        _Candidate(
+          alongM: start + t * len,
+          offsetM: _distance.distanceBetween(p.lat, p.lng, q.lat, q.lng),
+        ),
+      );
     }
     return out;
   }

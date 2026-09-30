@@ -10,9 +10,9 @@ const _mPerDeg = 6371000 * math.pi / 180;
 
 /// A point [northM] metres north and [eastM] metres east of (48°, 11°).
 LatLng at(double northM, double eastM) => (
-      lat: 48.0 + northM / _mPerDeg,
-      lng: 11.0 + eastM / (_mPerDeg * math.cos(48.0 * math.pi / 180)),
-    );
+  lat: 48.0 + northM / _mPerDeg,
+  lng: 11.0 + eastM / (_mPerDeg * math.cos(48.0 * math.pi / 180)),
+);
 
 /// 300 m due north in three 100 m segments.
 final _straight = [at(0, 0), at(100, 0), at(200, 0), at(300, 0)];
@@ -71,8 +71,13 @@ void main() {
 
     test('loop: at the start, the nearby finish does not count', () {
       // Square loop whose finish lies 5 m east of the start.
-      final loop =
-          RouteTrack([at(0, 0), at(100, 0), at(100, 100), at(0, 100), at(0, 5)]);
+      final loop = RouteTrack([
+        at(0, 0),
+        at(100, 0),
+        at(100, 100),
+        at(0, 100),
+        at(0, 5),
+      ]);
       final p = loop.locate(at(0, 1))!;
       expect(p.alongM, lessThan(10));
       expect(p.isFinished, isFalse);
@@ -81,8 +86,13 @@ void main() {
     test('out-and-back on the same road: progress follows the return leg', () {
       final track = RouteTrack([at(0, 0), at(200, 0), at(0, 3)]);
       final p = walk(track, [
-        at(50, 0), at(100, 0), at(150, 0), at(195, 0), at(199, 2),
-        at(180, 3), at(150, 3),
+        at(50, 0),
+        at(100, 0),
+        at(150, 0),
+        at(195, 0),
+        at(199, 2),
+        at(180, 3),
+        at(150, 3),
       ])!;
       expect(p.alongM, closeTo(250, 3));
     });
@@ -90,16 +100,23 @@ void main() {
     test('a crossing far ahead does not capture the position', () {
       // The last leg crosses the first one at (500, 0), 2100 m along.
       final track = RouteTrack([
-        at(0, 0), at(1000, 0), at(1000, 300), at(500, 300), at(500, -300),
+        at(0, 0),
+        at(1000, 0),
+        at(1000, 300),
+        at(500, 300),
+        at(500, -300),
       ]);
-      final p =
-          walk(track, [at(400, 0), at(450, 0), at(500, 0), at(550, 0)])!;
+      final p = walk(track, [at(400, 0), at(450, 0), at(500, 0), at(550, 0)])!;
       expect(p.alongM, closeTo(550, 1));
     });
 
     test('first fix exactly on a crossing takes the earlier pass', () {
       final track = RouteTrack([
-        at(0, 0), at(1000, 0), at(1000, 300), at(500, 300), at(500, -300),
+        at(0, 0),
+        at(1000, 0),
+        at(1000, 300),
+        at(500, 300),
+        at(500, -300),
       ]);
       expect(track.locate(at(500, 0))!.alongM, closeTo(500, 1));
     });
@@ -139,6 +156,47 @@ void main() {
       final p = walk(track, [at(290, 0), at(298, 0)])!;
       expect(p.isFinished, isTrue);
       expect(p.remainingM, closeTo(2, 0.5));
+    });
+  });
+
+  group('RouteTrack.splitAt', () {
+    void expectPoint(LatLng actual, LatLng expected) {
+      expect(actual.lat, closeTo(expected.lat, 1e-9));
+      expect(actual.lng, closeTo(expected.lng, 1e-9));
+    }
+
+    test('mid-segment: both halves share the cut point', () {
+      final s = RouteTrack(_straight).splitAt(150);
+      expect(s.done.length, 3);
+      expect(s.ahead.length, 3);
+      expectPoint(s.done.last, at(150, 0));
+      expectPoint(s.ahead.first, at(150, 0));
+      expectPoint(s.ahead.last, at(300, 0));
+    });
+
+    test('at a vertex: no duplicated point', () {
+      final s = RouteTrack(_straight).splitAt(100);
+      expect(s.done.length, 2);
+      expect(s.ahead.length, 3);
+      expectPoint(s.ahead.first, at(100, 0));
+    });
+
+    test('at or before the start nothing is done', () {
+      final s = RouteTrack(_straight).splitAt(0);
+      expect(s.done, isEmpty);
+      expect(s.ahead.length, 4);
+    });
+
+    test('at or past the end everything is done', () {
+      final s = RouteTrack(_straight).splitAt(400);
+      expect(s.done.length, 4);
+      expect(s.ahead, isEmpty);
+    });
+
+    test('a single-point route is all ahead', () {
+      final s = RouteTrack([at(0, 0)]).splitAt(10);
+      expect(s.done, isEmpty);
+      expect(s.ahead.length, 1);
     });
   });
 }
