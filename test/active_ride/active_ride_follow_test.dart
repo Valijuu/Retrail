@@ -15,13 +15,13 @@ import 'package:retrail/data/db/trackpoint_dao.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/domain/distance_calculator.dart';
+import 'package:retrail/domain/route_progress.dart';
 import 'package:retrail/features/active_ride/active_ride_controller.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/active_ride/active_ride_screen.dart';
 import 'package:retrail/features/active_ride/widgets/ride_chrome.dart';
 import 'package:retrail/features/follow/route_follow_providers.dart';
 import 'package:retrail/features/follow/widgets/follow_chrome.dart';
-import 'package:retrail/domain/route_progress.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
@@ -129,7 +129,6 @@ class RecordingController extends ActiveRideController {
     calls.add('save');
   }
 }
-
 
 class _FixedFollow extends RouteFollowNotifier {
   _FixedFollow(this.initial);
@@ -240,6 +239,7 @@ void main() {
       (tester) async {
     await pumpScreen(tester, state: tracking, follow: null);
     expect(find.byType(FollowRemainingLine), findsNothing);
+    expect(find.byType(RideWarningBanner), findsNothing);
     final map = tester.widget<RideMapArea>(find.byType(RideMapArea));
     expect(map.reference, isNull);
   });
@@ -273,8 +273,10 @@ void main() {
       (tester) async {
     await pumpScreen(tester,
         state: tracking,
-        follow: followState(progress: progress(), recording: false));
+        follow: followState(
+            progress: progress(off: true, offset: 45), recording: false));
     expect(find.byType(FollowRemainingLine), findsNothing);
+    expect(find.byType(RideWarningBanner), findsNothing);
     final map = tester.widget<RideMapArea>(find.byType(RideMapArea));
     expect(map.reference, isNull);
   });
@@ -287,5 +289,28 @@ void main() {
     await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(follow.stopped, isTrue);
+  });
+
+  testWidgets('finished: the remaining line says the finish is reached',
+      (tester) async {
+    await pumpScreen(tester,
+        state: tracking,
+        follow: followState(progress: progress(finished: true, remaining: 3)));
+    expect(find.text('Finish reached'), findsOneWidget);
+  });
+
+  testWidgets(
+      'leaving keeps the follow chrome frozen behind the exit scrim while the '
+      'reference is already cleared', (tester) async {
+    final follow = await pumpScreen(tester,
+        state: tracking,
+        follow: followState(progress: progress(off: true, offset: 45)));
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pump();
+    await tester.tap(find.text('Discard'));
+    await tester.pump();
+    expect(follow.stopped, isTrue);
+    expect(find.byType(FollowRemainingLine), findsOneWidget);
+    expect(find.text('Off route — head back to the line'), findsOneWidget);
   });
 }

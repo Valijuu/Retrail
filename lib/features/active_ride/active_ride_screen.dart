@@ -57,6 +57,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   /// (visible flicker) before the pop-to-home animation began.
   bool _isLeaving = false;
 
+  /// The follow reference as it was when leaving started. The provider is
+  /// cleared right away, but the frozen chrome behind the exit scrim must not
+  /// change (remaining line, banner, reference on the map).
+  RouteFollowState? _followingAtExit;
+
   bool get _anyDialogOpen =>
       _showConfirmStop || _showDiscardConfirm || _showSummary;
 
@@ -107,8 +112,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     // the navigation home actually take.
     ref.read(pendingRideDeepLinkProvider.notifier).state = false;
     // Spec 17: the reference ends with the ride (save, skip, discard, gate).
+    // The screen keeps drawing the last state through the exit transition.
+    _followingAtExit = _liveFollowing();
     ref.read(routeFollowProvider.notifier).stop();
     context.go(AppRoutes.main);
+  }
+
+  RouteFollowState? _liveFollowing() {
+    final follow = ref.read(routeFollowProvider);
+    return follow != null && follow.recording ? follow : null;
   }
 
   void _onBack() {
@@ -185,8 +197,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     final isOnline = ref.watch(isOnlineProvider).asData?.value ?? true;
     final l10n = AppLocalizations.of(context);
     // Spec 17: a reference only shows on a RECORDING follow; null = today.
-    final follow = ref.watch(routeFollowProvider);
-    final following = follow != null && follow.recording ? follow : null;
+    ref.watch(routeFollowProvider);
+    final following = _isLeaving ? _followingAtExit : _liveFollowing();
     final banner =
         following == null ? null : followBanner(context, following.progress);
 
