@@ -180,11 +180,14 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                           children: [
                             activity.glyph(size: 18, color: colors.primary),
                             const SizedBox(width: 6),
-                            Text(
-                              activity.label(l10n),
-                              style: text.bodyMedium?.copyWith(
-                                color: colors.primary,
-                                fontWeight: FontWeight.w500,
+                            // Wraps at narrow widths / large text (#46).
+                            Flexible(
+                              child: Text(
+                                activity.label(l10n),
+                                style: text.bodyMedium?.copyWith(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ],

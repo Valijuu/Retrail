@@ -126,6 +126,40 @@ void main() {
     });
 
     testWidgets(
+        'the activity row wraps instead of overflowing at 320 px, text scale '
+        '2.0, German (issue #46)', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_host(
+        Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2.0)),
+            child: RideDetailDialog(
+              rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+              // Single-digit speeds: with the Ahem test font (1 em per glyph)
+              // a "22,0 km/h" value alone is wider than the dialog, which
+              // real fonts are not.
+              stats: const RideStats(
+                  durationMs: 600000,
+                  distanceMetres: 4200,
+                  maxSpeedKmh: 9,
+                  avgSpeedKmh: 5),
+              onDismiss: () {},
+            ),
+          ),
+        ),
+        locale: const Locale('de'),
+      ));
+
+      expect(find.text('Longboard'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
         'on a small screen (iPhone 8) the Close button stays visible and '
         'tappable', (tester) async {
       tester.view.physicalSize = const Size(375, 667);
