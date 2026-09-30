@@ -160,14 +160,42 @@ void main() {
     expect(container.read(routeFollowProvider), isNull);
   });
 
-  testWidgets('a reference with fewer than 2 points is ignored', (
+  Future<void> expectUnavailable(WidgetTester tester) async {
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+    expect(find.text("Route can't be followed"), findsOneWidget);
+    expect(find.text('Record this ride?'), findsNothing);
+    expect(container.read(routeFollowProvider), isNull);
+  }
+
+  testWidgets('a reference with 1 point explains why it cannot be followed', (
     tester,
   ) async {
     await pumpLauncher(tester, ref: const [(lat: 48.0, lng: 11.0)]);
-    await tester.tap(find.text('go'));
+    await expectUnavailable(tester);
+    await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
-    expect(find.text('Record this ride?'), findsNothing);
     expect(find.text('go'), findsOneWidget);
     expect(container.read(routeFollowProvider), isNull);
+  });
+
+  testWidgets('2 identical points show the same dialog', (tester) async {
+    await pumpLauncher(
+      tester,
+      ref: const [(lat: 48.0, lng: 11.0), (lat: 48.0, lng: 11.0)],
+    );
+    await expectUnavailable(tester);
+  });
+
+  testWidgets('while tracking, an unfollowable route is still explained', (
+    tester,
+  ) async {
+    await pumpLauncher(
+      tester,
+      tracking: true,
+      ref: const [(lat: 48.0, lng: 11.0)],
+    );
+    await expectUnavailable(tester);
+    expect(find.text('RIDE'), findsNothing);
   });
 }

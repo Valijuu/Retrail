@@ -23,9 +23,9 @@ memorise the route. Recording the repeat ride is **optional**: the rider chooses
 - Riding a route in reverse as a supported mode (progress assumes the recorded direction).
 
 ## A. Entry flow
-Two entry points, both leading into the same flow. The detail button needs a route with ≥ 2 points; the card menu entry needs a route with distance > 0 (a positive distance implies ≥ 2 distinct points). The launcher additionally ignores references with < 2 points.
+Two entry points, both leading into the same flow. Both entries are shown for any ride that has at least one trackpoint (rides with no trackpoints, "No route", show none). The launcher is the single place that decides followability: a reference with < 2 points, or with zero length (all points identical), is not followed — an `AlertDialog` (`followRouteUnavailableTitle` / `followRouteUnavailableBody`, one Close button) explains why instead. This check runs before the record question and before the "already recording" short-circuit, and sets no reference.
 - **Ride detail dialog:** a `FilledButton.tonal` with a route icon, **"Follow route"** (`followRouteAction`), in the bottom action row, an `OverflowBar` with Follow route + the existing "Close" `TextButton` (they stack on narrow widths). It is **not** shown in the detail map's fullscreen view.
-- **History card ⋮ menu:** a new **first** entry "Follow route" (same icon, same label) above Edit / Delete, gated on the ride having a route with distance > 0.
+- **History card ⋮ menu:** a new **first** entry "Follow route" (same icon, same label) above Edit / Delete, shown whenever the ride has a route.
 - Not added: a separate card icon (it would be easy to confuse with the existing ↱ "navigate to start" icon, which stays unchanged), and no entry on the Home "recent rides" rows (they have no menu; the path there is via the detail).
 
 Flow:
@@ -97,7 +97,7 @@ All strings via ARB (en + de); colours from `AppColors`.
 ## F. Testing
 - `route_progress` and the done/remaining split → **EXACT** (`tdd-dart`).
 - `routeFollowProvider` (start/stop, fixes → progress, cleared on save/discard/end, lifecycle pause) → Red-Green-Refactor with `ProviderContainer` and a fake `LocationSource`.
-- Widgets (Red-Green-Refactor): detail "Follow route" button (hidden < 2 points, absent in fullscreen) and history-card ⋮ entry, both → record dialog → routing; `FollowRouteScreen` (title, ride title, remaining, end confirmation, navigate-to-start visibility, finished hint); `ActiveRideScreen` with a reference (remaining line, off-route banner) **and without one (unchanged)**.
+- Widgets (Red-Green-Refactor): detail "Follow route" button (hidden with no points, absent in fullscreen; an unfollowable route shows the explanation dialog) and history-card ⋮ entry, both → record dialog → routing; `FollowRouteScreen` (title, ride title, remaining, end confirmation, navigate-to-start visibility, finished hint); `ActiveRideScreen` with a reference (remaining line, off-route banner) **and without one (unchanged)**.
 - `LiveMap` reference layers → alongside the implementation (platform view).
 - On-device acceptance, Android + iOS: follow-only and recording, joining mid-route, a loop route, off-route and back, offline.
 

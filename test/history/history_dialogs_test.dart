@@ -279,8 +279,8 @@ void main() {
     });
 
     for (final (name, n, cb) in [
-      ('one trackpoint', 1, true),
       ('no callback', 2, false),
+      ('no points', 0, true),
     ]) {
       testWidgets('no Follow route button: $name', (tester) async {
         tester.view.physicalSize = const Size(400, 900);
@@ -305,6 +305,29 @@ void main() {
         expect(find.text('Follow route'), findsNothing);
       });
     }
+
+    testWidgets('one trackpoint + callback: Follow route button shown',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+          Trackpoint(
+              trackpointId: 0,
+              rideId: 1,
+              latitude: 48.0,
+              longitude: 11.0,
+              timestamp: 0),
+        ]),
+        stats: const RideStats(
+            durationMs: 1, distanceMetres: 0, maxSpeedKmh: 1, avgSpeedKmh: 1),
+        onDismiss: () {},
+        onFollowRoute: () {},
+      )));
+      expect(find.widgetWithText(FilledButton, 'Follow route'), findsOneWidget);
+    });
 
     for (final (label, size, locale, text) in [
       ('en 600x900', const Size(600, 900), const Locale('en'), 'Follow route'),

@@ -702,14 +702,17 @@ void main() {
     expect(find.text('Follow route'), findsNothing);
   });
 
-  testWidgets('3-dot menu has no Follow route for a route without length',
+  testWidgets(
+      '3-dot menu shows Follow route for a route without length and explains',
       (tester) async {
     await pump(tester, [_routedEntry(5, distanceMetres: 0)], trackpoints: {
       5: [_tp(5, 52.0, 13.0)],
     });
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
-    expect(find.text('Follow route'), findsNothing);
+    await tester.tap(find.text('Follow route'));
+    await tester.pumpAndSettle();
+    expect(find.text("Route can't be followed"), findsOneWidget);
   });
 
   testWidgets('detail dialog Follow route closes it and asks to record',

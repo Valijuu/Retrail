@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/stacked_dialog_actions.dart';
 import '../../domain/heading.dart' show LatLng;
+import '../../domain/route_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/location_permission.dart';
 import '../../tracking/tracking_providers.dart';
@@ -16,19 +17,36 @@ enum _FollowChoice { record, followOnly }
 /// Starts following [reference] (Spec 17): asks whether to record, then either
 /// runs the normal ride start (countdown → ride, with the reference) or opens
 /// the follow-only screen. While a ride is already recording it just returns
-/// to that ride, without a reference.
+/// to that ride, without a reference. A [reference] without a real route (under
+/// 2 points, or no length) is explained in a dialog instead — this is the single
+/// place that decides followability.
 Future<void> launchFollowRoute(
   BuildContext context,
   WidgetRef ref, {
   required List<LatLng> reference,
   String? rideTitle,
 }) async {
-  if (reference.length < 2) return;
+  final l10n = AppLocalizations.of(context);
+  if (reference.length < 2 || RouteTrack(reference).lengthM <= 0) {
+    await showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(l10n.followRouteUnavailableTitle),
+        content: Text(l10n.followRouteUnavailableBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: Text(l10n.actionClose),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
   if (ref.read(isTrackingProvider)) {
     context.go(AppRoutes.ride);
     return;
   }
-  final l10n = AppLocalizations.of(context);
   final choice = await showDialog<_FollowChoice>(
     context: context,
     builder: (c) => AlertDialog(

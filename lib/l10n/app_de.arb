@@ -72,6 +72,8 @@
   "followRouteRecordBody": "Die Strecke wird in beiden Fällen auf der Karte angezeigt. Zeichne sie auf, um die Fahrt im Verlauf zu speichern.",
   "followRouteRecordConfirm": "Aufzeichnen",
   "followRouteJustFollow": "Nur folgen",
+  "followRouteUnavailableTitle": "Strecke nicht nachfahrbar",
+  "followRouteUnavailableBody": "Diese Fahrt hat keine vollständige Strecke mit Start und Ziel, deshalb kann sie nicht nachgefahren werden.",
   "confirmStopTitle": "Fahrt beenden?",
   "confirmStopBody": "Möchtest du die aktuelle Fahrt beenden?",
   "confirmStopKeep": "Weiterfahren",

@@ -90,8 +90,8 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
     final ride = widget.entry.ride;
     final stats = widget.entry.stats;
     final hasRoute = ride.hasRoute;
-    // A positive distance implies ≥ 2 distinct points — a followable route.
-    final canFollow = hasRoute && stats.distanceMetres > 0;
+    // Any route is offered; the launcher explains one that can't be followed.
+    final canFollow = hasRoute;
     final locale = Localizations.localeOf(context).toString();
     final distance = formatShortDistanceKm(stats.distanceMetres, locale: locale);
     final title = rideDisplayTitle(ride, locale: locale);

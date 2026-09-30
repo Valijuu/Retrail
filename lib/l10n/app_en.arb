@@ -73,6 +73,8 @@
   "followRouteRecordBody": "The route is shown on the map either way. Record it to save this ride to your history.",
   "followRouteRecordConfirm": "Record",
   "followRouteJustFollow": "Just follow",
+  "followRouteUnavailableTitle": "Route can't be followed",
+  "followRouteUnavailableBody": "This ride has no complete route with a start and finish, so it can't be followed.",
   "confirmStopTitle": "Stop ride?",
   "confirmStopBody": "Do you want to stop the current ride?",
   "confirmStopKeep": "Keep riding",

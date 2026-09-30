@@ -72,7 +72,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
     final locale = Localizations.localeOf(context).toString();
     final ride = widget.rwt.ride;
     final points = _points;
-    final showFollow = widget.onFollowRoute != null && points.length >= 2;
+    final showFollow = widget.onFollowRoute != null && points.isNotEmpty;
     final activity = ActivityType.fromId(ride.typ);
     final title = (ride.description?.trim().isNotEmpty ?? false)
         ? ride.description!
