@@ -117,6 +117,18 @@ const double kReferenceRouteOpacity = 0.45;
   );
 }
 
+/// Which reference to push into the `reference` sources, or null to push
+/// nothing. [drawn] is the reference whose sources the current style load
+/// created (null = none exist, so any push would hit a missing source — a
+/// native crash on Android, see `_sourcesReady`); [current] is the widget's
+/// reference now. A replaced reference re-cuts the existing sources; one that
+/// went away pushes nothing (the screen is leaving).
+RouteTrack? referencePushTarget({
+  required RouteTrack? drawn,
+  required RouteTrack? current,
+}) =>
+    drawn == null ? null : current;
+
 /// Linear interpolation between two coordinates. Safe for the short per-fix
 /// distances the marker glide covers (metres — curvature is irrelevant).
 RoutePoint lerpPoint(RoutePoint a, RoutePoint b, double t) =>
@@ -273,6 +285,11 @@ class LiveMap extends StatefulWidget {
   /// A saved route being followed (Spec 17), drawn semi-transparent under the
   /// live line with its start/finish markers and arrows. Null = not following
   /// (no reference sources or layers are added at all).
+  ///
+  /// The sources are created at style load: a reference that appears later
+  /// is drawn from the next style load on, and a replaced one re-cuts the
+  /// existing lines while its start/finish markers stay where the style load
+  /// put them.
   final RouteTrack? reference;
 
   /// How far along [reference] the rider is; the part behind is greyed.
@@ -334,6 +351,10 @@ class _LiveMapState extends State<LiveMap>
   /// The `points` list last pushed into the `route` source, so a fix that
   /// adds no point only redraws the short tail, not the whole line.
   List<RoutePoint>? _pushedPoints;
+
+  /// The reference whose `reference` / `reference-done` sources this style
+  /// load created, or null when it created none (see [referencePushTarget]).
+  RouteTrack? _drawnReference;
 
   @override
   void initState() {
@@ -416,8 +437,8 @@ class _LiveMapState extends State<LiveMap>
       _pushRoute();
     }
     if (_sourcesReady &&
-        widget.reference != null &&
-        widget.referenceProgressM != oldWidget.referenceProgressM) {
+        (!identical(widget.reference, oldWidget.reference) ||
+            widget.referenceProgressM != oldWidget.referenceProgressM)) {
       _pushReference();
     }
     final trail = widget.headingTrail ?? widget.points;
@@ -509,10 +530,11 @@ class _LiveMapState extends State<LiveMap>
   }
 
   /// Re-cuts the reference at the rider's progress (done vs ahead). Callers
-  /// gate on [_sourcesReady] (see its doc comment): the `reference` sources
-  /// exist only once [_onStyleLoaded] has created them.
+  /// gate on [_sourcesReady] (see its doc comment); [referencePushTarget]
+  /// additionally skips it when this style load created no reference sources.
   void _pushReference() {
-    final reference = widget.reference;
+    final reference = referencePushTarget(
+        drawn: _drawnReference, current: widget.reference);
     if (reference == null) return;
     final g = referenceGeoJson(reference, widget.referenceProgressM);
     _style?.updateGeoJsonSource(id: 'reference', data: g.ahead);
@@ -626,6 +648,7 @@ class _LiveMapState extends State<LiveMap>
     _markerReady = false;
     _sourcesReady = false;
     _pushedPoints = null; // the fresh style's `route` source starts over
+    _drawnReference = null; // nor has it any reference sources yet
     _markerImages.clear();
     final colors = context.colors;
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
@@ -639,6 +662,7 @@ class _LiveMapState extends State<LiveMap>
       final g = referenceGeoJson(reference, widget.referenceProgressM);
       await style.addSource(GeoJsonSource(id: 'reference', data: g.ahead));
       await style.addSource(GeoJsonSource(id: 'reference-done', data: g.done));
+      _drawnReference = reference;
       await style.addLayer(LineStyleLayer(
         id: 'reference-done-line',
         sourceId: 'reference-done',
@@ -965,6 +989,7 @@ class _LiveMapState extends State<LiveMap>
     _style = null;
     _sourcesReady = false;
     _markerReady = false;
+    _drawnReference = null;
     _glide.stop();
   }
 
@@ -992,11 +1017,13 @@ class _LiveMapState extends State<LiveMap>
       _viewportSize = size;
       final fit = widget.fitBounds ? _fitCamera : null;
       // While following a saved route, the live map's placeholder already
-      // shows that route (framed whole) instead of bare terrain.
-      final referenceFit = !widget.fitBounds && widget.reference != null
-          ? fitRouteCamera(widget.reference!.points,
-              width: size.width, height: size.height)
-          : null;
+      // shows that route (framed whole) instead of bare terrain — computed
+      // only while the placeholder is actually covering the map.
+      final referenceFit =
+          covered && !widget.fitBounds && widget.reference != null
+              ? fitRouteCamera(widget.reference!.points,
+                  width: size.width, height: size.height)
+              : null;
       return Stack(
         fit: StackFit.expand,
         children: [

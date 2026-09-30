@@ -52,4 +52,26 @@ void main() {
           (ahead['geometry']['coordinates'] as List).first);
     });
   });
+
+  group('referencePushTarget', () {
+    final a = RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)]);
+    final b = RouteTrack(const [(lat: 49.0, lng: 11.0), (lat: 49.001, lng: 11.0)]);
+
+    test('no reference sources in this style load: never push', () {
+      expect(referencePushTarget(drawn: null, current: null), isNull);
+      expect(referencePushTarget(drawn: null, current: a), isNull);
+    });
+
+    test('the drawn reference is still current: push it', () {
+      expect(referencePushTarget(drawn: a, current: a), same(a));
+    });
+
+    test('a different reference replaces the drawn one: push the new one', () {
+      expect(referencePushTarget(drawn: a, current: b), same(b));
+    });
+
+    test('the reference went away: push nothing', () {
+      expect(referencePushTarget(drawn: a, current: null), isNull);
+    });
+  });
 }
