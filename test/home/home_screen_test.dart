@@ -232,6 +232,19 @@ void main() {
     expect(find.text('Retrail ride'), findsOneWidget);
   });
 
+  testWidgets('reopening an active ride keeps its followed reference',
+      (tester) async {
+    await pumpHome(tester, tracking: true);
+    final container =
+        ProviderScope.containerOf(tester.element(find.text('Start tracking')));
+    container.read(routeFollowProvider.notifier).start(
+        reference: const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)],
+        recording: true);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    expect(container.read(routeFollowProvider), isNotNull);
+  });
+
   testWidgets(
       'Start clears a reference left over from an abandoned follow start',
       (tester) async {

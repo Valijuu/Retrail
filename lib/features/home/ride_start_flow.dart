@@ -39,6 +39,7 @@ Future<bool> runRideStartFlow(
   return false;
 }
 
+/// Shows the rationale / enable-location dialog for a blocked [action].
 Future<void> showPermissionGateBlocked(
   BuildContext context,
   WidgetRef ref,
