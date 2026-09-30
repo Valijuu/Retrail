@@ -924,9 +924,6 @@ class _LiveMapState extends State<LiveMap>
     }
   }
 
-  /// Adds the live `current-dot` marker layer for [type]: the amber activity
-  /// badge (Android `makeIconBitmap` parity) for known types, or the plain blue
-  /// dot ([blue]) for null/OTHER. Each badge image is rasterized once.
   /// A start/finish/loop marker (see route_marker_painter.dart) as a symbol on
   /// its own point source [id].
   Future<void> _addEndpointMarker(
@@ -955,6 +952,9 @@ class _LiveMapState extends State<LiveMap>
     ));
   }
 
+  /// Adds the live `current-dot` marker layer for [type]: the amber activity
+  /// badge (Android `makeIconBitmap` parity) for known types, or the plain blue
+  /// dot ([blue]) for null/OTHER. Each badge image is rasterized once.
   Future<void> _addCurrentMarker(
       StyleController style, ActivityType? type, String blue) async {
     final ring = _hex(context.colors.onMap);
