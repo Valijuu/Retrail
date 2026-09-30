@@ -166,7 +166,8 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
                   onRecenter: () => setState(() => _isFollowing = true),
                 ),
               ),
-              FollowRemainingLine(progress: progress),
+              FollowRemainingLine(
+                  progress: progress, totalM: follow.track.lengthM),
               Container(
                 color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

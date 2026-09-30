@@ -270,7 +270,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     child: following == null
                         ? panel
                         : Column(children: [
-                            FollowRemainingLine(progress: following.progress),
+                            FollowRemainingLine(
+                                progress: following.progress,
+                                totalM: following.track.lengthM),
                             Expanded(child: panel),
                           ]),
                   ),

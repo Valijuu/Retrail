@@ -102,6 +102,12 @@ void main() {
     expect(follow.calls, contains('resume'));
   });
 
+  testWidgets('before the first fix: the remaining line shows the route length',
+      (tester) async {
+    await pump(tester, _state());
+    expect(find.text('1.11 km to go'), findsOneWidget);
+  });
+
   testWidgets('no ride title line when the ride has none', (tester) async {
     await pump(tester, _state(title: null, progress: _p()));
     expect(find.text('Rhein'), findsNothing);

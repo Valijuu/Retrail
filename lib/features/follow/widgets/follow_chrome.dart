@@ -7,10 +7,15 @@ import '../../../l10n/app_localizations.dart';
 import '../../active_ride/widgets/ride_chrome.dart';
 
 /// "X km to go" strip above the ride panel while following (Spec 17).
+/// Before the first fix it shows the whole route's length.
 class FollowRemainingLine extends StatelessWidget {
-  const FollowRemainingLine({super.key, required this.progress});
+  const FollowRemainingLine(
+      {super.key, required this.progress, required this.totalM});
 
   final RouteProgress? progress;
+
+  /// The followed route's length, shown while [progress] is still null.
+  final double totalM;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,7 @@ class FollowRemainingLine extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
     final p = progress;
     final label = p == null
-        ? ''
+        ? l10n.followRemaining(formatDistanceKm(totalM, locale: locale))
         : p.isFinished
             ? l10n.followFinished
             : l10n.followRemaining(formatDistanceKm(p.remainingM, locale: locale));

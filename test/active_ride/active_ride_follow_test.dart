@@ -254,6 +254,12 @@ void main() {
     expect(find.text('0.81 km to go'), findsOneWidget);
   });
 
+  testWidgets('before the first fix: the remaining line shows the route length',
+      (tester) async {
+    await pumpScreen(tester, state: tracking, follow: followState());
+    expect(find.text('1.11 km to go'), findsOneWidget);
+  });
+
   testWidgets('before joining: distance-to-route banner', (tester) async {
     await pumpScreen(tester,
         state: tracking,
