@@ -162,6 +162,22 @@ class RouteTrack {
     );
   }
 
+  /// The same route ridden the other way round.
+  RouteTrack reversed() =>
+      RouteTrack(points.reversed.toList(), distance: _distance);
+
+  /// The polyline from [fromM] to [toM] along the route (clamped to it,
+  /// swapped if reversed). Cuts within [_vertexSnapM] of a vertex land on it.
+  /// Empty when the range is no longer than [_vertexSnapM] or the route has
+  /// no length.
+  List<LatLng> segmentBetween(double fromM, double toM) {
+    final lo = math.min(fromM, toM).clamp(0.0, lengthM).toDouble();
+    final hi = math.max(fromM, toM).clamp(0.0, lengthM).toDouble();
+    if (lengthM <= 0 || hi - lo <= _vertexSnapM) return const [];
+    final upToHi = RouteTrack(splitAt(hi).done, distance: _distance);
+    return upToHi.splitAt(lo).ahead;
+  }
+
   RouteProgress _onRoute(LatLng position, _Candidate c) {
     final end = points.last;
     final toEnd = _distance.distanceBetween(

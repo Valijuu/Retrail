@@ -253,4 +253,75 @@ void main() {
       expect(s.ahead.length, 1);
     });
   });
+
+  group('RouteTrack.reversed', () {
+    test('walks the points backwards with the same length', () {
+      final r = RouteTrack(_straight).reversed();
+      expect(r.points, _straight.reversed.toList());
+      expect(r.lengthM, closeTo(300, 0.5));
+      expect(r.cumulativeM[0], 0);
+      expect(r.cumulativeM[1], closeTo(100, 0.5));
+      expect(r.cumulativeM[2], closeTo(200, 0.5));
+      expect(r.cumulativeM[3], closeTo(300, 0.5));
+    });
+
+    test('a single-point route stays a single point of length 0', () {
+      final r = RouteTrack([at(0, 0)]).reversed();
+      expect(r.points.length, 1);
+      expect(r.lengthM, 0);
+    });
+  });
+
+  group('RouteTrack.segmentBetween', () {
+    void expectPoints(List<LatLng> actual, List<LatLng> expected) {
+      expect(actual.length, expected.length);
+      for (var i = 0; i < expected.length; i++) {
+        expect(actual[i].lat, closeTo(expected[i].lat, 1e-9));
+        expect(actual[i].lng, closeTo(expected[i].lng, 1e-9));
+      }
+    }
+
+    test('the whole route yields every point', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(0, 300), _straight);
+    });
+
+    test('interior cuts are interpolated', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(150, 250), [
+        at(150, 0),
+        at(200, 0),
+        at(250, 0),
+      ]);
+    });
+
+    test('from after to is swapped', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(250, 150), [
+        at(150, 0),
+        at(200, 0),
+        at(250, 0),
+      ]);
+    });
+
+    test('cuts on vertices add no duplicate points', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(100, 200), [
+        at(100, 0),
+        at(200, 0),
+      ]);
+    });
+
+    test('an empty range yields nothing', () {
+      expect(RouteTrack(_straight).segmentBetween(120, 120), isEmpty);
+    });
+
+    test('values are clamped to the route', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(-50, 50), [
+        at(0, 0),
+        at(50, 0),
+      ]);
+    });
+
+    test('a route without length yields nothing', () {
+      expect(RouteTrack([at(5, 5), at(5, 5)]).segmentBetween(0, 10), isEmpty);
+      expect(RouteTrack([at(0, 0)]).segmentBetween(0, 10), isEmpty);
+    });
+  });
 }
