@@ -445,13 +445,21 @@ void main() {
     cases.forEach((name, size) => expect(size, plain, reason: name));
   });
 
-  testWidgets('a banner appearing keeps the same map', (tester) async {
+  testWidgets('a banner appearing, then going with the follow, keeps the '
+      'same map', (tester) async {
     final follow = await pumpScreen(tester,
         state: tracking, follow: followState(progress: progress()));
     final before = tester.state(find.byType(LiveMap));
     follow.emit(followState(progress: progress(off: true, offset: 45)));
     await tester.pump();
     expect(find.text('Off route — head back to the line'), findsOneWidget);
+    expect(tester.state(find.byType(LiveMap)), same(before));
+    // The banner above the map and the remaining line below it go in the
+    // same frame: only the map's key keeps its element.
+    follow.stop();
+    await tester.pump();
+    expect(find.text('Off route — head back to the line'), findsNothing);
+    expect(find.byType(FollowRemainingLine), findsNothing);
     expect(tester.state(find.byType(LiveMap)), same(before));
   });
 
