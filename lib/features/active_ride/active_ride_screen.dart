@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/theme_context.dart';
-import '../../domain/follow_direction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/location_permission.dart';
 import '../../tracking/permission_gate_dialog.dart';
@@ -252,38 +251,34 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     showLive: showLive,
                     onBack: _onBack,
                   ),
-                  if (!isOnline)
-                    RideWarningBanner(label: l10n.mapOfflineBanner),
-                  // GPS switched off mid-ride: nothing records until it's back
-                  // on, so say so instead of looking live (issue #33).
-                  if (!state.locationServiceEnabled)
-                    RideWarningBanner(
-                      label: l10n.rideLocationOffBanner,
-                      onTap: _recording.openLocationSettings,
-                    ),
-                  ?banner,
                   // The 65/35 map+stats layout is fixed for the whole screen
                   // session: the panel shows from the FIRST frame (zeros/--,
                   // blending in with the screen's entry transition, before GPS
                   // or the tracker have committed) and stays through the stop
                   // dialog + exit transition. Gating it on isTracking made it
                   // pop in late on entry and flicker away on save.
-                  // Following: the remaining line sits under the map, so the
-                  // stats panel keeps the same height as without a reference
-                  // (it squeezed the panel's rows on short screens). The map
-                  // stays the Column's first child either way, so the native
-                  // view is never remounted.
+                  // The banners and the follow remaining line live in the
+                  // map's share, so the stats panel keeps one height in every
+                  // state (they squeezed its rows on short screens, e.g. an
+                  // iPhone 8). The key keeps the native map element when a
+                  // banner comes or goes.
                   Expanded(
                     flex: 65,
                     child: Column(children: [
-                      Expanded(child: map),
+                      if (!isOnline)
+                        RideWarningBanner(label: l10n.mapOfflineBanner),
+                      // GPS switched off mid-ride: nothing records until it's
+                      // back on, so say so instead of looking live (issue #33).
+                      if (!state.locationServiceEnabled)
+                        RideWarningBanner(
+                          label: l10n.rideLocationOffBanner,
+                          onTap: _recording.openLocationSettings,
+                        ),
+                      ?banner,
+                      Expanded(key: const ValueKey('ride-map'), child: map),
                       if (following != null)
                         FollowRemainingLine(
-                            // Undecided: the whole length (Spec 18).
-                            progress:
-                                following.direction == FollowDirection.undecided
-                                    ? null
-                                    : following.progress,
+                            progress: following.displayProgress,
                             totalM: following.track.lengthM,
                             reversed: following.isReversed),
                     ]),

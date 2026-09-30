@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/theme_context.dart';
-import '../../domain/follow_direction.dart';
 import '../../domain/route_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/ride_tracking_state.dart';
@@ -188,11 +187,7 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
                         Expanded(
                           child: Text(
                               followProgressLabel(context,
-                                  // Undecided: the whole length (Spec 18).
-                                  progress: follow.direction ==
-                                          FollowDirection.undecided
-                                      ? null
-                                      : progress,
+                                  progress: follow.displayProgress,
                                   totalM: follow.track.lengthM,
                                   reversed: follow.isReversed),
                               style: text.titleMedium

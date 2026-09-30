@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/domain/follow_direction.dart';
 import 'package:retrail/domain/heading.dart' show LatLng;
+import 'package:retrail/domain/route_progress.dart';
 import 'package:retrail/features/follow/route_follow_providers.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_source.dart';
@@ -416,6 +417,30 @@ void main() {
       follow(_straight);
       ride([at(299, 0)]);
       expect(state().direction, FollowDirection.reverse);
+    });
+  });
+
+  group('displayProgress', () {
+    const p = RouteProgress(
+        alongM: 300,
+        remainingM: 812,
+        offsetM: 2,
+        isOffRoute: false,
+        isFinished: true,
+        hasJoined: true);
+    RouteFollowState at(FollowDirection d) => RouteFollowState(
+        track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
+        recording: false,
+        progress: p,
+        direction: d);
+
+    test('undecided: none, so the text shows the whole length', () {
+      expect(at(FollowDirection.undecided).displayProgress, isNull);
+    });
+
+    test('decided either way: the progress', () {
+      expect(at(FollowDirection.forward).displayProgress, same(p));
+      expect(at(FollowDirection.reverse).displayProgress, same(p));
     });
   });
 }

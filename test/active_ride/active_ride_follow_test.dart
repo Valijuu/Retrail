@@ -25,6 +25,7 @@ import 'package:retrail/features/active_ride/widgets/ride_stats_panel.dart';
 import 'package:retrail/features/follow/route_follow_providers.dart';
 import 'package:retrail/features/follow/widgets/follow_chrome.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:retrail/tracking/location_fix.dart';
@@ -141,6 +142,7 @@ class _FixedFollow extends RouteFollowNotifier {
   RouteFollowState? build() => initial;
   @override
   void flipDirection() => flips++;
+  void emit(RouteFollowState next) => state = next;
   @override
   void stop() {
     stopped = true;
@@ -153,6 +155,7 @@ RouteFollowState followState({
   bool recording = true,
   RouteTrack? orientedTrack,
   List<List<({double lat, double lng})>> ridden = const [],
+  // Decided by default, so progress shows as is; undecided tests opt in.
   FollowDirection direction = FollowDirection.forward,
 }) =>
     RouteFollowState(
@@ -211,8 +214,12 @@ void main() {
     required RideTrackingState state,
     required RouteFollowState? follow,
     Size size = const Size(400, 900),
+    bool online = true,
+    double topInset = 0,
   }) async {
     tester.view.physicalSize = size;
+    tester.view.padding = FakeViewPadding(top: topInset);
+    addTearDown(tester.view.resetPadding);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -228,7 +235,7 @@ void main() {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         rideTrackingStateProvider.overrideWith((ref) => Stream.value(state)),
-        isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
         activeRideControllerProvider.overrideWithValue(controller),
         rideRecordingControllerProvider.overrideWithValue(recording),
         routeFollowProvider.overrideWith(() => notifier),
@@ -388,18 +395,74 @@ void main() {
       'iPhone 8: a recording follow leaves the stats panel its full height',
       (tester) async {
     const iPhone8 = Size(375, 667);
-    await pumpScreen(tester, state: tracking, follow: null, size: iPhone8);
+    await pumpScreen(tester,
+        state: tracking, follow: null, size: iPhone8, topInset: 20);
     expect(tester.takeException(), isNull);
     final plain = tester.getSize(find.byType(RideStatsPanel));
     await tester.pumpWidget(const SizedBox()); // a fresh ProviderScope
     await pumpScreen(tester,
         state: tracking,
         follow: followState(progress: progress()),
-        size: iPhone8);
+        size: iPhone8,
+        topInset: 20);
     expect(tester.takeException(), isNull);
     expect(tester.getSize(find.byType(RideStatsPanel)), plain);
     // The remaining line sits under the map instead.
     expect(tester.getBottomLeft(find.byType(FollowRemainingLine)).dy,
         tester.getTopLeft(find.byType(RideStatsPanel)).dy);
+  });
+
+  testWidgets('iPhone 8: no banner changes the stats panel height',
+      (tester) async {
+    const iPhone8 = Size(375, 667);
+    Future<Size> panelFor(
+        {RideTrackingState state = tracking,
+        RouteFollowState? follow,
+        bool online = true}) async {
+      await tester.pumpWidget(const SizedBox()); // a fresh ProviderScope
+      await pumpScreen(tester,
+          state: state,
+          follow: follow,
+          online: online,
+          size: iPhone8,
+          topInset: 20);
+      expect(tester.takeException(), isNull);
+      return tester.getSize(find.byType(RideStatsPanel));
+    }
+
+    final plain = await panelFor();
+    final cases = {
+      'off route': await panelFor(
+          follow: followState(progress: progress(off: true, offset: 45))),
+      'not joined': await panelFor(
+          follow: followState(
+              progress: progress(joined: false, off: true, offset: 250))),
+      'offline': await panelFor(online: false),
+      'GPS off': await panelFor(
+          state: const RideTrackingState(
+              isTracking: true, locationServiceEnabled: false)),
+    };
+    cases.forEach((name, size) => expect(size, plain, reason: name));
+  });
+
+  testWidgets('a banner appearing keeps the same map', (tester) async {
+    final follow = await pumpScreen(tester,
+        state: tracking, follow: followState(progress: progress()));
+    final before = tester.state(find.byType(LiveMap));
+    follow.emit(followState(progress: progress(off: true, offset: 45)));
+    await tester.pump();
+    expect(find.text('Off route — head back to the line'), findsOneWidget);
+    expect(tester.state(find.byType(LiveMap)), same(before));
+  });
+
+  testWidgets('a follow and its banner appearing together keep the same map',
+      (tester) async {
+    final follow = await pumpScreen(tester, state: tracking, follow: null);
+    final before = tester.state(find.byType(LiveMap));
+    follow.emit(followState(progress: progress(off: true, offset: 45)));
+    await tester.pump();
+    expect(find.byType(FollowRemainingLine), findsOneWidget);
+    expect(find.text('Off route — head back to the line'), findsOneWidget);
+    expect(tester.state(find.byType(LiveMap)), same(before));
   });
 }

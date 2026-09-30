@@ -53,6 +53,11 @@ class RouteFollowState {
 
   bool get isReversed => direction == FollowDirection.reverse;
 
+  /// [progress] as the remaining text shows it: null while [direction] is
+  /// undecided, so the text shows the whole route's length (Spec 18).
+  RouteProgress? get displayProgress =>
+      direction == FollowDirection.undecided ? null : progress;
+
   /// True when the repeat ride is being recorded (position from the recorder);
   /// false for follow-only (own foreground GPS feed).
   final bool recording;
