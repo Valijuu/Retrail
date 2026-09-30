@@ -56,6 +56,13 @@ void main() {
         FollowDirection.undecided,
       );
     });
+
+    test('an empty route is undecided', () {
+      expect(
+        directionAtJoin(RouteTrack(const []), at(0, 0)),
+        FollowDirection.undecided,
+      );
+    });
   });
 
   group('decideDirection', () {
@@ -90,6 +97,13 @@ void main() {
     test('a tie goes to forward', () {
       expect(
         decideDirection(forwardAdvanceM: 30, reverseAdvanceM: 30),
+        FollowDirection.forward,
+      );
+    });
+
+    test('forward wins when both advances reached the threshold', () {
+      expect(
+        decideDirection(forwardAdvanceM: 25, reverseAdvanceM: 40),
         FollowDirection.forward,
       );
     });

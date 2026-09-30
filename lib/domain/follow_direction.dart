@@ -9,7 +9,8 @@ enum FollowDirection { undecided, forward, reverse }
 const double followDirectionDecisionM = 25;
 
 /// Direction decided at the join: forward in the start zone, reverse in the
-/// finish zone, undecided elsewhere and always on a loop.
+/// finish zone, undecided elsewhere and always on a loop. On a short open
+/// route whose start and finish zones overlap, the start zone (forward) wins.
 FollowDirection directionAtJoin(
   RouteTrack track,
   LatLng position, {
@@ -18,33 +19,30 @@ FollowDirection directionAtJoin(
   if (track.points.length < 2 || track.lengthM <= 0) {
     return FollowDirection.undecided;
   }
-  double to(LatLng p) =>
+  double distanceTo(LatLng p) =>
       distance.distanceBetween(position.lat, position.lng, p.lat, p.lng);
   final first = track.points.first, last = track.points.last;
   final isLoop =
       distance.distanceBetween(first.lat, first.lng, last.lat, last.lng) <=
       followFinishRadiusM;
   if (isLoop) return FollowDirection.undecided;
-  if (to(first) <= followFinishRadiusM) return FollowDirection.forward;
-  if (to(last) <= followFinishRadiusM) return FollowDirection.reverse;
+  if (distanceTo(first) <= followFinishRadiusM) return FollowDirection.forward;
+  if (distanceTo(last) <= followFinishRadiusM) return FollowDirection.reverse;
   return FollowDirection.undecided;
 }
 
 /// Forward/reverse once either advance reaches [followDirectionDecisionM]
-/// (forward wins a tie), else undecided.
+/// (forward wins when both reach it in the same fix), else undecided.
 FollowDirection decideDirection({
   required double forwardAdvanceM,
   required double reverseAdvanceM,
 }) {
-  final forward = forwardAdvanceM >= followDirectionDecisionM;
-  final reverse = reverseAdvanceM >= followDirectionDecisionM;
-  if (forward && reverse) {
-    return forwardAdvanceM >= reverseAdvanceM
-        ? FollowDirection.forward
-        : FollowDirection.reverse;
+  if (forwardAdvanceM >= followDirectionDecisionM) {
+    return FollowDirection.forward;
   }
-  if (forward) return FollowDirection.forward;
-  if (reverse) return FollowDirection.reverse;
+  if (reverseAdvanceM >= followDirectionDecisionM) {
+    return FollowDirection.reverse;
+  }
   return FollowDirection.undecided;
 }
 

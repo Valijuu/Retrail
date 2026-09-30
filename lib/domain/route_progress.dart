@@ -173,9 +173,28 @@ class RouteTrack {
   List<LatLng> segmentBetween(double fromM, double toM) {
     final lo = math.min(fromM, toM).clamp(0.0, lengthM).toDouble();
     final hi = math.max(fromM, toM).clamp(0.0, lengthM).toDouble();
-    if (lengthM <= 0 || hi - lo <= _vertexSnapM) return const [];
-    final upToHi = RouteTrack(splitAt(hi).done, distance: _distance);
-    return upToHi.splitAt(lo).ahead;
+    if (hi - lo <= _vertexSnapM) return const [];
+    final from = _cutAt(lo), to = _cutAt(hi);
+    final fromCut = from.cut, toCut = to.cut;
+    return [
+      ?fromCut,
+      ...points.sublist(from.index, toCut == null ? to.index + 1 : to.index),
+      ?toCut,
+    ];
+  }
+
+  /// [alongM] as the first vertex at or after it ([index]) and, unless the cut
+  /// lands within [_vertexSnapM] of that vertex, the interpolated [cut] point
+  /// on the leg ending there.
+  ({int index, LatLng? cut}) _cutAt(double alongM) {
+    var i = 0;
+    while (i < points.length - 1 && cumulativeM[i] < alongM - _vertexSnapM) {
+      i++;
+    }
+    if (cumulativeM[i] - alongM <= _vertexSnapM) return (index: i, cut: null);
+    final legStart = cumulativeM[i - 1];
+    final t = (alongM - legStart) / (cumulativeM[i] - legStart);
+    return (index: i, cut: _lerp(points[i - 1], points[i], t));
   }
 
   RouteProgress _onRoute(LatLng position, _Candidate c) {

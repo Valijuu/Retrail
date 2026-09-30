@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/domain/heading.dart' show LatLng;
 import 'package:retrail/domain/route_progress.dart';
 
@@ -23,6 +24,15 @@ RouteProgress? walk(RouteTrack track, List<LatLng> fixes) {
     p = track.locate(f, previous: p);
   }
   return p;
+}
+
+/// One metre per leg, whatever the coordinates.
+class _OneMetreLegs implements DistanceCalculator {
+  const _OneMetreLegs();
+
+  @override
+  double distanceBetween(double lat1, double lon1, double lat2, double lon2) =>
+      1;
 }
 
 void main() {
@@ -265,6 +275,14 @@ void main() {
       expect(r.cumulativeM[3], closeTo(300, 0.5));
     });
 
+    test('keeps the injected distance calculator', () {
+      final r = RouteTrack(
+        _straight,
+        distance: const _OneMetreLegs(),
+      ).reversed();
+      expect(r.lengthM, 3);
+    });
+
     test('a single-point route stays a single point of length 0', () {
       final r = RouteTrack([at(0, 0)]).reversed();
       expect(r.points.length, 1);
@@ -317,6 +335,24 @@ void main() {
         at(0, 0),
         at(50, 0),
       ]);
+    });
+
+    test('both cuts inside one leg', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(120, 180), [
+        at(120, 0),
+        at(180, 0),
+      ]);
+    });
+
+    test('a cut on the last vertex ends there', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(250, 300), [
+        at(250, 0),
+        at(300, 0),
+      ]);
+    });
+
+    test('a swapped whole-route range yields every point', () {
+      expectPoints(RouteTrack(_straight).segmentBetween(300, 0), _straight);
     });
 
     test('a route without length yields nothing', () {
