@@ -153,6 +153,12 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   /// Follow-only: stops the GPS feed (app backgrounded). Progress is kept.
   void pauseFeed() => _cancelFeed();
 
+  /// Pauses the feed only while [track]'s session is still the current one,
+  /// so a closing follow screen can't stop a newer session's feed (#50).
+  void pauseFeedFor(RouteTrack track) {
+    if (identical(state?.track, track)) _cancelFeed();
+  }
+
   void onFix(LocationFix fix) {
     final s = state;
     if (s == null || fix.accuracy > followMaxFixAccuracyM) return;

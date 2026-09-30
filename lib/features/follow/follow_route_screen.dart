@@ -11,6 +11,7 @@ import '../active_ride/widgets/ride_chrome.dart';
 import '../home/navigation_chooser.dart';
 import '../home/navigation_launcher.dart';
 import '../shell/routes.dart';
+import '../../domain/route_progress.dart';
 import 'route_follow_providers.dart';
 import 'widgets/follow_chrome.dart';
 
@@ -27,6 +28,9 @@ class FollowRouteScreen extends ConsumerStatefulWidget {
 class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
     with WidgetsBindingObserver {
   late final RouteFollowNotifier _follow;
+
+  /// The session this screen was opened for; [dispose] pauses only its feed.
+  RouteTrack? _session;
   bool _isFollowing = true;
   bool _leaving = false;
 
@@ -38,6 +42,7 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
   void initState() {
     super.initState();
     _follow = ref.read(routeFollowProvider.notifier);
+    _session = ref.read(routeFollowProvider)?.track;
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -58,8 +63,10 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    // Leaving by any route (not only End) must not keep GPS running.
-    _follow.pauseFeed();
+    // Leaving by any route (not only End) must not keep GPS running — but a
+    // newer session started during the exit transition keeps its feed (#50).
+    final session = _session;
+    if (session != null) _follow.pauseFeedFor(session);
     super.dispose();
   }
 

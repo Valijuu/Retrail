@@ -186,6 +186,23 @@ void main() {
     expect(source.serviceCtrl.hasListener, isFalse);
   });
 
+  test('pauseFeedFor an earlier session leaves a newer session\'s feed running',
+      () async {
+    notifier().start(reference: _ref, recording: false);
+    final earlier = c.read(routeFollowProvider)!.track;
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    notifier().pauseFeedFor(earlier);
+    expect(source.fixCtrl.hasListener, isTrue);
+  });
+
+  test('pauseFeedFor the current session pauses its feed', () async {
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    notifier().pauseFeedFor(c.read(routeFollowProvider)!.track);
+    expect(source.fixCtrl.hasListener, isFalse);
+  });
+
   test('recording: an unchanged recorder location is not re-applied', () async {
     notifier().start(reference: _ref, recording: true);
     final loc = fix(48.001, 11.0);

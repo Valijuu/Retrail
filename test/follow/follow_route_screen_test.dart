@@ -34,6 +34,12 @@ class _FakeFollow extends RouteFollowNotifier {
   Future<void> resumeFeed() async => calls.add('resume');
   @override
   void pauseFeed() => calls.add('pause');
+  RouteTrack? pausedFor;
+  @override
+  void pauseFeedFor(RouteTrack track) {
+    calls.add('pauseFor');
+    pausedFor = track;
+  }
   @override
   void stop() {
     calls.add('stop');
@@ -188,10 +194,13 @@ void main() {
     expect(follow.calls, isNot(contains('pause')));
   });
 
-  testWidgets('leaving the screen pauses the feed', (tester) async {
-    await pump(tester, _state(progress: _p()));
+  testWidgets('leaving the screen pauses only its own session\'s feed (#50)',
+      (tester) async {
+    final session = _state(progress: _p());
+    await pump(tester, session);
     await tester.pumpWidget(const SizedBox());
-    expect(follow.calls, contains('pause'));
+    expect(follow.calls, contains('pauseFor'));
+    expect(follow.pausedFor, same(session.track));
   });
 
   testWidgets('offline shows the map offline banner', (tester) async {
