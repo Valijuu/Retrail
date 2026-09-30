@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/domain/follow_direction.dart';
+import 'package:retrail/domain/heading.dart' show LatLng;
 import 'package:retrail/features/follow/route_follow_providers.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_source.dart';
@@ -51,6 +54,21 @@ const _ref = [
   (lat: 48.001, lng: 11.0),
   (lat: 48.002, lng: 11.0),
 ];
+
+/// Metres per degree of latitude for the Haversine radius (6371000 m).
+const _mPerDeg = 6371000 * math.pi / 180;
+
+/// A point [northM] metres north and [eastM] metres east of (48°, 11°).
+LatLng at(double northM, double eastM) => (
+  lat: 48.0 + northM / _mPerDeg,
+  lng: 11.0 + eastM / (_mPerDeg * math.cos(48.0 * math.pi / 180)),
+);
+
+/// 300 m due north in three 100 m segments.
+final _straight = [at(0, 0), at(100, 0), at(200, 0), at(300, 0)];
+
+/// Metres north of (48°, 11°) of [p].
+double _northM(LatLng p) => (p.lat - 48.0) * _mPerDeg;
 
 void main() {
   late FakeLocationSource source;
@@ -276,5 +294,172 @@ void main() {
     notifier().start(reference: _ref, recording: false);
     await notifier().resumeFeed();
     expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
+  });
+
+  group('direction', () {
+    RouteFollowState state() => c.read(routeFollowProvider)!;
+    void ride(List<LatLng> points) {
+      for (final p in points) {
+        notifier().onFix(fix(p.lat, p.lng));
+      }
+    }
+
+    void follow(List<LatLng> reference) =>
+        notifier().start(reference: reference, recording: false);
+
+    test('a join at the finish decides reverse', () {
+      follow(_straight);
+      ride([at(299, 0)]);
+      final s = state();
+      expect(s.direction, FollowDirection.reverse);
+      expect(s.isReversed, isTrue);
+      expect(s.progress!.alongM, closeTo(1, 0.5));
+      expect(s.progress!.remainingM, closeTo(299, 0.5));
+      expect(s.ridden, isEmpty);
+      expect(s.orientedTrack.points.first, _straight.last);
+      expect(s.track.points, _straight);
+    });
+
+    test('a join at the start decides forward', () {
+      follow(_straight);
+      ride([at(1, 0)]);
+      expect(state().direction, FollowDirection.forward);
+      expect(identical(state().orientedTrack, state().track), isTrue);
+    });
+
+    test('undecided: original orientation and no ridden part', () {
+      follow(_straight);
+      ride([at(150, 0), at(160, 0)]);
+      final s = state();
+      expect(s.direction, FollowDirection.undecided);
+      expect(identical(s.orientedTrack, s.track), isTrue);
+      expect(s.ridden, isEmpty);
+      expect(s.progress!.alongM, closeTo(160, 0.5));
+    });
+
+    test('a mid-route join and 25 m forward decides forward', () {
+      follow(_straight);
+      ride([at(150, 0), at(165, 0)]);
+      expect(state().direction, FollowDirection.undecided);
+      ride([at(180, 0)]);
+      expect(state().direction, FollowDirection.forward);
+      expect(state().progress!.alongM, closeTo(180, 0.5));
+    });
+
+    test('a mid-route join and 25 m back decides reverse', () {
+      follow(_straight);
+      ride([at(150, 0), at(140, 0), at(130, 0)]);
+      expect(state().direction, FollowDirection.undecided);
+      ride([at(120, 0)]);
+      final s = state();
+      expect(s.direction, FollowDirection.reverse);
+      expect(s.progress!.alongM, closeTo(180, 0.5));
+      expect(s.progress!.remainingM, closeTo(120, 0.5));
+    });
+
+    test('the ridden part spans the join to the furthest point', () {
+      follow(_straight);
+      ride([at(150, 0), at(165, 0), at(180, 0), at(250, 0)]);
+      final r = state().ridden;
+      expect(_northM(r.first), closeTo(150, 0.5));
+      expect(_northM(r.last), closeTo(250, 0.5));
+    });
+
+    test('a reverse ridden part spans the join back to the furthest point',
+        () {
+      follow(_straight);
+      ride([at(150, 0), at(140, 0), at(120, 0), at(90, 0)]);
+      final r = state().ridden;
+      expect(_northM(r.first), closeTo(150, 0.5));
+      expect(_northM(r.last), closeTo(90, 0.5));
+    });
+
+    test('the ridden list is kept while its range does not grow', () {
+      follow(_straight);
+      ride([at(150, 0), at(180, 0), at(200, 0)]);
+      final before = state().ridden;
+      ride([at(200, 5)]);
+      expect(identical(state().ridden, before), isTrue);
+    });
+
+    test('an out-and-back joined on the way out decides forward', () {
+      follow([at(0, 0), at(200, 0), at(0, 3)]);
+      ride([at(50, 0), at(60, 0), at(80, 0), at(100, 0)]);
+      expect(state().direction, FollowDirection.forward);
+      expect(state().progress!.alongM, closeTo(100, 0.5));
+    });
+
+    test('a loop joined at its start decides only by movement', () {
+      follow([at(0, 0), at(100, 0), at(100, 100), at(0, 100), at(0, 5)]);
+      ride([at(0, 1)]);
+      expect(state().direction, FollowDirection.undecided);
+      ride([at(10, 0), at(20, 0), at(30, 0)]);
+      expect(state().direction, FollowDirection.forward);
+      expect(state().progress!.alongM, closeTo(30, 0.5));
+    });
+
+    test('flip after forward continues reverse from the position', () {
+      follow(_straight);
+      ride([at(150, 0), at(180, 0), at(200, 0)]);
+      final before = state().ridden;
+      notifier().flipDirection();
+      final s = state();
+      expect(s.direction, FollowDirection.reverse);
+      expect(s.progress!.alongM, closeTo(100, 0.5));
+      expect(s.progress!.hasJoined, isTrue);
+      expect(s.orientedTrack.points.first, _straight.last);
+      expect(_northM(s.ridden.first), closeTo(_northM(before.last), 0.5));
+      expect(_northM(s.ridden.last), closeTo(_northM(before.first), 0.5));
+      ride([at(190, 0)]);
+      expect(state().progress!.alongM, closeTo(110, 0.5));
+    });
+
+    test('flip while undecided forces reverse', () {
+      follow(_straight);
+      ride([at(150, 0)]);
+      notifier().flipDirection();
+      expect(state().direction, FollowDirection.reverse);
+      expect(state().progress!.alongM, closeTo(150, 0.5));
+    });
+
+    test('flip before the join does nothing', () {
+      follow(_straight);
+      ride([at(150, 100)]);
+      final before = state();
+      notifier().flipDirection();
+      expect(identical(state(), before), isTrue);
+      expect(state().direction, FollowDirection.undecided);
+    });
+
+    test('flip while off route keeps the mirrored progress', () {
+      follow(_straight);
+      ride([at(150, 0), at(180, 0), at(200, 0), at(200, 80)]);
+      notifier().flipDirection();
+      final p = state().progress!;
+      expect(p.isOffRoute, isTrue);
+      expect(p.hasJoined, isTrue);
+      expect(p.alongM, closeTo(100, 0.5));
+    });
+
+    test('pauseFeedFor the session pauses its feed after a flip', () async {
+      follow(_straight);
+      await notifier().resumeFeed();
+      final session = state().track;
+      ride([at(299, 0)]);
+      notifier().flipDirection();
+      expect(identical(state().track, session), isTrue);
+      notifier().pauseFeedFor(session);
+      expect(source.fixCtrl.hasListener, isFalse);
+    });
+
+    test('a new start resets the direction', () {
+      follow(_straight);
+      ride([at(299, 0)]);
+      follow(_straight);
+      expect(state().direction, FollowDirection.undecided);
+      ride([at(150, 0), at(160, 0)]);
+      expect(state().direction, FollowDirection.undecided);
+      expect(state().ridden, isEmpty);
+    });
   });
 }
