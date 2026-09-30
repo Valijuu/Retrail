@@ -6,6 +6,7 @@ import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/stats_aggregation.dart';
+import 'package:retrail/features/follow/route_follow_providers.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
 import 'package:retrail/tracking/location_permission.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
@@ -229,5 +230,20 @@ void main() {
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
     expect(find.text('Retrail ride'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Start clears a reference left over from an abandoned follow start',
+      (tester) async {
+    await pumpHome(tester);
+    final container =
+        ProviderScope.containerOf(tester.element(find.text('Start tracking')));
+    container.read(routeFollowProvider.notifier).start(
+        reference: const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)],
+        recording: true);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    expect(find.text('GET READY'), findsOneWidget);
+    expect(container.read(routeFollowProvider), isNull);
   });
 }

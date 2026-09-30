@@ -4,12 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_shapes.dart';
-import '../../core/widgets/stacked_dialog_actions.dart';
 import '../../domain/stats_aggregation.dart';
 import '../../l10n/app_localizations.dart';
-import '../../tracking/location_permission.dart';
-import '../../tracking/permission_gate_dialog.dart';
 import '../../tracking/tracking_providers.dart';
+import '../follow/route_follow_providers.dart';
 import '../profile/profile_providers.dart';
 import '../shell/routes.dart';
 import 'greetings.dart';
@@ -17,6 +15,7 @@ import 'home_providers.dart';
 import 'navigation_chooser.dart';
 import 'navigation_launcher.dart';
 import 'recent_ride_ui.dart';
+import 'ride_start_flow.dart';
 import 'ride_row_card.dart';
 import 'top_header.dart';
 import 'weekly_hero_card.dart';
@@ -47,64 +46,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context.go(AppRoutes.ride);
       return;
     }
-    ref.read(homeControllerProvider).beginTracking();
-    final online = ref.read(isOnlineProvider).asData?.value ?? true;
-    if (online) {
-      await _proceed();
-    } else {
-      await _confirmOffline();
-    }
-  }
-
-  /// Resolves location (and notification) permission up front — at the
-  /// Start-tracking press, before the countdown — mirroring the original
-  /// `HomePage`. Only a granted gate continues to the timer; a blocked gate
-  /// surfaces the rationale / enable-location prompt and stays on home.
-  Future<void> _proceed() async {
-    final action = await ref.read(rideRecordingControllerProvider).prepare();
-    if (!mounted) return;
-    if (action == LocationStartAction.proceed) {
-      context.go(AppRoutes.timer);
-    } else {
-      await _showGateBlocked(action);
-    }
-  }
-
-  Future<void> _showGateBlocked(LocationStartAction action) async {
-    final recording = ref.read(rideRecordingControllerProvider);
-    await showDialog<void>(
-      context: context,
-      builder: (c) => PermissionGateDialog(
-        action: action,
-        onOpenSettings: () {
-          Navigator.pop(c);
-          action == LocationStartAction.openLocationSettings
-              ? recording.openLocationSettings()
-              : recording.openAppSettings();
-        },
-        onDismiss: () => Navigator.pop(c),
-      ),
-    );
-  }
-
-  Future<void> _confirmOffline() async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: Text(l10n.offlineTrackingTitle),
-        content: Text(l10n.offlineTrackingBody),
-        actions: [
-          StackedDialogActions(
-            primaryLabel: l10n.offlineTrackingConfirm,
-            onPrimary: () => Navigator.pop(c, true),
-            secondaryLabel: l10n.actionSkip,
-            onSecondary: () => Navigator.pop(c, false),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await _proceed();
+    // A normal ride never inherits a reference left over from an abandoned
+    // "Follow route → Record" start (e.g. back from the countdown).
+    ref.read(routeFollowProvider.notifier).stop();
+    await runRideStartFlow(context, ref);
   }
 
   @override
