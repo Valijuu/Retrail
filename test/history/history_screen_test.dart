@@ -108,10 +108,14 @@ Trackpoint _tp(int rideId, double lat, double lng) => Trackpoint(
 /// A ride with a route (`hasRoute: true`); pass the same [trackpoints] map to
 /// `pump(... trackpoints: ...)` so `_Thumbnail`'s/`_warmPreviews`'/the
 /// navigate button's lazy fetch (issue #21) resolves real coordinates.
-RideEntryItem _routedEntry(int id) => RideEntryItem(
+RideEntryItem _routedEntry(int id, {double distanceMetres = 1200}) =>
+    RideEntryItem(
       _ride(id, desc: 'Routed ride', hasRoute: true),
-      const RideStats(
-          durationMs: 600000, distanceMetres: 1200, maxSpeedKmh: 22, avgSpeedKmh: 15),
+      RideStats(
+          durationMs: 600000,
+          distanceMetres: distanceMetres,
+          maxSpeedKmh: 22,
+          avgSpeedKmh: 15),
     );
 
 Ride _ride(int id,
@@ -693,6 +697,16 @@ void main() {
   testWidgets('3-dot menu has no Follow route for a ride without a route',
       (tester) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    expect(find.text('Follow route'), findsNothing);
+  });
+
+  testWidgets('3-dot menu has no Follow route for a route without length',
+      (tester) async {
+    await pump(tester, [_routedEntry(5, distanceMetres: 0)], trackpoints: {
+      5: [_tp(5, 52.0, 13.0)],
+    });
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     expect(find.text('Follow route'), findsNothing);

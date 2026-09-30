@@ -90,6 +90,8 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
     final ride = widget.entry.ride;
     final stats = widget.entry.stats;
     final hasRoute = ride.hasRoute;
+    // A positive distance implies ≥ 2 distinct points — a followable route.
+    final canFollow = hasRoute && stats.distanceMetres > 0;
     final locale = Localizations.localeOf(context).toString();
     final distance = formatShortDistanceKm(stats.distanceMetres, locale: locale);
     final title = rideDisplayTitle(ride, locale: locale);
@@ -163,7 +165,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                         _OverflowMenu(
                           onEdit: widget.onEdit,
                           onDelete: widget.onDelete,
-                          onFollowRoute: hasRoute ? widget.onFollowRoute : null,
+                          onFollowRoute: canFollow ? widget.onFollowRoute : null,
                         ),
                       ],
                     ],
