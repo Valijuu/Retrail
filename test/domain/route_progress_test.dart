@@ -1,4 +1,3 @@
-// test/domain/route_progress_test.dart
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -157,6 +156,54 @@ void main() {
       expect(p.isFinished, isTrue);
       expect(p.remainingM, closeTo(2, 0.5));
     });
+
+    test(
+      "out-and-back: GPS error towards the return leg doesn't jump legs",
+      () {
+        final track = RouteTrack([at(0, 0), at(200, 0), at(0, 3)]);
+        RouteProgress? p;
+        var last = 0.0;
+        for (final n in [20.0, 40.0, 50.0, 60.0, 80.0]) {
+          p = track.locate(at(n, n == 50 ? 2.5 : 0), previous: p);
+          expect(p!.alongM, closeTo(n, 3));
+          expect(p.alongM, greaterThanOrEqualTo(last));
+          last = p.alongM;
+        }
+      },
+    );
+
+    test('rejoining out-and-back picks the pass nearest the last progress', () {
+      final track = RouteTrack([at(0, 0), at(200, 0), at(0, 3)]);
+      final p = walk(track, [
+        at(50, 0),
+        at(100, 0),
+        at(150, 0),
+        at(150, 60),
+        at(100, 1),
+      ])!;
+      expect(p.isOffRoute, isFalse);
+      expect(p.alongM, closeTo(100, 3));
+    });
+
+    test('rejoining on a loop near the start does not jump to the finish', () {
+      final loop = RouteTrack([
+        at(0, 0),
+        at(100, 0),
+        at(100, 100),
+        at(0, 100),
+        at(0, 5),
+      ]);
+      final p = walk(loop, [
+        at(0, 0),
+        at(50, 0),
+        at(100, 0),
+        at(50, 50),
+        at(5, 2),
+      ])!;
+      expect(p.isOffRoute, isFalse);
+      expect(p.alongM, lessThan(10));
+      expect(p.isFinished, isFalse);
+    });
   });
 
   group('RouteTrack.splitAt', () {
@@ -179,6 +226,13 @@ void main() {
       expect(s.done.length, 2);
       expect(s.ahead.length, 3);
       expectPoint(s.ahead.first, at(100, 0));
+    });
+
+    test('just above a vertex: no near-duplicate point', () {
+      final track = RouteTrack(_straight);
+      final s = track.splitAt(track.cumulativeM[1] + 1e-9);
+      expect(s.done.length, 2);
+      expect(s.ahead.length, 3);
     });
 
     test('at or before the start nothing is done', () {

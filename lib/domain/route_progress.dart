@@ -1,4 +1,3 @@
-// lib/domain/route_progress.dart
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
@@ -104,15 +103,13 @@ class RouteTrack {
   RouteProgress? locate(LatLng position, {RouteProgress? previous}) {
     if (lengthM <= 0) return null;
     if (previous != null && previous.hasJoined && !previous.isOffRoute) {
-      final best = _closest(
-        _candidates(
-          position,
-          previous.alongM,
-          math.min(lengthM, previous.alongM + followLookAheadM),
-        ),
-      );
-      if (best != null && best.offsetM <= followOffRouteThresholdM) {
-        return _onRoute(position, best);
+      final windowOnRoute = _candidates(
+        position,
+        previous.alongM,
+        math.min(lengthM, previous.alongM + followLookAheadM),
+      ).where((c) => c.offsetM <= followOffRouteThresholdM).toList();
+      if (windowOnRoute.isNotEmpty) {
+        return _onRoute(position, _passes(windowOnRoute).first);
       }
     }
     final all = _candidates(position, 0, lengthM);
@@ -132,31 +129,35 @@ class RouteTrack {
     }
     final passes = _passes(onRoute);
     final pick = previous != null && previous.hasJoined
-        ? passes.firstWhere(
-            (c) => c.alongM >= previous.alongM,
-            orElse: () => passes.first,
-          )
+        ? _nearestPass(passes, previous.alongM)
         : passes.first;
     return _onRoute(position, pick);
   }
 
-  /// Cuts the route [alongM] metres from the start (clamped to the route).
+  /// Cuts the route [alongM] metres from the start (clamped to the route). A
+  /// cut within [_vertexSnapM] of a vertex lands on it, so neither half gets a
+  /// near-duplicate point.
   RouteSplit splitAt(double alongM) {
-    if (lengthM <= 0 || alongM <= 0) return (done: const [], ahead: points);
-    if (alongM >= lengthM) return (done: points, ahead: const []);
+    if (lengthM <= 0 || alongM <= _vertexSnapM) {
+      return (done: const [], ahead: points);
+    }
+    if (alongM >= lengthM - _vertexSnapM) {
+      return (done: points, ahead: const []);
+    }
     var i = 0;
     while (i < points.length - 2 && cumulativeM[i + 1] < alongM) {
       i++;
     }
-    // A cut within float noise of the segment's end is that vertex itself.
     if (cumulativeM[i + 1] - alongM <= _vertexSnapM) {
       return (done: points.sublist(0, i + 2), ahead: points.sublist(i + 1));
     }
-    final len = cumulativeM[i + 1] - cumulativeM[i];
-    final t = len == 0 ? 0.0 : (alongM - cumulativeM[i]) / len;
+    if (alongM - cumulativeM[i] <= _vertexSnapM) {
+      return (done: points.sublist(0, i + 1), ahead: points.sublist(i));
+    }
+    final t = (alongM - cumulativeM[i]) / (cumulativeM[i + 1] - cumulativeM[i]);
     final cut = _lerp(points[i], points[i + 1], t);
     return (
-      done: [...points.sublist(0, i + 1), if (t > 0) cut],
+      done: [...points.sublist(0, i + 1), cut],
       ahead: [cut, ...points.sublist(i + 1)],
     );
   }
@@ -225,6 +226,16 @@ class RouteTrack {
           (c.offsetM <= best.offsetM + _offsetTieM && c.alongM < best.alongM)) {
         best = c;
       }
+    }
+    return best;
+  }
+
+  /// The pass closest along the route to [alongM]; a tie goes to the one ahead.
+  static _Candidate _nearestPass(List<_Candidate> passes, double alongM) {
+    var best = passes.first;
+    for (final c in passes.skip(1)) {
+      final d = (c.alongM - alongM).abs(), bd = (best.alongM - alongM).abs();
+      if (d < bd || (d == bd && c.alongM > best.alongM)) best = c;
     }
     return best;
   }
