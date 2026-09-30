@@ -1,4 +1,3 @@
-// lib/features/follow/route_follow_providers.dart
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,9 +69,11 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   @override
   RouteFollowState? build() {
     ref.onDispose(_cancelFeed);
-    ref.listen(rideTrackingStateProvider, (_, next) {
+    ref.listen(rideTrackingStateProvider, (prev, next) {
       final fix = next.asData?.value.location;
-      if (fix != null && state?.recording == true) onFix(fix);
+      // The recorder re-emits every second with an unchanged location.
+      if (fix == null || identical(fix, prev?.asData?.value.location)) return;
+      if (state?.recording == true) onFix(fix);
     });
     return null;
   }
@@ -105,14 +106,27 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     if (s == null || s.recording || _fixSub != null) return;
     final epoch = ++_feedEpoch;
     final source = ref.read(locationSourceProvider);
-    final seed = await source.lastKnown();
+    LocationFix? seed;
+    try {
+      seed = await source.lastKnown();
+    } catch (_) {
+      // No seed: the live feed below still positions the rider.
+    }
+    // The service stream only reports changes, so seed its current value.
+    var serviceOn = true;
+    try {
+      serviceOn = await ref
+          .read(locationPermissionServiceProvider)
+          .isLocationServiceEnabled();
+    } catch (_) {}
     if (epoch != _feedEpoch || state == null) return;
+    state = state!.copyWith(locationServiceEnabled: serviceOn);
     if (seed != null) onFix(seed);
     _fixSub = source.fixes.listen(onFix, onError: (Object _) {});
     _serviceSub = source.serviceEnabled.listen((on) {
       final cur = state;
       if (cur != null) state = cur.copyWith(locationServiceEnabled: on);
-    });
+    }, onError: (Object _) {});
   }
 
   /// Follow-only: stops the GPS feed (app backgrounded). Progress is kept.

@@ -1,4 +1,3 @@
-// test/follow/route_follow_providers_test.dart
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,10 +5,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/features/follow/route_follow_providers.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_source.dart';
+import 'package:retrail/tracking/ride_recording_controller.dart';
 import 'package:retrail/tracking/ride_tracking_state.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
 
+class FakePermissions implements LocationPermissionService {
+  bool serviceEnabled = true;
+  @override
+  Future<bool> isLocationServiceEnabled() async => serviceEnabled;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class FakeLocationSource implements LocationSource {
+  bool lastKnownThrows = false;
   final fixCtrl = StreamController<LocationFix>.broadcast();
   final serviceCtrl = StreamController<bool>.broadcast();
   LocationFix? last;
@@ -18,7 +27,10 @@ class FakeLocationSource implements LocationSource {
   @override
   Stream<bool> get serviceEnabled => serviceCtrl.stream;
   @override
-  Future<LocationFix?> lastKnown() async => last;
+  Future<LocationFix?> lastKnown() async {
+    if (lastKnownThrows) throw StateError('no last known');
+    return last;
+  }
 }
 
 LocationFix fix(double lat, double lng, {double accuracy = 5}) => LocationFix(
@@ -39,15 +51,18 @@ const _ref = [
 
 void main() {
   late FakeLocationSource source;
+  late FakePermissions permissions;
   late StreamController<RideTrackingState> tracker;
   late ProviderContainer c;
 
   setUp(() {
     source = FakeLocationSource();
+    permissions = FakePermissions();
     tracker = StreamController<RideTrackingState>.broadcast();
     c = ProviderContainer(
       overrides: [
         locationSourceProvider.overrideWithValue(source),
+        locationPermissionServiceProvider.overrideWithValue(permissions),
         rideTrackingStateProvider.overrideWith((ref) => tracker.stream),
       ],
     );
@@ -153,5 +168,40 @@ void main() {
     );
     await flush();
     expect(c.read(routeFollowProvider)!.lastFix, isNull);
+  });
+
+  test('a pause during resumeFeed does not leave a subscription', () async {
+    notifier().start(reference: _ref, recording: false);
+    final pending = notifier().resumeFeed();
+    notifier().pauseFeed();
+    await pending;
+    expect(source.fixCtrl.hasListener, isFalse);
+    expect(source.serviceCtrl.hasListener, isFalse);
+  });
+
+  test('recording: an unchanged recorder location is not re-applied', () async {
+    notifier().start(reference: _ref, recording: true);
+    final loc = fix(48.001, 11.0);
+    tracker.add(RideTrackingState(isTracking: true, location: loc));
+    await flush();
+    tracker.add(RideTrackingState(isTracking: true, location: loc));
+    await flush();
+    expect(c.read(routeFollowProvider)!.trail.length, 1);
+  });
+
+  test('resumeFeed seeds the location-services flag', () async {
+    permissions.serviceEnabled = false;
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
+  });
+
+  test('a failing lastKnown still starts the feed', () async {
+    source.lastKnownThrows = true;
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    source.fixCtrl.add(fix(48.001, 11.0));
+    await flush();
+    expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
   });
 }
