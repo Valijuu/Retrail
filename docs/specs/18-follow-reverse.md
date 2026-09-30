@@ -52,6 +52,7 @@ A route is a **loop** when its first and last points are within `followFinishRad
 - **One ridden range per tracker** until the direction is decided. Deciding keeps the winner's range; a flip converts the range to the new orientation.
 - **Doubled laps on loops.** A finished lap is **latched** until a flip. A flip on a loop starts a fresh lap and shifts the kept range by the lap offset.
 - `RouteFollowState.displayProgress` returns null while the direction is undecided, so the remaining text shows the route's total length.
+- **Scenario suite.** `test/domain/follow_tracker_scenarios_test.dart` is the yardstick for every change to the tracker: seeded simulated rides (six route shapes; start, finish, mid-route, seam, standing still, slow/fast, off-route excursion, flip) under five GPS noise models, 100 runs each. It checks the final direction, remaining ≤ one lap/route, no "finished" before the real finish, finish reached, and ridden parts within 40 m of the ridden road. Allowed failing runs: 0 without noise, ≤ 2 % for uniform ±5 m, Gaussian σ5 and a correlated random walk, ≤ 5 % for Gaussian σ8.
 
 ## UI layout
 - On the ride screen the banners and the follow line sit in the **map area**, so the stats panel keeps a constant height with any banner (checked at iPhone 8 size).
@@ -61,6 +62,7 @@ A route is a **loop** when its first and last points are within `followFinishRad
 - #51: after an accepted shortcut the skipped part is greyed; loop wrap-around is solved by circular loops (see Loops).
 - #52: a join near an out-and-back turnaround greys the unridden tip.
 - #53: approximations on gap loops and after a pass jump.
+- A lollipop joined exactly at its start/finish and ridden the reverse way goes up the stem first, which is the same road both ways. The direction defaults to **forward** there; the rider fixes it with the manual flip. The scenario suite asserts this default.
 
 ## Model
 - `RouteFollowState.track` stays the **original** route. It is the session identity that `pauseFeedFor` relies on (#50).
