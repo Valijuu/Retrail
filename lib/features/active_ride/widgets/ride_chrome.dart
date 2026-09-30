@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/activity_type.dart';
+import '../../../domain/route_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../map/live_map.dart';
 import '../../../tracking/ride_tracking_state.dart';
@@ -139,6 +140,9 @@ class RideMapArea extends StatelessWidget {
     required this.masked,
     required this.onGesture,
     required this.onRecenter,
+    this.reference,
+    this.referenceProgressM,
+    this.headingTrail,
   });
 
   final RideTrackingState state;
@@ -154,6 +158,13 @@ class RideMapArea extends StatelessWidget {
   final bool masked;
   final VoidCallback onGesture;
   final VoidCallback onRecenter;
+
+  /// The saved route being followed, its progress and the heading trail —
+  /// passed straight to [LiveMap] (see its fields). All null when not
+  /// following.
+  final RouteTrack? reference;
+  final double? referenceProgressM;
+  final List<RoutePoint>? headingTrail;
 
   @override
   Widget build(BuildContext context) {
@@ -173,6 +184,9 @@ class RideMapArea extends StatelessWidget {
             onGesture: onGesture,
             // The compass stacks right above the recenter button below.
             compassClearance: kMapControlSize + kMapControlInset,
+            reference: reference,
+            referenceProgressM: referenceProgressM,
+            headingTrail: headingTrail,
           ),
         ),
         if (masked)

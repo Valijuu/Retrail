@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/domain/route_progress.dart';
 import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/preview_projection.dart';
 
@@ -26,6 +27,29 @@ void main() {
         expect(f['type'], 'FeatureCollection');
         expect(f['features'], isEmpty);
       }
+    });
+  });
+
+  group('referenceGeoJson', () {
+    final track = RouteTrack(const [
+      (lat: 48.0, lng: 11.0),
+      (lat: 48.001, lng: 11.0),
+      (lat: 48.002, lng: 11.0),
+    ]);
+
+    test('no progress yet: everything ahead, nothing done', () {
+      final g = referenceGeoJson(track, null);
+      expect((jsonDecode(g.done) as Map)['type'], 'FeatureCollection');
+      final ahead = jsonDecode(g.ahead) as Map<String, dynamic>;
+      expect((ahead['geometry']['coordinates'] as List).length, 3);
+    });
+
+    test('mid-route: done and ahead meet at the cut', () {
+      final g = referenceGeoJson(track, track.lengthM / 4);
+      final done = jsonDecode(g.done) as Map<String, dynamic>;
+      final ahead = jsonDecode(g.ahead) as Map<String, dynamic>;
+      expect((done['geometry']['coordinates'] as List).last,
+          (ahead['geometry']['coordinates'] as List).first);
     });
   });
 }

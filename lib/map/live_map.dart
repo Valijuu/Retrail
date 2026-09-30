@@ -11,6 +11,7 @@ import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
 import '../domain/heading.dart'
     show HeadingState, nextHeading, splitRouteTail;
+import '../domain/route_progress.dart' show RouteTrack;
 import '../l10n/app_localizations.dart';
 import '../features/onboarding/activity_type_ui.dart';
 import 'map_config.dart';
@@ -99,6 +100,21 @@ String routeLineGeoJson(List<RoutePoint> points) {
     },
     'properties': <String, Object?>{},
   });
+}
+
+/// Opacity of the reference route being followed (Spec 17): clearly behind
+/// the live line, still readable on both basemaps.
+const double kReferenceRouteOpacity = 0.45;
+
+/// GeoJSON for the followed reference: the part already ridden ([done],
+/// greyed) and the part ahead, cut at [progressM] (null = nothing ridden yet).
+({String done, String ahead}) referenceGeoJson(
+    RouteTrack track, double? progressM) {
+  final split = track.splitAt(progressM ?? 0);
+  return (
+    done: routeLineGeoJson(split.done),
+    ahead: routeLineGeoJson(split.ahead),
+  );
 }
 
 /// Linear interpolation between two coordinates. Safe for the short per-fix
@@ -220,6 +236,9 @@ class LiveMap extends StatefulWidget {
     this.activityType,
     this.onGesture,
     this.compassClearance = 0,
+    this.reference,
+    this.referenceProgressM,
+    this.headingTrail,
   });
 
   final List<RoutePoint> points;
@@ -250,6 +269,19 @@ class LiveMap extends StatefulWidget {
   /// the map's bottom-left corner (the active ride's recenter button), so it
   /// sits directly above them. 0 puts it in the corner itself.
   final double compassClearance;
+
+  /// A saved route being followed (Spec 17), drawn semi-transparent under the
+  /// live line with its start/finish markers and arrows. Null = not following
+  /// (no reference sources or layers are added at all).
+  final RouteTrack? reference;
+
+  /// How far along [reference] the rider is; the part behind is greyed.
+  final double? referenceProgressM;
+
+  /// Positions the heading-up camera turns by, instead of [points]. The
+  /// follow-only screen passes its recent fixes here because it draws no
+  /// line of its own.
+  final List<RoutePoint>? headingTrail;
 
   /// Test seam: when non-null, every [LiveMap] (built directly OR inside a
   /// screen) renders this instead of the native [MapLibreMap]. The native map
@@ -323,7 +355,8 @@ class _LiveMapState extends State<LiveMap>
 
   /// True once every GeoJSON source this style load creates (`route`, plus
   /// `route-tail` + `current` or `start`/`end` depending on
-  /// [LiveMap.fitBounds]) has actually
+  /// [LiveMap.fitBounds], and `reference` + `reference-done` when following a
+  /// [LiveMap.reference]) has actually
   /// been added natively. Gates every `updateGeoJsonSource` call so none of
   /// them can race [_onStyleLoaded]'s sequential, awaited source-creation —
   /// `_style` is assigned before any source exists, so a GPS-driven
@@ -382,10 +415,15 @@ class _LiveMapState extends State<LiveMap>
             (!widget.fitBounds && currentChanged))) {
       _pushRoute();
     }
-    if (!widget.fitBounds &&
-        widget.points != oldWidget.points &&
-        widget.points.isNotEmpty) {
-      _heading = nextHeading(_heading, widget.points.last);
+    if (_sourcesReady &&
+        widget.reference != null &&
+        widget.referenceProgressM != oldWidget.referenceProgressM) {
+      _pushReference();
+    }
+    final trail = widget.headingTrail ?? widget.points;
+    final oldTrail = oldWidget.headingTrail ?? oldWidget.points;
+    if (!widget.fitBounds && trail != oldTrail && trail.isNotEmpty) {
+      _heading = nextHeading(_heading, trail.last);
     }
     if (_sourcesReady &&
         !widget.fitBounds &&
@@ -468,6 +506,17 @@ class _LiveMapState extends State<LiveMap>
           id: 'route', data: routeLineGeoJson(split.body));
     }
     _pushTail(_renderedCurrent);
+  }
+
+  /// Re-cuts the reference at the rider's progress (done vs ahead). Callers
+  /// gate on [_sourcesReady] (see its doc comment): the `reference` sources
+  /// exist only once [_onStyleLoaded] has created them.
+  void _pushReference() {
+    final reference = widget.reference;
+    if (reference == null) return;
+    final g = referenceGeoJson(reference, widget.referenceProgressM);
+    _style?.updateGeoJsonSource(id: 'reference', data: g.ahead);
+    _style?.updateGeoJsonSource(id: 'reference-done', data: g.done);
   }
 
   /// Draws the `route-tail` segment from [_tailStart] to [tip] (the marker's
@@ -583,6 +632,45 @@ class _LiveMapState extends State<LiveMap>
     final halo = _hex(colors.routeLineHalo);
     final blue = _hex(colors.routeLineBlue);
 
+    // The followed reference (Spec 17) goes in first, so every live layer
+    // added below draws on top of it.
+    final reference = widget.reference;
+    if (reference != null) {
+      final g = referenceGeoJson(reference, widget.referenceProgressM);
+      await style.addSource(GeoJsonSource(id: 'reference', data: g.ahead));
+      await style.addSource(GeoJsonSource(id: 'reference-done', data: g.done));
+      await style.addLayer(LineStyleLayer(
+        id: 'reference-done-line',
+        sourceId: 'reference-done',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {
+          'line-color': _hex(colors.onSurfaceVariant),
+          'line-width': 4.5,
+          'line-opacity': kReferenceRouteOpacity,
+        },
+      ));
+      await style.addLayer(LineStyleLayer(
+        id: 'reference-halo',
+        sourceId: 'reference',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {
+          'line-color': halo,
+          'line-width': 8.0,
+          'line-opacity': kReferenceRouteOpacity,
+        },
+      ));
+      await style.addLayer(LineStyleLayer(
+        id: 'reference-line',
+        sourceId: 'reference',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {
+          'line-color': blue,
+          'line-width': 4.5,
+          'line-opacity': kReferenceRouteOpacity,
+        },
+      ));
+    }
+
     await style.addSource(
         GeoJsonSource(id: 'route', data: routeLineGeoJson(widget.points)));
     await style.addLayer(LineStyleLayer(
@@ -614,6 +702,28 @@ class _LiveMapState extends State<LiveMap>
         'icon-ignore-placement': true,
       },
     ));
+    if (reference != null) {
+      // The reference's own arrowheads reuse the image registered just above
+      // (a second addImage of the same id throws), below the live route.
+      await style.addLayer(
+        SymbolStyleLayer(
+          id: 'reference-arrows',
+          sourceId: 'reference',
+          layout: {
+            'symbol-placement': 'line',
+            'symbol-spacing': _arrowSpacingPx,
+            'icon-image': _arrowImage,
+            'icon-size': _iconSize(_arrowIconSize, pixelRatio),
+            'icon-rotation-alignment': 'map',
+            'icon-keep-upright': false,
+            'icon-allow-overlap': true,
+            'icon-ignore-placement': true,
+          },
+          paint: const {'icon-opacity': kReferenceRouteOpacity},
+        ),
+        belowLayerId: 'route-halo',
+      );
+    }
     if (!widget.fitBounds) {
       // The live line's last stretch, drawn up to the gliding marker (see
       // _pushTail) in the route's own halo + blue.
@@ -660,6 +770,26 @@ class _LiveMapState extends State<LiveMap>
               RouteMarkerImage.loop, colors, pixelRatio);
       }
     } else {
+      // The followed reference's start/finish (or loop) marker, added before
+      // the current-position marker so that one stays on top.
+      if (reference != null) {
+        final rp = reference.points;
+        switch (routeEndpointStyle(rp)) {
+          case RouteEndpointStyle.none:
+            break;
+          case RouteEndpointStyle.startOnly:
+            await _addEndpointMarker(style, 'ref-start', rp.first,
+                RouteMarkerImage.start, colors, pixelRatio);
+          case RouteEndpointStyle.open:
+            await _addEndpointMarker(style, 'ref-start', rp.first,
+                RouteMarkerImage.start, colors, pixelRatio);
+            await _addEndpointMarker(style, 'ref-end', rp.last,
+                RouteMarkerImage.finish, colors, pixelRatio);
+          case RouteEndpointStyle.loop:
+            await _addEndpointMarker(style, 'ref-start', rp.first,
+                RouteMarkerImage.loop, colors, pixelRatio);
+        }
+      }
       // Current-position marker, updated per fix via updateGeoJsonSource (see
       // didUpdateWidget). Seeded empty until there is a fix.
       final cur = widget.current;
@@ -683,6 +813,7 @@ class _LiveMapState extends State<LiveMap>
     // sources didn't exist yet to receive it). Catch up now that they do,
     // instead of waiting for the next GPS fix to self-heal it.
     _pushRoute();
+    _pushReference();
     if (!widget.fitBounds && widget.current != null) {
       _glideMarkerTo(widget.current!);
     }
@@ -860,6 +991,12 @@ class _LiveMapState extends State<LiveMap>
       final covered = !_styleReady || _resizeCovered;
       _viewportSize = size;
       final fit = widget.fitBounds ? _fitCamera : null;
+      // While following a saved route, the live map's placeholder already
+      // shows that route (framed whole) instead of bare terrain.
+      final referenceFit = !widget.fitBounds && widget.reference != null
+          ? fitRouteCamera(widget.reference!.points,
+              width: size.width, height: size.height)
+          : null;
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -941,7 +1078,11 @@ class _LiveMapState extends State<LiveMap>
               // the style never loads (offline with nothing cached).
               child: fit != null
                   ? RouteSketch(points: widget.points, camera: fit)
-                  : ColoredBox(color: colors.mapTerrain),
+                  : referenceFit != null
+                      ? RouteSketch(
+                          points: widget.reference!.points,
+                          camera: referenceFit)
+                      : ColoredBox(color: colors.mapTerrain),
             ),
           ),
         ],
