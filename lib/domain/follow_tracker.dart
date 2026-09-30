@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:meta/meta.dart' show visibleForTesting;
+
 import 'distance_calculator.dart';
 import 'follow_direction.dart';
 import 'heading.dart' show LatLng;
@@ -37,6 +39,7 @@ class FollowTracker {
     this._reverseRange,
     double forwardJoinM = 0,
     double reverseJoinM = 0,
+    this._lapFinished = false,
   }) : _fwdJoinM = forwardJoinM,
        _revJoinM = reverseJoinM;
 
@@ -72,6 +75,7 @@ class FollowTracker {
   /// The ridden stretch in original-route metres (on a loop, of the route laid
   /// out twice), from the join on; null until the direction is decided.
   /// Consumers read [riddenIntervals].
+  @visibleForTesting
   final RiddenRange? range;
 
   /// The last position fed to [next].
@@ -79,6 +83,10 @@ class FollowTracker {
 
   /// Both along values at the join (moved by pass jumps while undecided).
   final double _fwdJoinM, _revJoinM;
+
+  /// On a loop: the lap from the join has been finished. It stays finished
+  /// until a [flip] starts a fresh lap.
+  final bool _lapFinished;
 
   /// While undecided: progress on the reversed route and what each tracker
   /// has ridden (original-route metres, as [range]).
@@ -105,13 +113,16 @@ class FollowTracker {
     );
     return RouteProgress(
       alongM: p.alongM,
-      remainingM: math.max(0, joinM + track.lengthM - p.alongM),
+      remainingM: _lapFinished
+          ? 0
+          : math.max(0, joinM + track.lengthM - p.alongM),
       offsetM: p.offsetM,
       isOffRoute: p.isOffRoute,
       isFinished:
+          _lapFinished ||
           !p.isOffRoute &&
-          p.alongM - joinM >= followFinishMinShare * track.lengthM &&
-          toJoin <= followFinishRadiusM,
+              p.alongM - joinM >= followFinishMinShare * track.lengthM &&
+              toJoin <= followFinishRadiusM,
       hasJoined: p.hasJoined,
     );
   }
@@ -137,6 +148,13 @@ class FollowTracker {
   }
 
   FollowTracker next(LatLng p) {
+    final t = _step(p);
+    final finishesLap =
+        t.isLoop && !t._lapFinished && (t.progress?.isFinished ?? false);
+    return finishesLap ? t._with(progress: t._progress, lapFinished: true) : t;
+  }
+
+  FollowTracker _step(LatLng p) {
     if (direction != FollowDirection.undecided) return _nextDecided(p);
     if (hasJoined) return _nextUndecided(p);
     final fwd = _forward.locate(p, previous: _progress);
@@ -206,13 +224,7 @@ class FollowTracker {
         reverseJoinM: isReverse ? _revJoinM + delta : null,
       );
     }
-    final range = _grown(
-      this.range!,
-      next,
-      direction == FollowDirection.reverse
-          ? _forward.lengthM - next.alongM
-          : next.alongM,
-    );
+    final range = _grown(this.range!, next, _originalM(direction, next.alongM));
     return _with(progress: next, range: range, lastPoint: p);
   }
 
@@ -224,6 +236,10 @@ class FollowTracker {
     final lapM = target.cumulativeM[track.points.length - 1];
     return m.alongM <= lapM ? m : mirrored(p, _forward.lengthM - lapM);
   }
+
+  /// [alongM] on [d]'s tracked route in original-route metres (as [range]).
+  double _originalM(FollowDirection d, double alongM) =>
+      d == FollowDirection.reverse ? _forward.lengthM - alongM : alongM;
 
   double _movedM(LatLng p) {
     final last = lastPoint!;
@@ -255,11 +271,13 @@ class FollowTracker {
 
   /// Riding [d] at [p]; the undecided bookkeeping is dropped. Leaving
   /// undecided, the range is the ridden range of [d]'s tracker. [joinM]
-  /// replaces [d]'s join along.
+  /// replaces [d]'s join along, [ridden] the range, [lapFinished] the latch.
   FollowTracker _oriented(
     FollowDirection d,
     RouteProgress? p, {
     double? joinM,
+    RiddenRange? ridden,
+    bool? lapFinished,
   }) => FollowTracker._(
     track: track,
     forward: _forward,
@@ -268,14 +286,17 @@ class FollowTracker {
     distance: _distance,
     direction: d,
     progress: p,
-    range: direction != FollowDirection.undecided
-        ? range
-        : d == FollowDirection.reverse
-        ? _reverseRange
-        : _forwardRange,
+    range:
+        ridden ??
+        (direction != FollowDirection.undecided
+            ? range
+            : d == FollowDirection.reverse
+            ? _reverseRange
+            : _forwardRange),
     lastPoint: lastPoint,
     forwardJoinM: d == FollowDirection.forward ? joinM ?? _fwdJoinM : _fwdJoinM,
     reverseJoinM: d == FollowDirection.reverse ? joinM ?? _revJoinM : _revJoinM,
+    lapFinished: lapFinished ?? _lapFinished,
   );
 
   /// Rides the route the other way from [lastPoint], keeping [range]. Only
@@ -292,8 +313,22 @@ class FollowTracker {
       lastPoint!,
       previous: _mirroredOnto(target, current),
     );
+    final kept = range;
+    // On a loop the flipped along may lie a lap away from the current one:
+    // the kept range moves with it so it stays over the same ground.
+    final shiftM = !isLoop || kept == null || p == null
+        ? 0.0
+        : _originalM(flipped, p.alongM) - _originalM(direction, current.alongM);
     // On a loop the flip starts a fresh lap from where the rider turned.
-    return _oriented(flipped, p, joinM: p?.alongM);
+    return _oriented(
+      flipped,
+      p,
+      joinM: p?.alongM,
+      lapFinished: false,
+      ridden: kept == null
+          ? null
+          : RiddenRange(kept.loM + shiftM, kept.hiM + shiftM),
+    );
   }
 
   FollowTracker _with({
@@ -305,6 +340,7 @@ class FollowTracker {
     RiddenRange? forwardRange,
     RiddenRange? reverseRange,
     LatLng? lastPoint,
+    bool? lapFinished,
   }) => FollowTracker._(
     track: track,
     forward: _forward,
@@ -320,5 +356,6 @@ class FollowTracker {
     reverseJoinM: reverseJoinM ?? _revJoinM,
     forwardRange: forwardRange ?? _forwardRange,
     reverseRange: reverseRange ?? _reverseRange,
+    lapFinished: lapFinished ?? _lapFinished,
   );
 }

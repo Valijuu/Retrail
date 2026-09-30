@@ -50,6 +50,7 @@ dependencies:
   go_router: ^17.3.0
   url_launcher: ^6.3.2
   maplibre: ^0.3.6
+  meta: ^1.17.0 # @visibleForTesting in pure-Dart domain code
   flutter_svg: ^2.3.0
 
 dev_dependencies:
