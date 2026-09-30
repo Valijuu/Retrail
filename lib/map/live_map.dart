@@ -636,6 +636,15 @@ class _LiveMapState extends State<LiveMap>
     await controller.moveCamera(center: center, zoom: zoom);
   }
 
+  /// True when [style]'s load was overtaken (issue #47): the map was detached
+  /// (`_style` nulled) or a newer style loaded meanwhile (brightness rebuild).
+  /// [_onStyleLoaded] and its helpers check this after every await, so an
+  /// old load can't add layers to a dead map or set the ready flags
+  /// (`_sourcesReady`, `_markerReady`, `_drawnReference`, `_styleReady`)
+  /// against the new style before its sources exist.
+  bool _superseded(StyleController style) =>
+      !mounted || !identical(_style, style);
+
   Future<void> _onStyleLoaded(StyleController style) async {
     _style = style;
     // A fresh style (e.g. a brightness rebuild) carries none of the previously
@@ -661,7 +670,9 @@ class _LiveMapState extends State<LiveMap>
     if (reference != null) {
       final g = referenceGeoJson(reference, widget.referenceProgressM);
       await style.addSource(GeoJsonSource(id: 'reference', data: g.ahead));
+      if (_superseded(style)) return;
       await style.addSource(GeoJsonSource(id: 'reference-done', data: g.done));
+      if (_superseded(style)) return;
       _drawnReference = reference;
       await style.addLayer(LineStyleLayer(
         id: 'reference-done-line',
@@ -673,6 +684,7 @@ class _LiveMapState extends State<LiveMap>
           'line-opacity': kReferenceRouteOpacity,
         },
       ));
+      if (_superseded(style)) return;
       await style.addLayer(LineStyleLayer(
         id: 'reference-halo',
         sourceId: 'reference',
@@ -683,6 +695,7 @@ class _LiveMapState extends State<LiveMap>
           'line-opacity': kReferenceRouteOpacity,
         },
       ));
+      if (_superseded(style)) return;
       await style.addLayer(LineStyleLayer(
         id: 'reference-line',
         sourceId: 'reference',
@@ -693,25 +706,31 @@ class _LiveMapState extends State<LiveMap>
           'line-opacity': kReferenceRouteOpacity,
         },
       ));
+      if (_superseded(style)) return;
     }
 
     await style.addSource(
         GeoJsonSource(id: 'route', data: routeLineGeoJson(widget.points)));
+    if (_superseded(style)) return;
     await style.addLayer(LineStyleLayer(
       id: 'route-halo',
       sourceId: 'route',
       layout: const {'line-cap': 'round', 'line-join': 'round'},
       paint: {'line-color': halo, 'line-width': 8.0},
     ));
+    if (_superseded(style)) return;
     await style.addLayer(LineStyleLayer(
       id: 'route-line',
       sourceId: 'route',
       layout: const {'line-cap': 'round', 'line-join': 'round'},
       paint: {'line-color': blue, 'line-width': 4.5},
     ));
+    if (_superseded(style)) return;
     // Direction arrowheads, placed and rotated along the line by MapLibre.
-    await style.addImage(
-        _arrowImage, await routeArrowImagePng(colors, pixelRatio));
+    final arrowPng = await routeArrowImagePng(colors, pixelRatio);
+    if (_superseded(style)) return;
+    await style.addImage(_arrowImage, arrowPng);
+    if (_superseded(style)) return;
     await style.addLayer(SymbolStyleLayer(
       id: 'route-arrows',
       sourceId: 'route',
@@ -726,6 +745,7 @@ class _LiveMapState extends State<LiveMap>
         'icon-ignore-placement': true,
       },
     ));
+    if (_superseded(style)) return;
     if (reference != null) {
       // The reference's own arrowheads reuse the image registered just above
       // (a second addImage of the same id throws), below the live route.
@@ -747,12 +767,14 @@ class _LiveMapState extends State<LiveMap>
         ),
         belowLayerId: 'route-halo',
       );
+      if (_superseded(style)) return;
     }
     if (!widget.fitBounds) {
       // The live line's last stretch, drawn up to the gliding marker (see
       // _pushTail) in the route's own halo + blue.
       await style.addSource(
           const GeoJsonSource(id: 'route-tail', data: _emptyGeoJson));
+      if (_superseded(style)) return;
       // Halo BELOW the route's blue line: on top, its wider white cap would
       // cut a white crescent into the blue where body and tail meet.
       await style.addLayer(
@@ -764,12 +786,14 @@ class _LiveMapState extends State<LiveMap>
         ),
         belowLayerId: 'route-line',
       );
+      if (_superseded(style)) return;
       await style.addLayer(LineStyleLayer(
         id: 'route-tail-line',
         sourceId: 'route-tail',
         layout: const {'line-cap': 'round', 'line-join': 'round'},
         paint: {'line-color': blue, 'line-width': 4.5},
       ));
+      if (_superseded(style)) return;
     }
 
     // Marker mode mirrors the two original composables: the detail / fullscreen
@@ -784,14 +808,18 @@ class _LiveMapState extends State<LiveMap>
         case RouteEndpointStyle.startOnly:
           await _addEndpointMarker(style, 'start', points.first,
               RouteMarkerImage.start, colors, pixelRatio);
+          if (_superseded(style)) return;
         case RouteEndpointStyle.open:
           await _addEndpointMarker(style, 'start', points.first,
               RouteMarkerImage.start, colors, pixelRatio);
+          if (_superseded(style)) return;
           await _addEndpointMarker(style, 'end', points.last,
               RouteMarkerImage.finish, colors, pixelRatio);
+          if (_superseded(style)) return;
         case RouteEndpointStyle.loop:
           await _addEndpointMarker(style, 'start', points.first,
               RouteMarkerImage.loop, colors, pixelRatio);
+          if (_superseded(style)) return;
       }
     } else {
       // The followed reference's start/finish (or loop) marker, added before
@@ -804,14 +832,18 @@ class _LiveMapState extends State<LiveMap>
           case RouteEndpointStyle.startOnly:
             await _addEndpointMarker(style, 'ref-start', rp.first,
                 RouteMarkerImage.start, colors, pixelRatio);
+            if (_superseded(style)) return;
           case RouteEndpointStyle.open:
             await _addEndpointMarker(style, 'ref-start', rp.first,
                 RouteMarkerImage.start, colors, pixelRatio);
+            if (_superseded(style)) return;
             await _addEndpointMarker(style, 'ref-end', rp.last,
                 RouteMarkerImage.finish, colors, pixelRatio);
+            if (_superseded(style)) return;
           case RouteEndpointStyle.loop:
             await _addEndpointMarker(style, 'ref-start', rp.first,
                 RouteMarkerImage.loop, colors, pixelRatio);
+            if (_superseded(style)) return;
         }
       }
       // Current-position marker, updated per fix via updateGeoJsonSource (see
@@ -822,12 +854,17 @@ class _LiveMapState extends State<LiveMap>
         id: 'current',
         data: cur != null ? _pointGeoJson(cur) : _emptyGeoJson,
       ));
+      if (_superseded(style)) return;
       final markerType = widget.activityType;
       await _addCurrentMarker(style, markerType, blue);
+      if (_superseded(style)) return;
       _markerReady = true;
       // An activity change landing while the badge rendered was skipped by
       // didUpdateWidget's _markerReady gate — catch up now.
-      if (widget.activityType != markerType) await _swapCurrentMarker();
+      if (widget.activityType != markerType) {
+        await _swapCurrentMarker();
+        if (_superseded(style)) return;
+      }
     }
 
     _sourcesReady = true;
@@ -858,6 +895,7 @@ class _LiveMapState extends State<LiveMap>
         // A failed move still reveals the map below — a slightly off camera
         // beats a placeholder stuck on screen forever.
       }
+      if (_superseded(style)) return;
     } else if (!widget.fitBounds && widget.isFollowing) {
       // Recenter once the style is ready. The map is created with initCenter
       // (0,0) when the ride starts with no fix yet; the follow update in
@@ -899,9 +937,12 @@ class _LiveMapState extends State<LiveMap>
       AppColors colors,
       double pixelRatio) async {
     final imageId = 'endpoint-${kind.name}';
-    await style.addImage(
-        imageId, await routeMarkerImagePng(kind, colors, pixelRatio));
+    final png = await routeMarkerImagePng(kind, colors, pixelRatio);
+    if (_superseded(style)) return;
+    await style.addImage(imageId, png);
+    if (_superseded(style)) return;
     await style.addSource(GeoJsonSource(id: id, data: _pointGeoJson(at)));
+    if (_superseded(style)) return;
     await style.addLayer(SymbolStyleLayer(
       id: '$id-marker',
       sourceId: id,
@@ -920,7 +961,10 @@ class _LiveMapState extends State<LiveMap>
     if (rideMarkerIsBadge(type)) {
       final imageId = 'marker-${type!.name}';
       if (_markerImages.add(imageId)) {
-        await style.addImage(imageId, await _activityBadgePng(type));
+        final png = await _activityBadgePng(type);
+        if (_superseded(style)) return;
+        await style.addImage(imageId, png);
+        if (_superseded(style)) return;
       }
       await style.addLayer(SymbolStyleLayer(
         id: 'current-dot',
@@ -940,6 +984,7 @@ class _LiveMapState extends State<LiveMap>
           'icon-ignore-placement': true,
         },
       ));
+      if (_superseded(style)) return;
     } else {
       await style.addLayer(CircleStyleLayer(
         id: 'current-dot',
@@ -962,6 +1007,7 @@ class _LiveMapState extends State<LiveMap>
     if (style == null || !mounted) return;
     final blue = _hex(context.colors.routeLineBlue);
     await style.removeLayer('current-dot');
+    if (_superseded(style)) return;
     await _addCurrentMarker(style, widget.activityType, blue);
   }
 
