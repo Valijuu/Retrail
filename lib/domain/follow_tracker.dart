@@ -107,7 +107,7 @@ class FollowTracker {
 
   /// Progress on [orientedTrack]; forward progress while undecided. On a loop
   /// it runs one lap from the join: along continues past the start/finish,
-  /// the finish is back at the join.
+  /// the finish is back at the join, and remaining is at most one lap.
   RouteProgress? get progress {
     final p = _progress;
     if (p == null || !isLoop) return p;
@@ -123,7 +123,7 @@ class FollowTracker {
       alongM: p.alongM,
       remainingM: _lapFinished
           ? 0
-          : math.max(0, joinM + track.lengthM - p.alongM),
+          : (joinM + track.lengthM - p.alongM).clamp(0.0, track.lengthM),
       offsetM: p.offsetM,
       isOffRoute: p.isOffRoute,
       isFinished:

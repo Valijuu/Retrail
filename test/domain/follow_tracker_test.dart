@@ -514,5 +514,19 @@ void main() {
       expect(trace.last.progress!.isFinished, isTrue);
     });
 
+    test('decided forward on a loop, then off route and back on it behind '
+        'the join → remaining at most one lap', () {
+      final trace = _trace(_square, [
+        for (var e = 60.0; e >= 30; e -= 10) at(0, e),
+        at(-40, 30),
+        at(-40, 80),
+        at(0, 80),
+      ]);
+      expect(trace[3].direction, FollowDirection.forward);
+      expect(trace.last.progress!.isOffRoute, isFalse);
+      for (final t in trace) {
+        expect(t.progress!.remainingM, inInclusiveRange(0, 400));
+      }
+    });
   });
 }
