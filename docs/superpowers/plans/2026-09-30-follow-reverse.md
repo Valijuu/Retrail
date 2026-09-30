@@ -337,3 +337,64 @@ Zones use `followFinishRadiusM`. Loop = distance(first, last) ≤ `followFinishR
 - `lib/map/CLAUDE.md`: the reference paragraph now describes the oriented route, the done overlay and the marker move on a flip.
 - Run the full `flutter analyze` and `flutter test`.
 - Commit `docs: spec 18 follow in either direction`.
+
+### Task 7: Statistical scenario suite for the direction/progress tracker (the yardstick)
+
+**Why:** each fix to the direction heuristic has so far broken a different case: Task 3, Task 3b, the final review, and now the stationary-start regression after the final fix wave. The tracker needs one fixed, reproducible suite that every change must pass *as a whole*.
+
+**Files:**
+- Create `test/domain/follow_tracker_scenarios_test.dart`.
+- Optional helpers: `test/domain/support/ride_simulator.dart`.
+
+**Simulator:** pure Dart with a seeded `Random`, so results are deterministic.
+- **Route shapes:**
+  - open L-shape of about 1.6 km
+  - square loop, 400 m
+  - loop, about 2 km
+  - out-and-back on the same road, `[at(0,0),at(200,0),at(0,3)]`
+  - lollipop: stem 300 m, 200×200 square, stem back
+  - out-and-back of 1 km
+- **Rider behaviours:**
+  - forward from 2–20 m past the start
+  - reverse from the finish
+  - mid-route forward
+  - mid-route backward
+  - loop across the seam, both ways
+  - standing still 10 / 30 / 60 s at the join, then riding either way
+  - slow (1–2 m/s) and fast (5–8 m/s) at 1 Hz
+  - a brief 50 m off-route excursion
+  - a flip mid-ride
+- **Noise models:**
+  - uniform ±5 m
+  - Gaussian σ = 5 m per axis
+  - Gaussian σ = 8 m
+  - a correlated random walk: GPS drift with σ about 3 m step and 0.9 correlation, which is the most realistic
+- **Metrics per run:**
+  - final direction correct
+  - `remainingM` never above the lap/route length
+  - no `isFinished` before the rider really reached the finish (loops: before ≥ 90 % of a lap)
+  - finish reached at the end
+  - ridden intervals within the actually ridden stretch plus a tolerance of about 40 m
+- **Thresholds** (failure counts per scenario, about 100–200 seeded runs each):
+  - ≤ 2 % for uniform ±5, Gaussian σ5 and correlated noise
+  - ≤ 5 % for Gaussian σ8
+  - 0 for noiseless runs
+  - The one acknowledged ambiguity is a lollipop joined exactly at its start/finish and ridden the reverse way. It is expected to default to forward and be fixed with a manual flip. Assert that and document it in the spec.
+- **Runtime:** the whole suite must stay under about 30 s. Tune the run counts to fit.
+- On failure, the failure message prints the failing counts per scenario.
+
+**Expected state:** at the current head the suite is RED on the stationary-start and slow-reverse scenarios, and possibly on Gaussian out-and-back and lollipop. Record the baseline table in the report. Do NOT fix the tracker in this task. Commit the suite with the failing scenarios marked `skip: 'baseline RED — fixed in Task 8'`, so the suite is green-with-skips on the branch. Also commit the full baseline table.
+
+### Task 8: Robust direction decision, tuned against the Task 7 suite
+
+**Ruling (starting design; tune within it):**
+- While undecided, decide the direction from the **signed displacement along the route near the join**. Do not use two monotonic trackers' advance.
+  - Project each fix onto the forward (doubled for loops) track, **without** monotonic hold. Only consider candidates whose along lies within `[joinAlong − 60 m, joinAlong + 60 m]`, which is the join's own pass.
+  - `signed = along − joinAlong`.
+  - Decide forward when `signed ≥ followDirectionDecisionM`, and reverse when `signed ≤ −followDirectionDecisionM`.
+  - Re-anchor the join (new `joinAlong` from the current fix) when the fix is off route or the window yields nothing.
+- Stationary noise stays within about ±10 m, so it never decides. Riding back gives −25. The return leg of an out-and-back is outside the window.
+- Remove the tie band and the Σ-capped advance if they become unnecessary. Keep `decideDirection` or replace it with a signed helper. Keep the domain API used by the provider stable (`start`/`next`/`flip`, `direction`, `progress`, `orientedTrack`, `riddenIntervals`).
+- On decision, the ridden range is `[join, current]` in original metres, in the decided direction. After that, everything is as it is now.
+- Un-skip every Task 7 scenario. **All** must pass the thresholds. All existing tracker/provider/widget tests stay green, or are updated only where they asserted the old mechanism, with a reason given.
+- Update Spec 18 (§1–§2 direction decision, and the lollipop-at-seam ambiguity) and `lib/domain` docs.
