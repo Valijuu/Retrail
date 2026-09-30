@@ -7,4 +7,5 @@ abstract final class AppRoutes {
   static const main = '/';
   static const timer = '/timer';
   static const ride = '/ride';
+  static const follow = '/follow';
 }

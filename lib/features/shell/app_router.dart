@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../active_ride/active_ride_screen.dart';
+import '../follow/follow_route_screen.dart';
 import '../onboarding/activity_init_screen.dart';
 import '../onboarding/init_screen.dart';
 import '../onboarding/profile_picture_screen.dart';
@@ -82,6 +83,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
               path: 'ride',
               pageBuilder: (c, s) => _rideEnter(const ActiveRideScreen(), s)),
+          GoRoute(
+              path: 'follow',
+              pageBuilder: (c, s) => _rideEnter(const FollowRouteScreen(), s)),
         ],
       ),
     ],
