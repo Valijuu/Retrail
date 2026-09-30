@@ -216,54 +216,6 @@ void main() {
     });
   });
 
-  group('RouteTrack.splitAt', () {
-    void expectPoint(LatLng actual, LatLng expected) {
-      expect(actual.lat, closeTo(expected.lat, 1e-9));
-      expect(actual.lng, closeTo(expected.lng, 1e-9));
-    }
-
-    test('mid-segment: both halves share the cut point', () {
-      final s = RouteTrack(_straight).splitAt(150);
-      expect(s.done.length, 3);
-      expect(s.ahead.length, 3);
-      expectPoint(s.done.last, at(150, 0));
-      expectPoint(s.ahead.first, at(150, 0));
-      expectPoint(s.ahead.last, at(300, 0));
-    });
-
-    test('at a vertex: no duplicated point', () {
-      final s = RouteTrack(_straight).splitAt(100);
-      expect(s.done.length, 2);
-      expect(s.ahead.length, 3);
-      expectPoint(s.ahead.first, at(100, 0));
-    });
-
-    test('just above a vertex: no near-duplicate point', () {
-      final track = RouteTrack(_straight);
-      final s = track.splitAt(track.cumulativeM[1] + 1e-9);
-      expect(s.done.length, 2);
-      expect(s.ahead.length, 3);
-    });
-
-    test('at or before the start nothing is done', () {
-      final s = RouteTrack(_straight).splitAt(0);
-      expect(s.done, isEmpty);
-      expect(s.ahead.length, 4);
-    });
-
-    test('at or past the end everything is done', () {
-      final s = RouteTrack(_straight).splitAt(400);
-      expect(s.done.length, 4);
-      expect(s.ahead, isEmpty);
-    });
-
-    test('a single-point route is all ahead', () {
-      final s = RouteTrack([at(0, 0)]).splitAt(10);
-      expect(s.done, isEmpty);
-      expect(s.ahead.length, 1);
-    });
-  });
-
   group('RouteTrack.reversed', () {
     test('walks the points backwards with the same length', () {
       final r = RouteTrack(_straight).reversed();

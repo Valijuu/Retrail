@@ -131,7 +131,7 @@ class RideWarningBanner extends StatelessWidget {
   }
 }
 
-/// The live map plus its exit mask and recenter control.
+/// The live map plus its exit mask, recenter and reverse-direction controls.
 class RideMapArea extends StatelessWidget {
   const RideMapArea({
     super.key,
@@ -141,8 +141,9 @@ class RideMapArea extends StatelessWidget {
     required this.onGesture,
     required this.onRecenter,
     this.reference,
-    this.referenceProgressM,
+    this.referenceDone,
     this.headingTrail,
+    this.onReverse,
   });
 
   final RideTrackingState state;
@@ -159,12 +160,15 @@ class RideMapArea extends StatelessWidget {
   final VoidCallback onGesture;
   final VoidCallback onRecenter;
 
-  /// The saved route being followed, its progress and the heading trail —
-  /// passed straight to [LiveMap] (see its fields). All null when not
-  /// following.
+  /// The saved route being followed (as ridden), its ridden parts and the
+  /// heading trail — passed straight to [LiveMap] (see its fields). All null
+  /// when not following.
   final RouteTrack? reference;
-  final double? referenceProgressM;
+  final List<List<RoutePoint>>? referenceDone;
   final List<RoutePoint>? headingTrail;
+
+  /// Flips the followed route's direction (Spec 18). Null hides the button.
+  final VoidCallback? onReverse;
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +189,7 @@ class RideMapArea extends StatelessWidget {
             // The compass stacks right above the recenter button below.
             compassClearance: kMapControlSize + kMapControlInset,
             reference: reference,
-            referenceProgressM: referenceProgressM,
+            referenceDone: referenceDone,
             headingTrail: headingTrail,
           ),
         ),
@@ -206,6 +210,23 @@ class RideMapArea extends StatelessWidget {
               shape: const CircleBorder(),
               tooltip: l10n.mapRecenterCd,
               child: const Icon(Icons.refresh),
+            ),
+          ),
+        if (!masked && onReverse != null)
+          Positioned(
+            right: kMapControlInset,
+            bottom: kMapControlInset,
+            child: FloatingActionButton.small(
+              // No hero: it can show next to recenter, whose default tag a
+              // second FAB would duplicate.
+              heroTag: null,
+              onPressed: onReverse,
+              // Styled like recenter: it sits on the theme-following map.
+              backgroundColor: colors.surface,
+              foregroundColor: colors.primary,
+              shape: const CircleBorder(),
+              tooltip: l10n.followReverseDirection,
+              child: const Icon(Icons.swap_vert),
             ),
           ),
       ],

@@ -196,5 +196,6 @@
   "followNavigateToStart": "Navigate to start",
   "followEndAction": "End",
   "followEndConfirmTitle": "End following?",
-  "followEndConfirmBody": "Your position won't be shown on the route anymore."
+  "followEndConfirmBody": "Your position won't be shown on the route anymore.",
+  "followReverseDirection": "Reverse direction"
 }

@@ -164,8 +164,8 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
                   state: RideTrackingState(location: follow.lastFix),
                   isFollowing: _isFollowing,
                   masked: _leaving,
-                  reference: follow.track,
-                  referenceProgressM: progress?.alongM,
+                  reference: follow.orientedTrack,
+                  referenceDone: follow.ridden,
                   headingTrail: follow.trail,
                   onGesture: () {
                     if (_isFollowing) setState(() => _isFollowing = false);

@@ -143,11 +143,18 @@ class _FixedFollow extends RouteFollowNotifier {
   }
 }
 
-RouteFollowState followState({RouteProgress? progress, bool recording = true}) =>
+RouteFollowState followState({
+  RouteProgress? progress,
+  bool recording = true,
+  RouteTrack? orientedTrack,
+  List<List<({double lat, double lng})>> ridden = const [],
+}) =>
     RouteFollowState(
       track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
       recording: recording,
       progress: progress,
+      orientedTrack: orientedTrack,
+      ridden: ridden,
     );
 
 RouteProgress progress({
@@ -246,11 +253,19 @@ void main() {
 
   testWidgets('recording with a reference: map gets it, remaining line shows',
       (tester) async {
+    final reversed = RouteTrack(
+        const [(lat: 48.01, lng: 11.0), (lat: 48.0, lng: 11.0)]);
+    const ridden = [
+      [(lat: 48.01, lng: 11.0), (lat: 48.005, lng: 11.0)],
+    ];
     await pumpScreen(tester,
-        state: tracking, follow: followState(progress: progress()));
+        state: tracking,
+        follow: followState(
+            progress: progress(), orientedTrack: reversed, ridden: ridden));
     final map = tester.widget<RideMapArea>(find.byType(RideMapArea));
-    expect(map.reference, isNotNull);
-    expect(map.referenceProgressM, 300);
+    // The map draws the route as ridden (oriented) and its ridden parts.
+    expect(map.reference, same(reversed));
+    expect(map.referenceDone, ridden);
     expect(find.text('0.81 km to go'), findsOneWidget);
   });
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/domain/route_markers.dart';
 import 'package:retrail/domain/route_progress.dart';
 import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/preview_projection.dart';
@@ -37,19 +38,87 @@ void main() {
       (lat: 48.002, lng: 11.0),
     ]);
 
-    test('no progress yet: everything ahead, nothing done', () {
+    test('nothing ridden: done is empty, ahead is the whole track', () {
       final g = referenceGeoJson(track, null);
-      expect((jsonDecode(g.done) as Map)['type'], 'FeatureCollection');
+      final done = jsonDecode(g.done) as Map<String, dynamic>;
+      expect(done['type'], 'FeatureCollection');
+      expect(done['features'], isEmpty);
       final ahead = jsonDecode(g.ahead) as Map<String, dynamic>;
       expect((ahead['geometry']['coordinates'] as List).length, 3);
     });
 
-    test('mid-route: done and ahead meet at the cut', () {
-      final g = referenceGeoJson(track, track.lengthM / 4);
+    test('one ridden segment: a MultiLineString of it, ahead stays whole', () {
+      final g = referenceGeoJson(track, [
+        [track.points[0], track.points[1]],
+      ]);
       final done = jsonDecode(g.done) as Map<String, dynamic>;
+      expect(done['geometry']['type'], 'MultiLineString');
+      final lines = done['geometry']['coordinates'] as List;
+      expect(lines.length, 1);
+      expect((lines.single as List).length, 2);
+      expect((lines.single as List).first, [11.0, 48.0]); // [lng, lat]
       final ahead = jsonDecode(g.ahead) as Map<String, dynamic>;
-      expect((done['geometry']['coordinates'] as List).last,
-          (ahead['geometry']['coordinates'] as List).first);
+      expect((ahead['geometry']['coordinates'] as List).length, 3);
+    });
+
+    test('two ridden segments (a loop across its seam): both drawn', () {
+      final g = referenceGeoJson(track, [
+        [track.points[0], track.points[1]],
+        [track.points[1], track.points[2]],
+      ]);
+      final done = jsonDecode(g.done) as Map<String, dynamic>;
+      final lines = done['geometry']['coordinates'] as List;
+      expect(lines.length, 2);
+      expect((lines[1] as List).last, [11.0, 48.002]);
+    });
+
+    test('segments with fewer than 2 points are dropped', () {
+      final g = referenceGeoJson(track, [
+        [track.points[0]],
+        [track.points[1], track.points[2]],
+      ]);
+      final done = jsonDecode(g.done) as Map<String, dynamic>;
+      expect((done['geometry']['coordinates'] as List).length, 1);
+      final none = jsonDecode(referenceGeoJson(track, <List<RoutePoint>>[
+        const [],
+        [track.points[0]],
+      ]).done) as Map<String, dynamic>;
+      expect(none['type'], 'FeatureCollection');
+      expect(none['features'], isEmpty);
+    });
+  });
+
+  group('referenceMarkerPoints', () {
+    const pts = <RoutePoint>[
+      (lat: 48.0, lng: 11.0),
+      (lat: 48.001, lng: 11.0),
+      (lat: 48.002, lng: 11.0),
+    ];
+
+    test('open: start at the first point, finish at the last', () {
+      final m = referenceMarkerPoints(RouteEndpointStyle.open, pts);
+      expect(m.start, pts.first);
+      expect(m.end, pts.last);
+    });
+
+    test('a flip swaps them: the reversed points move both markers', () {
+      final m = referenceMarkerPoints(
+          RouteEndpointStyle.open, pts.reversed.toList());
+      expect(m.start, pts.last);
+      expect(m.end, pts.first);
+    });
+
+    test('loop: one combined marker at the start, no finish', () {
+      final m = referenceMarkerPoints(RouteEndpointStyle.loop, pts);
+      expect(m.start, pts.first);
+      expect(m.end, isNull);
+    });
+
+    test('startOnly: the start marker only', () {
+      final m = referenceMarkerPoints(
+          RouteEndpointStyle.startOnly, const [(lat: 48.0, lng: 11.0)]);
+      expect(m.start, (lat: 48.0, lng: 11.0));
+      expect(m.end, isNull);
     });
   });
 

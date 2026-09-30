@@ -193,5 +193,6 @@
   "followNavigateToStart": "Zum Start navigieren",
   "followEndAction": "Beenden",
   "followEndConfirmTitle": "Folgen beenden?",
-  "followEndConfirmBody": "Deine Position wird dann nicht mehr auf der Strecke angezeigt."
+  "followEndConfirmBody": "Deine Position wird dann nicht mehr auf der Strecke angezeigt.",
+  "followReverseDirection": "Richtung umkehren"
 }

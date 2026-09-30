@@ -257,8 +257,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                       state: state,
                       isFollowing: _isFollowing,
                       masked: _isLeaving,
-                      reference: following?.track,
-                      referenceProgressM: following?.progress?.alongM,
+                      reference: following?.orientedTrack,
+                      referenceDone: following?.ridden,
                       onGesture: () {
                         if (_isFollowing) setState(() => _isFollowing = false);
                       },

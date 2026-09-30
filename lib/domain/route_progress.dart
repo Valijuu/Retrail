@@ -62,10 +62,6 @@ class RouteProgress {
       'joined: $hasJoined)';
 }
 
-/// A route cut at a distance along it: the part behind and the part ahead,
-/// sharing the cut point.
-typedef RouteSplit = ({List<LatLng> done, List<LatLng> ahead});
-
 /// A reference route with its cumulative distances, locating positions on it.
 class RouteTrack {
   RouteTrack(
@@ -145,34 +141,6 @@ class RouteTrack {
         ? _nearestPass(passes, previous.alongM)
         : passes.first;
     return _onRoute(position, pick);
-  }
-
-  /// Cuts the route [alongM] metres from the start (clamped to the route). A
-  /// cut within [_vertexSnapM] of a vertex lands on it, so neither half gets a
-  /// near-duplicate point.
-  RouteSplit splitAt(double alongM) {
-    if (lengthM <= 0 || alongM <= _vertexSnapM) {
-      return (done: const [], ahead: points);
-    }
-    if (alongM >= lengthM - _vertexSnapM) {
-      return (done: points, ahead: const []);
-    }
-    var i = 0;
-    while (i < points.length - 2 && cumulativeM[i + 1] < alongM) {
-      i++;
-    }
-    if (cumulativeM[i + 1] - alongM <= _vertexSnapM) {
-      return (done: points.sublist(0, i + 2), ahead: points.sublist(i + 1));
-    }
-    if (alongM - cumulativeM[i] <= _vertexSnapM) {
-      return (done: points.sublist(0, i + 1), ahead: points.sublist(i));
-    }
-    final t = (alongM - cumulativeM[i]) / (cumulativeM[i + 1] - cumulativeM[i]);
-    final cut = _lerp(points[i], points[i + 1], t);
-    return (
-      done: [...points.sublist(0, i + 1), cut],
-      ahead: [cut, ...points.sublist(i + 1)],
-    );
   }
 
   /// The route laid out twice, the second lap continuing from the last point.

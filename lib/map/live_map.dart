@@ -106,22 +106,51 @@ String routeLineGeoJson(List<RoutePoint> points) {
 /// the live line, still readable on both basemaps.
 const double kReferenceRouteOpacity = 0.45;
 
-/// GeoJSON for the followed reference: the part already ridden ([done],
-/// greyed) and the part ahead, cut at [progressM] (null = nothing ridden yet).
-({String done, String ahead}) referenceGeoJson(
-    RouteTrack track, double? progressM) {
-  final split = track.splitAt(progressM ?? 0);
-  return (
-    done: routeLineGeoJson(split.done),
-    ahead: routeLineGeoJson(split.ahead),
-  );
+/// GeoJSON for the ridden parts of a followed reference: one MultiLineString
+/// of the [segments] with at least two points (a LineString needs two), or
+/// the empty document when none has.
+String _multiLineGeoJson(List<List<RoutePoint>> segments) {
+  final lines = [
+    for (final s in segments)
+      if (s.length >= 2) [for (final p in s) [p.lng, p.lat]],
+  ];
+  if (lines.isEmpty) return _emptyGeoJson;
+  return jsonEncode({
+    'type': 'Feature',
+    'geometry': {'type': 'MultiLineString', 'coordinates': lines},
+    'properties': <String, Object?>{},
+  });
 }
+
+/// GeoJSON for the followed reference (Spec 18): the whole [track] as
+/// [ahead] (the line with arrows) and the ridden parts [done] (up to two on a
+/// loop ridden across its start/finish; null = nothing ridden yet), greyed on
+/// top of it.
+({String done, String ahead}) referenceGeoJson(
+        RouteTrack track, List<List<RoutePoint>>? done) =>
+    (
+      done: _multiLineGeoJson(done ?? const []),
+      ahead: routeLineGeoJson(track.points),
+    );
+
+/// Where the followed reference's markers go for the endpoint [style] drawn
+/// at style load: the start (or combined loop) marker on the first of
+/// [points], the finish on the last — only for an [RouteEndpointStyle.open]
+/// route. [points] must not be empty (a [RouteEndpointStyle.none] route has
+/// no markers to move). After a flip [points] is the reversed route, so both
+/// markers swap ends.
+({RoutePoint start, RoutePoint? end}) referenceMarkerPoints(
+        RouteEndpointStyle style, List<RoutePoint> points) =>
+    (
+      start: points.first,
+      end: style == RouteEndpointStyle.open ? points.last : null,
+    );
 
 /// Which reference to push into the `reference` sources, or null to push
 /// nothing. [drawn] is the reference whose sources the current style load
 /// created (null = none exist, so any push would hit a missing source — a
 /// native crash on Android, see `_sourcesReady`); [current] is the widget's
-/// reference now. A replaced reference re-cuts the existing sources; one that
+/// reference now. A replaced reference (a flip) redraws the existing sources; one that
 /// went away pushes nothing (the screen is leaving).
 RouteTrack? referencePushTarget({
   required RouteTrack? drawn,
@@ -249,7 +278,7 @@ class LiveMap extends StatefulWidget {
     this.onGesture,
     this.compassClearance = 0,
     this.reference,
-    this.referenceProgressM,
+    this.referenceDone,
     this.headingTrail,
   });
 
@@ -286,14 +315,16 @@ class LiveMap extends StatefulWidget {
   /// live line with its start/finish markers and arrows. Null = not following
   /// (no reference sources or layers are added at all).
   ///
-  /// The sources are created at style load: a reference that appears later
-  /// is drawn from the next style load on, and a replaced one re-cuts the
-  /// existing lines while its start/finish markers stay where the style load
-  /// put them.
+  /// It is the route as ridden (Spec 18: reversed after a flip), so its
+  /// arrows point the riding way and its first point carries the start
+  /// marker. The sources are created at style load: a reference that appears
+  /// later is drawn from the next style load on, and a replaced one (a flip)
+  /// redraws the existing line and moves the start/finish markers.
   final RouteTrack? reference;
 
-  /// How far along [reference] the rider is; the part behind is greyed.
-  final double? referenceProgressM;
+  /// The ridden parts of [reference] (up to two on a loop ridden across its
+  /// start/finish), greyed on top of it. Null or empty = nothing ridden yet.
+  final List<List<RoutePoint>>? referenceDone;
 
   /// Positions the heading-up camera turns by, instead of [points]. The
   /// follow-only screen passes its recent fixes here because it draws no
@@ -355,6 +386,12 @@ class _LiveMapState extends State<LiveMap>
   /// The reference whose `reference` / `reference-done` sources this style
   /// load created, or null when it created none (see [referencePushTarget]).
   RouteTrack? _drawnReference;
+
+  /// The `ref-start` / `ref-end` marker sources this style load created: the
+  /// endpoint [RouteEndpointStyle] drawn then (which marker sources exist)
+  /// and the reference whose endpoints they show now. Null when it created
+  /// none — then a flip moves nothing (a push would hit a missing source).
+  ({RouteEndpointStyle style, RouteTrack shows})? _drawnReferenceMarkers;
 
   @override
   void initState() {
@@ -438,7 +475,7 @@ class _LiveMapState extends State<LiveMap>
     }
     if (_sourcesReady &&
         (!identical(widget.reference, oldWidget.reference) ||
-            widget.referenceProgressM != oldWidget.referenceProgressM)) {
+            !identical(widget.referenceDone, oldWidget.referenceDone))) {
       _pushReference();
     }
     final trail = widget.headingTrail ?? widget.points;
@@ -529,16 +566,38 @@ class _LiveMapState extends State<LiveMap>
     _pushTail(_renderedCurrent);
   }
 
-  /// Re-cuts the reference at the rider's progress (done vs ahead). Callers
+  /// Redraws the reference line and its ridden parts, and — when the
+  /// reference was replaced (a flip) — moves its start/finish markers. Callers
   /// gate on [_sourcesReady] (see its doc comment); [referencePushTarget]
   /// additionally skips it when this style load created no reference sources.
   void _pushReference() {
     final reference = referencePushTarget(
         drawn: _drawnReference, current: widget.reference);
     if (reference == null) return;
-    final g = referenceGeoJson(reference, widget.referenceProgressM);
+    final g = referenceGeoJson(reference, widget.referenceDone);
     _style?.updateGeoJsonSource(id: 'reference', data: g.ahead);
     _style?.updateGeoJsonSource(id: 'reference-done', data: g.done);
+    _pushReferenceMarkers(reference);
+  }
+
+  /// Moves the `ref-start` / `ref-end` points to [reference]'s ends, only
+  /// those marker sources this style load created ([_drawnReferenceMarkers])
+  /// and only when they show another reference (a flip, possibly one that
+  /// landed while the style was loading).
+  void _pushReferenceMarkers(RouteTrack reference) {
+    final drawn = _drawnReferenceMarkers;
+    if (drawn == null ||
+        identical(drawn.shows, reference) ||
+        reference.points.isEmpty) {
+      return;
+    }
+    _drawnReferenceMarkers = (style: drawn.style, shows: reference);
+    final m = referenceMarkerPoints(drawn.style, reference.points);
+    _style?.updateGeoJsonSource(id: 'ref-start', data: _pointGeoJson(m.start));
+    final end = m.end;
+    if (end != null) {
+      _style?.updateGeoJsonSource(id: 'ref-end', data: _pointGeoJson(end));
+    }
   }
 
   /// Draws the `route-tail` segment from [_tailStart] to [tip] (the marker's
@@ -658,6 +717,7 @@ class _LiveMapState extends State<LiveMap>
     _sourcesReady = false;
     _pushedPoints = null; // the fresh style's `route` source starts over
     _drawnReference = null; // nor has it any reference sources yet
+    _drawnReferenceMarkers = null;
     _markerImages.clear();
     final colors = context.colors;
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
@@ -668,23 +728,12 @@ class _LiveMapState extends State<LiveMap>
     // added below draws on top of it.
     final reference = widget.reference;
     if (reference != null) {
-      final g = referenceGeoJson(reference, widget.referenceProgressM);
+      final g = referenceGeoJson(reference, widget.referenceDone);
       await style.addSource(GeoJsonSource(id: 'reference', data: g.ahead));
       if (_superseded(style)) return;
       await style.addSource(GeoJsonSource(id: 'reference-done', data: g.done));
       if (_superseded(style)) return;
       _drawnReference = reference;
-      await style.addLayer(LineStyleLayer(
-        id: 'reference-done-line',
-        sourceId: 'reference-done',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {
-          'line-color': _hex(colors.onSurfaceVariant),
-          'line-width': 4.5,
-          'line-opacity': kReferenceRouteOpacity,
-        },
-      ));
-      if (_superseded(style)) return;
       await style.addLayer(LineStyleLayer(
         id: 'reference-halo',
         sourceId: 'reference',
@@ -702,6 +751,19 @@ class _LiveMapState extends State<LiveMap>
         layout: const {'line-cap': 'round', 'line-join': 'round'},
         paint: {
           'line-color': blue,
+          'line-width': 4.5,
+          'line-opacity': kReferenceRouteOpacity,
+        },
+      ));
+      if (_superseded(style)) return;
+      // The ridden parts on top of the whole reference line (Spec 18), still
+      // below every live layer added next.
+      await style.addLayer(LineStyleLayer(
+        id: 'reference-done-line',
+        sourceId: 'reference-done',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {
+          'line-color': _hex(colors.onSurfaceVariant),
           'line-width': 4.5,
           'line-opacity': kReferenceRouteOpacity,
         },
@@ -826,7 +888,8 @@ class _LiveMapState extends State<LiveMap>
       // the current-position marker so that one stays on top.
       if (reference != null) {
         final rp = reference.points;
-        switch (routeEndpointStyle(rp)) {
+        final drawnStyle = routeEndpointStyle(rp);
+        switch (drawnStyle) {
           case RouteEndpointStyle.none:
             break;
           case RouteEndpointStyle.startOnly:
@@ -844,6 +907,11 @@ class _LiveMapState extends State<LiveMap>
             await _addEndpointMarker(style, 'ref-start', rp.first,
                 RouteMarkerImage.loop, colors, pixelRatio);
             if (_superseded(style)) return;
+        }
+        // Only now do the marker sources exist; a flip moves them from here
+        // on (see _pushReferenceMarkers).
+        if (drawnStyle != RouteEndpointStyle.none) {
+          _drawnReferenceMarkers = (style: drawnStyle, shows: reference);
         }
       }
       // Current-position marker, updated per fix via updateGeoJsonSource (see
@@ -1036,6 +1104,7 @@ class _LiveMapState extends State<LiveMap>
     _sourcesReady = false;
     _markerReady = false;
     _drawnReference = null;
+    _drawnReferenceMarkers = null;
     _glide.stop();
   }
 
