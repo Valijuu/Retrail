@@ -316,6 +316,17 @@ Zones use `followFinishRadiusM`. Loop = distance(first, last) ≤ `followFinishR
 - the map receives `orientedTrack` and `ridden`
 - all on both screens
 
+**User-reported additions (2026-09-30), part of this task:**
+- **Ride screen, iPhone 8 bug.** The "X km to go" line currently sits inside the 35-flex stats area, where it steals height from `RideStatsPanel`. On short screens (iPhone 8, 375×667) the panel's rows are squeezed unevenly; on tall Android screens it looks fine. Move the line to the bottom of the **map's** 65-flex area: `Column[Expanded(RideMapArea), FollowRemainingLine]` when following. The stats panel must then get exactly the same height as without a reference.
+  - Regression test at `Size(375, 667)`: `tester.getSize(find.byType(RideStatsPanel))` is identical with and without a recording follow.
+  - Also check there is no overflow (`takeException` is null).
+- **Follow-only screen bottom bar.** Once the rider is on the route, "End" stands alone at the bottom right, and "X km to go" sits in a separate strip above it. Merge them into ONE bar:
+  - Row 1: the progress text on the left ("X km to go", "Finish reached", or "X km to go · reversed", styled prominently), and "End" (FilledButton) on the right.
+  - Row 2, only before joining: a full-width `FilledButton.tonalIcon` "Navigate to start".
+  - Remove the separate `FollowRemainingLine` strip on this screen. It may reuse the same text logic, e.g. a shared `followProgressLabel(...)` helper extracted from `FollowRemainingLine`.
+  - Keep the existing tests' intent: End still confirms, navigate-to-start is still shown only before joining, and the label fallback is unchanged.
+  - Check at 375 px in English and German that nothing truncates or overflows.
+
 - [ ] Red-Green-Refactor, green, analyze-clean.
 - [ ] Commit `feat(follow): flip button and reversed hint on both follow screens (spec 18)`.
 
