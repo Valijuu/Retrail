@@ -41,12 +41,14 @@ class _FakeFollow extends RouteFollowNotifier {
   }
 }
 
-RouteFollowState _state({String? title = 'Rhein', RouteProgress? progress}) =>
+RouteFollowState _state({String? title = 'Rhein', RouteProgress? progress,
+        bool locationOn = true}) =>
     RouteFollowState(
       track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
       recording: false,
       rideTitle: title,
       progress: progress,
+      locationServiceEnabled: locationOn,
     );
 
 RouteProgress _p({bool joined = true, bool off = false, double offset = 2,
@@ -59,7 +61,8 @@ void main() {
   late _FakeFollow follow;
   late FakeNavigationLauncher launcher;
 
-  Future<void> pump(WidgetTester tester, RouteFollowState? s) async {
+  Future<void> pump(WidgetTester tester, RouteFollowState? s,
+      {bool online = true}) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -73,7 +76,7 @@ void main() {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         routeFollowProvider.overrideWith(() => follow),
-        isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
         navigationLauncherProvider.overrideWithValue(launcher),
       ],
       child: MaterialApp.router(
@@ -139,6 +142,16 @@ void main() {
     await tester.tap(find.text('Navigate to start'));
     await tester.pump();
     expect(launcher.launches.first.$1, 48.0);
+    expect(launcher.launches.first.$3, 'Rhein');
+  });
+
+  testWidgets('a blank ride title navigates with the "Follow route" label',
+      (tester) async {
+    await pump(tester,
+        _state(title: '   ', progress: _p(joined: false, off: true, offset: 250)));
+    await tester.tap(find.text('Navigate to start'));
+    await tester.pump();
+    expect(launcher.launches.first.$3, 'Follow route');
   });
 
   testWidgets('on the route: no Navigate to start', (tester) async {
@@ -160,6 +173,33 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     expect(follow.calls.last, 'resume');
+  });
+
+  testWidgets('an inactive app alone does not pause the feed', (tester) async {
+    await pump(tester, _state(progress: _p()));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(follow.calls, isNot(contains('pause')));
+  });
+
+  testWidgets('leaving the screen pauses the feed', (tester) async {
+    await pump(tester, _state(progress: _p()));
+    await tester.pumpWidget(const SizedBox());
+    expect(follow.calls, contains('pause'));
+  });
+
+  testWidgets('offline shows the map offline banner', (tester) async {
+    await pump(tester, _state(progress: _p()), online: false);
+    await tester.pump();
+    expect(find.text('Offline — map tiles may not be available'), findsOneWidget);
+  });
+
+  testWidgets('location off shows the follow location banner', (tester) async {
+    await pump(tester, _state(progress: _p(), locationOn: false));
+    expect(
+        find.text(
+            "Location is off — your position can't be shown. Tap to turn it on."),
+        findsOneWidget);
   });
 
   testWidgets('without a reference it goes home', (tester) async {

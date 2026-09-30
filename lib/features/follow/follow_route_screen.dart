@@ -58,6 +58,8 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // Leaving by any route (not only End) must not keep GPS running.
+    _follow.pauseFeed();
     super.dispose();
   }
 
@@ -146,7 +148,7 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
               if (!isOnline) RideWarningBanner(label: l10n.mapOfflineBanner),
               if (!follow.locationServiceEnabled)
                 RideWarningBanner(
-                  label: l10n.rideLocationOffBanner,
+                  label: l10n.followLocationOffBanner,
                   onTap: ref.read(rideRecordingControllerProvider).openLocationSettings,
                 ),
               ?banner,
@@ -180,13 +182,16 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
                                     ref.read(navigationLauncherProvider),
                                     start.lat,
                                     start.lng,
-                                    title ?? l10n.followRouteTitle),
+                                    (title == null || title.isEmpty)
+                                        ? l10n.followRouteTitle
+                                        : title),
                                 icon: const Icon(Icons.directions),
                                 label: Text(l10n.followNavigateToStart),
                               )
                             : null,
                       ),
                     ),
+                    const SizedBox(width: 12),
                     FilledButton(
                       onPressed: _confirmEnd,
                       child: Text(l10n.followEndAction),

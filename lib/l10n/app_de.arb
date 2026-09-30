@@ -185,6 +185,7 @@
   "followRemaining": "noch {distance}",
   "followDistanceToRoute": "{distance} bis zur Strecke",
   "followOffRouteBanner": "Abseits der Strecke — zurück zur Linie",
+  "followLocationOffBanner": "Standort ist aus — deine Position kann nicht angezeigt werden. Tippen zum Einschalten.",
   "followFinished": "Ziel erreicht",
   "followRouteTitle": "Strecke nachfahren",
   "followNavigateToStart": "Zum Start navigieren",
