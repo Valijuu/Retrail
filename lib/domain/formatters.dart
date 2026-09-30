@@ -149,8 +149,13 @@ const int _wholeMetreDecimalPlaces = 0;
 const String _metresUnit = 'm';
 
 /// Distance to the followed route for the follow banner (Spec 17): whole
-/// metres under 1 km (`250 m`), [formatDistanceKm] from there on.
-String formatDistanceToRoute(double metres, {String? locale}) =>
-    metres < _metresPerKm
-        ? '${formatDecimal(metres, _wholeMetreDecimalPlaces, locale: locale)} $_metresUnit'
-        : formatDistanceKm(metres, locale: locale);
+/// metres (`250 m`) while the distance *rounded to whole metres* is under
+/// 1 km, [formatDistanceKm] from there on. Deciding on the rounded value keeps
+/// the unit consistent with the digits shown: 999.6 m is `1.00 km`, never
+/// `1000 m`.
+String formatDistanceToRoute(double metres, {String? locale}) {
+  final showsAsWholeMetres = metres.round() < _metresPerKm;
+  return showsAsWholeMetres
+      ? '${formatDecimal(metres, _wholeMetreDecimalPlaces, locale: locale)} $_metresUnit'
+      : formatDistanceKm(metres, locale: locale);
+}
