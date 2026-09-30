@@ -34,16 +34,26 @@ This removes "riding a route in reverse" from Spec 17's non-goals.
    - When reversed, the remaining line reads **"{distance} to go · reversed"** (de: **"noch {distance} · rückwärts"**).
 8. Both modes (recording and follow-only) behave the same. What is recorded is unaffected: it is always the rider's actual track.
 
+## Loops (circular progress)
+A route is a **loop** when its first and last points are within `followFinishRadiusM` (30 m) of each other. This is the same test `directionAtJoin` uses. Loops were broken before this section: a rider who joined mid-loop saw "Finish reached" as soon as they came near the start/finish point, progress stuck there, and then almost the whole loop greyed.
+
+1. **Seamless crossing.** For a loop, progress is tracked on the route laid out twice (two laps back to back), in each orientation. Crossing the start/finish point simply continues along the second lap: no jump and no stall.
+2. **One lap from the join.** For a loop:
+   - "X km to go" is the distance left to complete **one full lap from where the rider joined**: `joinAlong + L − along`, never negative.
+   - "Finish reached" means the rider has ridden at least `followFinishMinShare` (90 %) of the loop's length since joining **and** is within `followFinishRadiusM` of the join point.
+3. **Ridden parts may wrap.** The ridden range is kept on the doubled route. It is drawn as **up to two segments** on the single-lap route (a range that crosses the seam splits in two), or as the whole loop once a full lap is ridden. This closes the wrap-around case of issue #51.
+4. Open routes (not loops) behave exactly as described above; nothing changes for them.
+
 ## Model
 - `RouteFollowState.track` stays the **original** route. It is the session identity that `pauseFeedFor` relies on (#50).
 - New fields:
   - `direction` (`FollowDirection.undecided | forward | reverse`)
   - `orientedTrack` (the original track, or its reversed copy; the reversed copy is built once at `start`)
-  - `ridden` (`List<LatLng>`, the greyed segment in map order; empty while undecided)
+  - `ridden` (`List<List<LatLng>>`, the greyed segments in map order: one for open routes, up to two for a loop whose ridden part crosses the seam; empty while undecided)
 - `progress` is progress on `orientedTrack`. While undecided it is forward progress.
 
 ## Map (`LiveMap`)
-- `referenceProgressM` is replaced by `referenceDone` (`List<RoutePoint>?`).
+- `referenceProgressM` is replaced by `referenceDone` (`List<List<RoutePoint>>?`), drawn as a MultiLineString.
 - The `reference` source holds the **whole** oriented route. `reference-done` holds the ridden segment, drawn **above** the reference line but still below the live route.
 - A replaced `reference` (a flip) re-pushes the line and also moves the start/finish marker points. This goes through the existing `_drawnReference` / `referencePushTarget` gate.
 - `RouteTrack.splitAt` is then unused and is removed.

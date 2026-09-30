@@ -204,19 +204,58 @@ Zones use `followFinishRadiusM`. Loop = distance(first, last) ≤ `followFinishR
 - [ ] `flutter test test/follow/` green, analyze clean.
 - [ ] Commit `feat(follow): detect the riding direction and track the ridden part (spec 18)`.
 
+### Task 3b: Loops — circular progress (EXACT for the tracker; RGR for the provider)
+
+**Files:** Modify `lib/domain/follow_tracker.dart` (and add `RouteTrack` helpers in `lib/domain/route_progress.dart` if needed) and `lib/features/follow/route_follow_providers.dart`. Tests go in `test/domain/follow_tracker_test.dart` and `test/follow/route_follow_providers_test.dart`.
+
+**Spec:** Spec 18, section "Loops (circular progress)". It is binding.
+
+**Design (ruling):**
+- **Loop detection.** A route is a loop when the distance from its first to its last point is at most `followFinishRadiusM`. Expose `bool get isLoop` on `FollowTracker` or `RouteTrack`.
+- **Doubled tracks.** For a loop, the tracker's internal forward and reverse tracks are the route laid out twice. Build the doubled polyline as `points + points.skip(1)`. If the seam gap is not zero, the closing leg is simply part of the lap. Joins land in lap 1, because first-fix `passes.first` picks the lowest along. All existing machinery keeps working on the doubled tracks: mirrored join, jump re-base, per-tracker ranges, decision and flip. The mirror uses the doubled length.
+- **`orientedTrack`** stays the SINGLE-lap oriented route, because it is used for drawing.
+- **Loop progress mapping** (the `RouteProgress` exposed to consumers):
+  - `alongM` = the doubled along.
+  - `remainingM` = `max(0, joinAlong + L − along)`, where L is one lap and `joinAlong` is the oriented tracker's join along.
+  - `isFinished` = `(along − joinAlong) ≥ followFinishMinShare × L` && the distance to the join position is ≤ `followFinishRadiusM`.
+  - `offsetM`, `isOffRoute` and `hasJoined` are passed through.
+- **Ridden segments.** Replace the single-range getter for consumers with `List<(double from, double to)> riddenIntervals`, given in single-lap metres of the ORIGINAL route.
+  - Open route: at most one interval, as today.
+  - Loop: map the range `[lo, hi]` from the doubled original metres. If `hi − lo ≥ L`, return one interval `[0, L]`. Otherwise reduce `lo` mod L and split at L, which gives one or two intervals.
+- **Provider.** `ridden` becomes `List<List<LatLng>>`: `track.segmentBetween` for each interval, reversed into map order when `isReversed`. It is recomputed only when the intervals change, so its identity stays stable. Screens and the map switch to this type in Tasks 4 and 5. Adjust the current screens minimally so everything still compiles: flattening for the old single-list `referenceDone` is fine until Task 4, or change the map param type early.
+- **Open routes** must behave exactly as after Task 3. All existing tracker and provider tests stay green.
+
+**Test list** (square loop of L = 400 m: `at(0,0), at(100,0), at(100,100), at(0,100), at(0,0)`):
+- `isLoop` is true for it, false for `_straight`, and true for a loop with a 20 m gap.
+- Join at 340 (east 60 on the last leg), ride west through (0,0), then north to (0,60) at 10 m per fix:
+  - `isFinished` is never true;
+  - progress never stalls, i.e. `alongM` strictly increases each fix after the decision;
+  - `remainingM` goes from ≈ 400 down to ≈ 280 at north 60;
+  - the ridden intervals are two, ≈ [340, 400] and [0, 60].
+- A full lap from the join at 340 back to 340 → finished, and the intervals are a single [0, 400].
+- Loop joined at the start and ridden forward 30 m: the intervals are [0, 30], and it is not finished (the existing C1 case).
+- The reverse loop cases from Task 3 (M3 and the at(2,2) repro) are still reverse, their intervals are within the ridden stretch, and nothing is finished early.
+- Flip on a loop mid-lap: the direction flips, the intervals are kept, and it is not finished.
+- Open routes: all existing expectations are unchanged.
+
+- [ ] EXACT for the tracker, one test at a time, each RED first. Refactor inline.
+- [ ] Provider RGR for the `ridden` list-of-segments mapping.
+- [ ] `flutter analyze` is clean and the full `flutter test` suite is green.
+- [ ] Commit `feat(follow): circular progress on loops (spec 18)`.
+
 ### Task 4: Map — oriented reference, ridden overlay, marker move, flip button
 
 **Files:** Modify `lib/map/live_map.dart`, `lib/features/active_ride/widgets/ride_chrome.dart` (`RideMapArea`), `lib/domain/route_progress.dart` (remove `splitAt` and its tests), `lib/map/CLAUDE.md`. Tests in `test/map/live_map_geojson_test.dart` and `test/active_ride/` (a `RideMapArea` flip-button test).
 
 **Produces:**
-- `LiveMap({..., RouteTrack? reference, List<RoutePoint>? referenceDone, ...})`. `referenceProgressM` is removed.
-- `({String done, String ahead}) referenceGeoJson(RouteTrack track, List<RoutePoint>? done)`:
+- `LiveMap({..., RouteTrack? reference, List<List<RoutePoint>>? referenceDone, ...})` (the ridden segments, drawn as a MultiLineString). `referenceProgressM` is removed.
+- `({String done, String ahead}) referenceGeoJson(RouteTrack track, List<List<RoutePoint>>? done)`: `done` becomes a MultiLineString of the segments with ≥ 2 points:
   - `ahead` = the whole track line
   - `done` = `routeLineGeoJson(done ?? const [])`
 - Pure `({RoutePoint start, RoutePoint? end}) referenceMarkerPoints(RouteEndpointStyle style, List<RoutePoint> points)`:
   - `start` = first point
   - `end` = last point for `open`, else null
-- `RideMapArea({..., RouteTrack? reference, List<RoutePoint>? referenceDone, VoidCallback? onReverse, ...})`.
+- `RideMapArea({..., RouteTrack? reference, List<List<RoutePoint>>? referenceDone, VoidCallback? onReverse, ...})`.
 
 **Changes:**
 - Layer order at style load:
