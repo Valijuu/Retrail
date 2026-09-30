@@ -15,11 +15,13 @@ import 'package:retrail/data/db/trackpoint_dao.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/domain/distance_calculator.dart';
+import 'package:retrail/domain/follow_direction.dart';
 import 'package:retrail/domain/route_progress.dart';
 import 'package:retrail/features/active_ride/active_ride_controller.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/active_ride/active_ride_screen.dart';
 import 'package:retrail/features/active_ride/widgets/ride_chrome.dart';
+import 'package:retrail/features/active_ride/widgets/ride_stats_panel.dart';
 import 'package:retrail/features/follow/route_follow_providers.dart';
 import 'package:retrail/features/follow/widgets/follow_chrome.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -134,8 +136,11 @@ class _FixedFollow extends RouteFollowNotifier {
   _FixedFollow(this.initial);
   final RouteFollowState? initial;
   bool stopped = false;
+  int flips = 0;
   @override
   RouteFollowState? build() => initial;
+  @override
+  void flipDirection() => flips++;
   @override
   void stop() {
     stopped = true;
@@ -148,11 +153,13 @@ RouteFollowState followState({
   bool recording = true,
   RouteTrack? orientedTrack,
   List<List<({double lat, double lng})>> ridden = const [],
+  FollowDirection direction = FollowDirection.forward,
 }) =>
     RouteFollowState(
       track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
       recording: recording,
       progress: progress,
+      direction: direction,
       orientedTrack: orientedTrack,
       ridden: ridden,
     );
@@ -203,8 +210,9 @@ void main() {
     WidgetTester tester, {
     required RideTrackingState state,
     required RouteFollowState? follow,
+    Size size = const Size(400, 900),
   }) async {
-    tester.view.physicalSize = const Size(400, 900);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -333,5 +341,65 @@ void main() {
     expect(follow.stopped, isTrue);
     expect(find.byType(FollowRemainingLine), findsOneWidget);
     expect(find.text('Off route — head back to the line'), findsOneWidget);
+  });
+
+  testWidgets('reversed: the remaining line says so', (tester) async {
+    await pumpScreen(tester,
+        state: tracking,
+        follow: followState(
+            progress: progress(), direction: FollowDirection.reverse));
+    expect(find.text('0.81 km to go · reversed'), findsOneWidget);
+  });
+
+  testWidgets(
+      'undecided: the remaining line shows the route length, never the finish',
+      (tester) async {
+    await pumpScreen(tester,
+        state: tracking,
+        follow: followState(
+            progress: progress(finished: true, remaining: 3),
+            direction: FollowDirection.undecided));
+    expect(find.text('1.11 km to go'), findsOneWidget);
+    expect(find.text('Finish reached'), findsNothing);
+  });
+
+  testWidgets('joined: the flip button shows and flips the direction',
+      (tester) async {
+    final follow = await pumpScreen(tester,
+        state: tracking, follow: followState(progress: progress()));
+    await tester.tap(find.byTooltip('Reverse direction'));
+    expect(follow.flips, 1);
+  });
+
+  testWidgets('not joined: no flip button', (tester) async {
+    await pumpScreen(tester,
+        state: tracking,
+        follow: followState(
+            progress: progress(joined: false, off: true, offset: 250)));
+    expect(find.byTooltip('Reverse direction'), findsNothing);
+  });
+
+  testWidgets('before the first fix: no flip button', (tester) async {
+    await pumpScreen(tester, state: tracking, follow: followState());
+    expect(find.byTooltip('Reverse direction'), findsNothing);
+  });
+
+  testWidgets(
+      'iPhone 8: a recording follow leaves the stats panel its full height',
+      (tester) async {
+    const iPhone8 = Size(375, 667);
+    await pumpScreen(tester, state: tracking, follow: null, size: iPhone8);
+    expect(tester.takeException(), isNull);
+    final plain = tester.getSize(find.byType(RideStatsPanel));
+    await tester.pumpWidget(const SizedBox()); // a fresh ProviderScope
+    await pumpScreen(tester,
+        state: tracking,
+        follow: followState(progress: progress()),
+        size: iPhone8);
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byType(RideStatsPanel)), plain);
+    // The remaining line sits under the map instead.
+    expect(tester.getBottomLeft(find.byType(FollowRemainingLine)).dy,
+        tester.getTopLeft(find.byType(RideStatsPanel)).dy);
   });
 }

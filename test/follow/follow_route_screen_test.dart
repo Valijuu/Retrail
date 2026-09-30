@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/core/theme/app_theme.dart';
+import 'package:retrail/domain/follow_direction.dart';
 import 'package:retrail/domain/route_progress.dart';
+import 'package:retrail/features/active_ride/widgets/ride_chrome.dart';
 import 'package:retrail/features/follow/follow_route_screen.dart';
 import 'package:retrail/features/follow/route_follow_providers.dart';
+import 'package:retrail/features/follow/widgets/follow_chrome.dart';
 import 'package:retrail/features/home/navigation_launcher.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 
@@ -45,16 +49,24 @@ class _FakeFollow extends RouteFollowNotifier {
     calls.add('stop');
     state = null;
   }
+  @override
+  void flipDirection() => calls.add('flip');
 }
 
 RouteFollowState _state({String? title = 'Rhein', RouteProgress? progress,
-        bool locationOn = true}) =>
+        bool locationOn = true,
+        FollowDirection direction = FollowDirection.forward,
+        RouteTrack? orientedTrack,
+        List<List<({double lat, double lng})>> ridden = const []}) =>
     RouteFollowState(
       track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
       recording: false,
       rideTitle: title,
       progress: progress,
       locationServiceEnabled: locationOn,
+      direction: direction,
+      orientedTrack: orientedTrack,
+      ridden: ridden,
     );
 
 RouteProgress _p({bool joined = true, bool off = false, double offset = 2,
@@ -68,8 +80,9 @@ void main() {
   late FakeNavigationLauncher launcher;
 
   Future<void> pump(WidgetTester tester, RouteFollowState? s,
-      {bool online = true}) async {
-    tester.view.physicalSize = const Size(400, 900);
+      {bool online = true, Size size = const Size(400, 900),
+      Locale? locale}) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -94,6 +107,7 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
+        locale: locale,
         routerConfig: router,
       ),
     ));
@@ -234,4 +248,87 @@ void main() {
     await tester.pump();
     expect(find.text('Follow route'), findsOneWidget);
   });
+
+  testWidgets('reversed: the remaining text says so', (tester) async {
+    await pump(tester,
+        _state(progress: _p(), direction: FollowDirection.reverse));
+    expect(find.text('0.81 km to go · reversed'), findsOneWidget);
+  });
+
+  testWidgets('undecided: the route length, never the finish', (tester) async {
+    await pump(tester,
+        _state(progress: _p(finished: true, remaining: 3),
+            direction: FollowDirection.undecided));
+    expect(find.text('1.11 km to go'), findsOneWidget);
+    expect(find.text('Finish reached'), findsNothing);
+  });
+
+  testWidgets('joined: the flip button shows and flips the direction',
+      (tester) async {
+    await pump(tester, _state(progress: _p()));
+    await tester.tap(find.byTooltip('Reverse direction'));
+    expect(follow.calls, contains('flip'));
+  });
+
+  testWidgets('not joined: no flip button', (tester) async {
+    await pump(tester,
+        _state(progress: _p(joined: false, off: true, offset: 250)));
+    expect(find.byTooltip('Reverse direction'), findsNothing);
+  });
+
+  testWidgets('the map draws the oriented route and its ridden parts',
+      (tester) async {
+    final reversed = RouteTrack(
+        const [(lat: 48.01, lng: 11.0), (lat: 48.0, lng: 11.0)]);
+    const ridden = [
+      [(lat: 48.01, lng: 11.0), (lat: 48.005, lng: 11.0)],
+    ];
+    await pump(tester,
+        _state(progress: _p(), orientedTrack: reversed, ridden: ridden));
+    final map = tester.widget<RideMapArea>(find.byType(RideMapArea));
+    expect(map.reference, same(reversed));
+    expect(map.referenceDone, ridden);
+  });
+
+  testWidgets('the remaining text shares one bottom bar with End',
+      (tester) async {
+    await pump(tester, _state(progress: _p()));
+    expect(find.byType(FollowRemainingLine), findsNothing);
+    final label = tester.getRect(find.text('0.81 km to go'));
+    final end = tester.getRect(find.widgetWithText(FilledButton, 'End'));
+    expect(label.center.dy, closeTo(end.center.dy, 0.5));
+    expect(label.right, lessThanOrEqualTo(end.left));
+  });
+
+  testWidgets('before joining: Navigate to start spans the bar below',
+      (tester) async {
+    await pump(tester,
+        _state(progress: _p(joined: false, off: true, offset: 250)));
+    final label = tester.getRect(find.text('0.81 km to go'));
+    final end = tester.getRect(find.widgetWithText(FilledButton, 'End'));
+    final nav = tester.getRect(find.ancestor(
+        of: find.text('Navigate to start'), matching: find.byType(FilledButton)));
+    expect(nav.top, greaterThanOrEqualTo(end.bottom));
+    expect(nav.left, label.left);
+    expect(nav.right, end.right);
+  });
+
+  for (final (locale, texts) in [
+    (const Locale('en'), ['0.81 km to go · reversed', 'End', 'Navigate to start']),
+    (const Locale('de'), ['noch 0,81 km · rückwärts', 'Beenden', 'Zum Start navigieren']),
+  ]) {
+    testWidgets('375 px, $locale: the bottom bar fits without truncation',
+        (tester) async {
+      await pump(tester,
+          _state(progress: _p(joined: false, off: true, offset: 250),
+              direction: FollowDirection.reverse),
+          size: const Size(375, 667), locale: locale);
+      expect(tester.takeException(), isNull);
+      for (final t in texts) {
+        final paragraph =
+            tester.renderObject<RenderParagraph>(find.text(t));
+        expect(paragraph.didExceedMaxLines, isFalse, reason: t);
+      }
+    });
+  }
 }

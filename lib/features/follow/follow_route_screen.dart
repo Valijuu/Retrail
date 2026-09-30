@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/theme_context.dart';
+import '../../domain/follow_direction.dart';
 import '../../domain/route_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/ride_tracking_state.dart';
@@ -171,39 +172,57 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
                     if (_isFollowing) setState(() => _isFollowing = false);
                   },
                   onRecenter: () => setState(() => _isFollowing = true),
+                  // Spec 18: flipping only makes sense once on the route.
+                  onReverse: notJoined ? null : _follow.flipDirection,
                 ),
               ),
-              FollowRemainingLine(
-                  progress: progress, totalM: follow.track.lengthM),
+              // One bottom bar: the progress text beside End, and before the
+              // join a full-width "Navigate to start" below them.
               Container(
                 color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: notJoined
-                            ? FilledButton.tonalIcon(
-                                onPressed: () => navigateTo(
-                                    context,
-                                    ref.read(navigationLauncherProvider),
-                                    start.lat,
-                                    start.lng,
-                                    (title == null || title.isEmpty)
-                                        ? l10n.followRouteTitle
-                                        : title),
-                                icon: const Icon(Icons.directions),
-                                label: Text(l10n.followNavigateToStart),
-                              )
-                            : null,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                              followProgressLabel(context,
+                                  // Undecided: the whole length (Spec 18).
+                                  progress: follow.direction ==
+                                          FollowDirection.undecided
+                                      ? null
+                                      : progress,
+                                  totalM: follow.track.lengthM,
+                                  reversed: follow.isReversed),
+                              style: text.titleMedium
+                                  ?.copyWith(color: colors.onSurface)),
+                        ),
+                        const SizedBox(width: 12),
+                        FilledButton(
+                          onPressed: _confirmEnd,
+                          child: Text(l10n.followEndAction),
+                        ),
+                      ],
+                    ),
+                    if (notJoined) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.tonalIcon(
+                          onPressed: () => navigateTo(
+                              context,
+                              ref.read(navigationLauncherProvider),
+                              start.lat,
+                              start.lng,
+                              (title == null || title.isEmpty)
+                                  ? l10n.followRouteTitle
+                                  : title),
+                          icon: const Icon(Icons.directions),
+                          label: Text(l10n.followNavigateToStart),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed: _confirmEnd,
-                      child: Text(l10n.followEndAction),
-                    ),
+                    ],
                   ],
                 ),
               ),

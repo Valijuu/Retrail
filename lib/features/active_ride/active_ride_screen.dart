@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/theme_context.dart';
+import '../../domain/follow_direction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/location_permission.dart';
 import '../../tracking/permission_gate_dialog.dart';
@@ -214,6 +215,22 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       onStop: () => setState(() => _showConfirmStop = true),
     );
 
+    final map = RideMapArea(
+      state: state,
+      isFollowing: _isFollowing,
+      masked: _isLeaving,
+      reference: following?.orientedTrack,
+      referenceDone: following?.ridden,
+      onGesture: () {
+        if (_isFollowing) setState(() => _isFollowing = false);
+      },
+      onRecenter: () => setState(() => _isFollowing = true),
+      // Spec 18: flipping only makes sense once on the route.
+      onReverse: following?.progress?.hasJoined == true
+          ? ref.read(routeFollowProvider.notifier).flipDirection
+          : null,
+    );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -251,31 +268,27 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   // or the tracker have committed) and stays through the stop
                   // dialog + exit transition. Gating it on isTracking made it
                   // pop in late on entry and flicker away on save.
+                  // Following: the remaining line sits under the map, so the
+                  // stats panel keeps the same height as without a reference
+                  // (it squeezed the panel's rows on short screens). The map
+                  // stays the Column's first child either way, so the native
+                  // view is never remounted.
                   Expanded(
                     flex: 65,
-                    child: RideMapArea(
-                      state: state,
-                      isFollowing: _isFollowing,
-                      masked: _isLeaving,
-                      reference: following?.orientedTrack,
-                      referenceDone: following?.ridden,
-                      onGesture: () {
-                        if (_isFollowing) setState(() => _isFollowing = false);
-                      },
-                      onRecenter: () => setState(() => _isFollowing = true),
-                    ),
+                    child: Column(children: [
+                      Expanded(child: map),
+                      if (following != null)
+                        FollowRemainingLine(
+                            // Undecided: the whole length (Spec 18).
+                            progress:
+                                following.direction == FollowDirection.undecided
+                                    ? null
+                                    : following.progress,
+                            totalM: following.track.lengthM,
+                            reversed: following.isReversed),
+                    ]),
                   ),
-                  Expanded(
-                    flex: 35,
-                    child: following == null
-                        ? panel
-                        : Column(children: [
-                            FollowRemainingLine(
-                                progress: following.progress,
-                                totalM: following.track.lengthM),
-                            Expanded(child: panel),
-                          ]),
-                  ),
+                  Expanded(flex: 35, child: panel),
                 ],
               ),
             ),

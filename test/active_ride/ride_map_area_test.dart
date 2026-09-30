@@ -12,7 +12,8 @@ void main() {
   useStubLiveMap();
 
   Future<void> pumpArea(WidgetTester tester,
-      {VoidCallback? onReverse, bool masked = false}) async {
+      {VoidCallback? onReverse, bool masked = false, bool isFollowing = true})
+      async {
     await tester.pumpWidget(MaterialApp(
       theme: buildTheme(Brightness.light),
       localizationsDelegates: const [
@@ -25,7 +26,7 @@ void main() {
       home: Scaffold(
         body: RideMapArea(
           state: const RideTrackingState(),
-          isFollowing: true,
+          isFollowing: isFollowing,
           masked: masked,
           onGesture: () {},
           onRecenter: () {},
@@ -54,5 +55,18 @@ void main() {
   testWidgets('masked (leaving): no reverse button', (tester) async {
     await pumpArea(tester, onReverse: () {}, masked: true);
     expect(find.byIcon(Icons.swap_vert), findsNothing);
+  });
+
+  testWidgets('not following + onReverse: recenter and reverse show together',
+      (tester) async {
+    await pumpArea(tester, onReverse: () {}, isFollowing: false);
+    expect(tester.takeException(), isNull);
+    expect(find.byTooltip('Re-center'), findsOneWidget);
+    expect(find.byTooltip('Reverse direction'), findsOneWidget);
+    // Two FABs with the default hero tag only clash in a route transition.
+    tester.state<NavigatorState>(find.byType(Navigator)).push(
+        MaterialPageRoute<void>(builder: (_) => const SizedBox()));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 }

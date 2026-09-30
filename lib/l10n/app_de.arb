@@ -185,6 +185,7 @@
   "permissionPreciseLocationTitle": "Genauer Standort benötigt",
   "permissionPreciseLocationBody": "Mit ungefährem Standort kann Retrail deine Strecke nicht aufzeichnen. Erlaube den genauen Standort in den App-Einstellungen.",
   "followRemaining": "noch {distance}",
+  "followRemainingReversed": "noch {distance} · rückwärts",
   "followDistanceToRoute": "{distance} bis zur Strecke",
   "followOffRouteBanner": "Abseits der Strecke — zurück zur Linie",
   "followLocationOffBanner": "Standort ist aus — deine Position kann nicht angezeigt werden. Tippen zum Einschalten.",
