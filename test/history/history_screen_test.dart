@@ -25,9 +25,11 @@ import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_ride_card.dart';
 import 'package:retrail/features/history/history_screen.dart';
+import 'package:retrail/features/history/ride_detail_dialog.dart';
 import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/features/home/navigation_launcher.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/preview_projection.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview.dart';
@@ -680,7 +682,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     final items = tester
-        .widgetList<PopupMenuItem<int>>(find.byType(PopupMenuItem<int>))
+        .widgetList(find.byWidgetPredicate((w) => w is PopupMenuItem))
         .toList();
     expect(items.length, 3); // Follow route, Edit, Delete
     await tester.tap(find.text('Follow route'));
@@ -694,5 +696,22 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     expect(find.text('Follow route'), findsNothing);
+  });
+
+  testWidgets('detail dialog Follow route closes it and asks to record',
+      (tester) async {
+    LiveMap.debugMapBuilderOverride =
+        (_) => const SizedBox(key: ValueKey('stub-map'));
+    addTearDown(() => LiveMap.debugMapBuilderOverride = null);
+    await pump(tester, [_routedEntry(5)], trackpoints: {
+      5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
+    });
+    await tester.tap(find.byKey(const ValueKey('ride_map_5')));
+    await tester.pumpAndSettle();
+    expect(find.byType(RideDetailDialog), findsOneWidget);
+    await tester.tap(find.text('Follow route'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RideDetailDialog), findsNothing);
+    expect(find.text('Record this ride?'), findsOneWidget);
   });
 }

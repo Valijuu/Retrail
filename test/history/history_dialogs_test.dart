@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_colors.dart';
@@ -242,6 +243,78 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Follow route'), findsNothing);
     });
+
+    for (final (name, n, cb) in [
+      ('one trackpoint', 1, true),
+      ('no callback', 2, false),
+    ]) {
+      testWidgets('no Follow route button: $name', (tester) async {
+        tester.view.physicalSize = const Size(400, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(_host(RideDetailDialog(
+          rwt: RideWithTrackpoints(ride: _ride(), trackpoints: [
+            for (var i = 0; i < n; i++)
+              Trackpoint(
+                  trackpointId: i,
+                  rideId: 1,
+                  latitude: 48.0 + i * 0.001,
+                  longitude: 11.0,
+                  timestamp: i),
+          ]),
+          stats: const RideStats(
+              durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
+          onDismiss: () {},
+          onFollowRoute: cb ? () {} : null,
+        )));
+        expect(find.text('Follow route'), findsNothing);
+      });
+    }
+
+    for (final (label, size, locale, text) in [
+      ('en 600x900', const Size(600, 900), const Locale('en'), 'Follow route'),
+      ('de 375x667', const Size(375, 667), const Locale('de'),
+          'Strecke nachfahren'),
+    ]) {
+      testWidgets('Follow route label is not truncated ($label)',
+          (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(_host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+              Trackpoint(
+                  trackpointId: 0,
+                  rideId: 1,
+                  latitude: 48.0,
+                  longitude: 11.0,
+                  timestamp: 0),
+              Trackpoint(
+                  trackpointId: 1,
+                  rideId: 1,
+                  latitude: 48.001,
+                  longitude: 11.0,
+                  timestamp: 1),
+            ]),
+            stats: const RideStats(
+                durationMs: 1,
+                distanceMetres: 1,
+                maxSpeedKmh: 1,
+                avgSpeedKmh: 1),
+            onDismiss: () {},
+            onFollowRoute: () {},
+          ),
+          locale: locale,
+        ));
+        expect(find.text(text), findsOneWidget);
+        expect(
+            tester.renderObject<RenderParagraph>(find.text(text)).didExceedMaxLines,
+            isFalse);
+      });
+    }
 
     testWidgets('no Follow route button without a route or callback',
         (tester) async {

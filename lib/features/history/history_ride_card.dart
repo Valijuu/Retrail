@@ -337,6 +337,8 @@ class _Thumbnail extends ConsumerWidget {
   }
 }
 
+enum _MenuAction { follow, edit, delete }
+
 class _OverflowMenu extends StatelessWidget {
   const _OverflowMenu(
       {required this.onEdit, required this.onDelete, this.onFollowRoute});
@@ -344,24 +346,22 @@ class _OverflowMenu extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback? onFollowRoute;
 
-  static const _follow = 2, _edit = 0, _delete = 1;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
-    return PopupMenuButton<int>(
+    return PopupMenuButton<_MenuAction>(
       tooltip: l10n.a11yMoreOptions,
       icon: Icon(Icons.more_vert, size: 20, color: colors.onSurfaceVariant),
       onSelected: (v) => switch (v) {
-        _follow => onFollowRoute?.call(),
-        _edit => onEdit(),
-        _ => onDelete(),
+        _MenuAction.follow => onFollowRoute?.call(),
+        _MenuAction.edit => onEdit(),
+        _MenuAction.delete => onDelete(),
       },
       itemBuilder: (context) => [
         if (onFollowRoute != null)
           PopupMenuItem(
-            value: _follow,
+            value: _MenuAction.follow,
             child: Row(
               children: [
                 Icon(Icons.route, color: colors.onSurface, size: 20),
@@ -371,7 +371,7 @@ class _OverflowMenu extends StatelessWidget {
             ),
           ),
         PopupMenuItem(
-          value: _edit,
+          value: _MenuAction.edit,
           child: Row(
             children: [
               Icon(Icons.edit, color: colors.onSurface, size: 20),
@@ -381,7 +381,7 @@ class _OverflowMenu extends StatelessWidget {
           ),
         ),
         PopupMenuItem(
-          value: _delete,
+          value: _MenuAction.delete,
           child: Row(
             children: [
               Icon(Icons.delete, color: colors.deleteActionText, size: 20),

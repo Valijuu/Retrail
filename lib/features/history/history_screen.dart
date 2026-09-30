@@ -17,7 +17,7 @@ import 'history_items.dart';
 import 'history_providers.dart';
 import 'history_ride_card.dart';
 import 'ride_detail_dialog.dart';
-import '../../data/db/app_database.dart' show Ride;
+import '../../data/db/app_database.dart' show Ride, Trackpoint;
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
@@ -266,18 +266,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         onDismiss: () => Navigator.of(context).pop(),
         onFollowRoute: () {
           Navigator.of(context).pop();
-          _followRoute(entry.ride);
+          _followRoute(entry.ride, tps);
         },
       ),
     );
   }
 
   /// Loads [ride]'s route and starts "Follow route" for it (Spec 17).
-  Future<void> _followRoute(Ride ride) async {
-    final tps = await ref
-        .read(trackpointRepositoryProvider)
-        .getForRide(ride.rideId)
-        .first;
+  Future<void> _followRoute(Ride ride, [List<Trackpoint>? trackpoints]) async {
+    final tps = trackpoints ??
+        await ref
+            .read(trackpointRepositoryProvider)
+            .getForRide(ride.rideId)
+            .first;
     if (!mounted) return;
     await launchFollowRoute(
       context,

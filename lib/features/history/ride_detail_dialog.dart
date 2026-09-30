@@ -72,6 +72,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
     final locale = Localizations.localeOf(context).toString();
     final ride = widget.rwt.ride;
     final points = _points;
+    final showFollow = widget.onFollowRoute != null && points.length >= 2;
     final activity = ActivityType.fromId(ride.typ);
     final title = (ride.description?.trim().isNotEmpty ?? false)
         ? ride.description!
@@ -246,21 +247,21 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
-                child: Row(
+                child: OverflowBar(
+                  // Close stays right-aligned without the Follow button; with
+                  // both, they sit at opposite ends or stack when too narrow.
+                  alignment: showFollow
+                      ? MainAxisAlignment.spaceBetween
+                      : MainAxisAlignment.end,
+                  overflowAlignment: OverflowBarAlignment.end,
+                  spacing: 8,
                   children: [
-                    if (widget.onFollowRoute != null && points.length >= 2)
-                      Flexible(
-                        child: FilledButton.tonalIcon(
-                          onPressed: widget.onFollowRoute,
-                          icon: const Icon(Icons.route),
-                          label: Text(
-                            l10n.followRouteAction,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
+                    if (showFollow)
+                      FilledButton.tonalIcon(
+                        onPressed: widget.onFollowRoute,
+                        icon: const Icon(Icons.route),
+                        label: Text(l10n.followRouteAction),
                       ),
-                    const Spacer(),
                     TextButton(
                       onPressed: widget.onDismiss,
                       child: Text(
