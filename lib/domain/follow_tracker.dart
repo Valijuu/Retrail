@@ -7,9 +7,6 @@ import 'route_progress.dart';
 /// pass of the route, not movement.
 const double _jumpSlackM = 2 * followOffRouteThresholdM;
 
-/// A ridden range no longer than this is still just the join point.
-const double _joinPointM = 1;
-
 /// [p] seen from the other end of a route of length [lengthM]: joined and on
 /// route, at the same physical point.
 RouteProgress mirrored(RouteProgress p, double lengthM) => RouteProgress(
@@ -32,6 +29,8 @@ class FollowTracker {
     this.range,
     this.lastPoint,
     this._reverseProgress,
+    this._forwardRange,
+    this._reverseRange,
     double forwardJoinM = 0,
     double reverseJoinM = 0,
   }) : _fwdJoinM = forwardJoinM,
@@ -54,16 +53,18 @@ class FollowTracker {
   /// Progress on [orientedTrack]; forward progress while undecided.
   final RouteProgress? progress;
 
-  /// The ridden stretch in original-route metres, from the join on.
+  /// The ridden stretch in original-route metres, from the join on; null
+  /// until the direction is decided.
   final RiddenRange? range;
 
   /// The last position fed to [next].
   final LatLng? lastPoint;
 
-  /// While undecided: progress on the reversed route and both along values
-  /// at the join.
+  /// While undecided: progress on the reversed route, both along values at
+  /// the join, and what each tracker has ridden (original-route metres).
   final RouteProgress? _reverseProgress;
   final double _fwdJoinM, _revJoinM;
+  final RiddenRange? _forwardRange, _reverseRange;
 
   RouteTrack get orientedTrack => _trackFor(direction);
   bool get hasJoined => progress?.hasJoined ?? false;
@@ -81,7 +82,8 @@ class FollowTracker {
       reverseProgress: rev,
       forwardJoinM: fwd.alongM,
       reverseJoinM: rev!.alongM,
-      range: RiddenRange.at(fwd.alongM),
+      forwardRange: RiddenRange.at(fwd.alongM),
+      reverseRange: RiddenRange.at(track.lengthM - rev.alongM),
       lastPoint: p,
     );
     return joined._decide(directionAtJoin(track, p, distance: _distance));
@@ -95,19 +97,22 @@ class FollowTracker {
     final revDelta = rev.alongM - _reverseProgress!.alongM;
     final fwdJumped = _isJump(fwdDelta, moved);
     final revJumped = _isJump(revDelta, moved);
-    final range = _grown(
-      _grown(this.range!, fwd, fwd.alongM, jumped: fwdJumped),
-      rev,
-      track.lengthM - rev.alongM,
-      jumped: revJumped,
-    );
+    // A jump re-anchors that tracker's range: it is now on another pass.
+    final fwdRange = fwdJumped
+        ? RiddenRange.at(fwd.alongM)
+        : _grown(_forwardRange!, fwd, fwd.alongM);
+    final revOriginalM = track.lengthM - rev.alongM;
+    final revRange = revJumped
+        ? RiddenRange.at(revOriginalM)
+        : _grown(_reverseRange!, rev, revOriginalM);
     // A jump is re-based into the join value, so it adds no advance.
     final fwdJoinM = fwdJumped ? _fwdJoinM + fwdDelta : _fwdJoinM;
     final revJoinM = revJumped ? _revJoinM + revDelta : _revJoinM;
     final next = _with(
       progress: fwd,
       reverseProgress: rev,
-      range: range,
+      forwardRange: fwdRange,
+      reverseRange: revRange,
       forwardJoinM: fwdJoinM,
       reverseJoinM: revJoinM,
       lastPoint: p,
@@ -122,14 +127,16 @@ class FollowTracker {
 
   FollowTracker _nextDecided(LatLng p) {
     final next = orientedTrack.locate(p, previous: progress)!;
-    final range = _grown(
-      this.range!,
-      next,
-      direction == FollowDirection.reverse
-          ? track.lengthM - next.alongM
-          : next.alongM,
-      jumped: _isJump(next.alongM - progress!.alongM, _movedM(p)),
-    );
+    // A jump to another pass extends nothing.
+    final range = _isJump(next.alongM - progress!.alongM, _movedM(p))
+        ? this.range!
+        : _grown(
+            this.range!,
+            next,
+            direction == FollowDirection.reverse
+                ? track.lengthM - next.alongM
+                : next.alongM,
+          );
     return _with(progress: next, range: range, lastPoint: p);
   }
 
@@ -138,24 +145,13 @@ class FollowTracker {
     return _distance.distanceBetween(last.lat, last.lng, p.lat, p.lng);
   }
 
-  /// [range] after a fix at [at] ([originalM] in original-route metres). It
-  /// grows only from on-route movement. After a [jumped] fix (another pass of
-  /// the route) a range that is still just the join point moves there, as the
-  /// join was ambiguous between passes (a loop's start and finish); a ridden
-  /// range is kept.
+  /// [range] grown by a fix at [at] ([originalM] in original-route metres)
+  /// when it is on route.
   static RiddenRange _grown(
     RiddenRange range,
     RouteProgress at,
-    double originalM, {
-    required bool jumped,
-  }) {
-    if (jumped) {
-      return range.hiM - range.loM <= _joinPointM
-          ? RiddenRange.at(originalM)
-          : range;
-    }
-    return at.isOffRoute ? range : range.extend(originalM);
-  }
+    double originalM,
+  ) => at.isOffRoute ? range : range.extend(originalM);
 
   static bool _isJump(double deltaM, double movedM) =>
       deltaM.abs() > movedM + _jumpSlackM;
@@ -172,7 +168,8 @@ class FollowTracker {
     );
   }
 
-  /// Riding [d] at [p]; the undecided bookkeeping is dropped.
+  /// Riding [d] at [p]; the undecided bookkeeping is dropped. Leaving
+  /// undecided, the range is the ridden range of [d]'s tracker.
   FollowTracker _oriented(FollowDirection d, RouteProgress? p) =>
       FollowTracker._(
         track: track,
@@ -180,12 +177,17 @@ class FollowTracker {
         distance: _distance,
         direction: d,
         progress: p,
-        range: range,
+        range: direction != FollowDirection.undecided
+            ? range
+            : d == FollowDirection.reverse
+            ? _reverseRange
+            : _forwardRange,
         lastPoint: lastPoint,
       );
 
   /// Rides the route the other way from [lastPoint], keeping [range]. Only
-  /// once joined; while undecided it forces reverse.
+  /// once joined; while undecided it forces reverse with what the reverse
+  /// tracker rode.
   FollowTracker flip() {
     final current = progress;
     if (current == null || !current.hasJoined) return this;
@@ -207,6 +209,8 @@ class FollowTracker {
     RiddenRange? range,
     double? forwardJoinM,
     double? reverseJoinM,
+    RiddenRange? forwardRange,
+    RiddenRange? reverseRange,
     LatLng? lastPoint,
   }) => FollowTracker._(
     track: track,
@@ -219,5 +223,7 @@ class FollowTracker {
     reverseProgress: reverseProgress ?? _reverseProgress,
     forwardJoinM: forwardJoinM ?? _fwdJoinM,
     reverseJoinM: reverseJoinM ?? _revJoinM,
+    forwardRange: forwardRange ?? _forwardRange,
+    reverseRange: reverseRange ?? _reverseRange,
   );
 }

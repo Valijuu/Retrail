@@ -228,7 +228,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   RouteFollowState _following(RouteFollowState s, FollowTracker tracker) {
     final range = tracker.range;
     var ridden = s.ridden;
-    if (tracker.direction == FollowDirection.undecided || range == null) {
+    if (range == null) {
       ridden = const [];
     } else if (tracker.direction != s.direction ||
         range.loM != _drawnRidden?.loM ||

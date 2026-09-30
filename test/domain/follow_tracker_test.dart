@@ -147,6 +147,43 @@ void main() {
       expect(t.range!.hiM, lessThanOrEqualTo(395.5));
     });
 
+    test('loop joined 2.8 m off its start and ridden backwards → reverse, '
+        'range only the ridden last leg', () {
+      final t = _ride(_loop(5), [
+        at(2, 2),
+        for (var e = 5.0; e <= 70; e += 5) at(0, e),
+      ]);
+      expect(t.direction, FollowDirection.reverse);
+      expect(t.range!.hiM - t.range!.loM, lessThanOrEqualTo(75));
+      expect(t.range!.loM, greaterThan(300));
+    });
+
+    test('out-and-back joined at 190 and ridden south on the return leg → '
+        'forward, no ghost range on the way out', () {
+      final t = _ride([at(0, 0), at(200, 0), at(0, 3)], [
+        at(190, 0),
+        for (var n = 180.0; n >= 140; n -= 10) at(n, 3 * (200 - n) / 200),
+      ]);
+      expect(t.direction, FollowDirection.forward);
+      expect(t.range!.loM, greaterThanOrEqualTo(189));
+    });
+
+    test('decided forward: a jump to another pass extends nothing', () {
+      final t = _ride(_loop(5), [at(0, 1), at(10, 0), at(20, 0), at(30, 0)]);
+      expect(t.direction, FollowDirection.forward);
+      final j = t.next(at(0, 20));
+      expect(j.progress!.alongM, closeTo(380, 0.5));
+      expect(j.range!.loM, t.range!.loM);
+      expect(j.range!.hiM, t.range!.hiM);
+    });
+
+    test('flip while undecided keeps what the reverse tracker rode', () {
+      final t = _ride(_straight, [at(150, 0), at(140, 0)]).flip();
+      expect(t.direction, FollowDirection.reverse);
+      expect(t.range!.loM, closeTo(140, 0.5));
+      expect(t.range!.hiM, closeTo(150, 0.5));
+    });
+
     test('flip before the join is a no-op', () {
       final t = _ride(_straight, [at(150, 100)]);
       expect(identical(t.flip(), t), isTrue);
