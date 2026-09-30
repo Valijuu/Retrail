@@ -1,4 +1,3 @@
-// test/follow/follow_route_launcher_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -145,6 +144,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Record'));
     await tester.pumpAndSettle();
+    expect(find.text('Location needed'), findsOneWidget);
     expect(find.text('TIMER'), findsNothing);
     expect(container.read(routeFollowProvider), isNull);
   });
@@ -167,5 +167,7 @@ void main() {
     await tester.tap(find.text('go'));
     await tester.pumpAndSettle();
     expect(find.text('Record this ride?'), findsNothing);
+    expect(find.text('go'), findsOneWidget);
+    expect(container.read(routeFollowProvider), isNull);
   });
 }
