@@ -12,6 +12,8 @@ import '../../tracking/permission_gate_dialog.dart';
 import '../../tracking/ride_recording_controller.dart';
 import '../../tracking/ride_tracking_state.dart';
 import '../../tracking/tracking_providers.dart';
+import '../follow/route_follow_providers.dart';
+import '../follow/widgets/follow_chrome.dart';
 import '../shell/routes.dart';
 import '../shell/startup_provider.dart';
 import 'active_ride_controller.dart';
@@ -104,6 +106,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     // (starting a new ride → stuck on the ride screen). Clearing it first lets
     // the navigation home actually take.
     ref.read(pendingRideDeepLinkProvider.notifier).state = false;
+    // Spec 17: the reference ends with the ride (save, skip, discard, gate).
+    ref.read(routeFollowProvider.notifier).stop();
     context.go(AppRoutes.main);
   }
 
@@ -180,12 +184,23 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         ref.watch(rideTrackingStateProvider).asData?.value ?? const RideTrackingState();
     final isOnline = ref.watch(isOnlineProvider).asData?.value ?? true;
     final l10n = AppLocalizations.of(context);
+    // Spec 17: a reference only shows on a RECORDING follow; null = today.
+    final follow = ref.watch(routeFollowProvider);
+    final following = follow != null && follow.recording ? follow : null;
+    final banner =
+        following == null ? null : followBanner(context, following.progress);
 
     // The Live/Paused badge reflects (or freezes) the tracking state: kept up
     // while the summary dialog is open and through the exit transition —
     // stopping flips isTracking false BEFORE the dialog closes, and nothing
     // behind the dialog may change.
     final showLive = state.isTracking || _showSummary || _isLeaving;
+
+    final panel = RideStatsPanel(
+      state: state,
+      onPauseResume: () => _controller.pauseOrResume(state.isPaused),
+      onStop: () => setState(() => _showConfirmStop = true),
+    );
 
     return PopScope(
       canPop: false,
@@ -217,6 +232,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                       label: l10n.rideLocationOffBanner,
                       onTap: _recording.openLocationSettings,
                     ),
+                  ?banner,
                   // The 65/35 map+stats layout is fixed for the whole screen
                   // session: the panel shows from the FIRST frame (zeros/--,
                   // blending in with the screen's entry transition, before GPS
@@ -229,6 +245,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                       state: state,
                       isFollowing: _isFollowing,
                       masked: _isLeaving,
+                      reference: following?.track,
+                      referenceProgressM: following?.progress?.alongM,
                       onGesture: () {
                         if (_isFollowing) setState(() => _isFollowing = false);
                       },
@@ -237,12 +255,12 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   ),
                   Expanded(
                     flex: 35,
-                    child: RideStatsPanel(
-                      state: state,
-                      onPauseResume: () =>
-                          _controller.pauseOrResume(state.isPaused),
-                      onStop: () => setState(() => _showConfirmStop = true),
-                    ),
+                    child: following == null
+                        ? panel
+                        : Column(children: [
+                            FollowRemainingLine(progress: following.progress),
+                            Expanded(child: panel),
+                          ]),
                   ),
                 ],
               ),
