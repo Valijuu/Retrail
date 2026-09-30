@@ -33,14 +33,17 @@ class FakeLocationSource implements LocationSource {
   }
 }
 
-LocationFix fix(double lat, double lng, {double accuracy = 5}) => LocationFix(
+LocationFix fix(double lat, double lng, {double accuracy = 5, int atNanos = 0}) =>
+    LocationFix(
   latitude: lat,
   longitude: lng,
   accuracy: accuracy,
   hasSpeed: false,
   speed: 0,
-  elapsedRealtimeNanos: 0,
+  elapsedRealtimeNanos: atNanos,
 );
+
+int _nanos(Duration d) => d.inMicroseconds * 1000;
 
 // ~111 m per 0.001° latitude.
 const _ref = [
@@ -54,8 +57,11 @@ void main() {
   late FakePermissions permissions;
   late StreamController<RideTrackingState> tracker;
   late ProviderContainer c;
+  // The follow clock; fixes default to capture time 0, i.e. fresh.
+  var nowNanos = 0;
 
   setUp(() {
+    nowNanos = 0;
     source = FakeLocationSource();
     permissions = FakePermissions();
     tracker = StreamController<RideTrackingState>.broadcast();
@@ -64,6 +70,7 @@ void main() {
         locationSourceProvider.overrideWithValue(source),
         locationPermissionServiceProvider.overrideWithValue(permissions),
         rideTrackingStateProvider.overrideWith((ref) => tracker.stream),
+        followNowNanosProvider.overrideWithValue(() => nowNanos),
       ],
     );
     c.listen(routeFollowProvider, (_, _) {});
@@ -203,5 +210,54 @@ void main() {
     source.fixCtrl.add(fix(48.001, 11.0));
     await flush();
     expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
+  });
+
+  test('recording: a recorder location while not tracking is ignored',
+      () async {
+    notifier().start(reference: _ref, recording: true);
+    tracker.add(
+      RideTrackingState(isTracking: false, location: fix(48.001, 11.0)),
+    );
+    await flush();
+    expect(c.read(routeFollowProvider)!.lastFix, isNull);
+  });
+
+  test('follow-only: a last known fix older than 2 minutes is ignored',
+      () async {
+    source.last = fix(48.0005, 11.0);
+    nowNanos = _nanos(const Duration(minutes: 2, seconds: 1));
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    expect(c.read(routeFollowProvider)!.lastFix, isNull);
+  });
+
+  test('follow-only: a last known fix within 2 minutes seeds the position',
+      () async {
+    source.last = fix(48.0005, 11.0, atNanos: _nanos(const Duration(minutes: 5)));
+    nowNanos = _nanos(const Duration(minutes: 6, seconds: 30));
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
+  });
+
+  test('follow-only: a feed error shows location as off until the next fix',
+      () async {
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    source.fixCtrl.addError(StateError('gps lost'));
+    await flush();
+    expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
+    source.fixCtrl.add(fix(48.001, 11.0));
+    await flush();
+    expect(c.read(routeFollowProvider)!.locationServiceEnabled, isTrue);
+  });
+
+  test('follow-only: a seed fix does not override location services off',
+      () async {
+    permissions.serviceEnabled = false;
+    source.last = fix(48.0005, 11.0);
+    notifier().start(reference: _ref, recording: false);
+    await notifier().resumeFeed();
+    expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
   });
 }

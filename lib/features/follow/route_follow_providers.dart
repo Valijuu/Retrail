@@ -11,6 +11,10 @@ import '../../tracking/tracking_providers.dart';
 /// follow-only feed doesn't pass through the recorder's GPS filter).
 const double followMaxFixAccuracyM = 30;
 
+/// A follow-only `lastKnown` seed older than this is ignored: it could place
+/// the rider somewhere they left long ago.
+const Duration followMaxSeedAge = Duration(minutes: 2);
+
 /// Recent positions kept for the heading-up camera in follow-only mode.
 const int _trailLength = 30;
 
@@ -66,11 +70,18 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   /// can tell it was stopped meanwhile.
   int _feedEpoch = 0;
 
+  /// Set when the follow-only fix stream errored; the next accepted fix
+  /// clears it and turns the location banner off again.
+  bool _feedFailed = false;
+
   @override
   RouteFollowState? build() {
     ref.onDispose(_cancelFeed);
     ref.listen(rideTrackingStateProvider, (prev, next) {
-      final fix = next.asData?.value.location;
+      final recorder = next.asData?.value;
+      // Not tracking: the location is the display-only seed, not progress.
+      if (recorder == null || !recorder.isTracking) return;
+      final fix = recorder.location;
       // The recorder re-emits every second with an unchanged location.
       if (fix == null || identical(fix, prev?.asData?.value.location)) return;
       if (state?.recording == true) onFix(fix);
@@ -121,13 +132,23 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     } catch (_) {}
     if (epoch != _feedEpoch || state == null) return;
     state = state!.copyWith(locationServiceEnabled: serviceOn);
-    if (seed != null) onFix(seed);
-    _fixSub = source.fixes.listen(onFix, onError: (Object _) {});
+    if (seed != null && _isFreshSeed(seed)) onFix(seed);
+    _fixSub = source.fixes.listen(onFix, onError: (Object _) {
+      // Show the location banner rather than silently freezing the position.
+      final cur = state;
+      if (cur == null) return;
+      _feedFailed = true;
+      state = cur.copyWith(locationServiceEnabled: false);
+    });
     _serviceSub = source.serviceEnabled.listen((on) {
       final cur = state;
       if (cur != null) state = cur.copyWith(locationServiceEnabled: on);
     }, onError: (Object _) {});
   }
+
+  bool _isFreshSeed(LocationFix seed) =>
+      ref.read(followNowNanosProvider)() - seed.elapsedRealtimeNanos <=
+      followMaxSeedAge.inMicroseconds * 1000;
 
   /// Follow-only: stops the GPS feed (app backgrounded). Progress is kept.
   void pauseFeed() => _cancelFeed();
@@ -137,7 +158,10 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     if (s == null || fix.accuracy > followMaxFixAccuracyM) return;
     final p = (lat: fix.latitude, lng: fix.longitude);
     final trail = [...s.trail, p];
+    final recovered = _feedFailed;
+    _feedFailed = false;
     state = s.copyWith(
+      locationServiceEnabled: recovered ? true : null,
       progress: s.track.locate(p, previous: s.progress),
       lastFix: fix,
       trail: trail.length > _trailLength
@@ -148,6 +172,8 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
 
   void _cancelFeed() {
     _feedEpoch++;
+    // resumeFeed re-reads the service state, so a stale error doesn't carry.
+    _feedFailed = false;
     _fixSub?.cancel();
     _serviceSub?.cancel();
     _fixSub = null;
@@ -159,3 +185,11 @@ final routeFollowProvider =
     NotifierProvider<RouteFollowNotifier, RouteFollowState?>(
       RouteFollowNotifier.new,
     );
+
+/// Wall-clock "now" in nanoseconds for the follow seed's age check. Shares the
+/// time source of [LocationFix.elapsedRealtimeNanos] (the fix's capture time,
+/// see `fixFromPosition`), like `RideTracker`'s default clock. Overridden in
+/// tests.
+final followNowNanosProvider = Provider<int Function()>(
+  (ref) => () => DateTime.now().microsecondsSinceEpoch * 1000,
+);
