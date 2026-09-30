@@ -1,6 +1,6 @@
 # Spec 18: Follow a route in either direction
 
-**Status:** IMPLEMENTED on branch feature/follow-reverse — on-device check pending (#49). Approved in conversation on 2026-09-30.
+**Status:** IMPLEMENTED — on-device check pending (#49). Approved in conversation on 2026-09-30.
 **Depends on:** Spec 17 (follow a saved route: `RouteTrack`/`RouteProgress`, `routeFollowProvider`, reference layers in `LiveMap`, ride screen and follow screen).
 
 ## Goal
@@ -15,9 +15,10 @@ This removes "riding a route in reverse" from Spec 17's non-goals.
    - A **loop** (first and last point within 30 m of each other), or a join anywhere else → **undecided**.
 2. **Undecided → decided by movement.**
    - Progress is tracked on the forward and the reversed route in parallel, each with Spec 17's monotonic `locate`.
-   - Whichever one advances **25 m** (`followDirectionDecisionM`) past its join value first wins.
+   - Whichever one advances **25 m** (`followDirectionDecisionM`) first wins.
    - Riding against the original arrows advances only the reversed route, because forward progress holds. So the direction is reverse.
-   - This reuses Spec 17's leg logic, so an out-and-back on the same road is not misread.
+   - **Advance is capped by real movement.** Each tracker's advance is the sum over fixes of `min(max(Δalong, 0), moved)`, where `moved` is the distance from the last fix. A jump to another pass adds 0. So moving onto another pass of a road the route runs both ways (an out-and-back, a lollipop's stem, where the reverse tracker joins at the end of lap 1 and the next fix lands on the lap-2 start pass) never counts for more than the rider moved.
+   - **Tie band.** On such a same-road stretch both trackers advance. If reverse reaches 25 m while forward has advanced `followDirectionTieBandM` (15 m) or more, forward wins; forward is the default. Forward also wins when both reach 25 m in the same fix.
 3. **Decided = fixed.** The direction is never re-detected automatically. A U-turn on an out-and-back route can't be told apart from riding the return leg.
 4. **Manual flip.**
    - A map button **"Reverse direction"** is shown while following once the rider has joined the route. The icon is `Icons.swap_vert`, placed bottom-right; it is a round, app-surface control like recenter.
@@ -39,7 +40,7 @@ A route is a **loop** when its first and last points are within `followFinishRad
 
 1. **Seamless crossing.** For a loop, progress is tracked on the route laid out twice (two laps back to back), in each orientation. Crossing the start/finish point simply continues along the second lap: no jump and no stall.
 2. **One lap from the join.** For a loop:
-   - "X km to go" is the distance left to complete **one full lap from where the rider joined**: `joinAlong + L − along`, never negative.
+   - "X km to go" is the distance left to complete **one full lap from where the rider joined**: `joinAlong + L − along`, never negative and at most one lap.
    - "Finish reached" means the rider has ridden at least `followFinishMinShare` (90 %) of the loop's length since joining **and** is within `followFinishRadiusM` of the join point.
 3. **Ridden parts may wrap.** The ridden range is kept on the doubled route. It is drawn as **up to two segments** on the single-lap route (a range that crosses the seam splits in two), or as the whole loop once a full lap is ridden. This closes the wrap-around case of issue #51 (the shortcut case stays open).
 4. Open routes (not loops) behave exactly as described above; nothing changes for them.
@@ -57,7 +58,7 @@ A route is a **loop** when its first and last points are within `followFinishRad
 - The follow-only screen has a merged bottom bar: progress on the left, End on the right, and a full-width "Navigate to start" before the rider joins.
 
 ## Known limitations
-- #51: the ridden overlay is one interval; loop wrap-around is handled here, but the skipped part after an accepted shortcut stays a limitation.
+- #51: after an accepted shortcut the skipped part is greyed; loop wrap-around is solved by circular loops (see Loops).
 - #52: a join near an out-and-back turnaround greys the unridden tip.
 - #53: approximations on gap loops and after a pass jump.
 
@@ -72,7 +73,7 @@ A route is a **loop** when its first and last points are within `followFinishRad
 ## Map (`LiveMap`)
 - `referenceProgressM` is replaced by `referenceDone` (`List<List<RoutePoint>>?`), drawn as a MultiLineString.
 - The `reference` source holds the **whole** oriented route. `reference-done` holds the ridden segment, drawn **above** the reference line but still below the live route.
-- A replaced `reference` (a flip) re-pushes the line and also moves the start/finish marker points. This goes through the existing `_drawnReference` / `referencePushTarget` gate.
+- A replaced `reference` (a flip) re-pushes the line and also moves the start/finish marker points. This goes through the existing `_drawnReference` / `referencePushTarget` gate. The whole line is pushed only when the reference changes (`referenceUpdateGeoJson`, `_lastPushedReference`); a new ridden part pushes only `reference-done`.
 - `RouteTrack.splitAt` is then unused and is removed.
 
 ## Non-goals
