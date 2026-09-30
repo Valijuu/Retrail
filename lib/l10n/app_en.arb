@@ -188,5 +188,10 @@
   "followDistanceToRoute": "{distance} to the route",
   "@followDistanceToRoute": { "placeholders": { "distance": { "type": "String" } } },
   "followOffRouteBanner": "Off route — head back to the line",
-  "followFinished": "Finish reached"
+  "followFinished": "Finish reached",
+  "followRouteTitle": "Follow route",
+  "followNavigateToStart": "Navigate to start",
+  "followEndAction": "End",
+  "followEndConfirmTitle": "End following?",
+  "followEndConfirmBody": "Your position won't be shown on the route anymore."
 }
