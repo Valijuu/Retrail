@@ -67,8 +67,21 @@ LatLng at(double northM, double eastM) => (
 /// 300 m due north in three 100 m segments.
 final _straight = [at(0, 0), at(100, 0), at(200, 0), at(300, 0)];
 
+/// A closed 100 m square loop, L = 400 m.
+final _square = [at(0, 0), at(100, 0), at(100, 100), at(0, 100), at(0, 0)];
+
 /// Metres north of (48°, 11°) of [p].
 double _northM(LatLng p) => (p.lat - 48.0) * _mPerDeg;
+
+/// Metres east of (48°, 11°) of [p].
+double _eastM(LatLng p) =>
+    (p.lng - 11.0) * _mPerDeg * math.cos(48.0 * math.pi / 180);
+
+/// [p] is [northM] north and [eastM] east of (48°, 11°), to half a metre.
+void _expectAt(LatLng p, double northM, double eastM) {
+  expect(_northM(p), closeTo(northM, 0.5));
+  expect(_eastM(p), closeTo(eastM, 0.5));
+}
 
 void main() {
   late FakeLocationSource source;
@@ -333,9 +346,48 @@ void main() {
     test('the ridden part spans the join to the furthest point', () {
       follow(_straight);
       ride([at(150, 0), at(165, 0), at(180, 0), at(250, 0)]);
-      final r = state().ridden;
+      final r = state().ridden.single;
       expect(_northM(r.first), closeTo(150, 0.5));
       expect(_northM(r.last), closeTo(250, 0.5));
+    });
+
+    test('a loop ridden across its start/finish greys two segments in map '
+        'order', () {
+      follow(_square);
+      ride([
+        for (var e = 60.0; e >= 0; e -= 10) at(0, e),
+        for (var n = 10.0; n <= 60; n += 10) at(n, 0),
+      ]);
+      final r = state().ridden;
+      expect(r, hasLength(2));
+      _expectAt(r[0].first, 0, 60);
+      _expectAt(r[0].last, 0, 0);
+      _expectAt(r[1].first, 0, 0);
+      _expectAt(r[1].last, 60, 0);
+    });
+
+    test('a loop ridden backwards across its start/finish greys two segments '
+        'in riding order', () {
+      follow(_square);
+      ride([
+        for (var n = 40.0; n >= 0; n -= 10) at(n, 0),
+        for (var e = 10.0; e <= 60; e += 10) at(0, e),
+      ]);
+      expect(state().direction, FollowDirection.reverse);
+      final r = state().ridden;
+      expect(r, hasLength(2));
+      _expectAt(r[0].first, 40, 0);
+      _expectAt(r[0].last, 0, 0);
+      _expectAt(r[1].first, 0, 0);
+      _expectAt(r[1].last, 0, 60);
+    });
+
+    test('a loop\'s ridden segments are kept while they do not grow', () {
+      follow(_square);
+      ride([for (var e = 60.0; e >= 0; e -= 10) at(0, e), at(10, 0)]);
+      final before = state().ridden;
+      ride([at(10, 5)]);
+      expect(identical(state().ridden, before), isTrue);
     });
 
     test('the ridden list is kept while its range does not grow', () {

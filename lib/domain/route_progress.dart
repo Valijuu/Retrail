@@ -83,6 +83,19 @@ class RouteTrack {
 
   double get lengthM => cumulativeM.isEmpty ? 0 : cumulativeM.last;
 
+  /// True when the first and last points are within [followFinishRadiusM].
+  bool get isLoop {
+    if (points.length < 2) return false;
+    final first = points.first, last = points.last;
+    final gapM = _distance.distanceBetween(
+      first.lat,
+      first.lng,
+      last.lat,
+      last.lng,
+    );
+    return gapM <= followFinishRadiusM;
+  }
+
   static List<double> _cumulative(List<LatLng> points, DistanceCalculator d) {
     final out = <double>[];
     var sum = 0.0;
@@ -162,6 +175,10 @@ class RouteTrack {
     );
   }
 
+  /// The route laid out twice, the second lap continuing from the last point.
+  RouteTrack doubled() =>
+      RouteTrack([...points, ...points.skip(1)], distance: _distance);
+
   /// The same route ridden the other way round.
   RouteTrack reversed() =>
       RouteTrack(points.reversed.toList(), distance: _distance);
@@ -181,6 +198,12 @@ class RouteTrack {
       ...points.sublist(from.index, toCut == null ? to.index + 1 : to.index),
       ?toCut,
     ];
+  }
+
+  /// The point [alongM] metres along the route (clamped to it).
+  LatLng pointAt(double alongM) {
+    final c = _cutAt(alongM.clamp(0.0, lengthM).toDouble());
+    return c.cut ?? points[c.index];
   }
 
   /// [alongM] as the first vertex at or after it ([index]) and, unless the cut

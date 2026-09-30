@@ -22,9 +22,35 @@ final _straight = [at(0, 0), at(100, 0), at(200, 0), at(300, 0)];
 List<LatLng> _loop(double endEastM) =>
     [at(0, 0), at(100, 0), at(100, 100), at(0, 100), at(0, endEastM)];
 
+/// A closed 100 m square loop, L = 400 m.
+final _square = _loop(0);
+
 /// Starts following [route] and feeds it [fixes] in order.
 FollowTracker _ride(List<LatLng> route, List<LatLng> fixes) =>
     fixes.fold(FollowTracker.start(RouteTrack(route)), (t, p) => t.next(p));
+
+/// Every tracker state while following [route] through [fixes].
+List<FollowTracker> _trace(List<LatLng> route, List<LatLng> fixes) {
+  var t = FollowTracker.start(RouteTrack(route));
+  return [for (final p in fixes) t = t.next(p)];
+}
+
+/// Joins [_square] at 340 (east 60 on its last leg), rides west through the
+/// start/finish point, then north to (60, 0), 10 m per fix.
+final _acrossSeam = [
+  for (var e = 60.0; e >= 0; e -= 10) at(0, e),
+  for (var n = 10.0; n <= 60; n += 10) at(n, 0),
+];
+
+/// Joins [_square] at 340 and rides one full lap back to the join, 10 m per
+/// fix.
+final _fullLap = [
+  for (var e = 60.0; e >= 0; e -= 10) at(0, e),
+  for (var n = 10.0; n <= 100; n += 10) at(n, 0),
+  for (var e = 10.0; e <= 100; e += 10) at(100, e),
+  for (var n = 90.0; n >= 0; n -= 10) at(n, 100),
+  for (var e = 90.0; e >= 60; e -= 10) at(0, e),
+];
 
 void main() {
   group('FollowTracker', () {
@@ -125,9 +151,10 @@ void main() {
       expect(t.range!.hiM, lessThanOrEqualTo(80.5));
     });
 
-    test('a jump to another pass adds no advance', () {
+    test('a jump to another pass adds no advance: forward jumps along the '
+        'loop, reverse rides 30 m → reverse', () {
       final t = _ride(_loop(5), [at(0, 5), at(0, 15), at(0, 25), at(0, 35)]);
-      expect(t.direction, FollowDirection.undecided);
+      expect(t.direction, FollowDirection.reverse);
     });
 
     test('loop joined at its finish end and ridden backwards (M3) → reverse',
@@ -220,6 +247,150 @@ void main() {
       expect(t.progress!.isOffRoute, isTrue);
       expect(t.progress!.hasJoined, isTrue);
       expect(t.progress!.alongM, closeTo(100, 0.5));
+    });
+  });
+
+  group('FollowTracker on loops', () {
+    test('isLoop: a closed square loop is a loop', () {
+      expect(FollowTracker.start(RouteTrack(_square)).isLoop, isTrue);
+    });
+    test('isLoop: an open route is not a loop', () {
+      expect(FollowTracker.start(RouteTrack(_straight)).isLoop, isFalse);
+    });
+    test('isLoop: a loop ending 20 m from its start is a loop', () {
+      expect(FollowTracker.start(RouteTrack(_loop(20))).isLoop, isTrue);
+    });
+    test('open route: no ridden intervals before the decision', () {
+      final t = _ride(_straight, [at(150, 0), at(160, 0)]);
+      expect(t.riddenIntervals, isEmpty);
+    });
+    test('open route: one ridden interval, 150–180', () {
+      final t = _ride(_straight, [at(150, 0), at(165, 0), at(180, 0)]);
+      expect(t.riddenIntervals, hasLength(1));
+      final (from, to) = t.riddenIntervals.single;
+      expect(from, closeTo(150, 0.5));
+      expect(to, closeTo(180, 0.5));
+    });
+    test('square loop joined at 340 and ridden across the seam to north 60: never finished', () {
+      for (final t in _trace(_square, _acrossSeam)) {
+        expect(t.progress!.isFinished, isFalse, reason: '${t.progress}');
+      }
+    });
+    test('square loop joined at 340 and ridden across the seam: along strictly increases after the decision', () {
+      final decided = _trace(_square, _acrossSeam)
+          .where((t) => t.direction == FollowDirection.forward)
+          .toList();
+      expect(decided, hasLength(greaterThan(5)));
+      for (var i = 1; i < decided.length; i++) {
+        expect(
+          decided[i].progress!.alongM,
+          greaterThan(decided[i - 1].progress!.alongM + 9),
+          reason: 'fix $i',
+        );
+      }
+    });
+    test('square loop joined at 340 and ridden across the seam: remaining ≈ 400 → ≈ 280', () {
+      final trace = _trace(_square, _acrossSeam);
+      expect(trace.first.progress!.remainingM, closeTo(400, 0.5));
+      expect(trace.last.progress!.remainingM, closeTo(280, 0.5));
+    });
+    test('square loop joined at 340 and ridden across the seam: ridden intervals 340–400 and 0–60', () {
+      final intervals = _trace(_square, _acrossSeam).last.riddenIntervals;
+      expect(intervals, hasLength(2), reason: '$intervals');
+      expect(intervals[0].$1, closeTo(340, 0.5));
+      expect(intervals[0].$2, closeTo(400, 0.5));
+      expect(intervals[1].$1, closeTo(0, 0.5));
+      expect(intervals[1].$2, closeTo(60, 0.5));
+    });
+    test('square loop: a full lap from 340 back to 340 → finished, one interval 0–400', () {
+      final t = _trace(_square, _fullLap).last;
+      expect(t.progress!.isFinished, isTrue);
+      expect(t.progress!.remainingM, closeTo(0, 0.5));
+      expect(t.riddenIntervals, hasLength(1), reason: '${t.riddenIntervals}');
+      final (from, to) = t.riddenIntervals.single;
+      expect(from, 0);
+      expect(to, closeTo(400, 0.5));
+    });
+    test('square loop joined at north 40 and ridden backwards across the seam → reverse, remaining ≈ 400 → 300, intervals 340–400 and 0–40', () {
+      final trace = _trace(_square, [
+        for (var n = 40.0; n >= 0; n -= 10) at(n, 0),
+        for (var e = 10.0; e <= 60; e += 10) at(0, e),
+      ]);
+      final decided = trace
+          .where((t) => t.direction == FollowDirection.reverse)
+          .toList();
+      expect(decided.last, same(trace.last));
+      for (var i = 1; i < decided.length; i++) {
+        expect(
+          decided[i].progress!.alongM,
+          greaterThan(decided[i - 1].progress!.alongM + 9),
+          reason: 'fix $i',
+        );
+      }
+      expect(trace.first.progress!.remainingM, closeTo(400, 0.5));
+      expect(trace.last.progress!.remainingM, closeTo(300, 0.5));
+      final intervals = trace.last.riddenIntervals;
+      expect(intervals, hasLength(2), reason: '$intervals');
+      expect(intervals[0].$1, closeTo(340, 0.5));
+      expect(intervals[0].$2, closeTo(400, 0.5));
+      expect(intervals[1].$1, closeTo(0, 0.5));
+      expect(intervals[1].$2, closeTo(40, 0.5));
+      expect(trace.any((t) => t.progress!.isFinished), isFalse);
+    });
+    test('loop joined at its start and ridden forward 30 m (C1) → interval 0–30, not finished', () {
+      final trace = _trace(_loop(5), [at(0, 1), at(10, 0), at(20, 0), at(30, 0)]);
+      final t = trace.last;
+      expect(t.direction, FollowDirection.forward);
+      expect(t.riddenIntervals, hasLength(1));
+      final (from, to) = t.riddenIntervals.single;
+      expect(from, lessThanOrEqualTo(1));
+      expect(to, closeTo(30, 0.5));
+      expect(trace.any((t) => t.progress!.isFinished), isFalse);
+    });
+    test('loop ridden backwards from its finish end (M3) → reverse, intervals within 315–395.5, never finished', () {
+      final trace = _trace(_loop(5), [
+        for (var e = 5.0; e <= 85; e += 10) at(0, e),
+      ]);
+      expect(trace.last.direction, FollowDirection.reverse);
+      final intervals = trace.last.riddenIntervals;
+      expect(intervals, hasLength(1), reason: '$intervals');
+      expect(intervals.single.$1, closeTo(315, 0.5));
+      expect(intervals.single.$2, lessThanOrEqualTo(395.5));
+      expect(trace.any((t) => t.progress!.isFinished), isFalse);
+    });
+    test('loop joined 2.8 m off its start and ridden backwards → reverse, intervals within the ridden stretch, never finished', () {
+      final trace = _trace(_loop(5), [
+        at(2, 2),
+        for (var e = 5.0; e <= 70; e += 5) at(0, e),
+      ]);
+      expect(trace.last.direction, FollowDirection.reverse);
+      final intervals = trace.last.riddenIntervals;
+      for (final (from, to) in intervals) {
+        expect(from > 300 || to <= 5, isTrue, reason: '$intervals');
+      }
+      final ridden = intervals.fold(0.0, (m, i) => m + i.$2 - i.$1);
+      expect(ridden, lessThanOrEqualTo(75), reason: '$intervals');
+      expect(trace.any((t) => t.progress!.isFinished), isFalse);
+    });
+    test('flip on a loop mid-lap → direction flips, intervals kept, not finished', () {
+      final t = _trace(_square, _acrossSeam).last;
+      final f = t.flip();
+      expect(f.direction, FollowDirection.reverse);
+      expect(f.riddenIntervals, t.riddenIntervals);
+      expect(f.progress!.isFinished, isFalse);
+      // A flip starts a fresh lap from where the rider turned.
+      expect(f.progress!.remainingM, closeTo(400, 0.5));
+      final back = f.next(at(50, 0));
+      expect(back.progress!.alongM, closeTo(f.progress!.alongM + 10, 0.5));
+      expect(back.progress!.isFinished, isFalse);
+    });
+    test('decided forward on a loop: a jump to another pass does not finish the lap', () {
+      final t = _ride(_loop(5), [at(0, 1), at(10, 0), at(20, 0), at(30, 0)]);
+      final j = t.next(at(0, 20));
+      expect(j.progress!.alongM, closeTo(380, 0.5));
+      expect(j.progress!.isFinished, isFalse);
+      // The jump is re-based into the join: the lap less the 30 m ridden.
+      expect(j.progress!.remainingM, closeTo(365, 0.5));
     });
   });
 }

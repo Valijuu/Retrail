@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/follow_direction.dart';
@@ -46,8 +47,9 @@ class RouteFollowState {
   /// measured on it.
   final RouteTrack orientedTrack;
 
-  /// The ridden part of the route, in map order; empty while undecided.
-  final List<LatLng> ridden;
+  /// The ridden parts of the route, in map order; empty while undecided. Up
+  /// to two on a loop ridden across its start/finish (Spec 18).
+  final List<List<LatLng>> ridden;
 
   bool get isReversed => direction == FollowDirection.reverse;
 
@@ -69,7 +71,7 @@ class RouteFollowState {
     bool? locationServiceEnabled,
     FollowDirection? direction,
     RouteTrack? orientedTrack,
-    List<LatLng>? ridden,
+    List<List<LatLng>>? ridden,
   }) => RouteFollowState(
     track: track,
     recording: recording,
@@ -102,8 +104,8 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   /// The session's direction and ridden-range state machine (Spec 18).
   FollowTracker? _tracker;
 
-  /// The range [RouteFollowState.ridden] was last cut from.
-  RiddenRange? _drawnRidden;
+  /// The intervals [RouteFollowState.ridden] was last cut from.
+  List<(double, double)> _drawnRidden = const [];
 
   @override
   RouteFollowState? build() {
@@ -129,7 +131,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     final distance = ref.read(distanceCalculatorProvider);
     final track = RouteTrack(reference, distance: distance);
     _tracker = FollowTracker.start(track, distance: distance);
-    _drawnRidden = null;
+    _drawnRidden = const [];
     state = RouteFollowState(
       track: track,
       recording: recording,
@@ -140,7 +142,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   void stop() {
     _cancelFeed();
     _tracker = null;
-    _drawnRidden = null;
+    _drawnRidden = const [];
     state = null;
   }
 
@@ -223,21 +225,15 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     state = _following(s, flipped);
   }
 
-  /// [s] with [tracker]'s direction and progress, and the ridden segment cut
-  /// from its range once decided (reused while the range is unchanged).
+  /// [s] with [tracker]'s direction and progress, and the ridden segments
+  /// cut from its intervals once decided (reused while they are unchanged).
   RouteFollowState _following(RouteFollowState s, FollowTracker tracker) {
-    final range = tracker.range;
+    final intervals = tracker.riddenIntervals;
     var ridden = s.ridden;
-    if (range == null) {
-      ridden = const [];
-    } else if (tracker.direction != s.direction ||
-        range.loM != _drawnRidden?.loM ||
-        range.hiM != _drawnRidden?.hiM) {
-      final segment = s.track.segmentBetween(range.loM, range.hiM);
-      ridden = tracker.direction == FollowDirection.reverse
-          ? segment.reversed.toList()
-          : segment;
-      _drawnRidden = range;
+    if (tracker.direction != s.direction ||
+        !listEquals(intervals, _drawnRidden)) {
+      ridden = _riddenSegments(s.track, intervals, tracker.direction);
+      _drawnRidden = intervals;
     }
     return s.copyWith(
       direction: tracker.direction,
@@ -245,6 +241,22 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
       progress: tracker.progress,
       ridden: ridden,
     );
+  }
+
+  /// [intervals] of [track] as polylines in map order: on a reverse ride each
+  /// runs backwards and their order flips.
+  static List<List<LatLng>> _riddenSegments(
+    RouteTrack track,
+    List<(double, double)> intervals,
+    FollowDirection direction,
+  ) {
+    final segments = [
+      for (final (from, to) in intervals) track.segmentBetween(from, to),
+    ]..removeWhere((segment) => segment.isEmpty);
+    if (direction != FollowDirection.reverse) return segments;
+    return [
+      for (final segment in segments.reversed) segment.reversed.toList(),
+    ];
   }
 
   void _cancelFeed() {

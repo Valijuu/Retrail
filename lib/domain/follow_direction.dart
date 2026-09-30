@@ -21,13 +21,13 @@ FollowDirection directionAtJoin(
   }
   double distanceTo(LatLng p) =>
       distance.distanceBetween(position.lat, position.lng, p.lat, p.lng);
-  final first = track.points.first, last = track.points.last;
-  final isLoop =
-      distance.distanceBetween(first.lat, first.lng, last.lat, last.lng) <=
-      followFinishRadiusM;
-  if (isLoop) return FollowDirection.undecided;
-  if (distanceTo(first) <= followFinishRadiusM) return FollowDirection.forward;
-  if (distanceTo(last) <= followFinishRadiusM) return FollowDirection.reverse;
+  if (track.isLoop) return FollowDirection.undecided;
+  if (distanceTo(track.points.first) <= followFinishRadiusM) {
+    return FollowDirection.forward;
+  }
+  if (distanceTo(track.points.last) <= followFinishRadiusM) {
+    return FollowDirection.reverse;
+  }
   return FollowDirection.undecided;
 }
 
