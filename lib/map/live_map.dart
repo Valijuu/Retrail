@@ -1017,13 +1017,13 @@ class _LiveMapState extends State<LiveMap>
       _viewportSize = size;
       final fit = widget.fitBounds ? _fitCamera : null;
       // While following a saved route, the live map's placeholder already
-      // shows that route (framed whole) instead of bare terrain — computed
-      // only while the placeholder is actually covering the map.
-      final referenceFit =
-          covered && !widget.fitBounds && widget.reference != null
-              ? fitRouteCamera(widget.reference!.points,
-                  width: size.width, height: size.height)
-              : null;
+      // shows that route (framed whole) instead of bare terrain. Computed on
+      // every build (not only while covered) so the sketch stays the fading
+      // child through the reveal instead of vanishing in one frame.
+      final referenceFit = !widget.fitBounds && widget.reference != null
+          ? fitRouteCamera(widget.reference!.points,
+              width: size.width, height: size.height)
+          : null;
       return Stack(
         fit: StackFit.expand,
         children: [
