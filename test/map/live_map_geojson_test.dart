@@ -143,4 +143,29 @@ void main() {
       expect(referencePushTarget(drawn: a, current: null), isNull);
     });
   });
+
+  group('referenceUpdateGeoJson', () {
+    final a = RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)]);
+    final b = RouteTrack(const [(lat: 49.0, lng: 11.0), (lat: 49.001, lng: 11.0)]);
+    final done = [
+      [a.points[0], a.points[1]],
+    ];
+
+    test('nothing pushed yet: the whole line and the ridden parts', () {
+      final g = referenceUpdateGeoJson(a, done, lastPushed: null);
+      expect(g.ahead, referenceGeoJson(a, done).ahead);
+      expect(g.done, referenceGeoJson(a, done).done);
+    });
+
+    test('the same reference already pushed: only the ridden parts', () {
+      final g = referenceUpdateGeoJson(a, done, lastPushed: a);
+      expect(g.ahead, isNull);
+      expect(g.done, referenceGeoJson(a, done).done);
+    });
+
+    test('a replaced reference (a flip): the new whole line', () {
+      final g = referenceUpdateGeoJson(b, null, lastPushed: a);
+      expect(g.ahead, referenceGeoJson(b, null).ahead);
+    });
+  });
 }

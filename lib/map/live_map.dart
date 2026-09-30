@@ -133,6 +133,22 @@ String _multiLineGeoJson(List<List<RoutePoint>> segments) {
       ahead: routeLineGeoJson(track.points),
     );
 
+/// What a reference update pushes: the ridden parts ([done]) always, the
+/// whole line ([ahead]) only when [track] is not the one [lastPushed] into
+/// the existing sources (a flip), else null — so a fix that only grows the
+/// ridden part doesn't re-encode and re-upload the whole route.
+({String done, String? ahead}) referenceUpdateGeoJson(
+  RouteTrack track,
+  List<List<RoutePoint>>? done, {
+  required RouteTrack? lastPushed,
+}) =>
+    (
+      done: _multiLineGeoJson(done ?? const []),
+      ahead: identical(track, lastPushed)
+          ? null
+          : routeLineGeoJson(track.points),
+    );
+
 /// Where the followed reference's markers go for the endpoint [style] drawn
 /// at style load: the start (or combined loop) marker on the first of
 /// [points], the finish on the last — only for an [RouteEndpointStyle.open]
@@ -387,6 +403,11 @@ class _LiveMapState extends State<LiveMap>
   /// load created, or null when it created none (see [referencePushTarget]).
   RouteTrack? _drawnReference;
 
+  /// The reference whose whole line the `reference` source holds now (its
+  /// lifecycle is [_drawnReference]'s), so a fix that only grows the ridden
+  /// part doesn't push the whole line again.
+  RouteTrack? _lastPushedReference;
+
   /// The `ref-start` / `ref-end` marker sources this style load created: the
   /// endpoint [RouteEndpointStyle] drawn then (which marker sources exist)
   /// and the reference whose endpoints they show now. Null when it created
@@ -574,8 +595,13 @@ class _LiveMapState extends State<LiveMap>
     final reference = referencePushTarget(
         drawn: _drawnReference, current: widget.reference);
     if (reference == null) return;
-    final g = referenceGeoJson(reference, widget.referenceDone);
-    _style?.updateGeoJsonSource(id: 'reference', data: g.ahead);
+    final g = referenceUpdateGeoJson(reference, widget.referenceDone,
+        lastPushed: _lastPushedReference);
+    final ahead = g.ahead;
+    if (ahead != null) {
+      _style?.updateGeoJsonSource(id: 'reference', data: ahead);
+      _lastPushedReference = reference;
+    }
     _style?.updateGeoJsonSource(id: 'reference-done', data: g.done);
     _pushReferenceMarkers(reference);
   }
@@ -700,7 +726,7 @@ class _LiveMapState extends State<LiveMap>
   /// [_onStyleLoaded] and its helpers check this after every await, so an
   /// old load can't add layers to a dead map or set the ready flags
   /// (`_sourcesReady`, `_markerReady`, `_drawnReference`,
-  /// `_drawnReferenceMarkers`, `_styleReady`)
+  /// `_lastPushedReference`, `_drawnReferenceMarkers`, `_styleReady`)
   /// against the new style before its sources exist.
   bool _superseded(StyleController style) =>
       !mounted || !identical(_style, style);
@@ -718,6 +744,7 @@ class _LiveMapState extends State<LiveMap>
     _sourcesReady = false;
     _pushedPoints = null; // the fresh style's `route` source starts over
     _drawnReference = null; // nor has it any reference sources yet
+    _lastPushedReference = null;
     _drawnReferenceMarkers = null;
     _markerImages.clear();
     final colors = context.colors;
@@ -735,6 +762,7 @@ class _LiveMapState extends State<LiveMap>
       await style.addSource(GeoJsonSource(id: 'reference-done', data: g.done));
       if (_superseded(style)) return;
       _drawnReference = reference;
+      _lastPushedReference = reference;
       await style.addLayer(LineStyleLayer(
         id: 'reference-halo',
         sourceId: 'reference',
@@ -1105,6 +1133,7 @@ class _LiveMapState extends State<LiveMap>
     _sourcesReady = false;
     _markerReady = false;
     _drawnReference = null;
+    _lastPushedReference = null;
     _drawnReferenceMarkers = null;
     _glide.stop();
   }
