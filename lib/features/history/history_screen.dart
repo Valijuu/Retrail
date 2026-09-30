@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
+import '../follow/follow_route_launcher.dart';
 import '../shell/main_shell.dart';
 import 'confirm_delete_dialog.dart';
 import 'edit_ride_sheet.dart';
@@ -263,7 +264,26 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         rwt: RideWithTrackpoints(ride: entry.ride, trackpoints: tps),
         stats: entry.stats,
         onDismiss: () => Navigator.of(context).pop(),
+        onFollowRoute: () {
+          Navigator.of(context).pop();
+          _followRoute(entry.ride);
+        },
       ),
+    );
+  }
+
+  /// Loads [ride]'s route and starts "Follow route" for it (Spec 17).
+  Future<void> _followRoute(Ride ride) async {
+    final tps = await ref
+        .read(trackpointRepositoryProvider)
+        .getForRide(ride.rideId)
+        .first;
+    if (!mounted) return;
+    await launchFollowRoute(
+      context,
+      ref,
+      reference: [for (final tp in tps) (lat: tp.latitude, lng: tp.longitude)],
+      rideTitle: ride.description,
     );
   }
 
@@ -405,6 +425,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           onLongPress: () => _toggleSelected(rideId),
           onEdit: () => _openEdit(item.ride),
           onDelete: () => _confirmDelete(single: rideId),
+          onFollowRoute: () => _followRoute(item.ride),
           onToggleFavorite: () =>
               ref.read(historyControllerProvider).toggleFavorite(item.ride),
         );

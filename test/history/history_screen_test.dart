@@ -671,4 +671,28 @@ void main() {
     await pump(tester, [_entry(1)], locale: const Locale('de'));
     expect(find.text('4,2 km'), findsOneWidget);
   });
+
+  testWidgets('3-dot menu Follow route opens the record question',
+      (tester) async {
+    await pump(tester, [_routedEntry(5)], trackpoints: {
+      5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
+    });
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    final items = tester
+        .widgetList<PopupMenuItem<int>>(find.byType(PopupMenuItem<int>))
+        .toList();
+    expect(items.length, 3); // Follow route, Edit, Delete
+    await tester.tap(find.text('Follow route'));
+    await tester.pumpAndSettle();
+    expect(find.text('Record this ride?'), findsOneWidget);
+  });
+
+  testWidgets('3-dot menu has no Follow route for a ride without a route',
+      (tester) async {
+    await pump(tester, [_entry(1, desc: 'Morning roll')]);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    expect(find.text('Follow route'), findsNothing);
+  });
 }

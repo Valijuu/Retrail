@@ -21,11 +21,15 @@ class RideDetailDialog extends StatefulWidget {
     required this.rwt,
     required this.stats,
     required this.onDismiss,
+    this.onFollowRoute,
   });
 
   final RideWithTrackpoints rwt;
   final RideStats stats;
   final VoidCallback onDismiss;
+
+  /// Starts "Follow route" (Spec 17). Null hides the button.
+  final VoidCallback? onFollowRoute;
 
   @override
   State<RideDetailDialog> createState() => _RideDetailDialogState();
@@ -242,15 +246,29 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: widget.onDismiss,
-                    child: Text(
-                      l10n.actionClose,
-                      style: text.labelLarge?.copyWith(color: colors.primary),
+                child: Row(
+                  children: [
+                    if (widget.onFollowRoute != null && points.length >= 2)
+                      Flexible(
+                        child: FilledButton.tonalIcon(
+                          onPressed: widget.onFollowRoute,
+                          icon: const Icon(Icons.route),
+                          label: Text(
+                            l10n.followRouteAction,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: widget.onDismiss,
+                      child: Text(
+                        l10n.actionClose,
+                        style: text.labelLarge?.copyWith(color: colors.primary),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],

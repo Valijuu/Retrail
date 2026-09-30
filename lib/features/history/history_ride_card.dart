@@ -32,6 +32,7 @@ class HistoryRideCard extends ConsumerStatefulWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onToggleFavorite,
+    this.onFollowRoute,
   });
 
   final RideEntryItem entry;
@@ -48,6 +49,9 @@ class HistoryRideCard extends ConsumerStatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggleFavorite;
+
+  /// Starts "Follow route"; null hides the menu entry.
+  final VoidCallback? onFollowRoute;
 
   @override
   ConsumerState<HistoryRideCard> createState() => _HistoryRideCardState();
@@ -159,6 +163,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                         _OverflowMenu(
                           onEdit: widget.onEdit,
                           onDelete: widget.onDelete,
+                          onFollowRoute: hasRoute ? widget.onFollowRoute : null,
                         ),
                       ],
                     ],
@@ -333,9 +338,13 @@ class _Thumbnail extends ConsumerWidget {
 }
 
 class _OverflowMenu extends StatelessWidget {
-  const _OverflowMenu({required this.onEdit, required this.onDelete});
+  const _OverflowMenu(
+      {required this.onEdit, required this.onDelete, this.onFollowRoute});
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onFollowRoute;
+
+  static const _follow = 2, _edit = 0, _delete = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -344,10 +353,25 @@ class _OverflowMenu extends StatelessWidget {
     return PopupMenuButton<int>(
       tooltip: l10n.a11yMoreOptions,
       icon: Icon(Icons.more_vert, size: 20, color: colors.onSurfaceVariant),
-      onSelected: (v) => v == 0 ? onEdit() : onDelete(),
+      onSelected: (v) => switch (v) {
+        _follow => onFollowRoute?.call(),
+        _edit => onEdit(),
+        _ => onDelete(),
+      },
       itemBuilder: (context) => [
+        if (onFollowRoute != null)
+          PopupMenuItem(
+            value: _follow,
+            child: Row(
+              children: [
+                Icon(Icons.route, color: colors.onSurface, size: 20),
+                const SizedBox(width: 12),
+                Text(l10n.followRouteAction),
+              ],
+            ),
+          ),
         PopupMenuItem(
-          value: 0,
+          value: _edit,
           child: Row(
             children: [
               Icon(Icons.edit, color: colors.onSurface, size: 20),
@@ -357,7 +381,7 @@ class _OverflowMenu extends StatelessWidget {
           ),
         ),
         PopupMenuItem(
-          value: 1,
+          value: _delete,
           child: Row(
             children: [
               Icon(Icons.delete, color: colors.deleteActionText, size: 20),

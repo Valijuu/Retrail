@@ -207,6 +207,58 @@ void main() {
       expect(map.fitBounds, isTrue); // whole route, not centred on the last point
     });
 
+    testWidgets('Follow route button shows with a route and fires',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var followed = false;
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+          Trackpoint(
+              trackpointId: 0,
+              rideId: 1,
+              latitude: 48.0,
+              longitude: 11.0,
+              timestamp: 0),
+          Trackpoint(
+              trackpointId: 1,
+              rideId: 1,
+              latitude: 48.001,
+              longitude: 11.0,
+              timestamp: 1),
+        ]),
+        stats: const RideStats(
+            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
+        onDismiss: () {},
+        onFollowRoute: () => followed = true,
+      )));
+      final button = find.widgetWithText(FilledButton, 'Follow route');
+      expect(button, findsOneWidget);
+      await tester.tap(button);
+      expect(followed, isTrue);
+      await tester.tap(find.byIcon(Icons.fullscreen));
+      await tester.pumpAndSettle();
+      expect(find.text('Follow route'), findsNothing);
+    });
+
+    testWidgets('no Follow route button without a route or callback',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+        stats: const RideStats(
+            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
+        onDismiss: () {},
+        onFollowRoute: () {},
+      )));
+      expect(find.text('Follow route'), findsNothing);
+    });
+
     testWidgets(
         'fullscreen keeps the SAME map (state moves, no second native map '
         'to start) — there and back', (tester) async {
