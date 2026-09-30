@@ -123,6 +123,9 @@ void main() {
     test("formatDistanceToRoute: rounding up to 1 km uses km — 999.6 m → '1.00 km'", () {
       expect(formatDistanceToRoute(999.6), '1.00 km');
     });
+    test("formatDistanceToRoute: exactly half a metre under 1 km rounds up — 999.5 m → '1.00 km'", () {
+      expect(formatDistanceToRoute(999.5), '1.00 km');
+    });
     test("formatDistanceToRoute: 1 km and up uses km — 1000 m → '1.00 km'", () {
       expect(formatDistanceToRoute(1000), '1.00 km');
     });

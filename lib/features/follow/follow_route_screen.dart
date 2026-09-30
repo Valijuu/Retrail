@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/theme_context.dart';
+import '../../domain/route_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/ride_tracking_state.dart';
 import '../../tracking/tracking_providers.dart';
@@ -11,7 +12,6 @@ import '../active_ride/widgets/ride_chrome.dart';
 import '../home/navigation_chooser.dart';
 import '../home/navigation_launcher.dart';
 import '../shell/routes.dart';
-import '../../domain/route_progress.dart';
 import 'route_follow_providers.dart';
 import 'widgets/follow_chrome.dart';
 

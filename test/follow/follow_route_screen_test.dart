@@ -221,6 +221,8 @@ void main() {
     await pump(tester, null);
     await tester.pumpAndSettle();
     expect(find.text('HOME'), findsOneWidget);
+    // No session was opened, so disposing must not pause anyone's feed.
+    expect(follow.calls, isNot(contains('pauseFor')));
   });
 
   testWidgets('leaving keeps the follow chrome until the route changes',
