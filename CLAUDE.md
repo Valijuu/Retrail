@@ -78,7 +78,7 @@ lib/
 │   └── repositories/             # RideRepository, TrackpointRepository, PreferencesRepository
 ├── domain/                       # DistanceCalculator (Haversine), RideStats, formatters, time bounds — pure logic
 ├── features/
-│   ├── onboarding/  home/  timer/  active_ride/  history/  settings/  profile/
+│   ├── onboarding/  home/  timer/  active_ride/  history/  settings/  profile/  follow/
 │   │     each: <feature>_screen.dart, <feature>_providers.dart, widgets/
 │   └── shell/                    # splash, main tabs + bottom nav, routing, deep-link
 ├── tracking/                     # RideTracker (singleton provider), location pipeline, foreground task / Live Activity
@@ -95,6 +95,7 @@ ios/
 - One Riverpod provider set per feature (`*_providers.dart`); expose read-only state, accept intents as methods. Mirrors the original ViewModels 1:1 (`HomeViewModel` → `homeProvider`, etc.).
 - Repositories return Drift `Stream`s; providers transform them (stats, filtering, grouping) exactly as the Kotlin ViewModels did.
 - `RideTracker` is a process-lifetime singleton provider (survives screen disposal), exposing live `location`, `trackPoints`, `distance`, `speed`, `elapsed`, `isPaused`, `activityType`. Recording is fully local and works offline.
+- `routeFollowProvider` (Spec 17) holds a followed reference route, process-lifetime like `RideTracker` but separate from it: recording follows read the recorder's position, follow-only (`/follow`) runs its own foreground GPS feed. Null = no reference; every screen then behaves as without the feature.
 - Naming: files `snake_case.dart`, types `UpperCamelCase`, providers `camelCaseProvider`.
 - Bottom sheets open through `core/widgets/app_bottom_sheet.dart`: `showAppScrollableSheet` for forms/filters (drag handle, 90 % height, drag-to-close from scrolled content), `showAppBottomSheet` for short pickers and short forms that should hug their content (profile edit — no empty band below the buttons on tall phones; still capped at 90 % and drag-to-close while the content fits). Confirmations stay dialogs.
 
