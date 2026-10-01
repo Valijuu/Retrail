@@ -32,14 +32,16 @@ extension FollowLap on FollowTracker {
     );
   }
 
-  /// The ridden parts of [track], in its metres; empty until decided. On a
+  /// The ridden parts of [track], in its metres; empty until decided. A
+  /// part not ridden yet (a single point, as after a jump) is left out. On a
   /// loop a part crossing the start/finish is split in two, and a full lap is
   /// the whole route.
   List<(double, double)> get riddenIntervals {
     final r = range;
     if (r == null) return const [];
     return [
-      for (final ridden in [..._closed, r]) ..._onLap(ridden),
+      for (final ridden in [..._closed, r])
+        if (ridden.hiM > ridden.loM) ..._onLap(ridden),
     ];
   }
 

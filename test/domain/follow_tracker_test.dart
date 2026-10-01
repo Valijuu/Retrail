@@ -261,11 +261,9 @@ void main() {
       // Far from the progress point: not on its pass any more.
       final j = t.next(at(0, 60));
       expect(j.progress!.alongM, closeTo(340, 0.5));
-      // The part ridden before stays, the new pass starts at the jump.
-      expect(j.riddenIntervals.first, t.riddenIntervals.single);
-      final (from, to) = j.riddenIntervals.last;
-      expect(from, closeTo(340, 0.5));
-      expect(to, from);
+      // The part ridden before stays; the new pass, a point so far, isn't
+      // ridden yet.
+      expect(j.riddenIntervals, t.riddenIntervals);
     });
 
     test('flip while undecided keeps what the reverse tracker rode', () {
@@ -371,6 +369,43 @@ void main() {
         expect(to1, closeTo(100, 0.5));
         expect(from2, closeTo(350, 0.5));
         expect(to2, closeTo(390, 0.5));
+      },
+    );
+
+    test(
+      'open U route 120 m wide ridden to 100, then across it off route and on '
+      'to 660 (#51): intervals 0–100 and 620–660',
+      () {
+        // 300 m north, 120 m east, 300 m back south: L = 720.
+        final u = [at(0, 0), at(300, 0), at(300, 120), at(0, 120)];
+        final t = _ride(u, [
+          for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+          at(100, 40),
+          at(100, 80),
+          for (var n = 100.0; n >= 60; n -= 10) at(n, 120),
+        ]);
+        expect(t.riddenIntervals, hasLength(2));
+        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+        expect(from1, closeTo(0, 0.5));
+        expect(to1, closeTo(100, 0.5));
+        expect(from2, closeTo(620, 0.5));
+        expect(to2, closeTo(660, 0.5));
+      },
+    );
+
+    test(
+      'off route alongside the route and back on 140 m further (#51): no '
+      'shortcut, one interval 0–240',
+      () {
+        final t = _ride(_straight, [
+          for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+          for (var n = 120.0; n <= 180; n += 20) at(n, 40),
+          at(240, 0),
+        ]);
+        expect(t.riddenIntervals, hasLength(1));
+        final (from, to) = t.riddenIntervals.single;
+        expect(from, closeTo(0, 0.5));
+        expect(to, closeTo(240, 0.5));
       },
     );
 

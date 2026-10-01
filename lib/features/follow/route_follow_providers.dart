@@ -47,8 +47,9 @@ class RouteFollowState {
   /// measured on it.
   final RouteTrack orientedTrack;
 
-  /// The ridden parts of the route, in map order; empty while undecided. Up
-  /// to two on a loop ridden across its start/finish (Spec 18).
+  /// The ridden parts of the route, in map order; empty while undecided. One
+  /// per ridden part (a shortcut starts a new one), a part on a loop ridden
+  /// across its start/finish split in two (Spec 18).
   final List<List<LatLng>> ridden;
 
   bool get isReversed => direction == FollowDirection.reverse;
