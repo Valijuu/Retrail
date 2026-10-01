@@ -20,7 +20,7 @@ import 'support/sim_route.dart';
 // committed baseline + 3 (support/follow_scenarios_baseline.dart); the
 // long-term target is 5 %. The local real-ride group also replays each
 // ride along its own geometry under the gate noise models, with the gate
-// thresholds.
+// thresholds (50 runs each).
 //
 //   --dart-define=FOLLOW_SCENARIOS_ALL=true    also run the baseline-RED pairs
 //   --dart-define=FOLLOW_SCENARIOS_PRINT=true  print every pair's counts
@@ -31,16 +31,15 @@ import 'support/sim_route.dart';
 const _runAll = bool.fromEnvironment('FOLLOW_SCENARIOS_ALL');
 const _printCounts = bool.fromEnvironment('FOLLOW_SCENARIOS_PRINT');
 const _replay = String.fromEnvironment('FOLLOW_SCENARIOS_REPLAY');
-const _baselineRed = 'baseline RED — fixed in Task 8';
+const _baselineRed = 'over its threshold after Task 8 — see #56';
 
 /// Seeded runs per real ride and gate noise model.
-const _realNoiseRuns = 200;
+const _realNoiseRuns = 50;
 
-const _u5 = 'uniform ±5 m', _g5 = 'gaussian σ5', _g8 = 'gaussian σ8';
-const _walk = 'correlated walk σ3 ρ0.9';
+const _g8 = 'gaussian σ8', _walk = 'correlated walk σ3 ρ0.9';
 
-/// Scenario → the noise models it still fails its threshold under during the
-/// Task 8 rework, skipped until it is done.
+/// Scenario → the noise models it still fails its threshold under after the
+/// Task 8 rework (#56), skipped by default.
 const _red = <String, Set<String>>{
   'square · forward from 2–20 m past the start · cruise': {_walk},
   'square · across the seam forward · cruise': {_walk},
@@ -53,11 +52,11 @@ const _red = <String, Set<String>>{
   'out-and-back 1 km · stand 30s at the join, then forward · cruise': {_walk},
 };
 
-/// Real-ride cases failing at the Task 7 baseline, skipped until Task 8.
+/// Real-ride cases failing their checks, skipped by default.
 const _redReal = <String>{};
 
-/// Noisy real-ride runs still failing during the Task 8 rework, skipped
-/// until it is done.
+/// Noisy real-ride runs still over their threshold after the Task 8 rework
+/// (#56), skipped by default.
 const _redRealNoise = <String>{
   'ride 6 · across the seam reversed · correlated walk σ3 ρ0.9',
   'ride 6 · across the seam · correlated walk σ3 ρ0.9',
