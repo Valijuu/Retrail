@@ -153,6 +153,21 @@ void main() {
       expect(t.range!.hiM, closeTo(230, 0.5));
     });
 
+    test('decided forward, a 70 m gap between fixes: progress catches up '
+        'within one more fix', () {
+      // Catch-up per fix: the pace (the average move over the last fixes, or
+      // this move − 25 m for a gap) + 2 m, then 25 % of the rest. The 70 m
+      // fix advances 190 → ~243 (pace 45); the next fix's pace, averaged
+      // over the gap, covers the remaining ~17 m.
+      final t = _ride(_straight, [at(150, 0), at(170, 0), at(190, 0)]);
+      expect(t.direction, FollowDirection.forward);
+      final gap = t.next(at(260, 0));
+      expect(gap.progress!.alongM, inExclusiveRange(190, 260));
+      final caught = gap.next(at(260, 0));
+      expect(caught.progress!.alongM, closeTo(260, 0.5));
+      expect(caught.range!.hiM, closeTo(260, 0.5));
+    });
+
     test('decided reverse: the range grows in original metres', () {
       final t = _ride(_straight, [at(299, 0), at(250, 0), at(200, 0)]);
       expect(t.range!.loM, closeTo(200, 0.5));

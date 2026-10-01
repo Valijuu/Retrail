@@ -505,20 +505,14 @@ void main() {
           key,
           () {
             final allowed = (noise.maxFailureShare * _realNoiseRuns).floor();
-            var failedRuns = 0;
-            int? firstSeed;
+            final result = ScenarioResult(_realNoiseRuns);
             for (var k = 0; k < _realNoiseRuns; k++) {
               final seed = seedOf('$key|$k');
-              if (runRealNoisy(rc, noise, seed).isEmpty) continue;
-              failedRuns++;
-              firstSeed ??= seed;
+              result.record(seed, runRealNoisy(rc, noise, seed));
             }
-            final result =
-                '$failedRuns/$_realNoiseRuns failed'
-                '${firstSeed == null ? '' : ', first seed $firstSeed'}';
             if (_printCounts) _log('REALNOISE $key: $result');
             expect(
-              failedRuns,
+              result.failedRuns,
               lessThanOrEqualTo(allowed),
               reason: '$key: $result, allowed $allowed',
             );

@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
-import 'follow_join.dart' show routeHeading;
 import 'heading.dart' show LatLng;
 import 'route_progress.dart';
 
@@ -114,7 +113,7 @@ RouteHit _likeliest(
 /// How far the move from [a] to [b] runs along [route] at [alongM], in
 /// metres (negative: against it). Local flat-earth approximation.
 double _alongRouteM(RouteTrack route, double alongM, LatLng a, LatLng b) {
-  final t = routeHeading(route, alongM);
+  final t = route.headingAt(alongM);
   final dx = (b.lng - a.lng) * math.cos(a.lat * math.pi / 180);
   final dy = b.lat - a.lat;
   return (dx * t.x + dy * t.y) * _metresPerDegree;

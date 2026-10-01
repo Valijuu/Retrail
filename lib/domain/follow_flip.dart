@@ -82,6 +82,11 @@ extension FollowFlip on FollowTracker {
     double ridM,
     double offsetM,
   ) {
+    // Searched from halfway, not from the join itself (signed ≥ 0): just
+    // after a U-turn the rider is still near the join, and a hit clamped to
+    // the start of the window there would pass for a correction. Halfway
+    // keeps the U-turn's position (the join less [ridM]) [ridM] / 2 or more
+    // outside the window.
     final hits = [
       for (final h in target.hitsWithin(
         lastPoint!,

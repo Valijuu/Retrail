@@ -165,6 +165,16 @@ class RouteTrack {
   RouteProgress progressAt(LatLng position, RouteHit hit) =>
       _onRoute(position, hit);
 
+  /// The unit direction of the route at [alongM] in a local flat frame (x
+  /// east, y north); zero where it has no length.
+  ({double x, double y}) headingAt(double alongM) {
+    final a = pointAt(alongM - 1), b = pointAt(alongM + 1);
+    final x = (b.lng - a.lng) * math.cos(a.lat * math.pi / 180);
+    final y = b.lat - a.lat;
+    final norm = math.sqrt(x * x + y * y);
+    return norm == 0 ? (x: 0, y: 0) : (x: x / norm, y: y / norm);
+  }
+
   /// The route laid out twice, the second lap continuing from the last point.
   RouteTrack doubled() =>
       RouteTrack([...points, ...points.skip(1)], distance: _distance);

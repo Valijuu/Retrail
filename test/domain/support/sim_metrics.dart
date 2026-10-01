@@ -290,6 +290,16 @@ class ScenarioResult {
   /// The first failing seed, to replay one run.
   int? firstFailingSeed;
 
+  /// Counts the run with [seed] that failed [failed] (none: it passed).
+  void record(int seed, Set<Metric> failed) {
+    if (failed.isEmpty) return;
+    failedRuns++;
+    firstFailingSeed ??= seed;
+    for (final m in failed) {
+      byMetric[m] = (byMetric[m] ?? 0) + 1;
+    }
+  }
+
   @override
   String toString() {
     final parts = [
@@ -310,13 +320,7 @@ ScenarioResult runScenario(Scenario sc, NoiseModel noise) {
   final result = ScenarioResult(noise.runs);
   for (var k = 0; k < noise.runs; k++) {
     final seed = runSeed(sc, noise, k);
-    final failed = runOnce(sc, noise, seed);
-    if (failed.isEmpty) continue;
-    result.failedRuns++;
-    result.firstFailingSeed ??= seed;
-    for (final m in failed) {
-      result.byMetric[m] = (result.byMetric[m] ?? 0) + 1;
-    }
+    result.record(seed, runOnce(sc, noise, seed));
   }
   return result;
 }

@@ -363,4 +363,16 @@ void main() {
       expect(p.isFinished, isTrue);
     });
   });
+
+  group('RouteTrack.headingAt', () {
+    test('north along a route running north, east after its corner', () {
+      final track = RouteTrack([at(0, 0), at(100, 0), at(100, 100)]);
+      final north = track.headingAt(50);
+      expect(north.x, closeTo(0, 1e-9));
+      expect(north.y, closeTo(1, 1e-9));
+      final east = track.headingAt(150);
+      expect(east.x, closeTo(1, 1e-9));
+      expect(east.y, closeTo(0, 1e-9));
+    });
+  });
 }

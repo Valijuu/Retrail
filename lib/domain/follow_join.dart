@@ -34,11 +34,11 @@ List<RouteHit> sameRoad(RouteTrack track, List<RouteHit> hits) {
   for (final h in hits) {
     if (h.offsetM < closest.offsetM) closest = h;
   }
-  final heading = routeHeading(track, closest.alongM);
+  final heading = track.headingAt(closest.alongM);
   bool fits(RouteHit h) {
     if (h.offsetM <= closest.offsetM + followSameRoadBandM) return true;
     if (h.offsetM > closest.offsetM + followRoadBackBandM) return false;
-    final other = routeHeading(track, h.alongM);
+    final other = track.headingAt(h.alongM);
     return heading.x * other.x + heading.y * other.y < _oppositeCos;
   }
 
@@ -46,16 +46,6 @@ List<RouteHit> sameRoad(RouteTrack track, List<RouteHit> hits) {
     for (final h in hits)
       if (fits(h)) h,
   ];
-}
-
-/// The unit direction of [track] at [alongM] in a local flat frame (x east,
-/// y north); zero on a route without length there.
-({double x, double y}) routeHeading(RouteTrack track, double alongM) {
-  final a = track.pointAt(alongM - 1), b = track.pointAt(alongM + 1);
-  final x = (b.lng - a.lng) * math.cos(a.lat * math.pi / 180);
-  final y = b.lat - a.lat;
-  final norm = math.sqrt(x * x + y * y);
-  return norm == 0 ? (x: 0, y: 0) : (x: x / norm, y: y / norm);
 }
 
 /// A hit of the rider seen from the join: [anchorM] is the pass of the join
