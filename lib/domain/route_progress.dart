@@ -31,6 +31,9 @@ const double _offsetTieM = 1;
 /// lands on the vertex instead of adding a duplicate point.
 const double _vertexSnapM = 1e-6;
 
+/// A position projected onto the route: how far along it and how far off.
+typedef RouteHit = ({double alongM, double offsetM});
+
 /// Where the rider is relative to the reference route.
 class RouteProgress {
   const RouteProgress({
@@ -112,19 +115,17 @@ class RouteTrack {
   RouteProgress? locate(LatLng position, {RouteProgress? previous}) {
     if (lengthM <= 0) return null;
     if (previous != null && previous.hasJoined && !previous.isOffRoute) {
-      final windowOnRoute = _candidates(
+      final windowOnRoute = hitsWithin(
         position,
         previous.alongM,
         math.min(lengthM, previous.alongM + followLookAheadM),
-      ).where((c) => c.offsetM <= followOffRouteThresholdM).toList();
+      );
       if (windowOnRoute.isNotEmpty) {
         return _onRoute(position, _passes(windowOnRoute).first);
       }
     }
     final all = _candidates(position, 0, lengthM);
-    final onRoute = all
-        .where((c) => c.offsetM <= followOffRouteThresholdM)
-        .toList();
+    final onRoute = _onRouteOnly(all);
     if (onRoute.isEmpty) {
       final along = previous?.alongM ?? 0;
       return RouteProgress(
@@ -142,6 +143,27 @@ class RouteTrack {
         : passes.first;
     return _onRoute(position, pick);
   }
+
+  /// The on-route projections of [position] onto each segment overlapping
+  /// [fromM]..[toM] (clamped to that range), in route order.
+  List<RouteHit> hitsWithin(LatLng position, double fromM, double toM) =>
+      _onRouteOnly(_candidates(position, fromM, toM));
+
+  static List<RouteHit> _onRouteOnly(List<RouteHit> hits) => [
+    for (final h in hits)
+      if (h.offsetM <= followOffRouteThresholdM) h,
+  ];
+
+  /// The passes of the route within the off-route threshold of [position]:
+  /// each pass's closest hit, in route order.
+  List<RouteHit> passesOf(LatLng position) {
+    final onRoute = _onRouteOnly(_candidates(position, 0, lengthM));
+    return onRoute.isEmpty ? const [] : _passes(onRoute);
+  }
+
+  /// Progress on route at [hit], [position]'s projection onto the route.
+  RouteProgress progressAt(LatLng position, RouteHit hit) =>
+      _onRoute(position, hit);
 
   /// The route laid out twice, the second lap continuing from the last point.
   RouteTrack doubled() =>
@@ -188,7 +210,7 @@ class RouteTrack {
     return (index: i, cut: _lerp(points[i - 1], points[i], t));
   }
 
-  RouteProgress _onRoute(LatLng position, _Candidate c) {
+  RouteProgress _onRoute(LatLng position, RouteHit c) {
     final end = points.last;
     final toEnd = _distance.distanceBetween(
       position.lat,
@@ -210,8 +232,8 @@ class RouteTrack {
 
   /// The nearest point of each segment overlapping [fromM]..[toM] (clamped to
   /// that range), with its distance along the route and to [p].
-  List<_Candidate> _candidates(LatLng p, double fromM, double toM) {
-    final out = <_Candidate>[];
+  List<RouteHit> _candidates(LatLng p, double fromM, double toM) {
+    final out = <RouteHit>[];
     for (var i = 0; i < points.length - 1; i++) {
       final start = cumulativeM[i];
       final len = cumulativeM[i + 1] - start;
@@ -221,12 +243,10 @@ class RouteTrack {
       if (tMin > tMax) continue;
       final t = _projectT(points[i], points[i + 1], p).clamp(tMin, tMax);
       final q = _lerp(points[i], points[i + 1], t);
-      out.add(
-        _Candidate(
-          alongM: start + t * len,
-          offsetM: _distance.distanceBetween(p.lat, p.lng, q.lat, q.lng),
-        ),
-      );
+      out.add((
+        alongM: start + t * len,
+        offsetM: _distance.distanceBetween(p.lat, p.lng, q.lat, q.lng),
+      ));
     }
     return out;
   }
@@ -244,8 +264,10 @@ class RouteTrack {
   static LatLng _lerp(LatLng a, LatLng b, double t) =>
       (lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t);
 
-  static _Candidate? _closest(Iterable<_Candidate> cs) {
-    _Candidate? best;
+  /// The hit of [cs] closest to the route; within [_offsetTieM] the one
+  /// less far along wins. Null for none.
+  static RouteHit? closestOf(Iterable<RouteHit> cs) {
+    RouteHit? best;
     for (final c in cs) {
       if (best == null ||
           c.offsetM < best.offsetM - _offsetTieM ||
@@ -257,7 +279,7 @@ class RouteTrack {
   }
 
   /// The pass closest along the route to [alongM]; a tie goes to the one ahead.
-  static _Candidate _nearestPass(List<_Candidate> passes, double alongM) {
+  static RouteHit _nearestPass(List<RouteHit> passes, double alongM) {
     var best = passes.first;
     for (final c in passes.skip(1)) {
       final d = (c.alongM - alongM).abs(), bd = (best.alongM - alongM).abs();
@@ -268,25 +290,19 @@ class RouteTrack {
 
   /// Groups [onRoute] into passes (along-gap > [_passGapM]) and returns each
   /// pass's closest candidate, in route order.
-  static List<_Candidate> _passes(List<_Candidate> onRoute) {
+  static List<RouteHit> _passes(List<RouteHit> onRoute) {
     final sorted = [...onRoute]..sort((a, b) => a.alongM.compareTo(b.alongM));
-    final passes = <_Candidate>[];
-    var group = <_Candidate>[sorted.first];
+    final passes = <RouteHit>[];
+    var group = <RouteHit>[sorted.first];
     for (final c in sorted.skip(1)) {
       if (c.alongM - group.last.alongM > _passGapM) {
-        passes.add(_closest(group)!);
+        passes.add(closestOf(group)!);
         group = [c];
       } else {
         group.add(c);
       }
     }
-    passes.add(_closest(group)!);
+    passes.add(closestOf(group)!);
     return passes;
   }
-}
-
-class _Candidate {
-  const _Candidate({required this.alongM, required this.offsetM});
-  final double alongM;
-  final double offsetM;
 }

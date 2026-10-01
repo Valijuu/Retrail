@@ -312,4 +312,55 @@ void main() {
       expect(RouteTrack([at(0, 0)]).segmentBetween(0, 10), isEmpty);
     });
   });
+
+  group('RouteTrack.hitsWithin', () {
+    final outAndBack = RouteTrack([at(0, 0), at(200, 0), at(0, 3)]);
+
+    test('a point on the route: one hit at its along, offset 0', () {
+      final hits = RouteTrack(_straight).hitsWithin(at(150, 0), 100, 200);
+      expect(hits, hasLength(1));
+      expect(hits.single.alongM, closeTo(150, 0.5));
+      expect(hits.single.offsetM, closeTo(0, 0.5));
+    });
+
+    test('a point off the route: no hits', () {
+      expect(RouteTrack(_straight).hitsWithin(at(150, 31), 0, 300), isEmpty);
+    });
+
+    test('a hit is clamped to the window', () {
+      final hits = RouteTrack(_straight).hitsWithin(at(150, 0), 100, 140);
+      expect(hits.single.alongM, closeTo(140, 0.5));
+      expect(hits.single.offsetM, closeTo(10, 0.5));
+    });
+
+    test('by both legs of an out-and-back: one hit per leg', () {
+      final hits = outAndBack.hitsWithin(at(150, 1), 0, 400);
+      expect(hits.map((h) => h.alongM.round()), [150, 250]);
+    });
+  });
+
+  group('RouteTrack.passesOf', () {
+    test('by the start of an out-and-back: the way out and the way back', () {
+      final track = RouteTrack([at(0, 0), at(200, 0), at(0, 3)]);
+      final passes = track.passesOf(at(10, 1));
+      expect(passes.map((h) => h.alongM.round()), [10, 390]);
+    });
+
+    test('off the route: none', () {
+      expect(RouteTrack(_straight).passesOf(at(150, 31)), isEmpty);
+    });
+  });
+
+  group('RouteTrack.progressAt', () {
+    test('progress on route at a hit', () {
+      final track = RouteTrack(_straight);
+      final p = track.progressAt(at(299, 1), (alongM: 299, offsetM: 1));
+      expect(p.alongM, 299);
+      expect(p.remainingM, closeTo(1, 0.5));
+      expect(p.offsetM, 1);
+      expect(p.isOffRoute, isFalse);
+      expect(p.hasJoined, isTrue);
+      expect(p.isFinished, isTrue);
+    });
+  });
 }
