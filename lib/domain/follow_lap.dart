@@ -38,9 +38,21 @@ extension FollowLap on FollowTracker {
   List<(double, double)> get riddenIntervals {
     final r = range;
     if (r == null) return const [];
+    return [
+      for (final ridden in [..._closed, r]) ..._onLap(ridden),
+    ];
+  }
+
+  /// [r] on one lap of [track]: split at the start/finish on a loop.
+  List<(double, double)> _onLap(RiddenRange r) {
     if (!isLoop) return [(r.loM, r.hiM)];
     if (r.hiM - r.loM >= _lapM) return [(0, _lapM)];
     final lo = r.loM % _lapM, hi = lo + r.hiM - r.loM;
     return hi <= _lapM ? [(lo, hi)] : [(lo, _lapM), (0, hi - _lapM)];
   }
 }
+
+/// [range] grown by a fix at [at] ([originalM] in original-route metres)
+/// when it is on route.
+RiddenRange _grown(RiddenRange range, RouteProgress at, double originalM) =>
+    at.isOffRoute ? range : range.extend(originalM);

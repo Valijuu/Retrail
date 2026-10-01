@@ -13,6 +13,7 @@ This removes "riding a route in reverse" from Spec 17's non-goals.
    - Within `followFinishRadiusM` (30 m) of the route's **first** point → **forward**, decided immediately.
    - Within 30 m of the **last** point → **reverse**, decided immediately.
    - A **loop** (first and last point within 30 m of each other), or a join anywhere else → **undecided**.
+   - A start or finish zone the route also passes mid-route (a pass of the route through the join more than 30 m from both ends, e.g. a "6" whose finish lies on its own middle) → **undecided**, decided by movement (#54).
 2. **Undecided → decided by movement.**
    - The join is placed on the closest pass of the route through the first on-route fix. Passes that fit about as well (within 4 m, or within 15 m on a pass running the other way: the same road ridden back) also count; of these the first along the route is the join. On a loop the route is laid out twice, and a join within 60 m of the start moves to the second lap so its window reaches back across the start/finish.
    - Each fix is projected onto the route, **without** monotonic hold, within one window from 60 m (`followJoinWindowM`) before the first of the join's passes to 60 m after the last. On a route whose passes through the join lie far apart along it (a road ridden back much later) this window also takes in the route between them; a pass crossed there counts towards the nearest of the join's passes, and because its displacement is capped by the straight distance from the join point (below) it can only decide once the rider is at least 35 m from the join. Its **signed displacement** is how far along the route it lies from the join on its pass (`along − joinAlong`), at most the straight-line distance from the join point: a fix near a corner also lies near the other leg, far along the route.
@@ -44,14 +45,14 @@ A route is a **loop** when its first and last points are within `followFinishRad
 2. **One lap from the join.** For a loop:
    - "X km to go" is the distance left to complete **one full lap from where the rider joined**: `joinAlong + L − along`, never negative and at most one lap. The join is the rider's position on the pass that decided the direction (a join at the seam counts from the nearest point, not from the start), or after a U-turn flip the turn.
    - "Finish reached" means the rider has ridden at least `followFinishMinShare` (90 %) of the loop's length since joining **and** is within `followFinishRadiusM` of the join point.
-3. **Ridden parts may wrap.** The ridden range is kept on the doubled route. It is drawn as **up to two segments** on the single-lap route (a range that crosses the seam splits in two), or as the whole loop once a full lap is ridden. This closes the wrap-around case of issue #51 (the shortcut case stays open).
+3. **Ridden parts may wrap.** The ridden range is kept on the doubled route. It is drawn as **up to two segments** on the single-lap route (a range that crosses the seam splits in two), or as the whole loop once a full lap is ridden. This closes the wrap-around case of issue #51; the shortcut case is closed by the pass jumps below.
 4. Open routes (not loops) behave exactly as described above; nothing changes for them.
 
 ## Implementation
 - The logic is the pure `lib/domain/follow_tracker.dart` (`FollowTracker`, no Flutter imports); `lib/domain/follow_direction.dart` holds the helpers (`directionAtJoin`, `decideDirection`, ...). `routeFollowProvider` only feeds it fixes and exposes its state.
 - **Undecided window.** `lib/domain/follow_join.dart` (`FollowJoin`) holds the join, one anchor per pass of the road through it, each pass's fit and the settling; `decideDirection` takes the signed displacements.
 - **Decided progress** (`lib/domain/follow_progress.dart`, `decidedProgress`): of the fix's hits from 30 m behind progress to 30 m beyond how far the rider is from the progress point, the one that best fits the rider wins (close to the route, about as far along from the progress point as the rider is from it, not more than 5 m behind progress, on a pass running the way the rider heads over the last fixes). Progress never goes back and advances per fix by at most the rider's recent pace + 2 m, then a quarter of the rest, so a noisy fix across a corner, a hairpin or an out-and-back's turnaround is caught up with over a few fixes instead of moving progress onto a later pass of the same road. Off route, Spec 17's look-ahead and full search.
-- **Pass jumps.** A progress change with `|Δalong| > moved + 60 m` is a jump to another pass of the route (a shortcut, or a loop wrap). It re-bases the join value and does **not** extend the ridden range.
+- **Pass jumps.** A progress change with `|Δalong| > moved + 60 m` is a jump to another pass of the route (a shortcut, or a loop wrap). It re-bases the join value and does **not** extend the ridden range: the range so far is kept as a ridden part of its own and a new one starts at the jump, so the skipped stretch stays ungreyed (#51).
 - **Doubled laps on loops.** A finished lap is **latched** until a flip. A U-turn flip on a loop starts a fresh lap and shifts the kept range by the lap offset; a correction keeps the join (`lib/domain/follow_flip.dart`).
 - `RouteFollowState.displayProgress` returns null while the direction is undecided, so the remaining text shows the route's total length.
 - **Scenario suite.** `test/domain/follow_tracker_scenarios_test.dart` is the yardstick for every change to the tracker. It runs seeded simulated rides over six route shapes, with these rider behaviours: start, finish, mid-route, across the seam, standing still, slow/fast, an off-route excursion and a flip. Each ride runs under five GPS noise models. A ride checks:
@@ -72,7 +73,6 @@ A route is a **loop** when its first and last points are within `followFinishRad
 - The follow-only screen has a merged bottom bar: progress on the left, End on the right, and a full-width "Navigate to start" before the rider joins.
 
 ## Known limitations
-- #51: after an accepted shortcut the skipped part is greyed; loop wrap-around is solved by circular loops (see Loops).
 - #52: a join near an out-and-back turnaround greys the unridden tip.
 - #53: approximations on gap loops and after a pass jump.
 - A lollipop joined exactly at its start/finish and ridden the reverse way goes up the stem first, which is the same road both ways. At the top of the stem the direction may be forward (the default), reverse, or still undecided. If it is not reverse, the rider fixes it with the manual flip, which is a correction: the lap still runs from the join.
@@ -83,7 +83,7 @@ A route is a **loop** when its first and last points are within `followFinishRad
 - New fields:
   - `direction` (`FollowDirection.undecided | forward | reverse`)
   - `orientedTrack` (the original track, or its reversed copy; the reversed copy is built once at `start`)
-  - `ridden` (`List<List<LatLng>>`, the greyed segments in map order: one for open routes, up to two for a loop whose ridden part crosses the seam; empty while undecided)
+  - `ridden` (`List<List<LatLng>>`, the greyed segments in map order: one per ridden part (a pass jump starts a new one), a part on a loop that crosses the seam split in two; empty while undecided)
 - `progress` is progress on `orientedTrack`. While undecided it is forward progress.
 
 ## Map (`LiveMap`)

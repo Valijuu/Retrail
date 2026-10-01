@@ -17,6 +17,16 @@ LatLng at(double northM, double eastM) => (
 /// 300 m due north in three 100 m segments.
 final _straight = RouteTrack([at(0, 0), at(100, 0), at(200, 0), at(300, 0)]);
 
+/// A "6", 600 m: 300 m south, a 100 m square loop, finishing on the first leg
+/// at along 200.
+final _six = RouteTrack([
+  at(300, 0),
+  at(0, 0),
+  at(0, 100),
+  at(100, 100),
+  at(100, 0),
+]);
+
 void main() {
   group('directionAtJoin', () {
     test('at the start is forward', () {
@@ -49,6 +59,33 @@ void main() {
       ]);
       expect(directionAtJoin(loop, at(0, 0)), FollowDirection.undecided);
     });
+
+    test(
+      'at the start of a "6" whose finish lies on its middle is forward',
+      () {
+        expect(directionAtJoin(_six, at(300, 0)), FollowDirection.forward);
+      },
+    );
+
+    test(
+      'at the finish of a "6" that lies on its middle (along 200 of 600) '
+      'is undecided',
+      () {
+        expect(directionAtJoin(_six, at(100, 0)), FollowDirection.undecided);
+      },
+    );
+
+    test(
+      'at the start of a route that lies on its own middle (along 400 of '
+      '600) is undecided',
+      () {
+        final sixReversed = RouteTrack(_six.points.reversed.toList());
+        expect(
+          directionAtJoin(sixReversed, at(100, 0)),
+          FollowDirection.undecided,
+        );
+      },
+    );
 
     test('a single-point route is undecided', () {
       expect(

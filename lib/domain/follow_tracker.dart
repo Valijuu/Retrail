@@ -41,6 +41,7 @@ class FollowTracker {
     this.direction = FollowDirection.undecided,
     this._progress,
     this.range,
+    this._closed = const [],
     this.lastPoint,
     this._join,
     this._joinM = 0,
@@ -82,6 +83,9 @@ class FollowTracker {
   /// Consumers read [riddenIntervals].
   @visibleForTesting
   final RiddenRange? range;
+
+  /// Ridden stretches before the last pass jump, as [range] (#51).
+  final List<RiddenRange> _closed;
 
   /// The last position fed to [next].
   final LatLng? lastPoint;
@@ -225,14 +229,37 @@ class FollowTracker {
   FollowTracker _nextDecided(LatLng p) {
     final next = _locateDecided(p);
     final delta = next.alongM - _progress!.alongM;
+    final atM = _originalM(direction, next.alongM);
     if (_isJump(delta, _movedM(p))) {
       // A jump to another pass extends nothing and is re-based into the join,
-      // so it doesn't count towards a loop's lap.
-      return _with(progress: next, lastPoint: p, joinM: _joinM + delta);
+      // so it doesn't count towards a loop's lap. A rider who was where
+      // progress was took a shortcut: the ridden part starts anew there and
+      // the skipped stretch stays ungreyed (#51). Progress that lagged
+      // behind the rider only catches up.
+      final shortcut = _wasAtProgress();
+      return _with(
+        progress: next,
+        lastPoint: p,
+        joinM: _joinM + delta,
+        closed: shortcut ? [..._closed, range!] : null,
+        range: shortcut ? RiddenRange.at(atM) : null,
+      );
     }
-    final range = _grown(this.range!, next, _originalM(direction, next.alongM));
-    return _with(progress: next, range: range, lastPoint: p);
+    return _with(
+      progress: next,
+      range: _grown(range!, next, atM),
+      lastPoint: p,
+    );
   }
+
+  /// The last fix lay within [followOffRouteThresholdM] of the progress
+  /// point.
+  bool _wasAtProgress() =>
+      _distanceTo(
+        lastPoint!,
+        _trackFor(direction).pointAt(_progress!.alongM),
+      ) <=
+      followOffRouteThresholdM;
 
   /// Progress at [p] once decided (see [decidedProgress]).
   RouteProgress _locateDecided(LatLng p) => decidedProgress(
@@ -263,14 +290,6 @@ class FollowTracker {
   double _distanceTo(LatLng a, LatLng b) =>
       _distance.distanceBetween(a.lat, a.lng, b.lat, b.lng);
 
-  /// [range] grown by a fix at [at] ([originalM] in original-route metres)
-  /// when it is on route.
-  static RiddenRange _grown(
-    RiddenRange range,
-    RouteProgress at,
-    double originalM,
-  ) => at.isOffRoute ? range : range.extend(originalM);
-
   static bool _isJump(double deltaM, double movedM) =>
       deltaM.abs() > movedM + _jumpSlackM;
 
@@ -294,6 +313,7 @@ class FollowTracker {
     direction: d,
     progress: p,
     range: ridden ?? range,
+    closed: _closed,
     lastPoint: lastPoint,
     joinM: joinM,
     lapFinished: lapFinished ?? _lapFinished,
@@ -302,6 +322,7 @@ class FollowTracker {
   FollowTracker _with({
     RouteProgress? progress,
     RiddenRange? range,
+    List<RiddenRange>? closed,
     double? joinM,
     LatLng? lastPoint,
     bool? lapFinished,
@@ -316,6 +337,7 @@ class FollowTracker {
     direction: direction,
     progress: progress ?? _progress,
     range: range ?? this.range,
+    closed: closed ?? _closed,
     lastPoint: lastPoint ?? this.lastPoint,
     join: join ?? _join,
     joinM: joinM ?? _joinM,

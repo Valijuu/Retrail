@@ -261,8 +261,11 @@ void main() {
       // Far from the progress point: not on its pass any more.
       final j = t.next(at(0, 60));
       expect(j.progress!.alongM, closeTo(340, 0.5));
-      expect(j.range!.loM, t.range!.loM);
-      expect(j.range!.hiM, t.range!.hiM);
+      // The part ridden before stays, the new pass starts at the jump.
+      expect(j.riddenIntervals.first, t.riddenIntervals.single);
+      final (from, to) = j.riddenIntervals.last;
+      expect(from, closeTo(340, 0.5));
+      expect(to, from);
     });
 
     test('flip while undecided keeps what the reverse tracker rode', () {
@@ -328,6 +331,71 @@ void main() {
       final t = _ride(_straight, [at(150, 0), at(160, 0)]);
       expect(t.riddenIntervals, isEmpty);
     });
+
+    test(
+      'loop decided forward to 45, then a jump to 340 and on to 360 (#51): '
+      'intervals 0–45 and 340–360, not the skipped part between',
+      () {
+        final t = _ride(_loop(5), [
+          at(0, 1),
+          at(15, 0),
+          at(30, 0),
+          at(45, 0),
+          at(0, 60),
+          at(0, 50),
+          at(0, 40),
+        ]);
+        expect(t.riddenIntervals, hasLength(2));
+        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+        expect(from1, lessThanOrEqualTo(1));
+        expect(to1, closeTo(45, 0.5));
+        expect(from2, closeTo(340, 0.5));
+        expect(to2, closeTo(360, 0.5));
+      },
+    );
+
+    test(
+      'open U route ridden to 100, a shortcut across to 350 and on to 390 '
+      '(#51): intervals 0–100 and 350–390',
+      () {
+        // 200 m north, 50 m east, 200 m back south: L = 450.
+        final u = [at(0, 0), at(200, 0), at(200, 50), at(0, 50)];
+        final t = _ride(u, [
+          for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+          for (var n = 100.0; n >= 60; n -= 10) at(n, 50),
+        ]);
+        expect(t.direction, FollowDirection.forward);
+        expect(t.riddenIntervals, hasLength(2));
+        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+        expect(from1, closeTo(0, 0.5));
+        expect(to1, closeTo(100, 0.5));
+        expect(from2, closeTo(350, 0.5));
+        expect(to2, closeTo(390, 0.5));
+      },
+    );
+
+    test(
+      'a U-turn flip on a loop after a jump keeps both ridden parts, 0–45 '
+      'and 340–360 (#51)',
+      () {
+        final t = _ride(_loop(5), [
+          at(0, 1),
+          at(15, 0),
+          at(30, 0),
+          at(45, 0),
+          at(0, 60),
+          at(0, 50),
+          at(0, 40),
+        ]).flip();
+        expect(t.direction, FollowDirection.reverse);
+        expect(t.riddenIntervals, hasLength(2));
+        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+        expect(from1, lessThanOrEqualTo(1));
+        expect(to1, closeTo(45, 0.5));
+        expect(from2, closeTo(340, 0.5));
+        expect(to2, closeTo(360, 0.5));
+      },
+    );
 
     test('open route: one ridden interval, 150–190', () {
       final t = _ride(_straight, [at(150, 0), at(170, 0), at(190, 0)]);
