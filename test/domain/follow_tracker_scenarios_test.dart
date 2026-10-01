@@ -18,17 +18,23 @@ import 'support/sim_route.dart';
 // walk; 200 runs) must stay under their thresholds. The stress model
 // (Gaussian σ8; 100 runs) may fail ≤ 15 % of runs and no more than its
 // committed baseline + 3 (support/follow_scenarios_baseline.dart); the
-// long-term target is 5 %.
+// long-term target is 5 %. The local real-ride group also replays each
+// ride along its own geometry under the gate noise models, with the gate
+// thresholds.
 //
 //   --dart-define=FOLLOW_SCENARIOS_ALL=true    also run the baseline-RED pairs
 //   --dart-define=FOLLOW_SCENARIOS_PRINT=true  print every pair's counts
 //   --dart-define=FOLLOW_SCENARIOS_REPLAY='<scenario id>|<noise>|<seed>'
-//       replay one run with a per-fix log (seeds are in failure messages)
+//       replay one run with a per-fix log (seeds are in failure messages);
+//       a real-ride case id ('ride …') replays a noisy real-ride run
 
 const _runAll = bool.fromEnvironment('FOLLOW_SCENARIOS_ALL');
 const _printCounts = bool.fromEnvironment('FOLLOW_SCENARIOS_PRINT');
 const _replay = String.fromEnvironment('FOLLOW_SCENARIOS_REPLAY');
 const _baselineRed = 'baseline RED — fixed in Task 8';
+
+/// Seeded runs per real ride and gate noise model.
+const _realNoiseRuns = 200;
 
 const _u5 = 'uniform ±5 m', _g5 = 'gaussian σ5', _g8 = 'gaussian σ8';
 const _walk = 'correlated walk σ3 ρ0.9';
@@ -144,6 +150,29 @@ const _red = <String, Set<String>>{
 
 /// Real-ride cases failing at the Task 7 baseline, skipped until Task 8.
 const _redReal = <String>{};
+
+/// Noisy real-ride runs failing at the Task 8 baseline (before the tracker
+/// rework), skipped until it lands.
+const _redRealNoise = <String>{
+  'ride 6 · across the seam reversed · correlated walk σ3 ρ0.9',
+  'ride 6 · across the seam reversed · gaussian σ5',
+  'ride 6 · across the seam reversed · uniform ±5 m',
+  'ride 6 · across the seam · correlated walk σ3 ρ0.9',
+  'ride 6 · across the seam · gaussian σ5',
+  'ride 6 · across the seam · uniform ±5 m',
+  'ride 6 · itself from the start · correlated walk σ3 ρ0.9',
+  'ride 6 · itself from the start · gaussian σ5',
+  'ride 6 · itself from the start · uniform ±5 m',
+  'ride 6 · reversed from 60 % · correlated walk σ3 ρ0.9',
+  'ride 6 · reversed from 60 % · gaussian σ5',
+  'ride 6 · reversed from 60 % · uniform ±5 m',
+  'ride 6 · reversed from the finish · correlated walk σ3 ρ0.9',
+  'ride 6 · reversed from the finish · gaussian σ5',
+  'ride 6 · reversed from the finish · uniform ±5 m',
+  'ride 7 · itself from 40 % · correlated walk σ3 ρ0.9',
+  'ride 7 · itself from the start · correlated walk σ3 ρ0.9',
+  'ride 7 · reversed from the finish · correlated walk σ3 ρ0.9',
+};
 
 const _fwd = FollowDirection.forward;
 const _rev = FollowDirection.reverse;
@@ -462,8 +491,14 @@ void main() {
   if (_replay.isNotEmpty) {
     test('replay $_replay', () {
       final [id, noiseName, seed] = _replay.split('|');
-      final sc = _scenarios.firstWhere((s) => s.id == id);
       final noise = noiseModels.firstWhere((n) => n.name == noiseName);
+      final rides = loadRealRides();
+      if (id.startsWith('ride ') && rides != null) {
+        final rc = realCases(rides).firstWhere((c) => c.check.id == id);
+        runRealNoisy(rc, noise, int.parse(seed), log: _log, trace: true);
+        return;
+      }
+      final sc = _scenarios.firstWhere((s) => s.id == id);
       runOnce(sc, noise, int.parse(seed), log: _log, trace: true);
     });
     return;
@@ -533,7 +568,13 @@ void main() {
     }
     final cases = realCases(rides);
     test('every baseline-RED real-ride key names a case', () {
-      expect({for (final c in cases) c.check.id}, containsAll(_redReal));
+      final ids = {for (final c in cases) c.check.id};
+      expect(ids, containsAll(_redReal));
+      final noisy = {
+        for (final id in ids)
+          for (final n in noiseModels) '$id · ${n.name}',
+      };
+      expect(noisy, containsAll(_redRealNoise));
     });
     for (final rc in cases) {
       test(
@@ -546,6 +587,51 @@ void main() {
         },
         skip: !_runAll && _redReal.contains(rc.check.id) ? _baselineRed : false,
       );
+    }
+  });
+
+  group('real rides + seeded noise (local)', () {
+    if (rides == null) {
+      test(
+        'replay',
+        () {},
+        skip: 'real-ride fixture not present — local-only replay',
+      );
+      return;
+    }
+    final selfReplays = [
+      for (final rc in realCases(rides))
+        if (rc.trueS != null) rc,
+    ];
+    for (final rc in selfReplays) {
+      for (final noise in noiseModels) {
+        if (noise == noiseless || noise.isStress) continue;
+        final key = '${rc.check.id} · ${noise.name}';
+        test(
+          key,
+          () {
+            final allowed = (noise.maxFailureShare * _realNoiseRuns).floor();
+            var failedRuns = 0;
+            int? firstSeed;
+            for (var k = 0; k < _realNoiseRuns; k++) {
+              final seed = seedOf('$key|$k');
+              if (runRealNoisy(rc, noise, seed).isEmpty) continue;
+              failedRuns++;
+              firstSeed ??= seed;
+            }
+            final result =
+                '$failedRuns/$_realNoiseRuns failed'
+                '${firstSeed == null ? '' : ', first seed $firstSeed'}';
+            if (_printCounts) _log('REALNOISE $key: $result');
+            expect(
+              failedRuns,
+              lessThanOrEqualTo(allowed),
+              reason: '$key: $result, allowed $allowed',
+            );
+          },
+          skip: !_runAll && _redRealNoise.contains(key) ? _baselineRed : false,
+        );
+      }
     }
   });
 }

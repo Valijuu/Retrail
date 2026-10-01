@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:retrail/domain/follow_direction.dart';
 
 import 'sim_metrics.dart';
+import 'sim_noise.dart';
 import 'sim_route.dart';
 
 /// The user's real rides, local only: private location data, gitignored and
@@ -52,6 +54,26 @@ Set<Metric> runReal(RealCase rc, {void Function(String)? log}) {
     }
   }
   return evaluate(rc.check, trueS, rc.fixes, null, log: log);
+}
+
+/// The failed metrics of one seeded run of [rc] (a ride along its own
+/// geometry, with known [RealCase.trueS]) with [noise] added to its fixes.
+Set<Metric> runRealNoisy(
+  RealCase rc,
+  NoiseModel noise,
+  int seed, {
+  void Function(String)? log,
+  bool trace = false,
+}) {
+  final error = noise.start(math.Random(seed));
+  final measured = [
+    for (final f in rc.fixes)
+      () {
+        final e = error();
+        return (n: f.n + e.n, e: f.e + e.e);
+      }(),
+  ];
+  return evaluate(rc.check, rc.trueS!, measured, null, log: log, trace: trace);
 }
 
 List<T> _from<T>(List<T> xs, double share) =>

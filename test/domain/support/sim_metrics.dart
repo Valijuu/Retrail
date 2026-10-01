@@ -128,16 +128,19 @@ Set<Metric> evaluate(
   }
 
   /// The finish is reached within the finish radius (plus the allowance)
-  /// along the route or as the crow flies (a route winding near its end).
+  /// along the route, or as the crow flies (a route winding near its end)
+  /// once [followFinishMinShare] of it (less the allowance) lies behind.
   bool finishAllowed(int i) {
-    if (route.isLoop) {
-      return truth(i).lapM >= followFinishMinShare * lengthM - finishSlackM;
-    }
+    final minAlongM = followFinishMinShare * lengthM - finishSlackM;
+    if (route.isLoop) return truth(i).lapM >= minAlongM;
+    final reachM = followFinishRadiusM + finishSlackM;
+    final remaining = trueRemaining(i);
+    if (remaining <= reachM) return true;
     final end = route.pointAt(
       truth(i).d == FollowDirection.forward ? lengthM : 0,
     );
-    return math.min(trueRemaining(i), dist(route.pointAt(trueS[i]), end)) <=
-        followFinishRadiusM + finishSlackM;
+    return dist(route.pointAt(trueS[i]), end) <= reachM &&
+        lengthM - remaining >= minAlongM;
   }
 
   var t = FollowTracker.start(route.track);
