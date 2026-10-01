@@ -58,7 +58,7 @@ Test list (minimum): straight line; join mid-route; position beside the route (o
 - `RouteFollowState` (immutable, `copyWith`): `reference` (points), `rideTitle`, `progress` (`RouteProgress?`), `recording` (bool), `lastFix`, `trail` and `locationServiceEnabled`.
 - `start(reference, title, {required bool recording})`, `stop()`.
 - Position source:
-  - **Recording:** listens to `RideTracker`'s published location (read-only), only while `isTracking` is true — the tracker's display-only seed location never counts as progress. The tracker itself is not touched.
+  - **Recording:** listens to `RideTracker`'s published location (read-only), only while `isTracking` is true. A location older than `followMaxSeedAge` (2 minutes, by its capture time) is ignored, so the tracker's display-only `lastKnown` seed, still shown when a ride starts, never counts as progress or decides the direction. The tracker itself is not touched.
   - **Follow-only:** uses the same permission gate as recording (`RideRecordingController.prepare()`), then subscribes to `LocationSource` while `FollowRouteScreen` is mounted and in the foreground. Pauses on `AppLifecycleState.paused` (not on `inactive` alone) and when the screen is disposed, resumes on `resumed`; the location-service flag is seeded on resume. The `lastKnown` seed is ignored when older than `followMaxSeedAge` (2 minutes, by its capture time). A fix-stream error sets `locationServiceEnabled: false`, so the rider sees the location banner; the next accepted fix sets it back.
 - Fixes with accuracy worse than 30 m are ignored. Recorder re-emits of the same fix are skipped.
 - Each fix → `RouteProgress.next(...)` → new state.
