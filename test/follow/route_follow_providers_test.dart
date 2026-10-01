@@ -285,6 +285,46 @@ void main() {
     expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
   });
 
+  group('reverse notice', () {
+    Future<void> ride(List<LatLng> fixes) async {
+      notifier().start(reference: _straight, recording: false);
+      await notifier().resumeFeed();
+      for (final p in fixes) {
+        source.fixCtrl.add(fix(p.lat, p.lng));
+        await flush();
+      }
+    }
+
+    test('joining at the finish: reverse, noticed as a start at the finish',
+        () async {
+      await ride([at(299, 0)]);
+      final s = c.read(routeFollowProvider)!;
+      expect(s.direction, FollowDirection.reverse);
+      expect(s.reverseNotice, FollowReverseNotice.atFinish);
+    });
+
+    test('joined mid-route and ridden backwards: noticed as detected',
+        () async {
+      await ride([for (var n = 150.0; n >= 100; n -= 10) at(n, 0)]);
+      final s = c.read(routeFollowProvider)!;
+      expect(s.direction, FollowDirection.reverse);
+      expect(s.reverseNotice, FollowReverseNotice.detected);
+    });
+
+    test('joining at the start: no notice', () async {
+      await ride([at(1, 0)]);
+      expect(c.read(routeFollowProvider)!.reverseNotice, isNull);
+    });
+
+    test('a manual flip to reverse: no notice', () async {
+      await ride([at(150, 0)]);
+      notifier().flipDirection();
+      final s = c.read(routeFollowProvider)!;
+      expect(s.direction, FollowDirection.reverse);
+      expect(s.reverseNotice, isNull);
+    });
+  });
+
   test('recording: a recorder location while not tracking is ignored',
       () async {
     notifier().start(reference: _ref, recording: true);

@@ -22,6 +22,7 @@ import 'navigation_rules.dart';
 import 'ride_dialogs.dart';
 import 'widgets/ride_chrome.dart';
 import 'widgets/ride_stats_panel.dart';
+import '../follow/widgets/follow_reverse_notice.dart';
 
 /// The live active-ride screen. Ports `MapPage` + `MapViewModel`: live map +
 /// route, Live/Paused badge, offline + location-off banners, 2×2 live stats with pause/stop,
@@ -187,6 +188,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    listenFollowReverseNotice(ref, context);
     ref.listen(rideTrackingStateProvider, (_, next) {
       final state = next.asData?.value;
       if (state != null) _onStateChange(state);

@@ -14,6 +14,7 @@ import '../home/navigation_launcher.dart';
 import '../shell/routes.dart';
 import 'route_follow_providers.dart';
 import 'widgets/follow_chrome.dart';
+import 'widgets/follow_reverse_notice.dart';
 
 /// Follow-only mode (Spec 17 §E2): the saved route with the rider's live
 /// position, remaining distance and off-route banner — nothing is recorded.
@@ -100,6 +101,7 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
 
   @override
   Widget build(BuildContext context) {
+    listenFollowReverseNotice(ref, context);
     final follow = ref.watch(routeFollowProvider) ?? (_leaving ? _frozen : null);
     final isOnline = ref.watch(isOnlineProvider).asData?.value ?? true;
     final l10n = AppLocalizations.of(context);

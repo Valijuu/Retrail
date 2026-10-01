@@ -355,7 +355,7 @@ void main() {
         state: tracking,
         follow: followState(
             progress: progress(), direction: FollowDirection.reverse));
-    expect(find.text('0.81 km to go · reversed'), findsOneWidget);
+    expect(find.text('0.81 km to go · opposite direction'), findsOneWidget);
   });
 
   testWidgets(

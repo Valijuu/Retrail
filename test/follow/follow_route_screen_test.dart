@@ -50,6 +50,7 @@ class _FakeFollow extends RouteFollowNotifier {
   }
   @override
   void flipDirection() => calls.add('flip');
+  void emit(RouteFollowState s) => state = s;
 }
 
 RouteFollowState _state({String? title = 'Rhein', RouteProgress? progress,
@@ -57,7 +58,8 @@ RouteFollowState _state({String? title = 'Rhein', RouteProgress? progress,
         // Decided by default, so progress shows as is; undecided tests opt in.
         FollowDirection direction = FollowDirection.forward,
         RouteTrack? orientedTrack,
-        List<List<({double lat, double lng})>> ridden = const []}) =>
+        List<List<({double lat, double lng})>> ridden = const [],
+        FollowReverseNotice? reverseNotice}) =>
     RouteFollowState(
       track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
       recording: false,
@@ -67,6 +69,7 @@ RouteFollowState _state({String? title = 'Rhein', RouteProgress? progress,
       direction: direction,
       orientedTrack: orientedTrack,
       ridden: ridden,
+      reverseNotice: reverseNotice,
     );
 
 RouteProgress _p({bool joined = true, bool off = false, double offset = 2,
@@ -252,7 +255,36 @@ void main() {
   testWidgets('reversed: the remaining text says so', (tester) async {
     await pump(tester,
         _state(progress: _p(), direction: FollowDirection.reverse));
-    expect(find.text('0.81 km to go · reversed'), findsOneWidget);
+    expect(find.text('0.81 km to go · opposite direction'), findsOneWidget);
+    // Reversed by hand: no notice.
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('a start at the finish tells the rider once', (tester) async {
+    await pump(tester, _state(direction: FollowDirection.undecided));
+    follow.emit(_state(
+        progress: _p(),
+        direction: FollowDirection.reverse,
+        reverseNotice: FollowReverseNotice.atFinish));
+    await tester.pump();
+    expect(
+        find.text("You're starting at the route's finish, so it's followed "
+            'in the opposite direction.'),
+        findsOneWidget);
+  });
+
+  testWidgets('an opposite direction detected on the way tells the rider',
+      (tester) async {
+    await pump(tester, _state(direction: FollowDirection.undecided));
+    follow.emit(_state(
+        progress: _p(),
+        direction: FollowDirection.reverse,
+        reverseNotice: FollowReverseNotice.detected));
+    await tester.pump();
+    expect(
+        find.text('Opposite direction detected: the route is followed the '
+            'other way.'),
+        findsOneWidget);
   });
 
   testWidgets('undecided: the route length, never the finish', (tester) async {
@@ -314,8 +346,8 @@ void main() {
   });
 
   for (final (locale, texts) in [
-    (const Locale('en'), ['0.81 km to go · reversed', 'End', 'Navigate to start']),
-    (const Locale('de'), ['noch 0,81 km · rückwärts', 'Beenden', 'Zum Start navigieren']),
+    (const Locale('en'), ['0.81 km to go · opposite direction', 'End', 'Navigate to start']),
+    (const Locale('de'), ['noch 0,81 km · Gegenrichtung', 'Beenden', 'Zum Start navigieren']),
   ]) {
     testWidgets('375 px, $locale: the bottom bar fits without overflow',
         (tester) async {

@@ -6,7 +6,7 @@ import '../../../domain/route_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../active_ride/widgets/ride_chrome.dart';
 
-/// The follow progress text: "X km to go" (with "· reversed" when the route
+/// The follow progress text: "X km to go" (with "· opposite direction" when the route
 /// is ridden backwards, Spec 18) or "Finish reached". A null [progress]
 /// (before the first fix, or while the direction is undecided) shows the
 /// whole route's length [totalM].

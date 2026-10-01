@@ -22,6 +22,10 @@ const Duration followMaxSeedAge = Duration(minutes: 2);
 /// Recent positions kept for the heading-up camera in follow-only mode.
 const int _trailLength = 30;
 
+/// Why the route turned to the opposite direction on its own (Spec 18): the
+/// rider joined at its finish, or rode it backwards from elsewhere.
+enum FollowReverseNotice { atFinish, detected }
+
 /// A reference route being followed (Spec 17), with the rider's progress.
 class RouteFollowState {
   const RouteFollowState({
@@ -35,6 +39,7 @@ class RouteFollowState {
     this.direction = FollowDirection.undecided,
     RouteTrack? orientedTrack,
     this.ridden = const [],
+    this.reverseNotice,
   }) : orientedTrack = orientedTrack ?? track;
 
   /// The original route, whichever way it is ridden: the session identity
@@ -43,6 +48,10 @@ class RouteFollowState {
 
   /// Which way the rider follows [track] (Spec 18).
   final FollowDirection direction;
+
+  /// Set once the direction was decided as reverse from the rider's
+  /// position (not by a manual flip); the screens tell the rider once.
+  final FollowReverseNotice? reverseNotice;
 
   /// [track] as ridden: its reversed copy when [isReversed]. [progress] is
   /// measured on it.
@@ -79,6 +88,7 @@ class RouteFollowState {
     FollowDirection? direction,
     RouteTrack? orientedTrack,
     List<List<LatLng>>? ridden,
+    FollowReverseNotice? reverseNotice,
   }) => RouteFollowState(
     track: track,
     recording: recording,
@@ -91,6 +101,7 @@ class RouteFollowState {
     direction: direction ?? this.direction,
     orientedTrack: orientedTrack ?? this.orientedTrack,
     ridden: ridden ?? this.ridden,
+    reverseNotice: reverseNotice ?? this.reverseNotice,
   );
 }
 
@@ -211,9 +222,18 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     final trail = [...s.trail, p];
     final recovered = _feedFailed;
     _feedFailed = false;
-    final tracker = _tracker!.next(p);
+    final before = _tracker!;
+    final tracker = before.next(p);
     _tracker = tracker;
+    final turned =
+        before.direction == FollowDirection.undecided &&
+        tracker.direction == FollowDirection.reverse;
     state = _following(s, tracker).copyWith(
+      reverseNotice: !turned
+          ? null
+          : before.hasJoined
+          ? FollowReverseNotice.detected
+          : FollowReverseNotice.atFinish,
       locationServiceEnabled: recovered ? true : null,
       lastFix: fix,
       trail: trail.length > _trailLength

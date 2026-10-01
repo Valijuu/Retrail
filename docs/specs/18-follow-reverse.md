@@ -35,7 +35,8 @@ This removes "riding a route in reverse" from Spec 17's non-goals.
 7. **Oriented display once decided.**
    - The reference line, arrows and start/finish markers are drawn on the **oriented** route. For reverse, that is the reversed point list.
    - "X km to go", the finish hint and the off-route / distance-to-route banners use progress on the oriented route.
-   - When reversed, the remaining line reads **"{distance} to go · reversed"** (de: **"noch {distance} · rückwärts"**).
+   - When reversed, the remaining line reads **"{distance} to go · opposite direction"** (de: **"noch {distance} · Gegenrichtung"**).
+   - When the direction turns to reverse on its own (not by the manual flip), a snack bar tells the rider why, once: joined at the finish → "You're starting at the route's finish, so it's followed in the opposite direction." (de: "Du startest am Ziel der Strecke, sie wird in Gegenrichtung nachgefahren."); decided by movement → "Opposite direction detected: the route is followed the other way." (de: "Gegenrichtung erkannt: Die Strecke wird andersherum nachgefahren."). `RouteFollowState.reverseNotice` carries the cause; `listenFollowReverseNotice` shows it on both screens.
 8. Both modes (recording and follow-only) behave the same. What is recorded is unaffected: it is always the rider's actual track.
 
 ## Loops (circular progress)
