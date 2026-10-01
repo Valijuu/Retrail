@@ -26,7 +26,10 @@ const double _correctionSlackM = followOffRouteThresholdM / 2;
 /// Fixes back the rider's heading is measured over.
 const int _headingFixes = 3;
 
-/// Follows a reference route in either direction (Spec 18).
+/// Follows a reference route in either direction (Spec 18): undecided from
+/// the join until the rider has moved [followDirectionDecisionM] along it one
+/// way ([FollowJoin]), then progress on the route of that direction
+/// ([decidedProgress]); [flip] turns it by hand.
 class FollowTracker {
   const FollowTracker._({
     required this.track,
@@ -95,7 +98,7 @@ class FollowTracker {
   final double _joinM;
 
   /// On a loop: the lap from the join has been finished. It stays finished
-  /// until a [flip] starts a fresh lap.
+  /// until a [flip].
   final bool _lapFinished;
 
   RouteTrack get orientedTrack =>
