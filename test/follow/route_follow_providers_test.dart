@@ -261,6 +261,30 @@ void main() {
     expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
   });
 
+  test('recording: a recorder location older than 2 minutes (the last known '
+      'seed) is ignored: it does not decide the direction', () async {
+    notifier().start(reference: _ref, recording: true);
+    nowNanos = _nanos(const Duration(minutes: 3));
+    // The seed lies at the finish, captured 3 minutes ago.
+    tracker.add(
+      RideTrackingState(isTracking: true, location: fix(48.002, 11.0)),
+    );
+    await flush();
+    final s = c.read(routeFollowProvider)!;
+    expect(s.lastFix, isNull);
+    expect(s.direction, FollowDirection.undecided);
+  });
+
+  test('recording: a recorder location 2 minutes old still counts', () async {
+    notifier().start(reference: _ref, recording: true);
+    nowNanos = _nanos(const Duration(minutes: 2));
+    tracker.add(
+      RideTrackingState(isTracking: true, location: fix(48.001, 11.0)),
+    );
+    await flush();
+    expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
+  });
+
   test('recording: a recorder location while not tracking is ignored',
       () async {
     notifier().start(reference: _ref, recording: true);

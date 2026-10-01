@@ -14,8 +14,9 @@ import '../../tracking/tracking_providers.dart';
 /// follow-only feed doesn't pass through the recorder's GPS filter).
 const double followMaxFixAccuracyM = 30;
 
-/// A follow-only `lastKnown` seed older than this is ignored: it could place
-/// the rider somewhere they left long ago.
+/// A position older than this (a `lastKnown` seed, in follow-only mode or as
+/// the recorder's first location) is ignored: it could place the rider
+/// somewhere they left long ago and decide the direction from there.
 const Duration followMaxSeedAge = Duration(minutes: 2);
 
 /// Recent positions kept for the heading-up camera in follow-only mode.
@@ -123,7 +124,9 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
       final fix = recorder.location;
       // The recorder re-emits every second with an unchanged location.
       if (fix == null || identical(fix, prev?.asData?.value.location)) return;
-      if (state?.recording == true) onFix(fix);
+      // The recorder's location may be its stale last-known seed: it would
+      // decide the direction from where the rider was long ago.
+      if (state?.recording == true && _isFresh(fix)) onFix(fix);
     });
     return null;
   }
@@ -174,7 +177,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     } catch (_) {}
     if (epoch != _feedEpoch || state == null) return;
     state = state!.copyWith(locationServiceEnabled: serviceOn);
-    if (seed != null && _isFreshSeed(seed)) onFix(seed);
+    if (seed != null && _isFresh(seed)) onFix(seed);
     _fixSub = source.fixes.listen(onFix, onError: (Object _) {
       // Show the location banner rather than silently freezing the position.
       final cur = state;
@@ -188,8 +191,8 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     }, onError: (Object _) {});
   }
 
-  bool _isFreshSeed(LocationFix seed) =>
-      ref.read(followNowNanosProvider)() - seed.elapsedRealtimeNanos <=
+  bool _isFresh(LocationFix fix) =>
+      ref.read(followNowNanosProvider)() - fix.elapsedRealtimeNanos <=
       followMaxSeedAge.inMicroseconds * 1000;
 
   /// Follow-only: stops the GPS feed (app backgrounded). Progress is kept.
