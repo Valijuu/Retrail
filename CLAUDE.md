@@ -103,7 +103,7 @@ ios/
 
 ## Code quality conventions
 
-- **Single responsibility:** one provider/repository/widget = one job. If a file grows past ~300 lines or mixes concerns, split it.
+- **Single responsibility:** one provider/repository/widget = one job. A class may have at most **400 lines of code**; split it before it grows past that, or when it mixes concerns.
 - **Depend on abstractions:** features depend on repository / `*Repository` APIs, never on Drift / SharedPreferences directly. Inject collaborators (DAO, `Clock`) via constructors / providers — no globally-reached singletons.
 - **No logic in widgets:** widgets read state + send intents; computation lives in providers or `domain/`.
 - **Pure & testable:** domain math (Haversine, stats, projection) is pure Dart with no Flutter imports, fully unit-tested.
