@@ -398,3 +398,8 @@ Zones use `followFinishRadiusM`. Loop = distance(first, last) ≤ `followFinishR
 - On decision, the ridden range is `[join, current]` in original metres, in the decided direction. After that, everything is as it is now.
 - Un-skip every Task 7 scenario. **All** must pass the thresholds. All existing tracker/provider/widget tests stay green, or are updated only where they asserted the old mechanism, with a reason given.
 - Update Spec 18 (§1–§2 direction decision, and the lollipop-at-seam ambiguity) and `lib/domain` docs.
+- **Issue #55, user-requested and part of Task 8:** a manual flip on a loop-type route currently always starts a fresh lap from the turn point. Ruling:
+  - On `flip()`, decide whether the flip is a **correction** or a **U-turn**, measured on the NEW orientation:
+    - **Correction:** the rider's physical travel since the join runs forward in the new orientation (signed displacement ≥ 0, e.g. the lollipop joined at the start/finish, wrongly defaulted to forward, and flipped at the top of the stem). Keep the original join as the lap anchor, mirrored onto the new orientation. "To go" then counts to the true end, and "Finish reached" appears there.
+    - **U-turn:** the travel since the join runs against the new orientation. Start a fresh lap from the turn point, as today.
+  - The Task 7 lollipop-at-seam scenario must then check the finish and remaining accuracy from the true join, not from the flip. Remove the #55 comment, and close #55 with `Fixes #55` in the commit.
