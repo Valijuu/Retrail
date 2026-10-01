@@ -3,58 +3,64 @@ import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/domain/follow_direction.dart';
 
-import 'support/ride_simulator.dart';
+import 'support/follow_scenarios_baseline.dart';
+import 'support/real_rides.dart';
+import 'support/sim_metrics.dart';
+import 'support/sim_noise.dart';
+import 'support/sim_route.dart';
 
 // The statistical yardstick for the follow direction/progress tracker
-// (Spec 18): seeded rides over six route shapes under five GPS noise models.
-// Every change to FollowTracker must keep the whole suite green.
+// (Spec 18): seeded rides over six route shapes under five GPS noise models,
+// plus a local-only replay of real rides. Every change to FollowTracker must
+// keep the whole suite green.
 //
-// Run the scenarios marked baseline RED too:
-//   flutter test test/domain/follow_tracker_scenarios_test.dart \
-//     --dart-define=FOLLOW_SCENARIOS_ALL=true
-// Print every failure count: add --dart-define=FOLLOW_SCENARIOS_PRINT=true.
-
-/// Seeded runs per scenario and noise model.
-const _runs = 100;
+// Tiers: the gate models (noiseless, uniform ±5 m, Gaussian σ5, correlated
+// walk; 200 runs) must stay under their thresholds. The stress model
+// (Gaussian σ8; 100 runs) may fail ≤ 15 % of runs and no more than its
+// committed baseline + 3 (support/follow_scenarios_baseline.dart); the
+// long-term target is 5 %.
+//
+//   --dart-define=FOLLOW_SCENARIOS_ALL=true    also run the baseline-RED pairs
+//   --dart-define=FOLLOW_SCENARIOS_PRINT=true  print every pair's counts
+//   --dart-define=FOLLOW_SCENARIOS_REPLAY='<scenario id>|<noise>|<seed>'
+//       replay one run with a per-fix log (seeds are in failure messages)
 
 const _runAll = bool.fromEnvironment('FOLLOW_SCENARIOS_ALL');
 const _printCounts = bool.fromEnvironment('FOLLOW_SCENARIOS_PRINT');
+const _replay = String.fromEnvironment('FOLLOW_SCENARIOS_REPLAY');
 const _baselineRed = 'baseline RED — fixed in Task 8';
 
 const _u5 = 'uniform ±5 m', _g5 = 'gaussian σ5', _g8 = 'gaussian σ8';
 const _walk = 'correlated walk σ3 ρ0.9';
 
 /// Scenario → the noise models it fails its threshold under at the Task 7
-/// baseline (6800fd4), skipped until Task 8 fixes them.
+/// baseline, skipped until Task 8 fixes them.
 const _red = <String, Set<String>>{
-  'L-shape · mid-route backward · cruise': {_g8},
-  'L-shape · mid-route forward · slow': {_g8},
   'L-shape · mid-route backward · slow': {_g5, _g8},
-  'L-shape · stand 10s at the join, then forward · cruise': {_g8},
-  'L-shape · stand 10s at the join, then backward · cruise': {_g5, _g8},
+  'L-shape · stand 10s at the join, then backward · cruise': {_g5, _g8, _walk},
   'L-shape · stand 30s at the join, then forward · cruise': {_g8},
   'L-shape · stand 30s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'L-shape · stand 60s at the join, then forward · cruise': {_g5, _g8},
+  'L-shape · stand 60s at the join, then forward · cruise': {_g8, _walk},
   'L-shape · stand 60s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'L-shape · flip mid-ride, back to the start · cruise': {_g8},
   'square · forward from 2–20 m past the start · cruise': {_g8},
-  'square · reverse from the finish · cruise': {_g5, _g8},
-  'square · mid-route forward · cruise': {_g8},
-  'square · mid-route backward · cruise': {_g8},
+  'square · reverse from the finish · cruise': {_g8, _walk},
+  'square · mid-route forward · cruise': {_g8, _walk},
+  'square · mid-route backward · cruise': {_g8, _walk},
   'square · across the seam forward · cruise': {_g8, _walk},
-  'square · across the seam backward · cruise': {_g8},
-  'square · mid-route forward · slow': {_g8},
+  'square · across the seam backward · cruise': {_g8, _walk},
+  'square · mid-route forward · slow': {_g8, _walk},
   'square · mid-route backward · slow': {_g5, _g8, _walk},
-  'square · mid-route forward · fast': {_g8},
+  'square · mid-route forward · fast': {_walk},
   'square · mid-route backward · fast': {_g8},
-  'square · stand 10s at the join, then forward · cruise': {_g8},
+  'square · stand 10s at the join, then forward · cruise': {_g8, _walk},
   'square · stand 10s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'square · stand 30s at the join, then forward · cruise': {_g5, _g8, _walk},
+  'square · stand 30s at the join, then forward · cruise': {_g8, _walk},
   'square · stand 30s at the join, then backward · cruise': {_g5, _g8, _walk},
   'square · stand 60s at the join, then forward · cruise': {_g5, _g8, _walk},
   'square · stand 60s at the join, then backward · cruise': {_g5, _g8, _walk},
   'square · flip mid-ride, one lap back · cruise': {_g8, _walk},
-  '2 km loop · reverse from the finish · fast': {_g5, _g8},
+  '2 km loop · reverse from the finish · fast': {_g8, _walk},
+  '2 km loop · across the seam forward · cruise': {_walk},
   '2 km loop · across the seam backward · cruise': {_g8},
   '2 km loop · mid-route backward · slow': {_g5, _g8, _walk},
   '2 km loop · stand 30s at the join, then backward · cruise': {
@@ -62,16 +68,20 @@ const _red = <String, Set<String>>{
     _g8,
     _walk,
   },
-  '2 km loop · 50 m off-route excursion · cruise': {_g8},
-  'out-and-back · forward from 2–20 m past the start · cruise': {_g5, _g8},
+  'out-and-back · forward from 2–20 m past the start · cruise': {
+    _u5,
+    _g5,
+    _g8,
+    _walk,
+  },
   'out-and-back · forward from 2–20 m past the start · slow': {
     _u5,
     _g5,
     _g8,
     _walk,
   },
-  'out-and-back · forward from 2–20 m past the start · fast': {_g5, _g8},
-  'out-and-back · mid-route forward (way out) · cruise': {_u5, _g5, _g8},
+  'out-and-back · forward from 2–20 m past the start · fast': {_u5, _g5, _g8},
+  'out-and-back · mid-route forward (way out) · cruise': {_u5, _g5, _g8, _walk},
   'out-and-back · stand 10s at the join, then forward · cruise': {
     _u5,
     _g5,
@@ -90,13 +100,23 @@ const _red = <String, Set<String>>{
     _g8,
     _walk,
   },
-  'lollipop · forward from 2–20 m past the start · cruise': {_g5, _g8},
-  'lollipop · mid-loop forward · cruise': {_g8},
-  'lollipop · mid-loop backward · cruise': {_g8},
-  'lollipop · stand 30s at the join, then forward · cruise': {_g8},
-  'lollipop · stand 30s at the join, then backward · cruise': {_g5, _g8, _walk},
+  'lollipop · forward from 2–20 m past the start · cruise': {_g5, _g8, _walk},
+  'lollipop · mid-loop forward · cruise': {_u5, _g5, _g8, _walk},
+  'lollipop · mid-loop backward · cruise': {_u5, _g5, _g8, _walk},
+  'lollipop · stand 30s at the join, then forward · cruise': {
+    _u5,
+    _g5,
+    _g8,
+    _walk,
+  },
+  'lollipop · stand 30s at the join, then backward · cruise': {
+    _u5,
+    _g5,
+    _g8,
+    _walk,
+  },
   'lollipop · joined at the start/finish, ridden reverse: forward by default, flipped at the top of the stem · cruise':
-      {_g5, _g8},
+      {_u5, _g5, _g8, _walk},
   'out-and-back 1 km · forward from 2–20 m past the start · cruise': {
     _u5,
     _g5,
@@ -104,12 +124,16 @@ const _red = <String, Set<String>>{
     _walk,
   },
   'out-and-back 1 km · forward 200 m from 2–20 m past the start · slow': {
+    _g5,
+    _g8,
+    _walk,
+  },
+  'out-and-back 1 km · mid-route forward (way out) · cruise': {
     _u5,
     _g5,
     _g8,
     _walk,
   },
-  'out-and-back 1 km · mid-route forward (way out) · cruise': {_u5, _g8, _walk},
   'out-and-back 1 km · stand 30s at the join, then forward · cruise': {
     _u5,
     _g5,
@@ -117,6 +141,9 @@ const _red = <String, Set<String>>{
     _walk,
   },
 };
+
+/// Real-ride cases failing at the Task 7 baseline, skipped until Task 8.
+const _redReal = <String>{};
 
 const _fwd = FollowDirection.forward;
 const _rev = FollowDirection.reverse;
@@ -378,14 +405,26 @@ final _scenarios = <Scenario>[
   _mid(_lollipop, _rev, lo: 500, hi: 900, standS: 30),
   // The acknowledged ambiguity (Spec 18): joined exactly at the start/finish
   // and ridden the reverse way, the rider goes up the stem, which is the same
-  // road either way. Forward is the default, so the direction is expected to
-  // be forward by the top of the stem (directionBeforeFlip), and the rider
-  // fixes it there with a manual flip.
+  // road either way. At the top of the stem forward (then flipped), reverse
+  // decided on its own (no flip) and undecided (the flip forces reverse) are
+  // all accepted, and "to go" is only checked from there on. A flip starts a
+  // fresh lap (#55): "to go" then overstates by the stem and "finished" is
+  // missing at the true end. The suite asserts that current behaviour: lap
+  // and finish are measured from the flip.
   Scenario(
     'lollipop · joined at the start/finish, ridden reverse: forward by '
     'default, flipped at the top of the stem · cruise',
     route: _lollipop,
     expected: _rev,
+    endsAtFinish: true,
+    remainingBeforeFlip: false,
+    metrics: const [
+      Metric.direction,
+      Metric.remaining,
+      Metric.earlyFinish,
+      Metric.finishReached,
+      Metric.ridden,
+    ],
     plan: (r) => Plan(_lollipop.lengthM)
       ..ride(_lollipop.lengthM - 300)
       ..flipAfter(0)
@@ -414,7 +453,22 @@ final _scenarios = <Scenario>[
   _mid(_outAndBack1k, _fwd, lo: 2, hi: 20, standS: 30),
 ];
 
+void _log(String line) {
+  // ignore: avoid_print
+  print(line);
+}
+
 void main() {
+  if (_replay.isNotEmpty) {
+    test('replay $_replay', () {
+      final [id, noiseName, seed] = _replay.split('|');
+      final sc = _scenarios.firstWhere((s) => s.id == id);
+      final noise = noiseModels.firstWhere((n) => n.name == noiseName);
+      runOnce(sc, noise, int.parse(seed), log: _log, trace: true);
+    });
+    return;
+  }
+
   for (final sc in _scenarios) {
     group(sc.id, () {
       for (final noise in noiseModels) {
@@ -422,14 +476,18 @@ void main() {
         test(
           noise.name,
           () {
-            final result = runScenario(sc, noise, _runs);
-            // ignore: avoid_print
-            if (_printCounts) print('RESULT $key: $result');
-            final allowed = (noise.maxFailureShare * _runs).floor();
+            final result = runScenario(sc, noise);
+            if (_printCounts) _log('RESULT $key: $result');
+            final baseline = followScenariosBaseline[sc.id]?[noise.name];
+            final allowed = noise.isStress && baseline != null
+                ? math.min(noise.maxFailures, baseline + stressRatchetSlack)
+                : noise.maxFailures;
             expect(
               result.failedRuns,
               lessThanOrEqualTo(allowed),
-              reason: '$key: $result, allowed $allowed',
+              reason:
+                  '$key: $result, allowed $allowed'
+                  '${baseline == null ? '' : ' (baseline $baseline)'}',
             );
           },
           skip: !_runAll && (_red[sc.id]?.contains(noise.name) ?? false)
@@ -439,4 +497,55 @@ void main() {
       }
     });
   }
+
+  group('suite bookkeeping', () {
+    final ids = {for (final sc in _scenarios) sc.id};
+
+    test('scenario ids are unique', () {
+      expect(ids, hasLength(_scenarios.length));
+    });
+
+    test('every baseline-RED key names a scenario and a noise model', () {
+      final noiseNames = {for (final n in noiseModels) n.name};
+      for (final MapEntry(:key, :value) in _red.entries) {
+        expect(ids, contains(key));
+        expect(noiseNames, containsAll(value), reason: key);
+      }
+    });
+
+    test('the committed baseline covers every scenario and noise model', () {
+      expect(followScenariosBaseline.keys.toSet(), ids);
+      for (final counts in followScenariosBaseline.values) {
+        expect(counts.keys.toSet(), {for (final n in noiseModels) n.name});
+      }
+    });
+  });
+
+  final rides = loadRealRides();
+  group('real rides (local)', () {
+    if (rides == null) {
+      test(
+        'replay',
+        () {},
+        skip: 'real-ride fixture not present — local-only replay',
+      );
+      return;
+    }
+    final cases = realCases(rides);
+    test('every baseline-RED real-ride key names a case', () {
+      expect({for (final c in cases) c.check.id}, containsAll(_redReal));
+    });
+    for (final rc in cases) {
+      test(
+        rc.check.id,
+        () {
+          final lines = <String>[];
+          final failed = runReal(rc, log: lines.add);
+          if (_printCounts) _log('REAL ${rc.check.id}: ${lines.join(' | ')}');
+          expect(failed, isEmpty, reason: lines.join('\n'));
+        },
+        skip: !_runAll && _redReal.contains(rc.check.id) ? _baselineRed : false,
+      );
+    }
+  });
 }

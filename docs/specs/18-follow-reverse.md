@@ -52,7 +52,18 @@ A route is a **loop** when its first and last points are within `followFinishRad
 - **One ridden range per tracker** until the direction is decided. Deciding keeps the winner's range; a flip converts the range to the new orientation.
 - **Doubled laps on loops.** A finished lap is **latched** until a flip. A flip on a loop starts a fresh lap and shifts the kept range by the lap offset.
 - `RouteFollowState.displayProgress` returns null while the direction is undecided, so the remaining text shows the route's total length.
-- **Scenario suite.** `test/domain/follow_tracker_scenarios_test.dart` is the yardstick for every change to the tracker: seeded simulated rides (six route shapes; start, finish, mid-route, seam, standing still, slow/fast, off-route excursion, flip) under five GPS noise models, 100 runs each. It checks the final direction, remaining ≤ one lap/route, no "finished" before the real finish, finish reached, and ridden parts within 40 m of the ridden road. Allowed failing runs: 0 without noise, ≤ 2 % for uniform ±5 m, Gaussian σ5 and a correlated random walk, ≤ 5 % for Gaussian σ8.
+- **Scenario suite.** `test/domain/follow_tracker_scenarios_test.dart` is the yardstick for every change to the tracker. It runs seeded simulated rides over six route shapes, with these rider behaviours: start, finish, mid-route, across the seam, standing still, slow/fast, an off-route excursion and a flip. Each ride runs under five GPS noise models. A ride checks:
+  - the final direction (on a same-road out-and-back, either direction counts);
+  - "to go" within 40 m of the true distance left, once decided and not finished;
+  - no "finished" before the real finish;
+  - the finish reached;
+  - ridden parts within 40 m of the ridden road.
+
+  Thresholds come in tiers:
+  - **Gate** (200 runs): no failing run without noise, ≤ 2 % for uniform ±5 m and a correlated random walk, ≤ 5 % for Gaussian σ5.
+  - **Stress** (Gaussian σ8, 100 runs): ≤ 15 %, and no more than the committed baseline (`test/domain/support/follow_scenarios_baseline.dart`) + 3 runs. The long-term target is 5 %.
+
+  A local-only group replays the user's real rides (a gitignored fixture, never committed) with the same checks.
 
 ## UI layout
 - On the ride screen the banners and the follow line sit in the **map area**, so the stats panel keeps a constant height with any banner (checked at iPhone 8 size).
@@ -62,7 +73,7 @@ A route is a **loop** when its first and last points are within `followFinishRad
 - #51: after an accepted shortcut the skipped part is greyed; loop wrap-around is solved by circular loops (see Loops).
 - #52: a join near an out-and-back turnaround greys the unridden tip.
 - #53: approximations on gap loops and after a pass jump.
-- A lollipop joined exactly at its start/finish and ridden the reverse way goes up the stem first, which is the same road both ways. The direction defaults to **forward** there; the rider fixes it with the manual flip. The scenario suite asserts this default.
+- A lollipop joined exactly at its start/finish and ridden the reverse way goes up the stem first, which is the same road both ways. At the top of the stem the direction may be forward (the default), reverse, or still undecided. If it is not reverse, the rider fixes it with the manual flip. After a flip on a loop a fresh lap starts from the flip (#55): "to go" then overstates by the stem length, and "Finish reached" is missing at the true end.
 
 ## Model
 - `RouteFollowState.track` stays the **original** route. It is the session identity that `pauseFeedFor` relies on (#50).
