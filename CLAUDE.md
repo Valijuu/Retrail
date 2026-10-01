@@ -56,7 +56,7 @@ Invoke the debugging skill (`.claude/skills/root-cause-debugging/SKILL.md`) when
 | Images / crop | `image_picker` + `image_cropper` — replaces camera intent + uCrop |
 | Localization | `flutter_localizations` + `intl`, ARB files (`en` default, `de`) |
 | Tile source | **MapTiler** `topo-v2` / `basic-v2-dark` (existing API key) — vector style for the live map, `@2x` raster tiles for previews |
-| Testing | `flutter_test`, `mocktail`, `drift` in-memory DB for DAO tests |
+| Testing | `flutter_test`, `mocktail`, `drift` in-memory DB for DAO tests. Every `FollowTracker` change must keep the seeded scenario suite green (`test/domain/follow_tracker_scenarios_test.dart`; `--dart-define=FOLLOW_SCENARIOS_ALL=true` runs the skipped pairs, `FOLLOW_SCENARIOS_REPLAY=<id>\|<noise>\|<seed>` replays one run). Its real-ride replay uses the local, gitignored `test/fixtures/real_rides.json` — never commit real ride data |
 
 ---
 

@@ -80,9 +80,10 @@ List<T> _from<T>(List<T> xs, double share) =>
     xs.sublist((xs.length * share).round());
 
 /// The replay cases: every ride along itself from the start, reversed from
-/// the finish, and joined at 40 % of its fixes either way; ride 8 ↔ ride 10
-/// (10 ridden in reverse); ride 4 along ride 3 (a stretch of 3 in reverse);
-/// ride 6 (a ~12 km loop) across its seam both ways.
+/// the finish, and joined at 40 % of its fixes either way; plus the local
+/// pairs where one ride covers another the other way round, and the loop
+/// ride across its seam both ways. Which rides these are lives only in the
+/// local, gitignored fixture.
 List<RealCase> realCases(Map<String, List<Xy>> rides) {
   const fwd = FollowDirection.forward, rev = FollowDirection.reverse;
   final routes = {
