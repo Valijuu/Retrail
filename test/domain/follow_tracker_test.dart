@@ -410,6 +410,27 @@ void main() {
     );
 
     test(
+      'a straight route left at 100 for another road 100 m away and rejoined '
+      'at 240 (#51): a new way, intervals 0–100 and 240–260',
+      () {
+        final t = _ride(_straight, [
+          for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+          for (var e = 40.0; e <= 100; e += 30) at(100, e),
+          for (var n = 140.0; n <= 240; n += 50) at(n, 100),
+          at(240, 0),
+          at(250, 0),
+          at(260, 0),
+        ]);
+        expect(t.riddenIntervals, hasLength(2));
+        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+        expect(from1, closeTo(0, 0.5));
+        expect(to1, closeTo(100, 0.5));
+        expect(from2, closeTo(240, 0.5));
+        expect(to2, closeTo(260, 0.5));
+      },
+    );
+
+    test(
       'a U-turn flip on a loop after a jump keeps both ridden parts, 0–45 '
       'and 340–360 (#51)',
       () {

@@ -16,6 +16,10 @@ part 'follow_lap.dart';
 /// pass of the route, not movement.
 const double _jumpSlackM = 2 * followOffRouteThresholdM;
 
+/// A rider farther than this off the route took another way: rejoining, the
+/// stretch skipped stays ungreyed (#51).
+const double _otherWayM = 2 * followOffRouteThresholdM;
+
 /// A fix-to-fix move longer than this beyond the pace is a gap between
 /// fixes, not GPS scatter.
 const double _scatterM = 25;
@@ -44,6 +48,7 @@ class FollowTracker {
     this._closed = const [],
     this.lastPoint,
     this._onRouteAt,
+    this._strayM = 0,
     this._join,
     this._joinM = 0,
     this._lapFinished = false,
@@ -94,6 +99,10 @@ class FollowTracker {
   /// Once decided: the last fix on the route; null until one after the
   /// decision ([lastPoint] then).
   final LatLng? _onRouteAt;
+
+  /// Once decided: how far off the route the rider has been since
+  /// [_onRouteAt].
+  final double _strayM;
 
   /// The positions fed before [lastPoint], oldest first: which way the rider
   /// is heading.
@@ -236,15 +245,20 @@ class FollowTracker {
     final delta = next.alongM - _progress!.alongM;
     final atM = _originalM(direction, next.alongM);
     final onRouteAt = next.isOffRoute ? null : p;
-    if (_isJump(delta, _movedM(p)) && _isShortcut(delta, p)) {
-      // A jump to another pass extends nothing and is re-based into the join,
-      // so it doesn't count towards a loop's lap. The ridden part starts
-      // anew there: the skipped stretch stays ungreyed (#51).
+    final strayM = next.isOffRoute ? math.max(_strayM, next.offsetM) : 0.0;
+    final isJump = _isJump(delta, _movedM(p));
+    final otherWay = !next.isOffRoute && _strayM > _otherWayM;
+    if (otherWay || isJump && _isShortcut(delta, p)) {
+      // The rider rejoins after another way or a shortcut: the ridden part
+      // starts anew there and the stretch skipped stays ungreyed (#51). A
+      // jump to another pass is re-based into the join, so it doesn't count
+      // towards a loop's lap.
       return _with(
         progress: next,
         lastPoint: p,
         onRouteAt: onRouteAt,
-        joinM: _joinM + delta,
+        strayM: strayM,
+        joinM: isJump ? _joinM + delta : null,
         closed: [..._closed, range!],
         range: RiddenRange.at(atM),
       );
@@ -254,13 +268,14 @@ class FollowTracker {
       range: _grown(range!, next, atM),
       lastPoint: p,
       onRouteAt: onRouteAt,
+      strayM: strayM,
     );
   }
 
   /// Progress jumped [deltaM] farther than the rider went in a straight line
   /// from the last fix on the route to [p], plus [_jumpSlackM]: the rider
-  /// cut across to another pass. A rider who rode off route alongside it
-  /// went about as far as progress jumps.
+  /// cut across to another pass. A rider who rode off route alongside it,
+  /// no farther off than [_otherWayM], went about as far as progress jumps.
   bool _isShortcut(double deltaM, LatLng p) =>
       _isJump(deltaM, _distanceTo(_onRouteAt ?? lastPoint!, p));
 
@@ -319,6 +334,7 @@ class FollowTracker {
     closed: _closed,
     lastPoint: lastPoint,
     onRouteAt: _onRouteAt,
+    strayM: _strayM,
     joinM: joinM,
     lapFinished: lapFinished ?? _lapFinished,
   );
@@ -330,6 +346,7 @@ class FollowTracker {
     double? joinM,
     LatLng? lastPoint,
     LatLng? onRouteAt,
+    double? strayM,
     bool? lapFinished,
     FollowJoin? join,
     List<LatLng>? recent,
@@ -345,6 +362,7 @@ class FollowTracker {
     closed: closed ?? _closed,
     lastPoint: lastPoint ?? this.lastPoint,
     onRouteAt: onRouteAt ?? _onRouteAt,
+    strayM: strayM ?? _strayM,
     join: join ?? _join,
     joinM: joinM ?? _joinM,
     lapFinished: lapFinished ?? _lapFinished,
