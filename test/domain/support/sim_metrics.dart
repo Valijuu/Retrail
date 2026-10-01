@@ -18,7 +18,8 @@ enum Metric {
   directionBeforeFlip,
 
   /// Once decided and not finished, "to go" is within [remainingSlackM] of
-  /// the true distance left (a loop: one lap from the join, or from a flip).
+  /// the true distance left (a loop: one lap from the join, or from a flip
+  /// that follows a U-turn).
   remaining,
 
   /// No "finished" (once decided) before the rider really reached the finish
@@ -50,6 +51,7 @@ class FollowCase {
     this.endsAtFinish = false,
     this.metrics = Metric.values,
     this.remainingBeforeFlip = true,
+    this.flipCorrects = false,
   });
 
   final String id;
@@ -60,13 +62,18 @@ class FollowCase {
   /// and this is only the way the rider rides.
   final FollowDirection expected;
 
-  /// The ride ends at the finish (a loop: a lap from the join or the flip).
+  /// The ride ends at the finish (a loop: a lap from the join, or from a
+  /// flip that follows a U-turn).
   final bool endsAtFinish;
   final List<Metric> metrics;
 
   /// Check "to go" before a scripted flip too. Off where the orientation
   /// before the flip is ambiguous (a lollipop's stem).
   final bool remainingBeforeFlip;
+
+  /// The scripted flip corrects a wrong direction rather than following a
+  /// U-turn (#55): the lap still runs from the join, not from the flip.
+  final bool flipCorrects;
 }
 
 /// One rider behaviour on one route, run many times with seeded randomness.
@@ -80,6 +87,7 @@ class Scenario extends FollowCase {
     super.endsAtFinish,
     super.metrics,
     super.remainingBeforeFlip,
+    super.flipCorrects,
   });
 
   final Plan Function(math.Random r) plan;
@@ -115,7 +123,8 @@ Set<Metric> evaluate(
   ({FollowDirection d, double lapM}) truth(int i) {
     final beforeFlip = flipAt != null && i < flipAt;
     final d = beforeFlip ? _opposite(c.expected) : c.expected;
-    final ref = flippedAt != null && i >= flippedAt ? flippedAt : joinAt!;
+    final fromFlip = flippedAt != null && i >= flippedAt && !c.flipCorrects;
+    final ref = fromFlip ? flippedAt : joinAt!;
     final sign = d == FollowDirection.forward ? 1 : -1;
     return (d: d, lapM: (trueS[i] - trueS[ref]) * sign);
   }

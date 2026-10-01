@@ -4,6 +4,7 @@ import 'package:meta/meta.dart' show visibleForTesting;
 
 import 'distance_calculator.dart';
 import 'follow_direction.dart';
+import 'follow_join.dart';
 import 'heading.dart' show LatLng;
 import 'route_progress.dart';
 
@@ -11,16 +12,49 @@ import 'route_progress.dart';
 /// pass of the route, not movement.
 const double _jumpSlackM = 2 * followOffRouteThresholdM;
 
-/// [p] seen from the other end of a route of length [lengthM]: joined and on
-/// route, at the same physical point.
-RouteProgress mirrored(RouteProgress p, double lengthM) => RouteProgress(
-  alongM: lengthM - p.alongM,
-  remainingM: p.alongM,
-  offsetM: p.offsetM,
-  isOffRoute: false,
-  isFinished: false,
-  hasJoined: true,
-);
+/// Once decided, progress is first looked for no farther ahead than the
+/// rider moved plus this, so a later pass of the road nearby (a hairpin, an
+/// out-and-back's other leg) can't capture it.
+const double _aheadSlackM = followOffRouteThresholdM;
+
+/// Once decided, progress advances per fix at most this much more than the
+/// rider moved.
+const double _catchUpM = 2;
+
+/// A fix-to-fix move longer than this beyond the pace is a gap between
+/// fixes, not GPS scatter.
+const double _scatterM = 25;
+
+/// The share of the rest it catches up per fix beyond that.
+const double _catchUpShare = 0.25;
+
+/// Once decided, hits this far behind progress still count: a rider whose
+/// progress ran ahead with the GPS error is found on their own pass.
+const double _behindM = followOffRouteThresholdM;
+
+/// A flip is a correction when the rider is found on the flipped route no
+/// more than this farther off it than before (#55).
+const double _correctionSlackM = followOffRouteThresholdM / 2;
+
+/// Metres off the route one metre of the rider's heading against a pass
+/// weighs.
+const double _headingWeight = 1;
+
+/// Fixes back the rider's heading is measured over.
+const int _headingFixes = 3;
+
+/// Metres per degree of latitude (mean Earth radius).
+const double _metresPerDegree = 6371000 * math.pi / 180;
+
+/// Metres off the route one metre of misfit along it weighs.
+const double _fitWeight = 0.5;
+
+/// Metres off the route one metre behind progress (beyond the tolerance)
+/// weighs.
+const double _behindWeight = 0.5;
+
+/// How far a GPS fix may fall behind progress without counting against it.
+const double _behindToleranceM = 5;
 
 /// Follows a reference route in either direction (Spec 18).
 class FollowTracker {
@@ -34,18 +68,11 @@ class FollowTracker {
     this._progress,
     this.range,
     this.lastPoint,
-    this._reverseProgress,
-    this._forwardRange,
-    this._reverseRange,
-    double forwardJoinM = 0,
-    double reverseJoinM = 0,
-    double forwardAdvanceM = 0,
-    double reverseAdvanceM = 0,
+    this._join,
+    this._joinM = 0,
     this._lapFinished = false,
-  }) : _fwdJoinM = forwardJoinM,
-       _revJoinM = reverseJoinM,
-       _fwdAdvM = forwardAdvanceM,
-       _revAdvM = reverseAdvanceM;
+    this._recent = const [],
+  });
 
   factory FollowTracker.start(
     RouteTrack track, {
@@ -85,21 +112,21 @@ class FollowTracker {
   /// The last position fed to [next].
   final LatLng? lastPoint;
 
-  /// Both along values at the join (moved by pass jumps while undecided).
-  final double _fwdJoinM, _revJoinM;
+  /// The positions fed before [lastPoint], oldest first: which way the rider
+  /// is heading.
+  final List<LatLng> _recent;
 
-  /// While undecided: how far each tracker has advanced since the join,
-  /// fix by fix and never more than the rider moved (Spec 18).
-  final double _fwdAdvM, _revAdvM;
+  /// While undecided: the join the direction is measured from; null before
+  /// the join and while off route since.
+  final FollowJoin? _join;
+
+  /// The along value at the join on the tracked route of [direction] (moved
+  /// by pass jumps once decided).
+  final double _joinM;
 
   /// On a loop: the lap from the join has been finished. It stays finished
   /// until a [flip] starts a fresh lap.
   final bool _lapFinished;
-
-  /// While undecided: progress on the reversed route and what each tracker
-  /// has ridden (original-route metres, as [range]).
-  final RouteProgress? _reverseProgress;
-  final RiddenRange? _forwardRange, _reverseRange;
 
   RouteTrack get orientedTrack =>
       direction == FollowDirection.reverse ? _reversedLap : track;
@@ -111,8 +138,7 @@ class FollowTracker {
   RouteProgress? get progress {
     final p = _progress;
     if (p == null || !isLoop) return p;
-    final joinM = _joinM;
-    final joinPoint = _trackFor(direction).pointAt(joinM);
+    final joinPoint = _trackFor(direction).pointAt(_joinM);
     final toJoin = _distance.distanceBetween(
       lastPoint!.lat,
       lastPoint!.lng,
@@ -123,13 +149,13 @@ class FollowTracker {
       alongM: p.alongM,
       remainingM: _lapFinished
           ? 0
-          : (joinM + track.lengthM - p.alongM).clamp(0.0, track.lengthM),
+          : (_joinM + _lapM - p.alongM).clamp(0.0, _lapM),
       offsetM: p.offsetM,
       isOffRoute: p.isOffRoute,
       isFinished:
           _lapFinished ||
           !p.isOffRoute &&
-              p.alongM - joinM >= followFinishMinShare * track.lengthM &&
+              p.alongM - _joinM >= followFinishMinShare * _lapM &&
               toJoin <= followFinishRadiusM,
       hasJoined: p.hasJoined,
     );
@@ -138,9 +164,7 @@ class FollowTracker {
   /// True when [track] is a loop; it is then tracked laid out twice.
   bool get isLoop => !identical(_forward, track);
 
-  /// The along value at the join on the tracked route of [direction].
-  double get _joinM =>
-      direction == FollowDirection.reverse ? _revJoinM : _fwdJoinM;
+  double get _lapM => track.lengthM;
 
   /// The ridden parts of [track], in its metres; empty until decided. On a
   /// loop a part crossing the start/finish is split in two, and a full lap is
@@ -149,112 +173,238 @@ class FollowTracker {
     final r = range;
     if (r == null) return const [];
     if (!isLoop) return [(r.loM, r.hiM)];
-    final lapM = track.lengthM;
-    if (r.hiM - r.loM >= lapM) return [(0, lapM)];
-    final lo = r.loM % lapM, hi = lo + r.hiM - r.loM;
-    return hi <= lapM ? [(lo, hi)] : [(lo, lapM), (0, hi - lapM)];
+    if (r.hiM - r.loM >= _lapM) return [(0, _lapM)];
+    final lo = r.loM % _lapM, hi = lo + r.hiM - r.loM;
+    return hi <= _lapM ? [(lo, hi)] : [(lo, _lapM), (0, hi - _lapM)];
   }
 
   FollowTracker next(LatLng p) {
     final t = _step(p);
     final finishesLap =
         t.isLoop && !t._lapFinished && (t.progress?.isFinished ?? false);
-    return finishesLap ? t._with(progress: t._progress, lapFinished: true) : t;
+    final last = lastPoint;
+    return t._with(
+      lapFinished: finishesLap ? true : null,
+      recent: last == null
+          ? const []
+          : [..._recent.skip(_recent.length < _headingFixes ? 0 : 1), last],
+    );
   }
 
   FollowTracker _step(LatLng p) {
     if (direction != FollowDirection.undecided) return _nextDecided(p);
-    if (hasJoined) return _nextUndecided(p);
-    final fwd = _forward.locate(p, previous: _progress);
-    if (fwd == null || !fwd.hasJoined) {
-      return _with(progress: fwd, lastPoint: p);
+    if (!hasJoined) {
+      final joined = _joinAt(p);
+      final join = joined._join;
+      if (join == null) return joined;
+      final atJoin = directionAtJoin(track, p, distance: _distance);
+      if (atJoin == FollowDirection.undecided) return joined;
+      final hit = (alongM: join.joinM, offsetM: join.offsetM);
+      return joined._decided(atJoin, (
+        hit: hit,
+        pass: 0,
+        anchorM: join.joinM,
+        signedM: 0,
+        fitM: join.offsetM,
+      ));
     }
-    final rev = _reversed.locate(p, previous: _mirroredOnto(_reversed, fwd));
-    final joined = _with(
-      progress: fwd,
-      reverseProgress: rev,
-      forwardJoinM: fwd.alongM,
-      reverseJoinM: rev!.alongM,
-      forwardRange: RiddenRange.at(fwd.alongM),
-      reverseRange: RiddenRange.at(_forward.lengthM - rev.alongM),
+    final joined = _join;
+    // Off route since the join: measure from here on.
+    if (joined == null) return _joinAt(p);
+    final (:join, :seen) = joined.see(_forward, p, _distance);
+    // Off route, or out of the join's window: measure from here on.
+    if (seen.isEmpty) return _joinAt(p);
+    final fitting = bestFitting(seen);
+    final closest = _closest(fitting);
+    final next = _with(
+      progress: _forward.progressAt(p, closest.hit),
       lastPoint: p,
     );
-    return joined._decide(directionAtJoin(track, p, distance: _distance));
+    final decided = decideDirection(fitting.map((h) => h.signedM));
+    if (decided == FollowDirection.undecided) {
+      return next._with(join: join.standing(seen));
+    }
+    return next._decided(decided, _closestGoing(decided, fitting));
   }
 
-  FollowTracker _nextUndecided(LatLng p) {
-    final fwd = _forward.locate(p, previous: _progress)!;
-    final rev = _reversed.locate(p, previous: _reverseProgress)!;
-    final moved = _movedM(p);
-    final fwdDelta = fwd.alongM - _progress!.alongM;
-    final revDelta = rev.alongM - _reverseProgress!.alongM;
-    final fwdJumped = _isJump(fwdDelta, moved);
-    final revJumped = _isJump(revDelta, moved);
-    // A jump re-anchors that tracker's range: it is now on another pass.
-    final fwdRange = fwdJumped
-        ? RiddenRange.at(fwd.alongM)
-        : _grown(_forwardRange!, fwd, fwd.alongM);
-    final revOriginalM = _forward.lengthM - rev.alongM;
-    final revRange = revJumped
-        ? RiddenRange.at(revOriginalM)
-        : _grown(_reverseRange!, rev, revOriginalM);
-    // A jump is re-based into the join value: it counts nothing towards a
-    // loop's lap.
-    final fwdJoinM = fwdJumped ? _fwdJoinM + fwdDelta : _fwdJoinM;
-    final revJoinM = revJumped ? _revJoinM + revDelta : _revJoinM;
-    final fwdAdvM = _fwdAdvM + _advancedM(fwdDelta, moved);
-    final revAdvM = _revAdvM + _advancedM(revDelta, moved);
-    final next = _with(
-      progress: fwd,
-      reverseProgress: rev,
-      forwardRange: fwdRange,
-      reverseRange: revRange,
-      forwardJoinM: fwdJoinM,
-      reverseJoinM: revJoinM,
-      forwardAdvanceM: fwdAdvM,
-      reverseAdvanceM: revAdvM,
+  /// Joins (again) at [p]: a fresh window, or off route without one.
+  FollowTracker _joinAt(LatLng p) {
+    final join = FollowJoin.at(_forward, p, lapM: isLoop ? _lapM : null);
+    final progress = join == null
+        ? _forward.locate(p, previous: _progress)
+        : _forward.progressAt(p, (alongM: join.joinM, offsetM: join.offsetM));
+    return FollowTracker._(
+      track: track,
+      forward: _forward,
+      reversed: _reversed,
+      reversedLap: _reversedLap,
+      distance: _distance,
+      progress: progress,
       lastPoint: p,
+      join: join,
+      joinM: join?.joinM ?? _joinM,
     );
-    return next._decide(
-      decideDirection(forwardAdvanceM: fwdAdvM, reverseAdvanceM: revAdvM),
+  }
+
+  /// The closest of the hits that lie ahead of their anchor when [d] is
+  /// forward, behind it when reverse: where the rider is, on a pass ridden
+  /// that way.
+  static JoinHit _closestGoing(FollowDirection d, List<JoinHit> seen) {
+    final going = [
+      for (final h in seen)
+        if (d == FollowDirection.forward ? h.signedM >= 0 : h.signedM <= 0) h,
+    ];
+    return _closest(going);
+  }
+
+  static JoinHit _closest(List<JoinHit> seen) {
+    var best = seen.first;
+    for (final h in seen) {
+      if (h.hit.offsetM < best.hit.offsetM) best = h;
+    }
+    return best;
+  }
+
+  /// Riding [d], decided at [at] (forward-route metres) on [lastPoint]: the
+  /// join is [at]'s anchor and the ridden range runs from it to [at]. On a
+  /// loop both move to the first lap, so a whole lap lies ahead.
+  FollowTracker _decided(FollowDirection d, JoinHit at) {
+    final isReverse = d == FollowDirection.reverse;
+    double oriented(double m) => isReverse ? _forward.lengthM - m : m;
+    var joinM = oriented(at.anchorM), alongM = oriented(at.hit.alongM);
+    if (isLoop && joinM >= _lapM) {
+      joinM -= _lapM;
+      alongM -= _lapM;
+    }
+    final progress = _trackFor(
+      d,
+    ).progressAt(lastPoint!, (alongM: alongM, offsetM: at.hit.offsetM));
+    return _oriented(
+      d,
+      progress,
+      joinM: joinM,
+      ridden: RiddenRange.at(
+        _originalM(d, joinM),
+      ).extend(_originalM(d, alongM)),
     );
   }
 
   FollowTracker _nextDecided(LatLng p) {
-    final next = _trackFor(direction).locate(p, previous: _progress)!;
+    final next = _locateDecided(p);
     final delta = next.alongM - _progress!.alongM;
     if (_isJump(delta, _movedM(p))) {
       // A jump to another pass extends nothing and is re-based into the join,
       // so it doesn't count towards a loop's lap.
-      final isReverse = direction == FollowDirection.reverse;
-      return _with(
-        progress: next,
-        lastPoint: p,
-        forwardJoinM: isReverse ? null : _fwdJoinM + delta,
-        reverseJoinM: isReverse ? _revJoinM + delta : null,
-      );
+      return _with(progress: next, lastPoint: p, joinM: _joinM + delta);
     }
     final range = _grown(this.range!, next, _originalM(direction, next.alongM));
     return _with(progress: next, range: range, lastPoint: p);
   }
 
-  /// [p] seen on [target], the other direction's track. On a loop it lands
-  /// in [target]'s first lap, so a whole lap lies ahead.
-  RouteProgress _mirroredOnto(RouteTrack target, RouteProgress p) {
-    final m = mirrored(p, _forward.lengthM);
-    if (!isLoop) return m;
-    final lapM = target.cumulativeM[track.points.length - 1];
-    return m.alongM <= lapM ? m : mirrored(p, _forward.lengthM - lapM);
+  /// Progress at [p] once decided, never going back. On route: the hit
+  /// closest to the route and to where the rider would be had they gone on
+  /// from the progress point as far as they now are from it, no farther
+  /// ahead than that; else Spec 17's look-ahead and full search.
+  RouteProgress _locateDecided(LatLng p) {
+    final route = _trackFor(direction);
+    final previous = _progress!;
+    if (!previous.isOffRoute) {
+      final fromM = previous.alongM;
+      // How far on the rider is from the progress point, even while progress
+      // holds there over several fixes.
+      final onM = _distanceTo(p, route.pointAt(fromM));
+      final hits = route.hitsWithin(
+        p,
+        fromM - _behindM,
+        fromM + onM + _aheadSlackM,
+      );
+      if (hits.isNotEmpty) {
+        final hit = _likeliest(route, hits, fromM, onM, p);
+        // A hit behind progress (the GPS error) holds it where it is, and
+        // progress advances no more than the rider moved (plus a little), so
+        // a fix thrown across a corner or a hairpin is caught up with over a
+        // few fixes rather than at once.
+        final maxM = fromM + _paceM(p) + _catchUpM;
+        final alongM = hit.alongM > maxM
+            ? maxM + _catchUpShare * (hit.alongM - maxM)
+            : math.max(hit.alongM, fromM);
+        return route.progressAt(p, (alongM: alongM, offsetM: hit.offsetM));
+      }
+    }
+    return route.locate(p, previous: previous)!;
+  }
+
+  static RouteHit _nearestTo(List<RouteHit> hits, double alongM) {
+    var best = hits.first;
+    for (final h in hits) {
+      if ((h.alongM - alongM).abs() < (best.alongM - alongM).abs()) best = h;
+    }
+    return best;
+  }
+
+  /// The hit of [hits] that best fits a rider at [p], [onM] from the
+  /// progress point at [fromM]: close to the route, about as far along it
+  /// from there as the rider is from it (not a pass of the same road coming
+  /// back), not far behind progress (beyond the GPS error,
+  /// [_behindToleranceM]), and on a pass running the way the rider heads.
+  RouteHit _likeliest(
+    RouteTrack route,
+    List<RouteHit> hits,
+    double fromM,
+    double onM,
+    LatLng p,
+  ) {
+    if (hits.length == 1) return hits.single;
+    final from = _recent.isEmpty ? lastPoint! : _recent.first;
+    double cost(RouteHit h) {
+      final alongM = h.alongM - fromM;
+      final behindM = -alongM - _behindToleranceM;
+      final headingM = _alongRouteM(route, h.alongM, from, p);
+      return h.offsetM +
+          _fitWeight * (alongM.abs() - onM).abs() +
+          _behindWeight * (behindM > 0 ? behindM : 0) +
+          _headingWeight * (headingM < 0 ? -headingM : 0);
+    }
+
+    var best = hits.first;
+    for (final h in hits) {
+      if (cost(h) < cost(best)) best = h;
+    }
+    return best;
+  }
+
+  /// How far the move from [a] to [b] runs along [route] at [alongM], in
+  /// metres (negative: against it). Local flat-earth approximation.
+  static double _alongRouteM(
+    RouteTrack route,
+    double alongM,
+    LatLng a,
+    LatLng b,
+  ) {
+    final t = routeHeading(route, alongM);
+    final dx = (b.lng - a.lng) * math.cos(a.lat * math.pi / 180);
+    final dy = b.lat - a.lat;
+    return (dx * t.x + dy * t.y) * _metresPerDegree;
   }
 
   /// [alongM] on [d]'s tracked route in original-route metres (as [range]).
   double _originalM(FollowDirection d, double alongM) =>
       d == FollowDirection.reverse ? _forward.lengthM - alongM : alongM;
 
-  double _movedM(LatLng p) {
-    final last = lastPoint!;
-    return _distance.distanceBetween(last.lat, last.lng, p.lat, p.lng);
+  double _movedM(LatLng p) => _distanceTo(p, lastPoint!);
+
+  /// How far the rider moved to [p]: on average over the last few fixes (a
+  /// single fix-to-fix move is mostly GPS scatter at a slow pace), unless
+  /// this move is longer than any scatter (a gap between fixes).
+  double _paceM(LatLng p) {
+    final movedM = _movedM(p);
+    if (_recent.isEmpty) return movedM;
+    final averageM = _distanceTo(p, _recent.first) / (_recent.length + 1);
+    return math.max(averageM, movedM - _scatterM);
   }
+
+  double _distanceTo(LatLng a, LatLng b) =>
+      _distance.distanceBetween(a.lat, a.lng, b.lat, b.lng);
 
   /// [range] grown by a fix at [at] ([originalM] in original-route metres)
   /// when it is on route.
@@ -264,34 +414,18 @@ class FollowTracker {
     double originalM,
   ) => at.isOffRoute ? range : range.extend(originalM);
 
-  /// The advance a progress change of [deltaM] adds: none backwards or on a
-  /// jump, and at most [movedM], so moving to another pass of a road ridden
-  /// both ways adds no more than the rider moved.
-  static double _advancedM(double deltaM, double movedM) =>
-      _isJump(deltaM, movedM) ? 0 : math.min(math.max(deltaM, 0), movedM);
-
   static bool _isJump(double deltaM, double movedM) =>
       deltaM.abs() > movedM + _jumpSlackM;
 
   RouteTrack _trackFor(FollowDirection d) =>
       d == FollowDirection.reverse ? _reversed : _forward;
 
-  /// Applies [decided] (undecided keeps tracking both directions).
-  FollowTracker _decide(FollowDirection decided) {
-    if (decided == FollowDirection.undecided) return this;
-    return _oriented(
-      decided,
-      decided == FollowDirection.reverse ? _reverseProgress : _progress,
-    );
-  }
-
-  /// Riding [d] at [p]; the undecided bookkeeping is dropped. Leaving
-  /// undecided, the range is the ridden range of [d]'s tracker. [joinM]
-  /// replaces [d]'s join along, [ridden] the range, [lapFinished] the latch.
+  /// Riding [d] with progress [p] from the join at [joinM]; the undecided
+  /// join is dropped. [ridden] replaces the range, [lapFinished] the latch.
   FollowTracker _oriented(
     FollowDirection d,
     RouteProgress? p, {
-    double? joinM,
+    required double joinM,
     RiddenRange? ridden,
     bool? lapFinished,
   }) => FollowTracker._(
@@ -302,63 +436,152 @@ class FollowTracker {
     distance: _distance,
     direction: d,
     progress: p,
-    range:
-        ridden ??
-        (direction != FollowDirection.undecided
-            ? range
-            : d == FollowDirection.reverse
-            ? _reverseRange
-            : _forwardRange),
+    range: ridden ?? range,
     lastPoint: lastPoint,
-    forwardJoinM: d == FollowDirection.forward ? joinM ?? _fwdJoinM : _fwdJoinM,
-    reverseJoinM: d == FollowDirection.reverse ? joinM ?? _revJoinM : _revJoinM,
+    joinM: joinM,
     lapFinished: lapFinished ?? _lapFinished,
   );
 
-  /// Rides the route the other way from [lastPoint], keeping [range]. Only
-  /// once joined; while undecided it forces reverse with what the reverse
-  /// tracker rode.
+  /// [alongM] seen from the other end of the tracked routes: the same point
+  /// on the route of the other direction.
+  double _mirroredM(double alongM) => _forward.lengthM - alongM;
+
+  /// Rides the route the other way from [lastPoint]. Only once joined; while
+  /// undecided it forces reverse from the join.
+  ///
+  /// Once decided, a flip either corrects a wrong direction or follows a
+  /// U-turn, told apart by where the rider is on the flipped route (#55): a
+  /// rider found as far ahead of the mirrored join as they have ridden went
+  /// that way all along (a lollipop's stem is the same road both ways), so the
+  /// join stays the lap anchor and the ridden part is re-measured from it.
+  /// Otherwise the rider turned: on a loop a fresh lap starts from the turn
+  /// and the ridden part is kept.
   FollowTracker flip() {
     final current = _progress;
     if (current == null || !current.hasJoined) return this;
+    if (direction == FollowDirection.undecided) return _flipUndecided(current);
     final flipped = direction == FollowDirection.reverse
         ? FollowDirection.forward
         : FollowDirection.reverse;
     final target = _trackFor(flipped);
-    final p = target.locate(
-      lastPoint!,
-      previous: _mirroredOnto(target, current),
-    );
-    final kept = range;
+    final lapBackM = isLoop && _mirroredM(_joinM) > _lapM ? _lapM : 0.0;
+    final joinM = _mirroredM(_joinM) - lapBackM;
+    final ridM = current.alongM - _joinM;
+    final corrected = current.isOffRoute
+        ? null
+        : _correctionHit(target, joinM, ridM, current.offsetM);
+    if (corrected != null) {
+      return _oriented(
+        flipped,
+        target.progressAt(lastPoint!, corrected),
+        joinM: joinM,
+        lapFinished: false,
+        ridden: RiddenRange.at(
+          _originalM(flipped, joinM),
+        ).extend(_originalM(flipped, corrected.alongM)),
+      );
+    }
+    final mirroredM = _mirroredM(current.alongM);
+    final baseM = isLoop && mirroredM > _lapM ? mirroredM - _lapM : mirroredM;
+    // Progress may have run ahead of the rider, who turned: the fresh lap
+    // starts where the rider is.
+    final turn = current.isOffRoute
+        ? null
+        : RouteTrack.closestOf(
+            target.hitsWithin(
+              lastPoint!,
+              baseM - followOffRouteThresholdM,
+              baseM + followOffRouteThresholdM,
+            ),
+          );
+    final p = turn == null
+        ? _mirroredProgress(target, current, baseM)
+        : target.progressAt(lastPoint!, turn);
+    final kept = range!;
     // On a loop the flipped along may lie a lap away from the current one:
     // the kept range moves with it so it stays over the same ground.
-    final shiftM = !isLoop || kept == null || p == null
-        ? 0.0
-        : _originalM(flipped, p.alongM) - _originalM(direction, current.alongM);
-    // On a loop the flip starts a fresh lap from where the rider turned.
+    final shiftM = isLoop
+        ? _originalM(flipped, baseM) - _originalM(direction, current.alongM)
+        : 0.0;
     return _oriented(
       flipped,
       p,
-      joinM: p?.alongM,
+      joinM: p.alongM,
       lapFinished: false,
-      ridden: kept == null
-          ? null
-          : RiddenRange(kept.loM + shiftM, kept.hiM + shiftM),
+      ridden: RiddenRange(kept.loM + shiftM, kept.hiM + shiftM),
+    );
+  }
+
+  /// The rider's hit on [target] ahead of the join at [joinM] by about
+  /// [ridM] (nearer that than the join), on the road the rider is on
+  /// ([offsetM] off it, give or take [_correctionSlackM]); null when the
+  /// rider isn't there.
+  RouteHit? _correctionHit(
+    RouteTrack target,
+    double joinM,
+    double ridM,
+    double offsetM,
+  ) {
+    final hits = [
+      for (final h in target.hitsWithin(
+        lastPoint!,
+        joinM + ridM / 2,
+        joinM + ridM + followJoinWindowM,
+      ))
+        if (h.offsetM <= offsetM + _correctionSlackM) h,
+    ];
+    return hits.isEmpty ? null : _nearestTo(hits, joinM + ridM);
+  }
+
+  /// Undecided → reverse from the join, with what was ridden since.
+  FollowTracker _flipUndecided(RouteProgress current) {
+    final lapBackM = isLoop && _mirroredM(_joinM) > _lapM ? _lapM : 0.0;
+    final joinM = _mirroredM(_joinM) - lapBackM;
+    final p = _mirroredProgress(
+      _reversed,
+      current,
+      _mirroredM(current.alongM) - lapBackM,
+    );
+    return _oriented(
+      FollowDirection.reverse,
+      p,
+      joinM: joinM,
+      ridden: RiddenRange.at(
+        _originalM(FollowDirection.reverse, joinM),
+      ).extend(_originalM(FollowDirection.reverse, p.alongM)),
+    );
+  }
+
+  /// [current] seen at [alongM] on [target], the other direction's route.
+  RouteProgress _mirroredProgress(
+    RouteTrack target,
+    RouteProgress current,
+    double alongM,
+  ) {
+    if (!current.isOffRoute) {
+      return target.progressAt(lastPoint!, (
+        alongM: alongM,
+        offsetM: current.offsetM,
+      ));
+    }
+    return RouteProgress(
+      alongM: alongM,
+      remainingM: target.lengthM - alongM,
+      offsetM: current.offsetM,
+      isOffRoute: true,
+      isFinished: false,
+      hasJoined: true,
     );
   }
 
   FollowTracker _with({
     RouteProgress? progress,
-    RouteProgress? reverseProgress,
     RiddenRange? range,
-    double? forwardJoinM,
-    double? reverseJoinM,
-    double? forwardAdvanceM,
-    double? reverseAdvanceM,
-    RiddenRange? forwardRange,
-    RiddenRange? reverseRange,
+    double? joinM,
     LatLng? lastPoint,
     bool? lapFinished,
+    FollowJoin? join,
+    List<LatLng>? recent,
   }) => FollowTracker._(
     track: track,
     forward: _forward,
@@ -366,16 +589,12 @@ class FollowTracker {
     reversedLap: _reversedLap,
     distance: _distance,
     direction: direction,
-    progress: progress,
+    progress: progress ?? _progress,
     range: range ?? this.range,
     lastPoint: lastPoint ?? this.lastPoint,
-    reverseProgress: reverseProgress ?? _reverseProgress,
-    forwardJoinM: forwardJoinM ?? _fwdJoinM,
-    reverseJoinM: reverseJoinM ?? _revJoinM,
-    forwardAdvanceM: forwardAdvanceM ?? _fwdAdvM,
-    reverseAdvanceM: reverseAdvanceM ?? _revAdvM,
-    forwardRange: forwardRange ?? _forwardRange,
-    reverseRange: reverseRange ?? _reverseRange,
+    join: join ?? _join,
+    joinM: joinM ?? _joinM,
     lapFinished: lapFinished ?? _lapFinished,
+    recent: recent ?? _recent,
   );
 }

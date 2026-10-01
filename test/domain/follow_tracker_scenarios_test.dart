@@ -39,139 +39,34 @@ const _realNoiseRuns = 200;
 const _u5 = 'uniform ±5 m', _g5 = 'gaussian σ5', _g8 = 'gaussian σ8';
 const _walk = 'correlated walk σ3 ρ0.9';
 
-/// Scenario → the noise models it fails its threshold under at the Task 7
-/// baseline, skipped until Task 8 fixes them.
+/// Scenario → the noise models it still fails its threshold under during the
+/// Task 8 rework, skipped until it is done.
 const _red = <String, Set<String>>{
-  'L-shape · mid-route backward · slow': {_g5, _g8},
-  'L-shape · stand 10s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'L-shape · stand 30s at the join, then forward · cruise': {_g8},
-  'L-shape · stand 30s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'L-shape · stand 60s at the join, then forward · cruise': {_g8, _walk},
-  'L-shape · stand 60s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'square · forward from 2–20 m past the start · cruise': {_g8},
-  'square · reverse from the finish · cruise': {_g8, _walk},
-  'square · mid-route forward · cruise': {_g8, _walk},
-  'square · mid-route backward · cruise': {_g8, _walk},
-  'square · across the seam forward · cruise': {_g8, _walk},
-  'square · across the seam backward · cruise': {_g8, _walk},
-  'square · mid-route forward · slow': {_g8, _walk},
-  'square · mid-route backward · slow': {_g5, _g8, _walk},
-  'square · mid-route forward · fast': {_walk},
-  'square · mid-route backward · fast': {_g8},
-  'square · stand 10s at the join, then forward · cruise': {_g8, _walk},
-  'square · stand 10s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'square · stand 30s at the join, then forward · cruise': {_g8, _walk},
-  'square · stand 30s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'square · stand 60s at the join, then forward · cruise': {_g5, _g8, _walk},
-  'square · stand 60s at the join, then backward · cruise': {_g5, _g8, _walk},
-  'square · flip mid-ride, one lap back · cruise': {_g8, _walk},
-  '2 km loop · reverse from the finish · fast': {_g8, _walk},
-  '2 km loop · across the seam forward · cruise': {_walk},
-  '2 km loop · across the seam backward · cruise': {_g8},
-  '2 km loop · mid-route backward · slow': {_g5, _g8, _walk},
-  '2 km loop · stand 30s at the join, then backward · cruise': {
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back · forward from 2–20 m past the start · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back · forward from 2–20 m past the start · slow': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back · forward from 2–20 m past the start · fast': {_u5, _g5, _g8},
-  'out-and-back · mid-route forward (way out) · cruise': {_u5, _g5, _g8, _walk},
-  'out-and-back · stand 10s at the join, then forward · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back · stand 30s at the join, then forward · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back · stand 60s at the join, then forward · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'lollipop · forward from 2–20 m past the start · cruise': {_g5, _g8, _walk},
-  'lollipop · mid-loop forward · cruise': {_u5, _g5, _g8, _walk},
-  'lollipop · mid-loop backward · cruise': {_u5, _g5, _g8, _walk},
-  'lollipop · stand 30s at the join, then forward · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'lollipop · stand 30s at the join, then backward · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'lollipop · joined at the start/finish, ridden reverse: forward by default, flipped at the top of the stem · cruise':
-      {_u5, _g5, _g8, _walk},
-  'out-and-back 1 km · forward from 2–20 m past the start · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back 1 km · forward 200 m from 2–20 m past the start · slow': {
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back 1 km · mid-route forward (way out) · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
-  'out-and-back 1 km · stand 30s at the join, then forward · cruise': {
-    _u5,
-    _g5,
-    _g8,
-    _walk,
-  },
+  'square · forward from 2–20 m past the start · cruise': {_walk},
+  'square · across the seam forward · cruise': {_walk},
+  'square · mid-route forward · slow': {_walk},
+  'square · mid-route backward · slow': {_walk},
+  'out-and-back · forward from 2–20 m past the start · slow': {_g8},
+  'out-and-back · mid-route forward (way out) · cruise': {_walk},
+  'lollipop · mid-loop backward · cruise': {_walk},
+  'lollipop · stand 30s at the join, then backward · cruise': {_walk},
+  'out-and-back 1 km · stand 30s at the join, then forward · cruise': {_walk},
 };
 
 /// Real-ride cases failing at the Task 7 baseline, skipped until Task 8.
 const _redReal = <String>{};
 
-/// Noisy real-ride runs failing at the Task 8 baseline (before the tracker
-/// rework), skipped until it lands.
+/// Noisy real-ride runs still failing during the Task 8 rework, skipped
+/// until it is done.
 const _redRealNoise = <String>{
   'ride 6 · across the seam reversed · correlated walk σ3 ρ0.9',
-  'ride 6 · across the seam reversed · gaussian σ5',
-  'ride 6 · across the seam reversed · uniform ±5 m',
   'ride 6 · across the seam · correlated walk σ3 ρ0.9',
-  'ride 6 · across the seam · gaussian σ5',
-  'ride 6 · across the seam · uniform ±5 m',
   'ride 6 · itself from the start · correlated walk σ3 ρ0.9',
   'ride 6 · itself from the start · gaussian σ5',
-  'ride 6 · itself from the start · uniform ±5 m',
   'ride 6 · reversed from 60 % · correlated walk σ3 ρ0.9',
-  'ride 6 · reversed from 60 % · gaussian σ5',
-  'ride 6 · reversed from 60 % · uniform ±5 m',
   'ride 6 · reversed from the finish · correlated walk σ3 ρ0.9',
   'ride 6 · reversed from the finish · gaussian σ5',
   'ride 6 · reversed from the finish · uniform ±5 m',
-  'ride 7 · itself from 40 % · correlated walk σ3 ρ0.9',
-  'ride 7 · itself from the start · correlated walk σ3 ρ0.9',
-  'ride 7 · reversed from the finish · correlated walk σ3 ρ0.9',
 };
 
 const _fwd = FollowDirection.forward;
@@ -436,10 +331,9 @@ final _scenarios = <Scenario>[
   // and ridden the reverse way, the rider goes up the stem, which is the same
   // road either way. At the top of the stem forward (then flipped), reverse
   // decided on its own (no flip) and undecided (the flip forces reverse) are
-  // all accepted, and "to go" is only checked from there on. A flip starts a
-  // fresh lap (#55): "to go" then overstates by the stem and "finished" is
-  // missing at the true end. The suite asserts that current behaviour: lap
-  // and finish are measured from the flip.
+  // all accepted, and "to go" is only checked from there on. The flip
+  // corrects the direction rather than following a U-turn, so the lap and
+  // the finish still run from the true join.
   Scenario(
     'lollipop · joined at the start/finish, ridden reverse: forward by '
     'default, flipped at the top of the stem · cruise',
@@ -447,6 +341,7 @@ final _scenarios = <Scenario>[
     expected: _rev,
     endsAtFinish: true,
     remainingBeforeFlip: false,
+    flipCorrects: true,
     metrics: const [
       Metric.direction,
       Metric.remaining,

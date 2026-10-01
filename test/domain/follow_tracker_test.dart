@@ -111,28 +111,46 @@ void main() {
       expect(identical(t.orientedTrack, t.track), isTrue);
     });
 
-    test('join mid-route + 25 m forward → forward, range 150–180', () {
-      final t = _ride(_straight, [at(150, 0), at(165, 0), at(180, 0)]);
+    test('join mid-route + 40 m forward → forward, range 150–190', () {
+      final t = _ride(_straight, [at(150, 0), at(170, 0), at(190, 0)]);
       expect(t.direction, FollowDirection.forward);
-      expect(t.progress!.alongM, closeTo(180, 0.5));
+      expect(t.progress!.alongM, closeTo(190, 0.5));
       expect(t.range!.loM, closeTo(150, 0.5));
-      expect(t.range!.hiM, closeTo(180, 0.5));
+      expect(t.range!.hiM, closeTo(190, 0.5));
     });
 
-    test('join mid-route + 25 m back → reverse, along 180', () {
-      final t = _ride(_straight, [at(150, 0), at(140, 0), at(130, 0)]);
+    test('join mid-route + 40 m back → reverse, along 190', () {
+      final t = _ride(_straight, [at(150, 0), at(140, 0), at(120, 0)]);
       expect(t.direction, FollowDirection.undecided);
-      final r = t.next(at(120, 0));
+      final r = t.next(at(110, 0));
       expect(r.direction, FollowDirection.reverse);
-      expect(r.progress!.alongM, closeTo(180, 0.5));
-      expect(r.range!.loM, closeTo(120, 0.5));
+      expect(r.progress!.alongM, closeTo(190, 0.5));
+      expect(r.range!.loM, closeTo(110, 0.5));
+      expect(r.range!.hiM, closeTo(150, 0.5));
+    });
+
+    test('GPS jitter 16 m ahead while standing at the join, then 36 m back '
+        '→ reverse, range 114–150', () {
+      final t = _ride(_straight, [
+        at(150, 0),
+        at(158, 0),
+        at(150, 0),
+        at(166, 0),
+        at(150, 0),
+        at(140, 0),
+        at(125, 0),
+      ]);
+      expect(t.direction, FollowDirection.undecided);
+      final r = t.next(at(114, 0));
+      expect(r.direction, FollowDirection.reverse);
+      expect(r.range!.loM, closeTo(114, 0.5));
       expect(r.range!.hiM, closeTo(150, 0.5));
     });
 
     test('decided forward: the range grows to the furthest point', () {
-      final t = _ride(_straight, [at(150, 0), at(180, 0), at(250, 0)]);
+      final t = _ride(_straight, [at(150, 0), at(190, 0), at(230, 0)]);
       expect(t.range!.loM, closeTo(150, 0.5));
-      expect(t.range!.hiM, closeTo(250, 0.5));
+      expect(t.range!.hiM, closeTo(230, 0.5));
     });
 
     test('decided reverse: the range grows in original metres', () {
@@ -142,11 +160,11 @@ void main() {
     });
 
     test('loop joined at its start and ridden forward (C1) → forward, range '
-        'within 0–30', () {
-      final t = _ride(_loop(5), [at(0, 1), at(10, 0), at(20, 0), at(30, 0)]);
+        'within 0–40', () {
+      final t = _ride(_loop(5), [at(0, 1), at(10, 0), at(25, 0), at(40, 0)]);
       expect(t.direction, FollowDirection.forward);
       expect(t.range!.loM, lessThanOrEqualTo(1));
-      expect(t.range!.hiM, closeTo(30, 0.5));
+      expect(t.range!.hiM, closeTo(40, 0.5));
     });
 
     test('loop joined at its start: the join alone decides nothing', () {
@@ -162,23 +180,23 @@ void main() {
         expect(t.direction, isNot(FollowDirection.reverse));
         expect(t.progress!.isFinished, isFalse);
       }
-      expect(t.next(at(30, 0)).direction, FollowDirection.forward);
+      expect(t.next(at(40, 0)).direction, FollowDirection.forward);
     });
 
-    test('out-and-back joined at 50 and ridden to 80 → forward, range within '
-        '50–80.5', () {
+    test('out-and-back joined at 50 and ridden to 90 → forward, range within '
+        '50–90.5', () {
       final t = _ride(
         [at(0, 0), at(200, 0), at(0, 3)],
-        [at(50, 0), at(60, 0), at(80, 0)],
+        [at(50, 0), at(70, 0), at(90, 0)],
       );
       expect(t.direction, FollowDirection.forward);
       expect(t.range!.loM, closeTo(50, 0.5));
-      expect(t.range!.hiM, lessThanOrEqualTo(80.5));
+      expect(t.range!.hiM, lessThanOrEqualTo(90.5));
     });
 
-    test('a jump to another pass adds no advance: forward jumps along the '
-        'loop, reverse rides 30 m → reverse', () {
-      final t = _ride(_loop(5), [at(0, 5), at(0, 15), at(0, 25), at(0, 35)]);
+    test('joined at a loop\'s finish end, the start nearby is no advance: '
+        'ridden 40 m back → reverse', () {
+      final t = _ride(_loop(5), [at(0, 5), at(0, 15), at(0, 30), at(0, 45)]);
       expect(t.direction, FollowDirection.reverse);
     });
 
@@ -195,8 +213,10 @@ void main() {
       final t = _ride(_loop(5), [
         for (var e = 5.0; e <= 85; e += 10) at(0, e),
       ]);
-      expect(t.range!.loM, closeTo(315, 0.5));
-      expect(t.range!.hiM, lessThanOrEqualTo(395.5));
+      // The range is in metres of the route laid out twice: either lap.
+      final lapM = t.track.lengthM;
+      expect(t.range!.loM % lapM, closeTo(315, 0.5));
+      expect(t.range!.hiM - t.range!.loM, lessThanOrEqualTo(80.5));
     });
 
     test('loop joined 2.8 m off its start and ridden backwards → reverse, '
@@ -221,10 +241,11 @@ void main() {
     });
 
     test('decided forward: a jump to another pass extends nothing', () {
-      final t = _ride(_loop(5), [at(0, 1), at(10, 0), at(20, 0), at(30, 0)]);
+      final t = _ride(_loop(5), [at(0, 1), at(15, 0), at(30, 0), at(45, 0)]);
       expect(t.direction, FollowDirection.forward);
-      final j = t.next(at(0, 20));
-      expect(j.progress!.alongM, closeTo(380, 0.5));
+      // Far from the progress point: not on its pass any more.
+      final j = t.next(at(0, 60));
+      expect(j.progress!.alongM, closeTo(340, 0.5));
       expect(j.range!.loM, t.range!.loM);
       expect(j.range!.hiM, t.range!.hiM);
     });
@@ -293,12 +314,12 @@ void main() {
       expect(t.riddenIntervals, isEmpty);
     });
 
-    test('open route: one ridden interval, 150–180', () {
-      final t = _ride(_straight, [at(150, 0), at(165, 0), at(180, 0)]);
+    test('open route: one ridden interval, 150–190', () {
+      final t = _ride(_straight, [at(150, 0), at(170, 0), at(190, 0)]);
       expect(t.riddenIntervals, hasLength(1));
       final (from, to) = t.riddenIntervals.single;
       expect(from, closeTo(150, 0.5));
-      expect(to, closeTo(180, 0.5));
+      expect(to, closeTo(190, 0.5));
     });
 
     test('square loop joined at 340 and ridden across the seam to north 60: '
@@ -379,20 +400,21 @@ void main() {
       expect(trace.any((t) => t.progress!.isFinished), isFalse);
     });
 
-    test('loop joined at its start and ridden forward 30 m (C1) → interval '
-        '0–30, not finished', () {
+    test('loop joined at its start and ridden forward 40 m (C1) → interval '
+        '0–40, not finished', () {
       final trace = _trace(_loop(5), [
         at(0, 1),
         at(10, 0),
         at(20, 0),
         at(30, 0),
+        at(40, 0),
       ]);
       final t = trace.last;
       expect(t.direction, FollowDirection.forward);
       expect(t.riddenIntervals, hasLength(1));
       final (from, to) = t.riddenIntervals.single;
       expect(from, lessThanOrEqualTo(1));
-      expect(to, closeTo(30, 0.5));
+      expect(to, closeTo(40, 0.5));
       expect(trace.any((t) => t.progress!.isFinished), isFalse);
     });
 
@@ -452,18 +474,54 @@ void main() {
       expect(to, closeTo(380, 0.5));
     });
 
-    test('flip on a loop after deciding reverse in lap 1: one interval 10–40, '
+    test('flip on a loop after deciding reverse in lap 1: one interval 10–50, '
         'remaining ≈ 370', () {
       final t = _ride(_square, [
-        for (var n = 40.0; n >= 10; n -= 10) at(n, 0),
+        for (var n = 50.0; n >= 10; n -= 10) at(n, 0),
       ]);
       expect(t.direction, FollowDirection.reverse);
       final f = t.flip().next(at(20, 0)).next(at(30, 0)).next(at(40, 0));
       expect(f.riddenIntervals, hasLength(1), reason: '${f.riddenIntervals}');
       final (from, to) = f.riddenIntervals.single;
       expect(from, closeTo(10, 0.5));
-      expect(to, closeTo(40, 0.5));
+      expect(to, closeTo(50, 0.5));
       expect(f.progress!.remainingM, closeTo(370, 0.5));
+    });
+
+    test('square loop joined 20 m before the start/finish and ridden across '
+        'it → the lap runs from the join: remaining ≈ 350 after 50 m', () {
+      final t = _ride(_square, [
+        for (var e = 20.0; e >= 0; e -= 10) at(0, e),
+        for (var n = 10.0; n <= 30; n += 10) at(n, 0),
+      ]);
+      expect(t.direction, FollowDirection.forward);
+      expect(t.progress!.remainingM, closeTo(350, 1));
+    });
+
+    test('out-and-back ridden out with the GPS nearer the way back: progress '
+        'stays on the way out until the turnaround', () {
+      final trace = _trace(_outAndBack, [
+        for (var n = 100.0; n <= 190; n += 5) at(n, 2.5),
+      ]);
+      expect(trace.last.direction, FollowDirection.forward);
+      for (final t in trace) {
+        expect(t.progress!.alongM, lessThanOrEqualTo(191), reason: '$t');
+      }
+    });
+
+    test('lollipop joined at its start/finish, ridden up the stem (forward by '
+        'default) and flipped at the top: a correction, the lap still runs '
+        'from the join (#55)', () {
+      final t = _ride(_lollipop, [
+        for (var n = 0.0; n <= 300; n += 10) at(n, 0),
+      ]);
+      expect(t.direction, FollowDirection.forward);
+      final f = t.flip();
+      expect(f.direction, FollowDirection.reverse);
+      expect(f.progress!.remainingM, closeTo(1100, 2));
+      final on = f.next(at(300, 10)).next(at(300, 20));
+      expect(on.progress!.remainingM, closeTo(1080, 2));
+      expect(on.progress!.isFinished, isFalse);
     });
 
     test('a finished loop lap stays finished: riding 60 m on past the join '
@@ -480,20 +538,21 @@ void main() {
 
     test('decided forward on a loop: a jump to another pass does not finish '
         'the lap', () {
-      final t = _ride(_loop(5), [at(0, 1), at(10, 0), at(20, 0), at(30, 0)]);
-      final j = t.next(at(0, 20));
-      expect(j.progress!.alongM, closeTo(380, 0.5));
+      final t = _ride(_loop(5), [at(0, 1), at(15, 0), at(30, 0), at(45, 0)]);
+      // Far from the progress point: not on its pass any more.
+      final j = t.next(at(0, 60));
+      expect(j.progress!.alongM, closeTo(340, 0.5));
       expect(j.progress!.isFinished, isFalse);
-      // The jump is re-based into the join: the lap less the 30 m ridden.
-      expect(j.progress!.remainingM, closeTo(365, 0.5));
+      // The jump is re-based into the join: the lap less the 45 m ridden.
+      expect(j.progress!.remainingM, closeTo(350, 0.5));
     });
 
     for (final joinM in <double>[2, 5, 8, 12, 20]) {
       test('out-and-back joined ${joinM.round()} m past its start and ridden forward to '
-          '50 → never reverse, forward', () {
+          '60 → never reverse, forward', () {
         final trace = _trace(_outAndBack, [
           at(joinM, 0),
-          for (final n in <double>[20, 30, 40, 50])
+          for (final n in <double>[20, 30, 40, 50, 60])
             if (n > joinM) at(n, 0),
         ]);
         for (final t in trace) {
@@ -517,12 +576,12 @@ void main() {
     test('decided forward on a loop, then off route and back on it behind '
         'the join → remaining at most one lap', () {
       final trace = _trace(_square, [
-        for (var e = 60.0; e >= 30; e -= 10) at(0, e),
+        for (var e = 70.0; e >= 30; e -= 10) at(0, e),
         at(-40, 30),
         at(-40, 80),
         at(0, 80),
       ]);
-      expect(trace[3].direction, FollowDirection.forward);
+      expect(trace[4].direction, FollowDirection.forward);
       expect(trace.last.progress!.isOffRoute, isFalse);
       for (final t in trace) {
         expect(t.progress!.remainingM, inInclusiveRange(0, 400));

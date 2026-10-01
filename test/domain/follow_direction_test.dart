@@ -66,62 +66,31 @@ void main() {
   });
 
   group('decideDirection', () {
-    test('no advance is undecided', () {
-      expect(
-        decideDirection(forwardAdvanceM: 0, reverseAdvanceM: 0),
-        FollowDirection.undecided,
-      );
+    const d = followDirectionDecisionM;
+
+    test('no displacement is undecided', () {
+      expect(decideDirection(const []), FollowDirection.undecided);
     });
 
-    test('just under the threshold is undecided', () {
-      expect(
-        decideDirection(forwardAdvanceM: 24.9, reverseAdvanceM: 0),
-        FollowDirection.undecided,
-      );
+    test('just short of the decision distance ahead is undecided', () {
+      expect(decideDirection(const [d - 0.1]), FollowDirection.undecided);
     });
 
-    test('forward advance at the threshold is forward', () {
-      expect(
-        decideDirection(forwardAdvanceM: 25, reverseAdvanceM: 0),
-        FollowDirection.forward,
-      );
+    test('the decision distance ahead is forward', () {
+      expect(decideDirection(const [d]), FollowDirection.forward);
     });
 
-    test('reverse advance at the threshold is reverse', () {
-      expect(
-        decideDirection(forwardAdvanceM: 0, reverseAdvanceM: 25),
-        FollowDirection.reverse,
-      );
+    test('just short of the decision distance behind is undecided', () {
+      expect(decideDirection(const [-d + 0.1]), FollowDirection.undecided);
     });
 
-    test('a tie goes to forward', () {
-      expect(
-        decideDirection(forwardAdvanceM: 30, reverseAdvanceM: 30),
-        FollowDirection.forward,
-      );
+    test('the decision distance behind is reverse', () {
+      expect(decideDirection(const [-d]), FollowDirection.reverse);
     });
 
-    test('forward wins when both advances reached the threshold', () {
-      expect(
-        decideDirection(forwardAdvanceM: 25, reverseAdvanceM: 40),
-        FollowDirection.forward,
-      );
-    });
-
-    test('reverse reaching the threshold while forward is at 15 is forward',
-        () {
-      expect(
-        decideDirection(forwardAdvanceM: 15, reverseAdvanceM: 25),
-        FollowDirection.forward,
-      );
-    });
-
-    test('reverse reaching the threshold while forward is at 14.9 is reverse',
-        () {
-      expect(
-        decideDirection(forwardAdvanceM: 14.9, reverseAdvanceM: 25),
-        FollowDirection.reverse,
-      );
+    test('ahead on one pass and behind on another (the same road both ways) '
+        'is forward', () {
+      expect(decideDirection(const [-d, d]), FollowDirection.forward);
     });
   });
 

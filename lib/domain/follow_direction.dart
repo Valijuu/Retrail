@@ -6,7 +6,7 @@ import 'route_progress.dart';
 enum FollowDirection { undecided, forward, reverse }
 
 /// Distance a rider must move along the route before the direction is decided.
-const double followDirectionDecisionM = 25;
+const double followDirectionDecisionM = 35;
 
 /// Direction decided at the join: forward in the start zone, reverse in the
 /// finish zone, undecided elsewhere and always on a loop. On a short open
@@ -31,28 +31,17 @@ FollowDirection directionAtJoin(
   return FollowDirection.undecided;
 }
 
-/// Forward advance at which reverse reaching [followDirectionDecisionM] still
-/// decides forward.
-const double followDirectionTieBandM = 15;
-
-/// Forward/reverse once either advance reaches [followDirectionDecisionM]
-/// (forward wins when both reach it in the same fix), else undecided.
-///
-/// On a stretch where the route runs both ways along the same road (an
-/// out-and-back, a lollipop's stem) both trackers advance, so reverse
-/// reaching the threshold while forward has advanced [followDirectionTieBandM]
-/// or more is a tie, and forward is the default.
-FollowDirection decideDirection({
-  required double forwardAdvanceM,
-  required double reverseAdvanceM,
-}) {
-  if (forwardAdvanceM >= followDirectionDecisionM) {
+/// Forward once a signed displacement along the route since the join
+/// reaches [followDirectionDecisionM] ahead, reverse once one reaches it
+/// behind, else undecided. Where the route runs both ways along one road
+/// (an out-and-back, a lollipop's stem) the rider is ahead on one pass and
+/// behind on the other: forward is the default.
+FollowDirection decideDirection(Iterable<double> signedM) {
+  if (signedM.any((m) => m >= followDirectionDecisionM)) {
     return FollowDirection.forward;
   }
-  if (reverseAdvanceM >= followDirectionDecisionM) {
-    return forwardAdvanceM >= followDirectionTieBandM
-        ? FollowDirection.forward
-        : FollowDirection.reverse;
+  if (signedM.any((m) => m <= -followDirectionDecisionM)) {
+    return FollowDirection.reverse;
   }
   return FollowDirection.undecided;
 }

@@ -346,7 +346,7 @@ void main() {
 
     test('the ridden part spans the join to the furthest point', () {
       follow(_straight);
-      ride([at(150, 0), at(165, 0), at(180, 0), at(250, 0)]);
+      ride([for (var n = 150.0; n <= 250; n += 20) at(n, 0)]);
       final r = state().ridden.single;
       expect(_northM(r.first), closeTo(150, 0.5));
       expect(_northM(r.last), closeTo(250, 0.5));
@@ -385,7 +385,11 @@ void main() {
 
     test('a loop\'s ridden segments are kept while they do not grow', () {
       follow(_square);
-      ride([for (var e = 60.0; e >= 0; e -= 10) at(0, e), at(10, 0)]);
+      ride([
+        for (var e = 60.0; e >= 0; e -= 10) at(0, e),
+        at(10, 0),
+        at(10, 0),
+      ]);
       final before = state().ridden;
       ride([at(10, 5)]);
       expect(identical(state().ridden, before), isTrue);
