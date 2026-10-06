@@ -202,7 +202,7 @@ class RideMapArea extends StatelessWidget {
             left: kMapControlSize + 2 * kMapControlInset,
             right: kMapControlSize + 2 * kMapControlInset,
             bottom: kMapAttributionInset,
-            child: Center(child: MapAttribution(onOpen: openMapCopyright)),
+            child: Center(child: MapAttribution(onOpen: openMapCopyright, collapsible: true)),
           ),
         if (!masked && !isFollowing)
           Positioned(

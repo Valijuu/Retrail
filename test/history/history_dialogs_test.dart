@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
@@ -19,7 +20,7 @@ import '../support/live_map_stub.dart';
 
 Widget _host(Widget child,
         {Locale? locale, Brightness brightness = Brightness.light}) =>
-    MaterialApp(
+    ProviderScope(child: MaterialApp(
       locale: locale,
       theme: buildTheme(brightness),
       localizationsDelegates: const [
@@ -30,7 +31,7 @@ Widget _host(Widget child,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(body: child),
-    );
+    ));
 
 Ride _ride() => const Ride(
       rideId: 1,
@@ -415,13 +416,16 @@ void main() {
             durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
         onDismiss: () {},
       )));
-      expect(tester.widget<MapAttribution>(find.byType(MapAttribution)).onOpen,
-          isNotNull);
+      final credit = tester.widget<MapAttribution>(find.byType(MapAttribution));
+      expect(credit.onOpen, isNotNull);
+      expect(credit.collapsible, isTrue);
 
       await tester.tap(find.byIcon(Icons.fullscreen));
       await tester.pump();
-      expect(tester.widget<MapAttribution>(find.byType(MapAttribution)).onOpen,
-          isNotNull);
+      final fullscreenCredit =
+          tester.widget<MapAttribution>(find.byType(MapAttribution));
+      expect(fullscreenCredit.onOpen, isNotNull);
+      expect(fullscreenCredit.collapsible, isTrue);
     });
 
     testWidgets('no route: no map credit', (tester) async {

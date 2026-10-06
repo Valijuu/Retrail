@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/features/active_ride/widgets/ride_chrome.dart';
@@ -15,7 +16,7 @@ void main() {
   Future<void> pumpArea(WidgetTester tester,
       {VoidCallback? onReverse, bool masked = false, bool isFollowing = true})
       async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(ProviderScope(child: MaterialApp(
       theme: buildTheme(Brightness.light),
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -34,7 +35,7 @@ void main() {
           onReverse: onReverse,
         ),
       ),
-    ));
+    )));
   }
 
   testWidgets('onReverse set: the reverse button shows and calls it',
@@ -52,6 +53,7 @@ void main() {
     await pumpArea(tester, onReverse: () {}, isFollowing: false);
     final credit = tester.widget<MapAttribution>(find.byType(MapAttribution));
     expect(credit.onOpen, isNotNull);
+    expect(credit.collapsible, isTrue, reason: 'a live map collapses it to ⓘ');
   });
 
   testWidgets('masked (leaving): no map credit over the cover', (tester) async {
