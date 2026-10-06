@@ -71,8 +71,8 @@ Future<PreviewResult> renderPreviewPng({
     // then lands 1:1 instead of being resampled between pixels, which blurred
     // labels and thin roads. The shift is under half a device pixel.
     final dst = ui.Rect.fromLTWH(
-        _snap(t.offsetXDp, pixelRatio),
-        _snap(t.offsetYDp, pixelRatio),
+        snapToDevicePixel(t.offsetXDp, pixelRatio),
+        snapToDevicePixel(t.offsetYDp, pixelRatio),
         tileSize.toDouble(),
         tileSize.toDouble());
     canvas.drawImageRect(
@@ -149,6 +149,8 @@ Future<PreviewResult> renderSketchPng({
   return PreviewResult(bytes!.buffer.asUint8List(), complete: false);
 }
 
-/// [dp] rounded to the nearest whole device pixel at [pixelRatio].
-double _snap(double dp, double pixelRatio) =>
-    (dp * pixelRatio).roundToDouble() / pixelRatio;
+/// [dp] rounded to the nearest whole device pixel at [pixelRatio], halves
+/// always up: rounding halves away from zero moved a tile left of zero and
+/// its right neighbour apart by one pixel, leaving a terrain-coloured seam.
+double snapToDevicePixel(double dp, double pixelRatio) =>
+    (dp * pixelRatio + 0.5).floorToDouble() / pixelRatio;

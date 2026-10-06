@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -14,9 +14,6 @@ const _tileJson =
     '{"tiles":["https://t.example/planet/v1/{z}/{x}/{y}.pbf"],"maxzoom":14}';
 final _pbf = File('test/fixtures/map/14_8675_5426.pbf').readAsBytesSync();
 
-/// A town tile with street names (Wernigerode old town, public OSM data).
-final _townPbf = File('test/fixtures/map/14_8682_5424.pbf').readAsBytesSync();
-
 /// Bundled styles from disk (the provider loads them through [loadAsset]).
 Future<String> _asset(String path) async => File(path).readAsString();
 
@@ -25,9 +22,6 @@ class _Server {
   int tileJsonCalls = 0;
   int Function(Uri tile)? tileStatus;
   bool tileJsonFails = false;
-
-  /// The tile body served; null = the Brocken fixture.
-  List<int>? tileBytes;
 
   MockClient get client => MockClient((r) async {
     requests.add(r);
@@ -38,7 +32,7 @@ class _Server {
     }
     final status = tileStatus?.call(r.url) ?? 200;
     return status == 200
-        ? http.Response.bytes(tileBytes ?? _pbf, 200)
+        ? http.Response.bytes(_pbf, 200)
         : http.Response('', status);
   });
 
@@ -80,13 +74,12 @@ void main() {
   /// [_pbf] painted the way the provider paints a z14 tile, with [zoom] for
   /// the style and [painter] for labels.
   Future<List<int>> reference(double zoom, vtr.TextPainterProvider painter,
-      {List<int>? pbf}) async {
+) async {
     final style = previewStyle(
         jsonDecode(await _asset(kRetrailLightStyleAsset)) as Map<String, dynamic>);
     final theme = vtr.ThemeReader().read(style);
     final tile = vtr.TileFactory(theme, const vtr.Logger.noop())
-        .createTileData(vtr.VectorTileReader().read(
-            Uint8List.fromList(pbf ?? _pbf)))
+        .createTileData(vtr.VectorTileReader().read(_pbf))
         .toTile();
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder)..scale(3);
@@ -99,8 +92,8 @@ void main() {
     return bytes!.buffer.asUint8List();
   }
 
-  Future<List<int>> providerTile({List<int>? pbf}) async {
-    final server = _Server()..tileBytes = pbf;
+  Future<List<int>> providerTile() async {
+    final server = _Server();
     final image =
         await provider(server).tile(14, 8675, 5426, ui.Brightness.light);
     final bytes = (await image!.toByteData())!.buffer.asUint8List();
@@ -144,12 +137,39 @@ void main() {
     expect(bytes, equals(await reference(13, scaled)));
   });
 
-  test('draws labels smaller than the style says (kPreviewLabelScale): the '
-      'small preview is shown stretched across the card', () async {
-    final bytes = await providerTile(pbf: _townPbf);
-    expect(bytes, isNot(equals(await reference(13,
-        const vtr.DefaultTextPainterProvider(), pbf: _townPbf))));
-    expect(bytes, equals(await reference(13, scaled, pbf: _townPbf)));
+  group('PreviewTextPainterProvider', () {
+    final symbol = vtr.StyledSymbol(
+      text: 'Altenfurter Straße',
+      style: vtr.SymbolStyle(
+        textAlign: TextAlign.center,
+        textStyle: const TextStyle(
+          fontSize: 12,
+          shadows: [
+            ui.Shadow(offset: ui.Offset(-1, -1), blurRadius: 1),
+            ui.Shadow(offset: ui.Offset(1, 1), blurRadius: 1),
+          ],
+        ),
+      ),
+    );
+
+    test('lays labels out at kPreviewLabelScale of the style size: the small '
+        'preview is shown stretched across the card', () {
+      expect(kPreviewLabelScale, lessThan(1));
+      final scaled = const PreviewTextPainterProvider(kPreviewLabelScale)
+          .provide(symbol);
+      final full = const vtr.DefaultTextPainterProvider().provide(symbol);
+      expect(scaled.width, closeTo(full.width * kPreviewLabelScale, 1));
+      expect(scaled.height, closeTo(full.height * kPreviewLabelScale, 1));
+    });
+
+    test('gives labels the centred halo (previewHalo), not vtr\'s diagonal '
+        'copies', () {
+      final painter = const PreviewTextPainterProvider(kPreviewLabelScale)
+          .provide(symbol);
+      final shadows = (painter.text! as TextSpan).style!.shadows!;
+      expect(shadows, isNotEmpty);
+      expect(shadows.every((s) => s.offset == ui.Offset.zero), isTrue);
+    });
   });
 
   test(

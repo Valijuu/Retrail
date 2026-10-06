@@ -9,8 +9,8 @@ import 'dart:convert';
 const String kOpenFreeMapTileJsonUrl = 'https://tiles.openfreemap.org/planet';
 
 /// Bundled styles (`tool/build_map_styles.dart`) for the live map and the
-/// previews: Retrail Light (OpenFreeMap Liberty toned down) and Retrail Dark
-/// (OpenFreeMap Dark lifted onto the app's dark terrain).
+/// previews: Retrail Light (OpenFreeMap Liberty in MapTiler topo-v2's
+/// colours) and Retrail Dark (OpenFreeMap Dark in MapTiler basic-v2-dark's).
 const String kRetrailLightStyleAsset = 'assets/map/retrail_light.json';
 const String kRetrailDarkStyleAsset = 'assets/map/retrail_dark.json';
 

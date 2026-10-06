@@ -282,7 +282,7 @@ const double kMapControlSize = 40.0;
 const double kLiveMapMinZoom = 3.0;
 const double kLiveMapMaxZoom = 19.0;
 
-/// Live/active-ride map: a native MapLibre vector basemap (OpenFreeMap Liberty / Retrail Dark)
+/// Live/active-ride map: a native MapLibre vector basemap (Retrail Light / Retrail Dark)
 /// with the halo + blue route line and start/end + current-position dots drawn as
 /// GeoJSON source layers. The camera follows the current position.
 ///
@@ -1182,7 +1182,7 @@ class _LiveMapState extends State<LiveMap>
         fit: StackFit.expand,
         children: [
           MapLibreMap(
-            // Rebuild on brightness change to reload Liberty / Retrail Dark.
+            // Rebuild on brightness change to reload Retrail Light / Retrail Dark.
             key: ValueKey(dark),
             options: MapOptions(
               initStyle: liveMapStyle(dark),

@@ -104,6 +104,18 @@ void main() {
     expect(grey, 0, reason: 'top row pixels resampled into grey');
   });
 
+  test('snapping keeps neighbouring tiles exactly one tile apart, so no '
+      'pixel column is left uncovered between them — also when a tile edge '
+      'sits half a device pixel either side of zero', () {
+    const ratio = 3.0;
+    for (final px in [-0.5, -1.5, 0.5, 2.5, -383.5]) {
+      final left = px / ratio;
+      final right = left + 256;
+      expect(snapToDevicePixel(right, ratio) - snapToDevicePixel(left, ratio),
+          closeTo(256, 1e-9), reason: 'tile edge at $px px');
+    }
+  });
+
   test('renders even when tiles are unavailable, but flags it incomplete',
       () async {
     final result = await renderPreviewPng(
