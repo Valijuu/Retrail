@@ -52,6 +52,7 @@ dependencies:
   maplibre: ^0.3.6
   meta: ^1.17.0 # @visibleForTesting in pure-Dart domain code
   flutter_svg: ^2.3.0
+  vector_tile_renderer: 6.1.0
 
 dev_dependencies:
   flutter_test:

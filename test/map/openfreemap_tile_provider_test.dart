@@ -1,0 +1,186 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:retrail/map/openfreemap.dart';
+import 'package:retrail/map/openfreemap_tile_provider.dart';
+
+const _tileJson =
+    '{"tiles":["https://t.example/planet/v1/{z}/{x}/{y}.pbf"],"maxzoom":14}';
+final _pbf = File('test/fixtures/map/14_8675_5426.pbf').readAsBytesSync();
+
+/// Bundled styles from disk (the provider loads them through [loadAsset]).
+Future<String> _asset(String path) async => File(path).readAsString();
+
+class _Server {
+  final requests = <http.Request>[];
+  int tileJsonCalls = 0;
+  int Function(Uri tile)? tileStatus;
+  bool tileJsonFails = false;
+
+  MockClient get client => MockClient((r) async {
+    requests.add(r);
+    if (r.url.toString() == kOpenFreeMapTileJsonUrl) {
+      tileJsonCalls++;
+      if (tileJsonFails) return http.Response('down', 503);
+      return http.Response(_tileJson, 200);
+    }
+    final status = tileStatus?.call(r.url) ?? 200;
+    return status == 200
+        ? http.Response.bytes(_pbf, 200)
+        : http.Response('', status);
+  });
+
+  List<Uri> get tileUrls => [
+    for (final r in requests)
+      if (r.url.toString() != kOpenFreeMapTileJsonUrl) r.url,
+  ];
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  OpenFreeMapTileProvider provider(_Server s) =>
+      OpenFreeMapTileProvider(client: s.client, loadAsset: _asset);
+
+  test('a z14 tile becomes a 768 px image (256 dp × pixel ratio 3)', () async {
+    final s = _Server();
+    final image = await provider(s).tile(14, 8675, 5426, ui.Brightness.light);
+    expect(image, isNotNull);
+    expect([image!.width, image.height], [768, 768]);
+    image.dispose();
+  });
+
+  test('draws the tile\'s map features, not a flat background', () async {
+    final s = _Server();
+    final image = await provider(s).tile(14, 8675, 5426, ui.Brightness.light);
+    final bytes = await image!.toByteData();
+    image.dispose();
+    final pixels = bytes!.buffer.asUint32List();
+    expect(
+      pixels.toSet().length,
+      greaterThan(10),
+      reason:
+          'roads, woods and labels give many colours; a style that '
+          'matches no source layer paints only the background',
+    );
+  });
+
+  test(
+    'fetches the versioned URL from TileJSON with the Retrail user agent',
+    () async {
+      final s = _Server();
+      (await provider(s).tile(14, 8675, 5426, ui.Brightness.dark))?.dispose();
+      expect(s.tileUrls, [
+        Uri.parse('https://t.example/planet/v1/14/8675/5426.pbf'),
+      ]);
+      expect(
+        s.requests.every((r) => r.headers['User-Agent'] == kMapUserAgent),
+        isTrue,
+      );
+    },
+  );
+
+  test('resolves TileJSON once for many tiles', () async {
+    final s = _Server();
+    final p = provider(s);
+    (await p.tile(14, 8675, 5426, ui.Brightness.light))?.dispose();
+    (await p.tile(14, 8676, 5426, ui.Brightness.light))?.dispose();
+    expect(s.tileJsonCalls, 1);
+  });
+
+  test(
+    'a z16 grid tile draws from its z14 parent, fetched once for all four',
+    () async {
+      final s = _Server();
+      final p = provider(s);
+      final images = await Future.wait([
+        for (final (x, y) in [
+          (34700, 21704),
+          (34701, 21704),
+          (34700, 21705),
+          (34701, 21705),
+        ])
+          p.tile(16, x, y, ui.Brightness.light),
+      ]);
+      expect(images.every((i) => i != null && i.width == 768), isTrue);
+      for (final i in images) {
+        i!.dispose();
+      }
+      expect(s.tileUrls, [
+        Uri.parse('https://t.example/planet/v1/14/8675/5426.pbf'),
+      ]);
+    },
+  );
+
+  test('both themes share one fetched tile', () async {
+    final s = _Server();
+    final p = provider(s);
+    (await p.tile(14, 8675, 5426, ui.Brightness.light))?.dispose();
+    (await p.tile(14, 8675, 5426, ui.Brightness.dark))?.dispose();
+    expect(s.tileUrls, hasLength(1));
+  });
+
+  test(
+    'a 404 (data version moved on) gives null and re-resolves TileJSON',
+    () async {
+      final s = _Server()..tileStatus = (_) => 404;
+      final p = provider(s);
+      expect(await p.tile(14, 8675, 5426, ui.Brightness.light), isNull);
+      s.tileStatus = null;
+      (await p.tile(14, 8676, 5426, ui.Brightness.light))?.dispose();
+      expect(s.tileJsonCalls, 2);
+    },
+  );
+
+  test('a failed TileJSON gives null now and is retried later', () async {
+    final s = _Server()..tileJsonFails = true;
+    final p = provider(s);
+    expect(await p.tile(14, 8675, 5426, ui.Brightness.light), isNull);
+    s.tileJsonFails = false;
+    final image = await p.tile(14, 8675, 5426, ui.Brightness.light);
+    expect(image, isNotNull);
+    image!.dispose();
+    expect(s.tileJsonCalls, 2);
+  });
+
+  test('a failed tile is not cached: the next request fetches again', () async {
+    var fail = true;
+    final s = _Server()..tileStatus = (_) => fail ? 500 : 200;
+    final p = provider(s);
+    expect(await p.tile(14, 8675, 5426, ui.Brightness.light), isNull);
+    fail = false;
+    final image = await p.tile(14, 8675, 5426, ui.Brightness.light);
+    expect(image, isNotNull);
+    image!.dispose();
+  });
+
+  test('garbage bytes give null instead of throwing', () async {
+    final p = OpenFreeMapTileProvider(
+      client: MockClient(
+        (r) async => r.url.toString() == kOpenFreeMapTileJsonUrl
+            ? http.Response(_tileJson, 200)
+            : http.Response.bytes(utf8.encode('not a tile'), 200),
+      ),
+      loadAsset: _asset,
+    );
+    expect(await p.tile(14, 8675, 5426, ui.Brightness.light), isNull);
+  });
+
+  test('a hung request times out to null', () async {
+    final p = OpenFreeMapTileProvider(
+      client: MockClient(
+        (r) => Future.delayed(
+          const Duration(seconds: 5),
+          () => http.Response(_tileJson, 200),
+        ),
+      ),
+      loadAsset: _asset,
+      timeout: const Duration(milliseconds: 50),
+    );
+    expect(await p.tile(14, 8675, 5426, ui.Brightness.light), isNull);
+  });
+}
