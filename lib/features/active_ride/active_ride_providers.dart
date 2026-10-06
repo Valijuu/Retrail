@@ -5,8 +5,7 @@ import 'package:flutter/material.dart' show ThemeMode, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
-import '../../map/map_config.dart';
-import '../../map/maptiler_tile_provider.dart';
+import '../../map/openfreemap_tile_provider.dart';
 import '../../map/preview_projection.dart';
 import '../../map/preview_snapshot.dart';
 import '../../map/route_preview_cache.dart';
@@ -36,7 +35,7 @@ final previewCacheDirProvider = Provider<Directory>(
 /// same instance so previews are generated once and reused.
 final routePreviewCacheProvider = Provider<RoutePreviewCache>((ref) {
   final dir = ref.watch(previewCacheDirProvider);
-  final tiles = MapTilerTileProvider(apiKey: MapConfig.mapTilerKey);
+  final tiles = OpenFreeMapTileProvider();
   final cache = RoutePreviewCache(
     baseDir: dir,
     render: buildPreviewRenderer(

@@ -26,8 +26,9 @@ typedef PreviewRenderer = Future<PreviewResult> Function(
 /// v5 — previewPixelRatio 2.0 → 3.0 (sharper); v6 — start ring, finish flag,
 /// loop marker and direction arrows. A new directory makes existing rides
 /// re-render instead of serving the outdated PNG (`RoutePreviewCache.purgeOutdatedVersions`
-/// clears the old ones).
-const int _cacheVersion = 6;
+/// clears the old ones); v7 — OpenFreeMap vector tiles replace MapTiler
+/// raster tiles (Spec 19).
+const int _cacheVersion = 7;
 const String _versionDir = 'ride_previews_v$_cacheVersion';
 final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
 

@@ -111,9 +111,8 @@ void main() {
         'high-density ratio stays within an imperceptible range', () {
       // 411dp (this file's test slot width) x a common 3.0 device ratio: the
       // largest realistic gap between rendered and displayed resolution.
-      // MapTiler's raster tiles cap at @2x, so fully closing this gap would
-      // need higher-resolution tiles MapTiler doesn't offer — 3.0 is the
-      // deliberate trade documented on [previewPixelRatio]. What must hold is
+      // The PNG is rendered once at [previewPixelRatio] and then scaled to
+      // the card, so it can't match every screen exactly. What must hold is
       // that the *remaining* upscale is small enough to not look blurry.
       const typicalPhysicalWidth = 411 * 3.0;
       final renderedPhysicalWidth = previewRenderWidthDp * previewPixelRatio;
