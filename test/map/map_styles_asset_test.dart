@@ -31,6 +31,24 @@ void main() {
     expect(_layer(light, 'water')['paint']['fill-color'], 'rgb(158,189,255)');
   });
 
+  test('Retrail Light draws buildings flat: no 3D extrusion (its dark walls '
+      'cluttered the tracking view)', () {
+    final types = [
+      for (final l in _style('retrail_light')['layers'] as List) l['type'],
+    ];
+    expect(types, isNot(contains('fill-extrusion')));
+  });
+
+  test('Retrail Light street names are darker with a ground-coloured halo', () {
+    final light = _style('retrail_light');
+    for (final id in ['highway-name-minor', 'highway-name-major']) {
+      final paint = _layer(light, id)['paint'] as Map;
+      expect(paint['text-color'], '#5A4E44', reason: id);
+      expect(paint['text-halo-color'], '#EEE5DA', reason: id);
+      expect(paint['text-halo-width'], 1.5, reason: id);
+    }
+  });
+
   test('Retrail Dark is a dark grey-green, a step darker than the app\'s '
       'dark terrain', () {
     final dark = _style('retrail_dark');

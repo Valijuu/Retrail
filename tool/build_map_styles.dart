@@ -16,11 +16,21 @@ const _lightPaint = <String, Map<String, String>>{
   'landuse_residential': {'fill-color': '#E6DBCE'},
   'building': {'fill-color': '#D7CABC'},
   'aeroway_fill': {'fill-color': '#E4DACE'},
-  'road_minor_casing': {'line-color': '#C9BCAE'},
-  'road_service_track_casing': {'line-color': '#C9BCAE'},
-  'tunnel_street_casing': {'line-color': '#C9BCAE'},
-  'tunnel_service_track_casing': {'line-color': '#C9BCAE'},
+  'road_minor_casing': {'line-color': '#BDAE9E'},
+  'road_service_track_casing': {'line-color': '#BDAE9E'},
+  'tunnel_street_casing': {'line-color': '#BDAE9E'},
+  'tunnel_service_track_casing': {'line-color': '#BDAE9E'},
+  // Street names: darker, with a halo in the ground colour (Liberty's thin
+  // #666 washed out on the warm ground).
+  'highway-name-minor': {'text-color': '#5A4E44', 'text-halo-color': '#EEE5DA'},
+  'highway-name-major': {'text-color': '#5A4E44', 'text-halo-color': '#EEE5DA'},
+  'highway-name-path': {'text-halo-color': '#EEE5DA'},
 };
+
+/// Liberty's 3D buildings: their dark walls cluttered the tracking view
+/// (Liberty's flat `building` fill stays).
+const _lightDroppedLayers = {'building-3d'};
+const _streetNameHaloWidth = 1.5;
 
 /// Retrail Dark: OpenFreeMap Dark (near black) lifted onto a dark grey-green
 /// a step below the app's DarkMapTerrain — the first version at that very
@@ -82,9 +92,14 @@ void _write(String name, Map<String, dynamic> style, String origin) {
 
 Future<void> main() async {
   final light = await _fetch('liberty');
-  for (final l in (light['layers'] as List).cast<Map<String, dynamic>>()) {
+  final lightLayers = (light['layers'] as List).cast<Map<String, dynamic>>()
+    ..removeWhere((l) => _lightDroppedLayers.contains(l['id']));
+  for (final l in lightLayers) {
     final paint = (l['paint'] ??= <String, dynamic>{}) as Map<String, dynamic>;
     paint.addAll(_lightPaint[l['id']] ?? const {});
+    if (l['id'] == 'highway-name-minor' || l['id'] == 'highway-name-major') {
+      paint['text-halo-width'] = _streetNameHaloWidth;
+    }
   }
   _write('retrail_light', light, 'liberty');
 
