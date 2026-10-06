@@ -25,7 +25,6 @@ iPhone 8 on iOS 16.7.
 ### 1. GitHub
 
 - **Repository secrets** (GitHub → Settings → Secrets and variables → Actions):
-  - `MAPTILER_KEY`: the key from your local `maptiler.json`.
   - `IPA_PASSWORD`: a long random passphrase (`openssl rand -base64 24`). Keep it in your
     password manager, because GitHub never shows it again.
 - The `gh` CLI must be logged in with the `workflow` scope:
@@ -189,7 +188,7 @@ build is installed, with a notification.
 | `splice` alias | `~/.bashrc` (last line) |
 | Anisette server | Docker container `anisette-v3`, volume `anisette-v3_data` |
 | IPA password | GNOME login keyring (`service=retrail-ios key=ipa-password`) |
-| GitHub secrets | `MAPTILER_KEY`, `IPA_PASSWORD` in the repo settings |
+| GitHub secrets | `IPA_PASSWORD` in the repo settings |
 
 ---
 
@@ -208,7 +207,7 @@ build is installed, with a notification.
 - **Community tooling:** Splice and the anisette server aren't Apple products and can break
   with new iOS versions.
 - **Public repo:** artifacts are downloadable by any GitHub user, which is why the `.ipa` is
-  AES-encrypted and only kept for 3 days. The MapTiler key is compiled into every build.
+  AES-encrypted and only kept for 3 days.
 
 ---
 

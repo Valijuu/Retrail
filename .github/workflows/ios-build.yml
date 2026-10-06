@@ -3,8 +3,8 @@
 # sideloaded onto a test iPhone (docs/ios-sideloading.md, Spec 6 §G/§H).
 #
 # The public repo makes workflow artifacts downloadable by any signed-in
-# GitHub user, and the MapTiler key is compiled into the app — so only an
-# AES-encrypted archive is uploaded, and only for a few days.
+# GitHub user — so only an AES-encrypted archive is uploaded, and only for a
+# few days.
 name: iOS build
 
 on:
@@ -56,9 +56,7 @@ jobs:
       - run: flutter pub get
 
       - name: Build Runner.app (release, unsigned)
-        env:
-          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
-        run: flutter build ios --release --no-codesign --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+        run: flutter build ios --release --no-codesign
 
       - name: Package Retrail.ipa and encrypt it
         env:

@@ -76,7 +76,7 @@ bundles).
 ## Build and check
 
 ```sh
-flutter build appbundle --release --dart-define-from-file=maptiler.json
+flutter build appbundle --release
 keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab
 ```
 

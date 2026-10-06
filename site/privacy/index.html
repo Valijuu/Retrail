@@ -39,9 +39,9 @@ E-Mail: <a href="mailto:vali_justus@live.de">vali_justus@live.de</a></p>
 <p><strong>Standort im Hintergrund:</strong> Damit eine Fahrt auch bei ausgeschaltetem Bildschirm weiter aufgezeichnet wird, nutzt die App unter Android einen Vordergrunddienst mit dauerhafter Benachrichtigung und unter iOS den Hintergrund-Standort mit einer Live-Aktivität. Das geschieht nur während einer laufenden Aufzeichnung bzw. während du einer Route folgst.</p>
 <p><strong>Standortbestimmung:</strong> Die Position wird über die Ortungsdienste des Betriebssystems ermittelt (unter Android ggf. über die Google Play-Dienste, unter iOS über Apple). Was dabei an Google bzw. Apple übermittelt wird, richtet sich nach deren Datenschutzbestimmungen und deinen Geräteeinstellungen.</p>
 
-<h2>4. Kartendienst (MapTiler)</h2>
-<p>Um die Karte anzuzeigen, lädt die App Kartenausschnitte („Kacheln“) und Kartenstile vom Dienst <strong>MapTiler AG</strong> (Schweiz). Dabei werden technisch notwendig übermittelt: deine <strong>IP-Adresse</strong>, Informationen zur App/zum Gerät (User-Agent) und der angefragte Kartenausschnitt – aus diesem lässt sich ungefähr ablesen, welche Gegend du dir gerade ansiehst. Deine aufgezeichneten Strecken werden nicht übermittelt.</p>
-<p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Darstellung einer Karte). Für die Schweiz besteht ein Angemessenheitsbeschluss der EU-Kommission. Datenschutzerklärung von MapTiler: <a href="https://www.maptiler.com/privacy-policy/">maptiler.com/privacy-policy</a>.</p>
+<h2>4. Kartendienst (OpenFreeMap)</h2>
+<p>Um die Karte anzuzeigen, lädt die App Kartendaten („Kacheln“), Kartenstile, Schriften und Symbole vom kostenlosen Dienst <strong>OpenFreeMap</strong> (<code>tiles.openfreemap.org</code>, ausgeliefert über das Netzwerk von Cloudflare). Dabei werden technisch notwendig übermittelt: deine <strong>IP-Adresse</strong>, Informationen zur App/zum Gerät (User-Agent) und der angefragte Kartenausschnitt – aus diesem lässt sich ungefähr ablesen, welche Gegend du dir gerade ansiehst. Deine aufgezeichneten Strecken werden nicht übermittelt. OpenFreeMap verwendet nach eigenen Angaben keine Konten und keine Cookies.</p>
+<p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Darstellung einer Karte). Nutzungsbedingungen von OpenFreeMap: <a href="https://openfreemap.org/tos/">openfreemap.org/tos</a>.</p>
 
 <h2>5. Verbindungsprüfung</h2>
 <p>Damit die App erkennt, ob du offline bist (und z. B. einen Hinweis anzeigt), sendet sie während der Nutzung regelmäßig eine kurze Anfrage ohne Inhalt an <code>clients3.google.com/generate_204</code> (Google Ireland Limited). Dabei erhält Google deine IP-Adresse und technische Verbindungsdaten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Datenschutzerklärung von Google: <a href="https://policies.google.com/privacy">policies.google.com/privacy</a>.</p>
@@ -63,7 +63,7 @@ E-Mail: <a href="mailto:vali_justus@live.de">vali_justus@live.de</a></p>
 <p>Du hast nach der DSGVO das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Da ich keine Daten von dir speichere, betreffen diese Rechte vor allem die Daten auf deinem Gerät, die du selbst verwaltest. Bei Fragen schreib mir an die oben genannte E-Mail-Adresse. Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.</p>
 
 <h2>10. Änderungen</h2>
-<p>Ändert sich die App so, dass andere Daten verarbeitet werden (z. B. ein anderer Kartendienst), passe ich diese Erklärung an. Es gilt die jeweils hier veröffentlichte Fassung.</p>
+<p>Ändert sich die App so, dass andere Daten verarbeitet werden (z. B. ein weiterer Dienst), passe ich diese Erklärung an. Es gilt die jeweils hier veröffentlichte Fassung.</p>
 </article>
 
 <hr>
@@ -97,9 +97,9 @@ Email: <a href="mailto:vali_justus@live.de">vali_justus@live.de</a></p>
 <p><strong>Background location:</strong> so a ride keeps recording with the screen off, the app uses a foreground service with a persistent notification on Android and background location with a Live Activity on iOS. This happens only while a recording is running or while you follow a route.</p>
 <p><strong>Positioning:</strong> your position is determined by the operating system's location services (on Android possibly via Google Play services, on iOS via Apple). What they transmit to Google or Apple is governed by their privacy policies and your device settings.</p>
 
-<h2>4. Map service (MapTiler)</h2>
-<p>To show the map, the app loads map tiles and map styles from <strong>MapTiler AG</strong> (Switzerland). This technically requires transmitting your <strong>IP address</strong>, app/device information (user agent) and the requested map area — which roughly shows which area you are looking at. Your recorded routes are not transmitted.</p>
-<p>Legal basis: Art. 6(1)(f) GDPR (legitimate interest in showing a map). Switzerland is covered by an adequacy decision of the European Commission. MapTiler's privacy policy: <a href="https://www.maptiler.com/privacy-policy/">maptiler.com/privacy-policy</a>.</p>
+<h2>4. Map service (OpenFreeMap)</h2>
+<p>To show the map, the app loads map data (“tiles”), map styles, fonts and icons from the free service <strong>OpenFreeMap</strong> (<code>tiles.openfreemap.org</code>, served through Cloudflare's network). This technically requires transmitting your <strong>IP address</strong>, app/device information (user agent) and the requested map area — which roughly shows which area you are looking at. Your recorded routes are not transmitted. According to OpenFreeMap, it uses no accounts and no cookies.</p>
+<p>Legal basis: Art. 6(1)(f) GDPR (legitimate interest in showing a map). OpenFreeMap's terms: <a href="https://openfreemap.org/tos/">openfreemap.org/tos</a>.</p>
 
 <h2>5. Connectivity check</h2>
 <p>To detect when you are offline (and show a notice, for example), the app regularly sends a short, empty request to <code>clients3.google.com/generate_204</code> (Google Ireland Limited) while in use. Google receives your IP address and technical connection data. Legal basis: Art. 6(1)(f) GDPR. Google's privacy policy: <a href="https://policies.google.com/privacy">policies.google.com/privacy</a>.</p>
@@ -121,7 +121,7 @@ Email: <a href="mailto:vali_justus@live.de">vali_justus@live.de</a></p>
 <p>Under the GDPR you have the right of access, rectification, erasure, restriction of processing, data portability and objection. As I store no data about you, these rights mainly concern the data on your device, which you manage yourself. For questions, email me at the address above. You also have the right to lodge a complaint with a data protection supervisory authority.</p>
 
 <h2>10. Changes</h2>
-<p>If the app changes so that other data is processed (e.g. a different map service), I will update this policy. The version published here applies.</p>
+<p>If the app changes so that other data is processed (e.g. an additional service), I will update this policy. The version published here applies.</p>
 </article>
 </main>
 </body>
