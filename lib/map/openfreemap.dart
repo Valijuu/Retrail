@@ -8,13 +8,10 @@ import 'dart:convert';
 /// maxzoom.
 const String kOpenFreeMapTileJsonUrl = 'https://tiles.openfreemap.org/planet';
 
-/// The live map's light style, loaded by URL so it picks up OpenFreeMap's
-/// fixes and sprite/glyph versions.
-const String kLibertyStyleUrl = 'https://tiles.openfreemap.org/styles/liberty';
-
-/// Bundled styles (`tool/build_map_styles.dart`): Liberty for light previews,
-/// Retrail Dark for the dark live map and dark previews.
-const String kLibertyStyleAsset = 'assets/map/liberty.json';
+/// Bundled styles (`tool/build_map_styles.dart`) for the live map and the
+/// previews: Retrail Light (OpenFreeMap Liberty toned down) and Retrail Dark
+/// (OpenFreeMap Dark lifted onto the app's dark terrain).
+const String kRetrailLightStyleAsset = 'assets/map/retrail_light.json';
 const String kRetrailDarkStyleAsset = 'assets/map/retrail_dark.json';
 
 /// The vector source name in the OpenFreeMap styles.

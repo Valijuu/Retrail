@@ -77,11 +77,12 @@ CameraFollow? followCameraUpdate({
   return null;
 }
 
-/// The live map's MapLibre style (Spec 19 §A): OpenFreeMap Liberty by URL in
-/// light mode, the bundled Retrail Dark asset in dark mode. MapLibre loads an
-/// asset path itself, asynchronously like a URL — not a JSON string, which it
-/// applies synchronously before `onMapCreated`, whose reset then discards it.
-String liveMapStyle(bool dark) => dark ? kRetrailDarkStyleAsset : kLibertyStyleUrl;
+/// The live map's MapLibre style (Spec 19 §A): the bundled Retrail Light /
+/// Retrail Dark asset. MapLibre loads an asset path itself, asynchronously like
+/// a URL — not a JSON string, which it applies synchronously before
+/// `onMapCreated`, whose reset then discards it.
+String liveMapStyle(bool dark) =>
+    dark ? kRetrailDarkStyleAsset : kRetrailLightStyleAsset;
 
 /// An empty GeoJSON source payload — a valid document MapLibre accepts when
 /// there is nothing to draw yet (a 0/1-point route or an unseeded marker).

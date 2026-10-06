@@ -96,7 +96,7 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
       _themes[brightness] ??= () async {
         final asset = brightness == ui.Brightness.dark
             ? kRetrailDarkStyleAsset
-            : kLibertyStyleAsset;
+            : kRetrailLightStyleAsset;
         final style =
             jsonDecode(await _loadAsset(asset)) as Map<String, dynamic>;
         return vtr.ThemeReader().read(previewStyle(style));

@@ -17,15 +17,16 @@ The pre-rendered preview architecture stays: lists show a cached PNG, rendered o
 
 ## A. Styles
 
-| Theme | Live map | Previews |
-|---|---|---|
-| Light | **Liberty** by URL `https://tiles.openfreemap.org/styles/liberty` | bundled copy `assets/map/liberty.json` |
-| Dark | **Retrail Dark**, bundled `assets/map/retrail_dark.json` | same file |
+| Theme | Live map and previews |
+|---|---|
+| Light | **Retrail Light**, bundled `assets/map/retrail_light.json` |
+| Dark | **Retrail Dark**, bundled `assets/map/retrail_dark.json` |
 
+- **Retrail Light** is OpenFreeMap **Liberty** toned down (decision 2026-10-06 on the device: Liberty's near-white ground `#f8f4f0` glared): a muted grey-green ground `#D2DDD2`, darker residential `#C8D0C5` and buildings `#BBC0B7`, stronger park `#B7D2A2` / grass `#A9CB91` / wood `#9CC386` and water `#82A9E2`, darker minor-road casings `#ADB2A8`. Roads keep Liberty's white/yellow, so they stand out more.
 - **Retrail Dark** is OpenFreeMap **Dark** recoloured, because the original is near black (RGB 10–35): parks and water are invisible. The background is the app's `DarkMapTerrain` (`#20292A`), so the map matches the offline sketch; parks/wood are dark green, water dark blue (`#1B3346`), buildings `DarkMapTerrainGrid` (`#2C3A3A`), roads graded greys (paths `#3C4A49` … motorway casing `#66716D`). A grass/meadow layer (`landcover` class `grass`) is added in park green; Dark has none, so open fields like Tempelhofer Feld stay grey otherwise. Label (`symbol`) text colours are lifted so they read on the new background. The final colours are tuned on the device (light + dark, live map + previews) and documented in `lib/core/theme/CLAUDE.md`.
 - The live map takes a style URL, a JSON string or a **Flutter asset path** (`MapOptions.initStyle`; the `maplibre` package loads an asset itself on Android and iOS). The dark style is passed as its **asset path**: MapLibre loads it asynchronously like a URL. A JSON string would be applied synchronously, before `onMapCreated`, whose reset then discards it (no map at all — found on the device). `liveMapStyleUrl(bool dark)` becomes `liveMapStyle(bool dark)`.
-- Liberty stays a URL on the live map so it picks up OpenFreeMap's fixes and its sprite/glyph versions. The previews use a bundled copy because they only need paint colours (no sprites, no glyphs: labels use the device font) and a fixed style keeps previews stable.
-- **Licence:** the OpenFreeMap styles are MIT; their design is CC BY 4.0 from OpenMapTiles (Liberty ← OSM Liberty ← OSM Bright; Dark ← OpenMapTiles). The "© OpenMapTiles" credit covers it. Each bundled file keeps a `"metadata"` note of its origin.
+- Both styles are bundled and used by the live map and the previews alike, so they look the same. The previews only use paint colours (no sprites, no glyphs: labels use the device font).
+- **Licence:** the OpenFreeMap styles are MIT; their design is CC BY 4.0 from OpenMapTiles (Retrail Light ← Liberty ← OSM Liberty ← OSM Bright; Retrail Dark ← Dark ← OpenMapTiles). The "© OpenMapTiles" credit covers it. Each bundled file keeps a `"metadata"` note of its origin.
 
 ## B. Preview tiles — `OpenFreeMapTileProvider`
 

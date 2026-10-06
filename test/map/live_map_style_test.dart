@@ -4,8 +4,8 @@ import 'package:retrail/map/openfreemap.dart';
 
 void main() {
   group('liveMapStyle', () {
-    test('light mode loads OpenFreeMap Liberty by URL', () {
-      expect(liveMapStyle(false), kLibertyStyleUrl);
+    test('light mode hands MapLibre the bundled Retrail Light asset path', () {
+      expect(liveMapStyle(false), kRetrailLightStyleAsset);
     });
 
     // MapLibre loads a Flutter asset path asynchronously, so the style loads

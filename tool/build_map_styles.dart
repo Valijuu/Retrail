@@ -7,6 +7,26 @@ const _base = 'https://tiles.openfreemap.org/styles';
 const _licence =
     'MIT (OpenFreeMap styles); design CC BY 4.0 OpenMapTiles — credited as "© OpenMapTiles"';
 
+/// Retrail Light: OpenFreeMap Liberty toned down — its near-white ground made
+/// the light map glaring. A muted grey-green ground, darker buildings and
+/// casings, stronger green and water; white/yellow roads stand out more.
+const _lightPaint = <String, Map<String, String>>{
+  'background': {'background-color': '#D2DDD2'},
+  'landuse_residential': {'fill-color': '#C8D0C5'},
+  'building': {'fill-color': '#BBC0B7'},
+  'park': {'fill-color': '#B7D2A2'},
+  'landcover_grass': {'fill-color': '#A9CB91'},
+  'landcover_wood': {'fill-color': '#9CC386'},
+  'water': {'fill-color': '#82A9E2'},
+  'waterway_river': {'line-color': '#82A9E2'},
+  'waterway_other': {'line-color': '#82A9E2'},
+  'aeroway_fill': {'fill-color': '#C7CEC4'},
+  'road_minor_casing': {'line-color': '#ADB2A8'},
+  'road_service_track_casing': {'line-color': '#ADB2A8'},
+  'tunnel_street_casing': {'line-color': '#ADB2A8'},
+  'tunnel_service_track_casing': {'line-color': '#ADB2A8'},
+};
+
 /// Retrail Dark: OpenFreeMap Dark lifted onto the app's DarkMapTerrain.
 const _darkPaint = <String, Map<String, String>>{
   'background': {'background-color': '#20292A'},
@@ -64,7 +84,12 @@ void _write(String name, Map<String, dynamic> style, String origin) {
 }
 
 Future<void> main() async {
-  _write('liberty', await _fetch('liberty'), 'liberty');
+  final light = await _fetch('liberty');
+  for (final l in (light['layers'] as List).cast<Map<String, dynamic>>()) {
+    final paint = (l['paint'] ??= <String, dynamic>{}) as Map<String, dynamic>;
+    paint.addAll(_lightPaint[l['id']] ?? const {});
+  }
+  _write('retrail_light', light, 'liberty');
 
   final dark = await _fetch('dark');
   final layers = (dark['layers'] as List).cast<Map<String, dynamic>>();

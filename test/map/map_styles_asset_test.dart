@@ -13,11 +13,20 @@ Map<String, dynamic> _layer(Map<String, dynamic> style, String id) =>
 
 void main() {
   test('both bundled styles read OpenMapTiles from OpenFreeMap', () {
-    for (final name in ['liberty', 'retrail_dark']) {
+    for (final name in ['retrail_light', 'retrail_dark']) {
       final sources = _style(name)['sources'] as Map<String, dynamic>;
       expect((sources['openmaptiles'] as Map)['url'],
           'https://tiles.openfreemap.org/planet', reason: name);
     }
+  });
+
+  test('Retrail Light is Liberty toned down: a muted grey-green ground, '
+      'darker buildings, stronger green and water', () {
+    final light = _style('retrail_light');
+    expect(_layer(light, 'background')['paint']['background-color'], '#D2DDD2');
+    expect(_layer(light, 'building')['paint']['fill-color'], '#BBC0B7');
+    expect(_layer(light, 'park')['paint']['fill-color'], '#B7D2A2');
+    expect(_layer(light, 'water')['paint']['fill-color'], '#82A9E2');
   });
 
   test('Retrail Dark sits on the app\'s dark terrain colour', () {
@@ -50,7 +59,7 @@ void main() {
   });
 
   test('each bundled style names its origin and licence', () {
-    for (final name in ['liberty', 'retrail_dark']) {
+    for (final name in ['retrail_light', 'retrail_dark']) {
       final meta = _style(name)['metadata'] as Map<String, dynamic>;
       expect(meta['retrail:origin'], startsWith('https://tiles.openfreemap.org/styles/'));
       expect(meta['retrail:licence'], contains('CC BY 4.0'));

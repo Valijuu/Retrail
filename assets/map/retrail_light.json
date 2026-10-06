@@ -21,7 +21,7 @@
    "id": "background",
    "type": "background",
    "paint": {
-    "background-color": "#f8f4f0"
+    "background-color": "#D2DDD2"
    }
   },
   {
@@ -52,7 +52,7 @@
    "source": "openmaptiles",
    "source-layer": "park",
    "paint": {
-    "fill-color": "#d8e8c8",
+    "fill-color": "#B7D2A2",
     "fill-opacity": 0.7,
     "fill-outline-color": "rgba(95, 208, 100, 1)"
    }
@@ -85,19 +85,7 @@
     "residential"
    ],
    "paint": {
-    "fill-color": [
-     "interpolate",
-     [
-      "linear"
-     ],
-     [
-      "zoom"
-     ],
-     9,
-     "hsla(0,3%,85%,0.84)",
-     12,
-     "hsla(35,57%,88%,0.49)"
-    ]
+    "fill-color": "#C8D0C5"
    }
   },
   {
@@ -115,7 +103,7 @@
    ],
    "paint": {
     "fill-antialias": false,
-    "fill-color": "hsla(98,61%,72%,0.7)",
+    "fill-color": "#9CC386",
     "fill-opacity": 0.4
    }
   },
@@ -134,7 +122,7 @@
    ],
    "paint": {
     "fill-antialias": false,
-    "fill-color": "rgba(176, 213, 154, 1)",
+    "fill-color": "#A9CB91",
     "fill-opacity": 0.3
    }
   },
@@ -340,7 +328,7 @@
     "line-cap": "round"
    },
    "paint": {
-    "line-color": "#a0c8f0",
+    "line-color": "#82A9E2",
     "line-width": [
      "interpolate",
      [
@@ -385,7 +373,7 @@
     "line-cap": "round"
    },
    "paint": {
-    "line-color": "#a0c8f0",
+    "line-color": "#82A9E2",
     "line-width": [
      "interpolate",
      [
@@ -416,7 +404,7 @@
     "tunnel"
    ],
    "paint": {
-    "fill-color": "rgb(158,189,255)"
+    "fill-color": "#82A9E2"
    }
   },
   {
@@ -455,7 +443,7 @@
     false
    ],
    "paint": {
-    "fill-color": "rgba(229, 228, 224, 1)",
+    "fill-color": "#C7CEC4",
     "fill-opacity": 0.7
    }
   },
@@ -647,7 +635,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#cfcdca",
+    "line-color": "#ADB2A8",
     "line-dasharray": [
      0.5,
      0.25
@@ -752,7 +740,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#cfcdca",
+    "line-color": "#ADB2A8",
     "line-opacity": [
      "interpolate",
      [
@@ -1698,7 +1686,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#cfcdca",
+    "line-color": "#ADB2A8",
     "line-width": [
      "interpolate",
      [
@@ -1847,7 +1835,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#cfcdca",
+    "line-color": "#ADB2A8",
     "line-opacity": [
      "interpolate",
      [
@@ -2813,7 +2801,8 @@
    "layout": {
     "icon-image": "arrow",
     "symbol-placement": "line"
-   }
+   },
+   "paint": {}
   },
   {
    "id": "road_one_way_arrow_opposite",
@@ -2833,7 +2822,8 @@
     "icon-image": "arrow",
     "icon-rotate": 180,
     "symbol-placement": "line"
-   }
+   },
+   "paint": {}
   },
   {
    "id": "bridge_motorway_link_casing",
@@ -3907,7 +3897,7 @@
    "minzoom": 13,
    "maxzoom": 14,
    "paint": {
-    "fill-color": "hsl(35,8%,85%)",
+    "fill-color": "#BBC0B7",
     "fill-outline-color": [
      "interpolate",
      [
@@ -5031,7 +5021,8 @@
     ],
     "text-rotation-alignment": "viewport",
     "text-size": 10
-   }
+   },
+   "paint": {}
   },
   {
    "id": "highway-shield-us-interstate",
@@ -5113,7 +5104,8 @@
     ],
     "text-rotation-alignment": "viewport",
     "text-size": 10
-   }
+   },
+   "paint": {}
   },
   {
    "id": "road_shield_us",
@@ -5194,7 +5186,8 @@
     ],
     "text-rotation-alignment": "viewport",
     "text-size": 10
-   }
+   },
+   "paint": {}
   },
   {
    "id": "airport",
