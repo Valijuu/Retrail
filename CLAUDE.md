@@ -89,6 +89,8 @@ ios/
 └── RideActivityExtension/            # WidgetKit extension: lock screen + Dynamic Island UI
 ```
 
+**App ID** is `io.github.valijuu.retrail` on Android (`applicationId`) and iOS (bundle ID; the Live Activity extension is `….RideActivity`); the Android `namespace` / Kotlin package stay `com.retrail.retrail`. **Android release builds** are signed with the upload key from the gitignored `android/key.properties` (debug key when it is missing) — see `docs/android-release.md`. The repo is public but **all rights reserved** (`LICENSE`).
+
 **iOS builds** happen only on GitHub Actions (`.github/workflows/ios-build.yml`, macOS runner, unsigned, encrypted `.ipa` artifact) — there is no Mac. Swift/Xcode-project changes are verified by that workflow going green; device testing is sideloaded per `docs/ios-sideloading.md` (`tool/ios_fetch_build.sh [--wait|--trigger|--install]` pulls a green build to `~/Downloads/retrail-ios/` and installs it via Splice when an iPhone is on USB; the `.githooks/pre-push` hook — enabled via `git config core.hooksPath .githooks` — starts `--wait` in the background on every push of app code to `main`). The Xcode project is edited by hand: keep "Embed Foundation Extensions" before "Run Script" in the Runner target (flutter/flutter#135056).
 
 **Conventions**
