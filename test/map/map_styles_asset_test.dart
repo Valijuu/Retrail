@@ -20,15 +20,27 @@ void main() {
     }
   });
 
-  test('Retrail Light is Liberty dimmed and warm (matches the app\'s cream '
-      'and its orange position marker), Liberty\'s own green and water', () {
+  test('Retrail Light takes MapTiler topo-v2\'s colours: neutral grey ground, '
+      'faint residential, outlined buildings, olive green, teal water', () {
     final light = _style('retrail_light');
-    expect(_layer(light, 'background')['paint']['background-color'], '#EEE5DA');
-    expect(_layer(light, 'landuse_residential')['paint']['fill-color'], '#E6DBCE');
-    expect(_layer(light, 'building')['paint']['fill-color'], '#D7CABC');
-    expect(_layer(light, 'park')['paint']['fill-color'], '#d8e8c8',
-        reason: 'no green tint added: Liberty\'s park colour stays');
-    expect(_layer(light, 'water')['paint']['fill-color'], 'rgb(158,189,255)');
+    expect(_layer(light, 'background')['paint']['background-color'], '#EDEDED');
+    final residential = _layer(light, 'landuse_residential')['paint'] as Map;
+    expect(residential['fill-color'], '#BFBAAB');
+    expect(residential['fill-opacity'],
+        ['interpolate', ['linear'], ['zoom'], 4, 0.6, 16, 0.1]);
+    expect(_layer(light, 'building')['paint']['fill-color'], '#CBC6BE');
+    expect(_layer(light, 'building')['paint']['fill-outline-color'], '#BFBAB0');
+    expect(_layer(light, 'landcover_wood')['paint']['fill-color'], '#BFCA9B');
+    expect(_layer(light, 'landcover_grass')['paint']['fill-color'], '#D5E0BE');
+    expect(_layer(light, 'park')['paint']['fill-color'], '#D5E0BE');
+    expect(_layer(light, 'water')['paint']['fill-color'], '#68A7C4');
+    expect(_layer(light, 'road_minor_casing')['paint']['line-color'], '#CFCDC9');
+  });
+
+  test('Retrail Light draws footpaths as MapTiler did: dark grey lines, not '
+      'white', () {
+    expect(_layer(_style('retrail_light'), 'road_path_pedestrian')['paint']
+        ['line-color'], ['interpolate', ['linear'], ['zoom'], 12, '#999999', 18, '#828282']);
   });
 
   test('Retrail Light draws buildings flat: no 3D extrusion (its dark walls '
@@ -45,35 +57,37 @@ void main() {
     expect(building.containsKey('maxzoom'), isFalse);
   });
 
-  test('Retrail Light street names are darker with a ground-coloured halo', () {
+  test('Retrail Light street names are near-black on a white halo (topo-v2)',
+      () {
     final light = _style('retrail_light');
     for (final id in ['highway-name-minor', 'highway-name-major']) {
       final paint = _layer(light, id)['paint'] as Map;
-      expect(paint['text-color'], '#5A4E44', reason: id);
-      expect(paint['text-halo-color'], '#EEE5DA', reason: id);
-      expect(paint['text-halo-width'], 1.5, reason: id);
+      expect(paint['text-color'], '#1F1F1F', reason: id);
+      expect(paint['text-halo-color'], '#FFFFFF', reason: id);
+      expect(paint['text-halo-width'], 1, reason: id);
     }
   });
 
-  test('Retrail Dark street names are lighter with a ground-coloured halo, '
-      'roads a step brighter', () {
+  test('Retrail Dark takes MapTiler basic-v2-dark\'s colours: neutral dark '
+      'grey ground, buildings a shade darker, dark green, dark teal water', () {
     final dark = _style('retrail_dark');
-    for (final id in ['highway_name_other', 'highway_name_motorway']) {
-      final paint = _layer(dark, id)['paint'] as Map;
-      expect(paint['text-color'], '#BAC4C1', reason: id);
-      expect(paint['text-halo-color'], '#181E1F', reason: id);
-      expect(paint['text-halo-width'], 1.5, reason: id);
-    }
-    expect(_layer(dark, 'highway_minor')['paint']['line-color'], '#3B4746');
-    expect(_layer(dark, 'highway_major_casing')['paint']['line-color'], '#4E5956');
+    expect(_layer(dark, 'background')['paint']['background-color'], '#2B2B2B');
+    expect(_layer(dark, 'landuse_residential')['paint']['fill-color'], '#2B2B2B');
+    expect(_layer(dark, 'building')['paint']['fill-color'], '#252525');
+    expect(_layer(dark, 'landcover_wood')['paint']['fill-color'], '#252A1D');
+    expect(_layer(dark, 'landuse_park')['paint']['fill-color'], '#252A1D');
+    expect(_layer(dark, 'water')['paint']['fill-color'], '#223949');
   });
 
-  test('Retrail Dark is a dark grey-green, a step darker than the app\'s '
-      'dark terrain', () {
+  test('Retrail Dark draws every road and path in one grey, as basic-v2-dark',
+      () {
     final dark = _style('retrail_dark');
-    expect(_layer(dark, 'background')['paint']['background-color'], '#181E1F');
-    expect(_layer(dark, 'water')['paint']['fill-color'], '#15283A');
-    expect(_layer(dark, 'building')['paint']['fill-color'], '#222B2B');
+    for (final id in [
+      'highway_path', 'highway_minor', 'highway_major_casing',
+      'highway_major_inner', 'highway_motorway_casing', 'highway_motorway_inner',
+    ]) {
+      expect(_layer(dark, id)['paint']['line-color'], '#454545', reason: id);
+    }
   });
 
   test('Retrail Dark greens open grass like parks (Dark has no grass layer)',
@@ -88,15 +102,19 @@ void main() {
         reason: 'grass is drawn under water and roads');
   });
 
-  test('Retrail Dark labels are readable on the lighter background', () {
+  test('Retrail Dark labels: street names #C2C2C2 on black, places #DBDBDB',
+      () {
     final dark = _style('retrail_dark');
-    for (final l in (dark['layers'] as List).cast<Map<String, dynamic>>()) {
-      if (l['type'] != 'symbol') continue;
-      final paint = (l['paint'] ?? {}) as Map;
-      if (!paint.containsKey('text-color')) continue;
-      expect(paint['text-color'], isIn(['#96A29F', '#7E98AC', '#BAC4C1']),
-          reason: l['id']);
+    for (final id in ['highway_name_other', 'highway_name_motorway']) {
+      final paint = _layer(dark, id)['paint'] as Map;
+      expect(paint['text-color'], '#C2C2C2', reason: id);
+      expect(paint['text-halo-color'], '#000000', reason: id);
+      expect(paint['text-halo-width'], 1, reason: id);
     }
+    final place = _layer(dark, 'place_town')['paint'] as Map;
+    expect(place['text-color'], '#DBDBDB');
+    expect(place['text-halo-color'], 'rgba(0,0,0,0.75)');
+    expect(place['text-halo-width'], 2);
   });
 
   test('each bundled style names its origin and licence', () {

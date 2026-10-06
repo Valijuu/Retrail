@@ -32,8 +32,8 @@ typedef PreviewRenderer = Future<PreviewResult> Function(
 /// to device pixels (sharp), labels × 0.75, darker Retrail Dark; v11 — warm
 /// Retrail Light, labels × 0.65; v12 — darker street names and road casings;
 /// v13 — lighter Retrail Dark street names and roads; v14 — Retrail Light
-/// buildings above z14 again.
-const int _cacheVersion = 14;
+/// buildings above z14 again; v15 — MapTiler topo-v2 / basic-v2-dark colours.
+const int _cacheVersion = 15;
 const String _versionDir = 'ride_previews_v$_cacheVersion';
 final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
 

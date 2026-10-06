@@ -7,74 +7,107 @@ const _base = 'https://tiles.openfreemap.org/styles';
 const _licence =
     'MIT (OpenFreeMap styles); design CC BY 4.0 OpenMapTiles — credited as "© OpenMapTiles"';
 
-/// Retrail Light: OpenFreeMap Liberty dimmed and warmed — its near-white
-/// ground glared, and a cool grey ground clashed with the app's warm cream and
-/// its orange position marker. Only the ground, residential areas, buildings
-/// and minor-road casings change; green, water and roads stay Liberty's.
-const _lightPaint = <String, Map<String, String>>{
-  'background': {'background-color': '#EEE5DA'},
-  'landuse_residential': {'fill-color': '#E6DBCE'},
-  'building': {'fill-color': '#D7CABC'},
-  'aeroway_fill': {'fill-color': '#E4DACE'},
-  'road_minor_casing': {'line-color': '#BDAE9E'},
-  'road_service_track_casing': {'line-color': '#BDAE9E'},
-  'tunnel_street_casing': {'line-color': '#BDAE9E'},
-  'tunnel_service_track_casing': {'line-color': '#BDAE9E'},
-  // Street names: darker, with a halo in the ground colour (Liberty's thin
-  // #666 washed out on the warm ground).
-  'highway-name-minor': {'text-color': '#5A4E44', 'text-halo-color': '#EEE5DA'},
-  'highway-name-major': {'text-color': '#5A4E44', 'text-halo-color': '#EEE5DA'},
-  'highway-name-path': {'text-halo-color': '#EEE5DA'},
+/// Retrail Light: OpenFreeMap Liberty in MapTiler topo-v2's colours, the map
+/// Retrail used before Spec 19 (decision 2026-10-06 after device rounds with
+/// warmer and greener variants): neutral grey ground, faint residential,
+/// outlined buildings, olive green, teal water, dark grey footpaths and
+/// near-black street names. Liberty's major-road yellow/orange already match.
+const _lightPaint = <String, Map<String, Object>>{
+  'background': {'background-color': '#EDEDED'},
+  'landuse_residential': {
+    'fill-color': '#BFBAAB',
+    'fill-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.6, 16, 0.1],
+  },
+  'building': {'fill-color': '#CBC6BE', 'fill-outline-color': '#BFBAB0'},
+  'landcover_wood': {'fill-color': '#BFCA9B'},
+  'landcover_grass': {'fill-color': '#D5E0BE'},
+  'park': {'fill-color': '#D5E0BE'},
+  'water': {'fill-color': '#68A7C4'},
+  'waterway_tunnel': {'line-color': '#68A7C4'},
+  'waterway_river': {'line-color': '#68A7C4'},
+  'waterway_other': {'line-color': '#68A7C4'},
+  'road_minor_casing': {'line-color': '#CFCDC9'},
+  'road_service_track_casing': {'line-color': '#CFCDC9'},
+  'tunnel_street_casing': {'line-color': '#CFCDC9'},
+  'tunnel_service_track_casing': {'line-color': '#CFCDC9'},
+  'bridge_street_casing': {'line-color': '#CFCDC9'},
+  'road_path_pedestrian': {'line-color': _lightPathColor},
+  'tunnel_path_pedestrian': {'line-color': _lightPathColor},
+  'bridge_path_pedestrian': {'line-color': _lightPathColor},
+  'highway-name-minor': _lightStreetName,
+  'highway-name-major': _lightStreetName,
+  'highway-name-path': _lightStreetName,
+};
+const _lightPathColor = [
+  'interpolate', ['linear'], ['zoom'], 12, '#999999', 18, '#828282', //
+];
+const _lightStreetName = <String, Object>{
+  'text-color': '#1F1F1F',
+  'text-halo-color': '#FFFFFF',
+  'text-halo-width': 1,
 };
 
 /// Liberty's 3D buildings: their dark walls cluttered the tracking view
-/// (Liberty's flat `building` fill stays).
+/// (Liberty's flat `building` fill stays, at every zoom).
 const _lightDroppedLayers = {'building-3d'};
-const _streetNameHaloWidth = 1.5;
 
-/// Retrail Dark: OpenFreeMap Dark (near black) lifted onto a dark grey-green
-/// a step below the app's DarkMapTerrain — the first version at that very
-/// colour looked too light on the device.
-const _darkPaint = <String, Map<String, String>>{
-  'background': {'background-color': '#181E1F'},
-  'water': {'fill-color': '#15283A'},
-  'waterway': {'line-color': '#15283A'},
-  'landcover_ice_shelf': {'fill-color': '#181E1F'},
-  'landcover_glacier': {'fill-color': '#181E1F'},
-  'landuse_residential': {'fill-color': '#1B2223'},
-  'landcover_wood': {'fill-color': '#19291F'},
-  'landuse_park': {'fill-color': '#1B2E22'},
-  'building': {'fill-color': '#222B2B', 'fill-outline-color': '#283333'},
-  'aeroway-taxiway': {'line-color': '#242E2E'},
-  'aeroway-runway-casing': {'line-color': '#2E3939'},
-  'aeroway-area': {'fill-color': '#1D2425'},
-  'aeroway-runway': {'line-color': '#242E2E'},
-  'road_area_pier': {'fill-color': '#181E1F'},
-  'road_pier': {'line-color': '#181E1F'},
-  'highway_path': {'line-color': '#2E3A39'},
-  'highway_minor': {'line-color': '#3B4746'},
-  'highway_major_casing': {'line-color': '#4E5956'},
-  'highway_major_inner': {'line-color': '#424D4B'},
-  'highway_major_subtle': {'line-color': '#424D4B'},
-  'highway_motorway_casing': {'line-color': '#5E6865'},
-  'highway_motorway_inner': {'line-color': '#515B58'},
-  'highway_motorway_subtle': {'line-color': '#424D4B'},
-  'railway_transit': {'line-color': '#2D3737'},
-  'railway_transit_dashline': {'line-color': '#181E1F'},
-  'railway_minor': {'line-color': '#2D3737'},
-  'railway_minor_dashline': {'line-color': '#181E1F'},
-  'railway': {'line-color': '#2D3737'},
-  'railway_dashline': {'line-color': '#181E1F'},
+/// Retrail Dark: OpenFreeMap Dark in MapTiler basic-v2-dark's colours, the dark
+/// map Retrail used before Spec 19: neutral dark grey ground, buildings a
+/// shade darker, very dark green (basic-v2-dark's translucent green, blended
+/// onto the ground), dark teal water, every road and path in one grey.
+const _darkGround = '#2B2B2B';
+const _darkGreen = '#252A1D';
+const _darkRoad = '#454545';
+const _darkRail = '#29292F';
+const _darkPaint = <String, Map<String, Object>>{
+  'background': {'background-color': _darkGround},
+  'water': {'fill-color': '#223949'},
+  'waterway': {'line-color': '#223949'},
+  'landcover_ice_shelf': {'fill-color': _darkGround},
+  'landcover_glacier': {'fill-color': _darkGround},
+  'landuse_residential': {'fill-color': _darkGround},
+  'landcover_wood': {'fill-color': _darkGreen},
+  'landuse_park': {'fill-color': _darkGreen},
+  'building': {'fill-color': '#252525', 'fill-outline-color': '#252525'},
+  'aeroway-taxiway': {'line-color': _darkRoad},
+  'aeroway-runway-casing': {'line-color': _darkRoad},
+  'aeroway-area': {'fill-color': '#2E2E2E'},
+  'aeroway-runway': {'line-color': _darkRoad},
+  'road_area_pier': {'fill-color': '#2E2E2E'},
+  'road_pier': {'line-color': '#2E2E2E'},
+  'highway_path': {'line-color': _darkRoad},
+  'highway_minor': {'line-color': _darkRoad},
+  'highway_major_casing': {'line-color': _darkRoad},
+  'highway_major_inner': {'line-color': _darkRoad},
+  'highway_major_subtle': {'line-color': _darkRoad},
+  'highway_motorway_casing': {'line-color': _darkRoad},
+  'highway_motorway_inner': {'line-color': _darkRoad},
+  'highway_motorway_subtle': {'line-color': _darkRoad},
+  'railway_transit': {'line-color': _darkRail},
+  'railway_transit_dashline': {'line-color': _darkGround},
+  'railway_minor': {'line-color': _darkRail},
+  'railway_minor_dashline': {'line-color': _darkGround},
+  'railway': {'line-color': _darkRail},
+  'railway_dashline': {'line-color': _darkGround},
+  'highway_name_other': _darkStreetName,
+  'highway_name_motorway': _darkStreetName,
+  'water_name': {
+    'text-color': '#8DA2B3',
+    'text-halo-color': 'rgba(0,0,0,0.75)',
+  },
 };
-const _labelColor = '#96A29F';
-const _waterLabelColor = '#7E98AC';
-const _labelHalo = 'rgba(24,30,31,0.85)';
+const _darkStreetName = <String, Object>{
+  'text-color': '#C2C2C2',
+  'text-halo-color': '#000000',
+  'text-halo-width': 1,
+};
 
-/// Street names: lighter than the other labels, on a solid halo in the ground
-/// colour (they washed out at #96A29F with a thin translucent halo).
-const _darkStreetNameLayers = {'highway_name_other', 'highway_name_motorway'};
-const _darkStreetNameColor = '#BAC4C1';
-const _darkStreetNameHalo = '#181E1F';
+/// Every other dark label (places): basic-v2-dark's place labels.
+const _darkPlaceLabel = <String, Object>{
+  'text-color': '#DBDBDB',
+  'text-halo-color': 'rgba(0,0,0,0.75)',
+  'text-halo-width': 2,
+};
 
 Future<Map<String, dynamic>> _fetch(String name) async {
   final client = HttpClient()..userAgent = 'Retrail (io.github.valijuu.retrail)';
@@ -96,45 +129,47 @@ void _write(String name, Map<String, dynamic> style, String origin) {
     ..writeAsStringSync(const JsonEncoder.withIndent(' ').convert(style));
 }
 
+/// Applies [paint] to [layers] by id and fails loudly when an id no longer
+/// exists upstream (a renamed layer would otherwise drop a colour silently).
+void _recolour(
+    List<Map<String, dynamic>> layers, Map<String, Map<String, Object>> paint) {
+  final ids = {for (final l in layers) l['id']};
+  final missing = paint.keys.where((id) => !ids.contains(id));
+  if (missing.isNotEmpty) throw StateError('layers gone upstream: $missing');
+  for (final l in layers) {
+    final p = (l['paint'] ??= <String, dynamic>{}) as Map<String, dynamic>;
+    p.addAll(paint[l['id']] ?? const {});
+  }
+}
+
 Future<void> main() async {
   final light = await _fetch('liberty');
   final lightLayers = (light['layers'] as List).cast<Map<String, dynamic>>()
     ..removeWhere((l) => _lightDroppedLayers.contains(l['id']));
-  for (final l in lightLayers) {
-    final paint = (l['paint'] ??= <String, dynamic>{}) as Map<String, dynamic>;
-    paint.addAll(_lightPaint[l['id']] ?? const {});
-    // Liberty stops its flat buildings at z14 where the 3D ones took over:
-    // without the 3D layer they must go on at tracking zoom.
-    if (l['id'] == 'building') l.remove('maxzoom');
-    if (l['id'] == 'highway-name-minor' || l['id'] == 'highway-name-major') {
-      paint['text-halo-width'] = _streetNameHaloWidth;
-    }
-  }
+  _recolour(lightLayers, _lightPaint);
+  // Liberty stops its flat buildings at z14 where the 3D ones took over:
+  // without the 3D layer they must go on at tracking zoom.
+  lightLayers.firstWhere((l) => l['id'] == 'building').remove('maxzoom');
   _write('retrail_light', light, 'liberty');
 
   final dark = await _fetch('dark');
-  final layers = (dark['layers'] as List).cast<Map<String, dynamic>>();
-  for (final l in layers) {
-    final paint = (l['paint'] ??= <String, dynamic>{}) as Map<String, dynamic>;
-    paint.addAll(_darkPaint[l['id']] ?? const {});
-    if (l['type'] == 'symbol' && paint.containsKey('text-color')) {
-      paint['text-color'] = l['id'] == 'water_name' ? _waterLabelColor : _labelColor;
-      paint['text-halo-color'] = _labelHalo;
-    }
-    if (_darkStreetNameLayers.contains(l['id'])) {
-      paint['text-color'] = _darkStreetNameColor;
-      paint['text-halo-color'] = _darkStreetNameHalo;
-      paint['text-halo-width'] = _streetNameHaloWidth;
+  final darkLayers = (dark['layers'] as List).cast<Map<String, dynamic>>();
+  for (final l in darkLayers) {
+    final p = l['paint'] as Map<String, dynamic>?;
+    if (l['type'] == 'symbol' && p != null && p.containsKey('text-color')) {
+      p.addAll(_darkPlaceLabel);
     }
   }
-  final grass = {
+  _recolour(darkLayers, _darkPaint);
+  final water = darkLayers.indexWhere((l) => l['id'] == 'water');
+  if (water < 0) throw StateError('dark: no water layer to put grass under');
+  darkLayers.insert(water, {
     'id': 'landcover_grass',
     'type': 'fill',
     'source': 'openmaptiles',
     'source-layer': 'landcover',
     'filter': ['==', ['get', 'class'], 'grass'],
-    'paint': {'fill-color': _darkPaint['landuse_park']!['fill-color']},
-  };
-  layers.insert(layers.indexWhere((l) => l['id'] == 'water'), grass);
+    'paint': {'fill-color': _darkGreen},
+  });
   _write('retrail_dark', dark, 'dark');
 }
