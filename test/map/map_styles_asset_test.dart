@@ -43,16 +43,21 @@ void main() {
         ['line-color'], ['interpolate', ['linear'], ['zoom'], 12, '#999999', 18, '#828282']);
   });
 
-  test('Retrail Light draws buildings flat: no 3D extrusion (its dark walls '
-      'cluttered the tracking view)', () {
-    final types = [
-      for (final l in _style('retrail_light')['layers'] as List) l['type'],
-    ];
-    expect(types, isNot(contains('fill-extrusion')));
+  test('Retrail Light has topo-v2\'s subtle 3D buildings: half-transparent '
+      'extrusion from z14 over the flat fill', () {
+    final light = _style('retrail_light');
+    final ids = [for (final l in light['layers'] as List) l['id']];
+    final extrusion = _layer(light, 'building-3d');
+    expect(extrusion['type'], 'fill-extrusion');
+    expect(extrusion['minzoom'], 14);
+    final paint = extrusion['paint'] as Map;
+    expect(paint['fill-extrusion-color'], '#ABA59C');
+    expect(paint['fill-extrusion-opacity'], 0.5);
+    expect(ids.indexOf('building'), lessThan(ids.indexOf('building-3d')));
   });
 
-  test('Retrail Light draws its flat buildings at tracking zoom too: Liberty '
-      'stops them at z14, where its 3D buildings took over', () {
+  test('Retrail Light keeps its flat buildings at tracking zoom too: Liberty '
+      'stops them at z14, where its opaque 3D buildings took over', () {
     final building = _layer(_style('retrail_light'), 'building');
     expect(building.containsKey('maxzoom'), isFalse);
   });

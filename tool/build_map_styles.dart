@@ -34,6 +34,12 @@ const _lightPaint = <String, Map<String, Object>>{
   'road_path_pedestrian': {'line-color': _lightPathColor},
   'tunnel_path_pedestrian': {'line-color': _lightPathColor},
   'bridge_path_pedestrian': {'line-color': _lightPathColor},
+  // topo-v2's 3D buildings: half-transparent over the flat fill, so their
+  // walls stay soft (Liberty's opaque ones cluttered the tracking view).
+  'building-3d': {
+    'fill-extrusion-color': '#ABA59C',
+    'fill-extrusion-opacity': 0.5,
+  },
   'highway-name-minor': _lightStreetName,
   'highway-name-major': _lightStreetName,
   'highway-name-path': _lightStreetName,
@@ -47,9 +53,6 @@ const _lightStreetName = <String, Object>{
   'text-halo-width': 1,
 };
 
-/// Liberty's 3D buildings: their dark walls cluttered the tracking view
-/// (Liberty's flat `building` fill stays, at every zoom).
-const _lightDroppedLayers = {'building-3d'};
 
 /// Retrail Dark: OpenFreeMap Dark in MapTiler basic-v2-dark's colours, the dark
 /// map Retrail used before Spec 19: neutral dark grey ground, buildings a
@@ -144,11 +147,10 @@ void _recolour(
 
 Future<void> main() async {
   final light = await _fetch('liberty');
-  final lightLayers = (light['layers'] as List).cast<Map<String, dynamic>>()
-    ..removeWhere((l) => _lightDroppedLayers.contains(l['id']));
+  final lightLayers = (light['layers'] as List).cast<Map<String, dynamic>>();
   _recolour(lightLayers, _lightPaint);
-  // Liberty stops its flat buildings at z14 where the 3D ones took over:
-  // without the 3D layer they must go on at tracking zoom.
+  // Liberty stops its flat buildings at z14 where its opaque 3D ones took
+  // over; under the half-transparent 3D layer they must go on, as in topo-v2.
   lightLayers.firstWhere((l) => l['id'] == 'building').remove('maxzoom');
   _write('retrail_light', light, 'liberty');
 

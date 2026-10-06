@@ -3950,6 +3950,25 @@
    }
   },
   {
+   "id": "building-3d",
+   "type": "fill-extrusion",
+   "source": "openmaptiles",
+   "source-layer": "building",
+   "minzoom": 14,
+   "paint": {
+    "fill-extrusion-base": [
+     "get",
+     "render_min_height"
+    ],
+    "fill-extrusion-color": "#ABA59C",
+    "fill-extrusion-height": [
+     "get",
+     "render_height"
+    ],
+    "fill-extrusion-opacity": 0.5
+   }
+  },
+  {
    "id": "boundary_3",
    "type": "line",
    "source": "openmaptiles",
