@@ -109,6 +109,7 @@ flutter:
   assets:
     - assets/icons/activity/
     - assets/branding/app_icon_foreground.png
+    - assets/map/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
