@@ -360,8 +360,6 @@ void main() {
     final credits = tester.widgetList<MapAttribution>(find.byType(MapAttribution));
     expect(credits, hasLength(1));
     expect(credits.single.onOpen, isNull);
-    expect(credits.single.collapsible, isFalse,
-        reason: 'a preview is a static image: the credit stays as text');
   });
 
   testWidgets('thumbnail top corners are clipped to the card radius '

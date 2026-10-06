@@ -69,7 +69,6 @@
   "mapOfflineBanner": "Offline — map tiles may not be available",
   "mapAttributionOpenMapTiles": "© OpenMapTiles",
   "mapAttributionOsm": "© OpenStreetMap",
-  "mapCreditsCd": "Map credits",
   "rideLocationOffBanner": "Location is off — your route isn't being recorded. Tap to turn it on.",
   "followRouteAction": "Follow route",
   "followRouteRecordTitle": "Record this ride?",

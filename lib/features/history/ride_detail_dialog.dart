@@ -355,6 +355,6 @@ class _MapCredit extends StatelessWidget {
         left: 0,
         right: 0,
         bottom: kMapAttributionInset,
-        child: Center(child: MapAttribution(onOpen: openMapCopyright, collapsible: true)),
+        child: Center(child: MapAttribution(onOpen: openMapCopyright)),
       );
 }
