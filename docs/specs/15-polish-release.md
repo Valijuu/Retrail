@@ -45,14 +45,14 @@ So this spec is **partitioned** into:
 | Target | Now | Change |
 |---|---|---|
 | Android `android:label` | `retrail` (lowercase) | `Retrail` (move to `@string/app_name` in a values resource, EN + DE both `Retrail`) |
-| Android `applicationId` / `namespace` | `com.retrail.retrail` | **keep** — fresh install, no store continuity (the roadmap's `com.retrail.app` was a pre-build assumption; the project was created as `com.retrail.retrail`). Noted, not changed. |
+| Android `applicationId` | `com.retrail.retrail` | `io.github.valijuu.retrail` (store release, #45). iOS `PRODUCT_BUNDLE_IDENTIFIER` the same, the Live Activity extension `io.github.valijuu.retrail.RideActivity`. The Android `namespace` / Kotlin package stay `com.retrail.retrail` (internal only). |
 | iOS `CFBundleDisplayName` | `Retrail` | keep |
 | iOS `CFBundleName` | `retrail` | `Retrail` (align the internal name too, so nothing user-visible is lowercase) |
 | Flutter `onGenerateTitle` | `appTitle` ARB | already `Retrail` via `app_en.arb`/`app_de.arb` — verify |
 
 **The display name is `Retrail` on every surface** — Android launcher label, iOS home-screen name,
 the in-app title, and the recents/task-switcher entry. The only intentionally-lowercase identifiers
-left are the non-visible package/bundle IDs (`applicationId` / `namespace = com.retrail.retrail`),
+left are the non-visible package/bundle IDs (`applicationId` / bundle ID `io.github.valijuu.retrail`, `namespace = com.retrail.retrail`),
 which users never see.
 
 Android label via a string resource (`android/app/src/main/res/values/strings.xml` →
