@@ -14,6 +14,12 @@ const String kOpenFreeMapTileJsonUrl = 'https://tiles.openfreemap.org/planet';
 const String kRetrailLightStyleAsset = 'assets/map/retrail_light.json';
 const String kRetrailDarkStyleAsset = 'assets/map/retrail_dark.json';
 
+/// How many zoom levels below a preview grid tile's zoom its style is
+/// evaluated: MapLibre styles assume 512 px tiles, the preview grid uses 256 dp
+/// ones, so at the grid zoom line widths and label sizes come out a level too
+/// big next to the live map.
+const int kPreviewStyleZoomOffset = 1;
+
 /// The vector source name in the OpenFreeMap styles.
 const String kOpenFreeMapSource = 'openmaptiles';
 

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:retrail/map/openfreemap.dart';
 import 'package:retrail/map/openfreemap_tile_provider.dart';
+import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
 
 const _tileJson =
     '{"tiles":["https://t.example/planet/v1/{z}/{x}/{y}.pbf"],"maxzoom":14}';
@@ -67,6 +68,35 @@ void main() {
           'roads, woods and labels give many colours; a style that '
           'matches no source layer paints only the background',
     );
+  });
+
+  test('styles a tile one zoom level below its grid zoom: MapLibre styles '
+      'assume 512 px tiles, the preview grid is 256 dp, so line widths and '
+      'label sizes match the live map instead of looking a level too big',
+      () async {
+    final style = previewStyle(
+        jsonDecode(await _asset(kRetrailLightStyleAsset)) as Map<String, dynamic>);
+    final theme = vtr.ThemeReader().read(style);
+    Future<List<int>> reference(double zoom) async {
+      final tile = vtr.TileFactory(theme, const vtr.Logger.noop())
+          .createTileData(vtr.VectorTileReader().read(_pbf))
+          .toTile();
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder)..scale(3);
+      vtr.Renderer(theme: theme).render(canvas,
+          vtr.TileSource(tileset: vtr.Tileset({kOpenFreeMapSource: tile})),
+          zoomScaleFactor: 1, zoom: zoom, rotation: 0);
+      final image = await recorder.endRecording().toImage(768, 768);
+      final bytes = await image.toByteData();
+      image.dispose();
+      return bytes!.buffer.asUint8List();
+    }
+
+    final image = await provider(_Server()).tile(14, 8675, 5426, ui.Brightness.light);
+    final bytes = (await image!.toByteData())!.buffer.asUint8List();
+    image.dispose();
+    expect(bytes, isNot(equals(await reference(14))));
+    expect(bytes, equals(await reference(13)));
   });
 
   test(

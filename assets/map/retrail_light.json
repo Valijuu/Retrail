@@ -21,7 +21,7 @@
    "id": "background",
    "type": "background",
    "paint": {
-    "background-color": "#D2DDD2"
+    "background-color": "#ECE8E3"
    }
   },
   {
@@ -52,7 +52,7 @@
    "source": "openmaptiles",
    "source-layer": "park",
    "paint": {
-    "fill-color": "#B7D2A2",
+    "fill-color": "#d8e8c8",
     "fill-opacity": 0.7,
     "fill-outline-color": "rgba(95, 208, 100, 1)"
    }
@@ -85,7 +85,7 @@
     "residential"
    ],
    "paint": {
-    "fill-color": "#C8D0C5"
+    "fill-color": "#E2DED8"
    }
   },
   {
@@ -103,7 +103,7 @@
    ],
    "paint": {
     "fill-antialias": false,
-    "fill-color": "#9CC386",
+    "fill-color": "hsla(98,61%,72%,0.7)",
     "fill-opacity": 0.4
    }
   },
@@ -122,7 +122,7 @@
    ],
    "paint": {
     "fill-antialias": false,
-    "fill-color": "#A9CB91",
+    "fill-color": "rgba(176, 213, 154, 1)",
     "fill-opacity": 0.3
    }
   },
@@ -328,7 +328,7 @@
     "line-cap": "round"
    },
    "paint": {
-    "line-color": "#82A9E2",
+    "line-color": "#a0c8f0",
     "line-width": [
      "interpolate",
      [
@@ -373,7 +373,7 @@
     "line-cap": "round"
    },
    "paint": {
-    "line-color": "#82A9E2",
+    "line-color": "#a0c8f0",
     "line-width": [
      "interpolate",
      [
@@ -404,7 +404,7 @@
     "tunnel"
    ],
    "paint": {
-    "fill-color": "#82A9E2"
+    "fill-color": "rgb(158,189,255)"
    }
   },
   {
@@ -443,7 +443,7 @@
     false
    ],
    "paint": {
-    "fill-color": "#C7CEC4",
+    "fill-color": "#E0DCD6",
     "fill-opacity": 0.7
    }
   },
@@ -635,7 +635,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#ADB2A8",
+    "line-color": "#C2BFBA",
     "line-dasharray": [
      0.5,
      0.25
@@ -740,7 +740,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#ADB2A8",
+    "line-color": "#C2BFBA",
     "line-opacity": [
      "interpolate",
      [
@@ -1686,7 +1686,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#ADB2A8",
+    "line-color": "#C2BFBA",
     "line-width": [
      "interpolate",
      [
@@ -1835,7 +1835,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#ADB2A8",
+    "line-color": "#C2BFBA",
     "line-opacity": [
      "interpolate",
      [
@@ -3897,7 +3897,7 @@
    "minzoom": 13,
    "maxzoom": 14,
    "paint": {
-    "fill-color": "#BBC0B7",
+    "fill-color": "#D3CEC7",
     "fill-outline-color": [
      "interpolate",
      [

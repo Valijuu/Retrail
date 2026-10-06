@@ -7,24 +7,19 @@ const _base = 'https://tiles.openfreemap.org/styles';
 const _licence =
     'MIT (OpenFreeMap styles); design CC BY 4.0 OpenMapTiles — credited as "© OpenMapTiles"';
 
-/// Retrail Light: OpenFreeMap Liberty toned down — its near-white ground made
-/// the light map glaring. A muted grey-green ground, darker buildings and
-/// casings, stronger green and water; white/yellow roads stand out more.
+/// Retrail Light: OpenFreeMap Liberty dimmed — its near-white ground glared.
+/// Only the ground, residential areas, buildings and minor-road casings get a
+/// greyer, slightly darker neutral tone; green and water stay Liberty's (no
+/// green tint — the app's grey-green terrain looked off on the map).
 const _lightPaint = <String, Map<String, String>>{
-  'background': {'background-color': '#D2DDD2'},
-  'landuse_residential': {'fill-color': '#C8D0C5'},
-  'building': {'fill-color': '#BBC0B7'},
-  'park': {'fill-color': '#B7D2A2'},
-  'landcover_grass': {'fill-color': '#A9CB91'},
-  'landcover_wood': {'fill-color': '#9CC386'},
-  'water': {'fill-color': '#82A9E2'},
-  'waterway_river': {'line-color': '#82A9E2'},
-  'waterway_other': {'line-color': '#82A9E2'},
-  'aeroway_fill': {'fill-color': '#C7CEC4'},
-  'road_minor_casing': {'line-color': '#ADB2A8'},
-  'road_service_track_casing': {'line-color': '#ADB2A8'},
-  'tunnel_street_casing': {'line-color': '#ADB2A8'},
-  'tunnel_service_track_casing': {'line-color': '#ADB2A8'},
+  'background': {'background-color': '#ECE8E3'},
+  'landuse_residential': {'fill-color': '#E2DED8'},
+  'building': {'fill-color': '#D3CEC7'},
+  'aeroway_fill': {'fill-color': '#E0DCD6'},
+  'road_minor_casing': {'line-color': '#C2BFBA'},
+  'road_service_track_casing': {'line-color': '#C2BFBA'},
+  'tunnel_street_casing': {'line-color': '#C2BFBA'},
+  'tunnel_service_track_casing': {'line-color': '#C2BFBA'},
 };
 
 /// Retrail Dark: OpenFreeMap Dark lifted onto the app's DarkMapTerrain.

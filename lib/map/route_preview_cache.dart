@@ -27,8 +27,9 @@ typedef PreviewRenderer = Future<PreviewResult> Function(
 /// loop marker and direction arrows. A new directory makes existing rides
 /// re-render instead of serving the outdated PNG (`RoutePreviewCache.purgeOutdatedVersions`
 /// clears the old ones); v7 — OpenFreeMap vector tiles replace the old
-/// raster tiles (Spec 19); v8 — Retrail Light replaces Liberty.
-const int _cacheVersion = 8;
+/// raster tiles (Spec 19); v8 — Retrail Light; v9 — neutral Retrail Light,
+/// style one zoom lower (thinner roads, smaller labels).
+const int _cacheVersion = 9;
 const String _versionDir = 'ride_previews_v$_cacheVersion';
 final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
 

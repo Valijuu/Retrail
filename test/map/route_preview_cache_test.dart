@@ -18,12 +18,12 @@ void main() {
 
   const points = <RoutePoint>[(lat: 1, lng: 2), (lat: 3, lng: 4)];
 
-  test('previews live in ride_previews_v8 (Spec 19: every preview re-renders '
+  test('previews live in ride_previews_v9 (Spec 19: every preview re-renders '
       'with OpenFreeMap, Retrail Light)', () {
     final cache =
         RoutePreviewCache(baseDir: tempDir, render: (_, _) async => _png([1]));
     expect(cache.fileFor(1, brightness: Brightness.light).path,
-        '${tempDir.path}/ride_previews_v8/1.png');
+        '${tempDir.path}/ride_previews_v9/1.png');
   });
 
   test('purgeOutdatedVersions deletes older preview dirs, keeps the current '

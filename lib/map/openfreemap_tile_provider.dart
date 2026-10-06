@@ -124,7 +124,7 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
           ? null
           : ui.Rect.fromLTWH(source.left, source.top, source.size, source.size),
       zoomScaleFactor: source.scale.toDouble(),
-      zoom: z.toDouble(),
+      zoom: (z - kPreviewStyleZoomOffset).toDouble(),
       rotation: 0,
     );
     final picture = recorder.endRecording();
