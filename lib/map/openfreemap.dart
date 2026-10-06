@@ -23,7 +23,7 @@ const int kPreviewStyleZoomOffset = 1;
 /// Labels in a preview are drawn at this share of the style's text size: the
 /// small preview is shown stretched across the card, and at full size street
 /// names crowded it (seen on the device).
-const double kPreviewLabelScale = 0.75;
+const double kPreviewLabelScale = 0.65;
 
 /// The vector source name in the OpenFreeMap styles.
 const String kOpenFreeMapSource = 'openmaptiles';

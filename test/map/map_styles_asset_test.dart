@@ -20,12 +20,12 @@ void main() {
     }
   });
 
-  test('Retrail Light is Liberty dimmed, neutral: a greyer ground, '
-      'residential and buildings, Liberty\'s own green and water', () {
+  test('Retrail Light is Liberty dimmed and warm (matches the app\'s cream '
+      'and its orange position marker), Liberty\'s own green and water', () {
     final light = _style('retrail_light');
-    expect(_layer(light, 'background')['paint']['background-color'], '#ECE8E3');
-    expect(_layer(light, 'landuse_residential')['paint']['fill-color'], '#E2DED8');
-    expect(_layer(light, 'building')['paint']['fill-color'], '#D3CEC7');
+    expect(_layer(light, 'background')['paint']['background-color'], '#EEE5DA');
+    expect(_layer(light, 'landuse_residential')['paint']['fill-color'], '#E6DBCE');
+    expect(_layer(light, 'building')['paint']['fill-color'], '#D7CABC');
     expect(_layer(light, 'park')['paint']['fill-color'], '#d8e8c8',
         reason: 'no green tint added: Liberty\'s park colour stays');
     expect(_layer(light, 'water')['paint']['fill-color'], 'rgb(158,189,255)');

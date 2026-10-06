@@ -21,7 +21,7 @@
    "id": "background",
    "type": "background",
    "paint": {
-    "background-color": "#ECE8E3"
+    "background-color": "#EEE5DA"
    }
   },
   {
@@ -85,7 +85,7 @@
     "residential"
    ],
    "paint": {
-    "fill-color": "#E2DED8"
+    "fill-color": "#E6DBCE"
    }
   },
   {
@@ -443,7 +443,7 @@
     false
    ],
    "paint": {
-    "fill-color": "#E0DCD6",
+    "fill-color": "#E4DACE",
     "fill-opacity": 0.7
    }
   },
@@ -635,7 +635,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#C2BFBA",
+    "line-color": "#C9BCAE",
     "line-dasharray": [
      0.5,
      0.25
@@ -740,7 +740,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#C2BFBA",
+    "line-color": "#C9BCAE",
     "line-opacity": [
      "interpolate",
      [
@@ -1686,7 +1686,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#C2BFBA",
+    "line-color": "#C9BCAE",
     "line-width": [
      "interpolate",
      [
@@ -1835,7 +1835,7 @@
     "line-join": "round"
    },
    "paint": {
-    "line-color": "#C2BFBA",
+    "line-color": "#C9BCAE",
     "line-opacity": [
      "interpolate",
      [
@@ -3897,7 +3897,7 @@
    "minzoom": 13,
    "maxzoom": 14,
    "paint": {
-    "fill-color": "#D3CEC7",
+    "fill-color": "#D7CABC",
     "fill-outline-color": [
      "interpolate",
      [

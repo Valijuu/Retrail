@@ -29,8 +29,9 @@ typedef PreviewRenderer = Future<PreviewResult> Function(
 /// clears the old ones); v7 — OpenFreeMap vector tiles replace the old
 /// raster tiles (Spec 19); v8 — Retrail Light; v9 — neutral Retrail Light,
 /// style one zoom lower (thinner roads, smaller labels); v10 — tiles snapped
-/// to device pixels (sharp), labels × 0.75, darker Retrail Dark.
-const int _cacheVersion = 10;
+/// to device pixels (sharp), labels × 0.75, darker Retrail Dark; v11 — warm
+/// Retrail Light, labels × 0.65.
+const int _cacheVersion = 11;
 const String _versionDir = 'ride_previews_v$_cacheVersion';
 final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
 
