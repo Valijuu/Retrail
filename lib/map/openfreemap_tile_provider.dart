@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:vector_tile_renderer/vector_tile_renderer.dart' as vtr;
@@ -117,7 +118,10 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
     final canvas = ui.Canvas(recorder);
     canvas.scale(pixelRatio * source.scale);
     canvas.translate(-source.left, -source.top);
-    vtr.Renderer(theme: theme).render(
+    vtr.Renderer(
+      theme: theme,
+      painterProvider: const PreviewTextPainterProvider(kPreviewLabelScale),
+    ).render(
       canvas,
       vtr.TileSource(tileset: vtr.Tileset({kOpenFreeMapSource: tile})),
       clip: source.scale == 1
@@ -151,3 +155,18 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
 /// drag its pending futures along, which can't be sent).
 Future<vtr.VectorTile> _parseOffUiIsolate(Uint8List bytes) =>
     Isolate.run(() => vtr.VectorTileReader().read(bytes));
+
+/// Lays labels out at [scale] × the style's text size (`kPreviewLabelScale`).
+class PreviewTextPainterProvider extends vtr.TextPainterProvider {
+  const PreviewTextPainterProvider(this.scale);
+
+  final double scale;
+
+  @override
+  TextPainter provide(vtr.StyledSymbol symbol) => TextPainter(
+        text: TextSpan(style: symbol.style.textStyle, text: symbol.text),
+        textAlign: symbol.style.textAlign,
+        textDirection: TextDirection.ltr,
+        textScaler: TextScaler.linear(scale),
+      )..layout();
+}

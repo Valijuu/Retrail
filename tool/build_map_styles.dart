@@ -22,41 +22,43 @@ const _lightPaint = <String, Map<String, String>>{
   'tunnel_service_track_casing': {'line-color': '#C2BFBA'},
 };
 
-/// Retrail Dark: OpenFreeMap Dark lifted onto the app's DarkMapTerrain.
+/// Retrail Dark: OpenFreeMap Dark (near black) lifted onto a dark grey-green
+/// a step below the app's DarkMapTerrain — the first version at that very
+/// colour looked too light on the device.
 const _darkPaint = <String, Map<String, String>>{
-  'background': {'background-color': '#20292A'},
-  'water': {'fill-color': '#1B3346'},
-  'waterway': {'line-color': '#1B3346'},
-  'landcover_ice_shelf': {'fill-color': '#20292A'},
-  'landcover_glacier': {'fill-color': '#20292A'},
-  'landuse_residential': {'fill-color': '#232D2E'},
-  'landcover_wood': {'fill-color': '#213A2B'},
-  'landuse_park': {'fill-color': '#233D2D'},
-  'building': {'fill-color': '#2C3A3A', 'fill-outline-color': '#334242'},
-  'aeroway-taxiway': {'line-color': '#2F3B3B'},
-  'aeroway-runway-casing': {'line-color': '#3A4747'},
-  'aeroway-area': {'fill-color': '#263132'},
-  'aeroway-runway': {'line-color': '#2F3B3B'},
-  'road_area_pier': {'fill-color': '#20292A'},
-  'road_pier': {'line-color': '#20292A'},
-  'highway_path': {'line-color': '#3C4A49'},
-  'highway_minor': {'line-color': '#424F4E'},
-  'highway_major_casing': {'line-color': '#56625F'},
-  'highway_major_inner': {'line-color': '#4A5654'},
-  'highway_major_subtle': {'line-color': '#4A5654'},
-  'highway_motorway_casing': {'line-color': '#66716D'},
-  'highway_motorway_inner': {'line-color': '#58635F'},
-  'highway_motorway_subtle': {'line-color': '#4A5654'},
-  'railway_transit': {'line-color': '#3A4545'},
-  'railway_transit_dashline': {'line-color': '#20292A'},
-  'railway_minor': {'line-color': '#3A4545'},
-  'railway_minor_dashline': {'line-color': '#20292A'},
-  'railway': {'line-color': '#3A4545'},
-  'railway_dashline': {'line-color': '#20292A'},
+  'background': {'background-color': '#181E1F'},
+  'water': {'fill-color': '#15283A'},
+  'waterway': {'line-color': '#15283A'},
+  'landcover_ice_shelf': {'fill-color': '#181E1F'},
+  'landcover_glacier': {'fill-color': '#181E1F'},
+  'landuse_residential': {'fill-color': '#1B2223'},
+  'landcover_wood': {'fill-color': '#19291F'},
+  'landuse_park': {'fill-color': '#1B2E22'},
+  'building': {'fill-color': '#222B2B', 'fill-outline-color': '#283333'},
+  'aeroway-taxiway': {'line-color': '#242E2E'},
+  'aeroway-runway-casing': {'line-color': '#2E3939'},
+  'aeroway-area': {'fill-color': '#1D2425'},
+  'aeroway-runway': {'line-color': '#242E2E'},
+  'road_area_pier': {'fill-color': '#181E1F'},
+  'road_pier': {'line-color': '#181E1F'},
+  'highway_path': {'line-color': '#2E3A39'},
+  'highway_minor': {'line-color': '#333F3E'},
+  'highway_major_casing': {'line-color': '#45504D'},
+  'highway_major_inner': {'line-color': '#3A4543'},
+  'highway_major_subtle': {'line-color': '#3A4543'},
+  'highway_motorway_casing': {'line-color': '#545E5B'},
+  'highway_motorway_inner': {'line-color': '#47514E'},
+  'highway_motorway_subtle': {'line-color': '#3A4543'},
+  'railway_transit': {'line-color': '#2D3737'},
+  'railway_transit_dashline': {'line-color': '#181E1F'},
+  'railway_minor': {'line-color': '#2D3737'},
+  'railway_minor_dashline': {'line-color': '#181E1F'},
+  'railway': {'line-color': '#2D3737'},
+  'railway_dashline': {'line-color': '#181E1F'},
 };
-const _labelColor = '#A7B3B0';
-const _waterLabelColor = '#8FA9BD';
-const _labelHalo = 'rgba(32,41,42,0.85)';
+const _labelColor = '#96A29F';
+const _waterLabelColor = '#7E98AC';
+const _labelHalo = 'rgba(24,30,31,0.85)';
 
 Future<Map<String, dynamic>> _fetch(String name) async {
   final client = HttpClient()..userAgent = 'Retrail (io.github.valijuu.retrail)';

@@ -31,11 +31,12 @@ void main() {
     expect(_layer(light, 'water')['paint']['fill-color'], 'rgb(158,189,255)');
   });
 
-  test('Retrail Dark sits on the app\'s dark terrain colour', () {
+  test('Retrail Dark is a dark grey-green, a step darker than the app\'s '
+      'dark terrain', () {
     final dark = _style('retrail_dark');
-    expect(_layer(dark, 'background')['paint']['background-color'], '#20292A');
-    expect(_layer(dark, 'water')['paint']['fill-color'], '#1B3346');
-    expect(_layer(dark, 'building')['paint']['fill-color'], '#2C3A3A');
+    expect(_layer(dark, 'background')['paint']['background-color'], '#181E1F');
+    expect(_layer(dark, 'water')['paint']['fill-color'], '#15283A');
+    expect(_layer(dark, 'building')['paint']['fill-color'], '#222B2B');
   });
 
   test('Retrail Dark greens open grass like parks (Dark has no grass layer)',
@@ -56,7 +57,7 @@ void main() {
       if (l['type'] != 'symbol') continue;
       final paint = (l['paint'] ?? {}) as Map;
       if (!paint.containsKey('text-color')) continue;
-      expect(paint['text-color'], isIn(['#A7B3B0', '#8FA9BD']), reason: l['id']);
+      expect(paint['text-color'], isIn(['#96A29F', '#7E98AC']), reason: l['id']);
     }
   });
 

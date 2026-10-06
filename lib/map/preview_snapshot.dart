@@ -67,8 +67,14 @@ Future<PreviewResult> renderPreviewPng({
     final t = grid[i];
     final src = ui.Rect.fromLTWH(
         0, 0, image.width.toDouble(), image.height.toDouble());
+    // Snapped to whole device pixels: a tile drawn at its native density
+    // then lands 1:1 instead of being resampled between pixels, which blurred
+    // labels and thin roads. The shift is under half a device pixel.
     final dst = ui.Rect.fromLTWH(
-        t.offsetXDp, t.offsetYDp, tileSize.toDouble(), tileSize.toDouble());
+        _snap(t.offsetXDp, pixelRatio),
+        _snap(t.offsetYDp, pixelRatio),
+        tileSize.toDouble(),
+        tileSize.toDouble());
     canvas.drawImageRect(
         image, src, dst, ui.Paint()..filterQuality = ui.FilterQuality.medium);
     image.dispose();
@@ -142,3 +148,7 @@ Future<PreviewResult> renderSketchPng({
   image.dispose();
   return PreviewResult(bytes!.buffer.asUint8List(), complete: false);
 }
+
+/// [dp] rounded to the nearest whole device pixel at [pixelRatio].
+double _snap(double dp, double pixelRatio) =>
+    (dp * pixelRatio).roundToDouble() / pixelRatio;
