@@ -49,6 +49,19 @@ void main() {
     }
   });
 
+  test('Retrail Dark street names are lighter with a ground-coloured halo, '
+      'roads a step brighter', () {
+    final dark = _style('retrail_dark');
+    for (final id in ['highway_name_other', 'highway_name_motorway']) {
+      final paint = _layer(dark, id)['paint'] as Map;
+      expect(paint['text-color'], '#BAC4C1', reason: id);
+      expect(paint['text-halo-color'], '#181E1F', reason: id);
+      expect(paint['text-halo-width'], 1.5, reason: id);
+    }
+    expect(_layer(dark, 'highway_minor')['paint']['line-color'], '#3B4746');
+    expect(_layer(dark, 'highway_major_casing')['paint']['line-color'], '#4E5956');
+  });
+
   test('Retrail Dark is a dark grey-green, a step darker than the app\'s '
       'dark terrain', () {
     final dark = _style('retrail_dark');
@@ -75,7 +88,8 @@ void main() {
       if (l['type'] != 'symbol') continue;
       final paint = (l['paint'] ?? {}) as Map;
       if (!paint.containsKey('text-color')) continue;
-      expect(paint['text-color'], isIn(['#96A29F', '#7E98AC']), reason: l['id']);
+      expect(paint['text-color'], isIn(['#96A29F', '#7E98AC', '#BAC4C1']),
+          reason: l['id']);
     }
   });
 

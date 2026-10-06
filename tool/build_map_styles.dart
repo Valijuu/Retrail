@@ -52,13 +52,13 @@ const _darkPaint = <String, Map<String, String>>{
   'road_area_pier': {'fill-color': '#181E1F'},
   'road_pier': {'line-color': '#181E1F'},
   'highway_path': {'line-color': '#2E3A39'},
-  'highway_minor': {'line-color': '#333F3E'},
-  'highway_major_casing': {'line-color': '#45504D'},
-  'highway_major_inner': {'line-color': '#3A4543'},
-  'highway_major_subtle': {'line-color': '#3A4543'},
-  'highway_motorway_casing': {'line-color': '#545E5B'},
-  'highway_motorway_inner': {'line-color': '#47514E'},
-  'highway_motorway_subtle': {'line-color': '#3A4543'},
+  'highway_minor': {'line-color': '#3B4746'},
+  'highway_major_casing': {'line-color': '#4E5956'},
+  'highway_major_inner': {'line-color': '#424D4B'},
+  'highway_major_subtle': {'line-color': '#424D4B'},
+  'highway_motorway_casing': {'line-color': '#5E6865'},
+  'highway_motorway_inner': {'line-color': '#515B58'},
+  'highway_motorway_subtle': {'line-color': '#424D4B'},
   'railway_transit': {'line-color': '#2D3737'},
   'railway_transit_dashline': {'line-color': '#181E1F'},
   'railway_minor': {'line-color': '#2D3737'},
@@ -69,6 +69,12 @@ const _darkPaint = <String, Map<String, String>>{
 const _labelColor = '#96A29F';
 const _waterLabelColor = '#7E98AC';
 const _labelHalo = 'rgba(24,30,31,0.85)';
+
+/// Street names: lighter than the other labels, on a solid halo in the ground
+/// colour (they washed out at #96A29F with a thin translucent halo).
+const _darkStreetNameLayers = {'highway_name_other', 'highway_name_motorway'};
+const _darkStreetNameColor = '#BAC4C1';
+const _darkStreetNameHalo = '#181E1F';
 
 Future<Map<String, dynamic>> _fetch(String name) async {
   final client = HttpClient()..userAgent = 'Retrail (io.github.valijuu.retrail)';
@@ -111,6 +117,11 @@ Future<void> main() async {
     if (l['type'] == 'symbol' && paint.containsKey('text-color')) {
       paint['text-color'] = l['id'] == 'water_name' ? _waterLabelColor : _labelColor;
       paint['text-halo-color'] = _labelHalo;
+    }
+    if (_darkStreetNameLayers.contains(l['id'])) {
+      paint['text-color'] = _darkStreetNameColor;
+      paint['text-halo-color'] = _darkStreetNameHalo;
+      paint['text-halo-width'] = _streetNameHaloWidth;
     }
   }
   final grass = {

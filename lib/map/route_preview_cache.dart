@@ -30,8 +30,9 @@ typedef PreviewRenderer = Future<PreviewResult> Function(
 /// raster tiles (Spec 19); v8 — Retrail Light; v9 — neutral Retrail Light,
 /// style one zoom lower (thinner roads, smaller labels); v10 — tiles snapped
 /// to device pixels (sharp), labels × 0.75, darker Retrail Dark; v11 — warm
-/// Retrail Light, labels × 0.65; v12 — darker street names and road casings.
-const int _cacheVersion = 12;
+/// Retrail Light, labels × 0.65; v12 — darker street names and road casings;
+/// v13 — lighter Retrail Dark street names and roads.
+const int _cacheVersion = 13;
 const String _versionDir = 'ride_previews_v$_cacheVersion';
 final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
 
