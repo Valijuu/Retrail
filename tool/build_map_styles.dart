@@ -103,6 +103,9 @@ Future<void> main() async {
   for (final l in lightLayers) {
     final paint = (l['paint'] ??= <String, dynamic>{}) as Map<String, dynamic>;
     paint.addAll(_lightPaint[l['id']] ?? const {});
+    // Liberty stops its flat buildings at z14 where the 3D ones took over:
+    // without the 3D layer they must go on at tracking zoom.
+    if (l['id'] == 'building') l.remove('maxzoom');
     if (l['id'] == 'highway-name-minor' || l['id'] == 'highway-name-major') {
       paint['text-halo-width'] = _streetNameHaloWidth;
     }

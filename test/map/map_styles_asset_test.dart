@@ -39,6 +39,12 @@ void main() {
     expect(types, isNot(contains('fill-extrusion')));
   });
 
+  test('Retrail Light draws its flat buildings at tracking zoom too: Liberty '
+      'stops them at z14, where its 3D buildings took over', () {
+    final building = _layer(_style('retrail_light'), 'building');
+    expect(building.containsKey('maxzoom'), isFalse);
+  });
+
   test('Retrail Light street names are darker with a ground-coloured halo', () {
     final light = _style('retrail_light');
     for (final id in ['highway-name-minor', 'highway-name-major']) {
