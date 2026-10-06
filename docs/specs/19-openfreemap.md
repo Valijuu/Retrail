@@ -1,6 +1,6 @@
 # Spec 19 — Map provider: MapTiler → OpenFreeMap
 
-**Status:** DRAFT — for review. Decisions from the conversation on 2026-10-06, recorded in #58.
+**Status:** IMPLEMENTED — device check passed on the Pixel 7 on 2026-10-07 (iOS: CI build + sideload check pending). Decisions from the conversation on 2026-10-06, recorded in #58.
 **Depends on:** Spec 7 (preview pipeline), Spec 12 (preview wiring), Spec 16 (MapLibre live map), #45 (`MapAttribution`).
 
 ## Goal
