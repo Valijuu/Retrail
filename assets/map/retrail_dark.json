@@ -382,6 +382,25 @@
    }
   },
   {
+   "id": "building-3d",
+   "type": "fill-extrusion",
+   "source": "openmaptiles",
+   "source-layer": "building",
+   "minzoom": 14,
+   "paint": {
+    "fill-extrusion-color": "#3A3A3A",
+    "fill-extrusion-height": [
+     "get",
+     "render_height"
+    ],
+    "fill-extrusion-base": [
+     "get",
+     "render_min_height"
+    ],
+    "fill-extrusion-opacity": 0.5
+   }
+  },
+  {
    "id": "aeroway-taxiway",
    "type": "line",
    "source": "openmaptiles",

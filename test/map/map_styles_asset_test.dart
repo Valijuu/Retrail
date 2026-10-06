@@ -84,6 +84,22 @@ void main() {
     expect(_layer(dark, 'water')['paint']['fill-color'], '#223949');
   });
 
+  test('Retrail Dark gets subtle 3D buildings too (Dark has none): a slightly '
+      'lighter grey extrusion at half opacity from z14 over the flat fill', () {
+    final dark = _style('retrail_dark');
+    final ids = [for (final l in dark['layers'] as List) l['id']];
+    final extrusion = _layer(dark, 'building-3d');
+    expect(extrusion['type'], 'fill-extrusion');
+    expect(extrusion['source-layer'], 'building');
+    expect(extrusion['minzoom'], 14);
+    final paint = extrusion['paint'] as Map;
+    expect(paint['fill-extrusion-color'], '#3A3A3A');
+    expect(paint['fill-extrusion-opacity'], 0.5);
+    expect(paint['fill-extrusion-height'], ['get', 'render_height']);
+    expect(paint['fill-extrusion-base'], ['get', 'render_min_height']);
+    expect(ids.indexOf('building-3d'), ids.indexOf('building') + 1);
+  });
+
   test('Retrail Dark draws every road and path in one grey, as basic-v2-dark',
       () {
     final dark = _style('retrail_dark');

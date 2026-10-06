@@ -176,5 +176,23 @@ Future<void> main() async {
     'filter': ['==', ['get', 'class'], 'grass'],
     'paint': {'fill-color': _darkGreen},
   });
+  // Dark has no 3D buildings: add them as in Retrail Light (topo-v2's subtle
+  // half-transparent extrusion), a little lighter than the flat fill so the
+  // buildings get volume on the dark ground.
+  final building = darkLayers.indexWhere((l) => l['id'] == 'building');
+  if (building < 0) throw StateError('dark: no building layer for 3D');
+  darkLayers.insert(building + 1, {
+    'id': 'building-3d',
+    'type': 'fill-extrusion',
+    'source': 'openmaptiles',
+    'source-layer': 'building',
+    'minzoom': 14,
+    'paint': {
+      'fill-extrusion-color': '#3A3A3A',
+      'fill-extrusion-height': ['get', 'render_height'],
+      'fill-extrusion-base': ['get', 'render_min_height'],
+      'fill-extrusion-opacity': 0.5,
+    },
+  });
   _write('retrail_dark', dark, 'dark');
 }
