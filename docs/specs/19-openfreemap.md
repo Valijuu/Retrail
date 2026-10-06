@@ -53,7 +53,13 @@ Per tile that is roughly 10–25 ms on the UI isolate. A catch-up of ~100 previe
 ## C. Credit — `MapAttribution`
 
 - Text: **"© OpenMapTiles"** (→ `https://openmaptiles.org/`) and **"© OpenStreetMap"** (→ `https://www.openstreetmap.org/copyright`), same in EN and DE. The short OSM form is allowed by the OSMF Attribution Guidelines; naming OpenFreeMap is optional per OpenFreeMap. ARB: `mapAttributionOpenMapTiles`, `mapAttributionOsm` (new text); `mapAttributionMapTiler` is removed.
-- **Live maps collapse it** (ride / follow map, detail and fullscreen map): it shows expanded, then collapses to a round ⓘ button after **5 s** or on the **first pointer-down outside the credit** (any touch counts as interacting with the screen; OSMF allows collapsing on map interaction or after 5 s). Tapping ⓘ expands it again; it collapses again on the next outside touch or after 5 s. The widget handles this itself (`collapsible: true`, a timer plus a global pointer route that ignores touches within its own box), so the hosts only pass the flag. The ⓘ is a small app-surface circle with `Icons.info_outline` in `onSurfaceVariant`, tooltip "Map credits" / "Kartenquellen".
+- **Live maps collapse it** (ride / follow map, detail and fullscreen map), shown expanded **once per app start** (decision 2026-10-06):
+  - The **first** live map after the app starts shows the credit expanded, then collapses it to a round ⓘ button after **5 s** or on the **first pointer-down outside the credit** (any touch counts as interacting with the screen).
+  - **Every later live map in the same process starts collapsed** as ⓘ. The OSMF guidelines allow this: "If attribution is presented to the user upon application startup, it does not need to be presented to the user every time the user looks at or interacts with the application." Collapsing itself is allowed on map interaction or after 5 s. Starting collapsed without ever showing it (MapLibre's default) would not be.
+  - Tapping ⓘ expands it again; it collapses again on the next outside touch or after 5 s.
+  - "Shown this app start" is process-lifetime state: `mapCreditShownProvider` (a Riverpod `StateProvider<bool>`, false at start). A collapsible credit starts expanded only while it is false and sets it to true when it first builds expanded. A brightness rebuild of the same map keeps its widget state, so it does not count as a new map.
+  - The widget handles the collapsing itself (`collapsible: true`: a timer plus a global pointer route that ignores touches within its own box), so the hosts only pass the flag.
+  - The ⓘ is a small app-surface circle with `Icons.info_outline` in `onSurfaceVariant`, tooltip "Map credits" / "Kartenquellen".
 - **Previews** keep the short text, not collapsible, not tappable (unchanged placement, bottom-left of the card).
 
 ## D. Removing MapTiler
@@ -72,9 +78,9 @@ All of it is dead once replaced:
 
 - **Pure logic → EXACT (`tdd-dart`):** TileJSON → template; template → tile URL; overzoom (parent + sub-square + scale for z ≤ 14 and z 15/16); preview theme filter (drops `raster` and `fill-extrusion`, keeps `symbol`, keeps everything else in order).
 - **Provider → Red-Green-Refactor** with a fake `http.Client` and a committed fixture pbf of a public place (a sparse z14 tile, OSM data under ODbL — no ride data): TileJSON fetched once; the tile URL and User-Agent sent; z16 fetches its z14 parent; two tiles of one parent → one fetch; 404 → `null` and the template re-resolved; timeout/garbage → `null`; a valid tile → a 768 px `ui.Image`.
-- **Widgets → Red-Green-Refactor:** `MapAttribution` texts EN/DE and links; collapsible: collapses after 5 s (`fake_async`), on an outside pointer-down, not on a touch inside; ⓘ expands; non-collapsible previews unchanged. Hosts pass `collapsible: true` (ride map area, detail, fullscreen) and not on the cards.
+- **Widgets → Red-Green-Refactor:** `MapAttribution` texts EN/DE and links; collapsible: the first one starts expanded and sets `mapCreditShownProvider`, a later one starts as ⓘ; collapses after 5 s (`fake_async`), on an outside pointer-down, not on a touch inside; ⓘ expands; non-collapsible previews unchanged. Hosts pass `collapsible: true` (ride map area, detail, fullscreen) and not on the cards.
 - `live_map_style_test.dart`: light → the Liberty URL, dark → the bundled JSON string.
-- **On the device (alongside, not test-first):** live map Liberty + Retrail Dark; previews re-render after the update in light + dark, with labels; no visible jank during the catch-up; offline → sketch, back online → map; the credit collapses and reopens; EN + DE.
+- **On the device (alongside, not test-first):** live map Liberty + Retrail Dark; previews re-render after the update in light + dark, with labels; no visible jank during the catch-up; offline → sketch, back online → map; the credit shows expanded on the first map after an app start only, collapses and reopens; EN + DE.
 
 ## Acceptance
 
