@@ -56,8 +56,9 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
   Future<TileJson> _resolveTileJson() => _tileJson ??= () async {
     try {
       final res = await _get(Uri.parse(kOpenFreeMapTileJsonUrl));
-      if (res.statusCode != 200)
+      if (res.statusCode != 200) {
         throw http.ClientException('TileJSON ${res.statusCode}');
+      }
       return parseTileJson(res.body);
     } catch (_) {
       _tileJson = null; // retried by the next tile
@@ -73,10 +74,11 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
       final res = await _get(
         tileUrl(tileJson.template, source.z, source.x, source.y),
       );
-      if (res.statusCode == 404)
-        _tileJson = null; // weekly data version moved on
-      if (res.statusCode != 200)
+      // A 404: the weekly data version moved on, so resolve TileJSON again.
+      if (res.statusCode == 404) _tileJson = null;
+      if (res.statusCode != 200) {
         throw http.ClientException('tile ${res.statusCode}');
+      }
       return _parseOffUiIsolate(res.bodyBytes);
     }();
     _tiles[key] = loading;
