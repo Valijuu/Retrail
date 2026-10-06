@@ -99,10 +99,13 @@ const _darkPaint = <String, Map<String, Object>>{
     'text-halo-color': 'rgba(0,0,0,0.75)',
   },
 };
+/// basic-v2-dark's street-name colour; its hard black 1 px halo looked jagged
+/// on the device, so the halo is a softer near-ground grey, wider and blurred.
 const _darkStreetName = <String, Object>{
   'text-color': '#C2C2C2',
-  'text-halo-color': '#000000',
-  'text-halo-width': 1,
+  'text-halo-color': '#1F1F1F',
+  'text-halo-width': 1.5,
+  'text-halo-blur': 0.5,
 };
 
 /// Every other dark label (places): basic-v2-dark's place labels.

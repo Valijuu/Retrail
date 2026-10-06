@@ -1566,9 +1566,9 @@
    },
    "paint": {
     "text-color": "#C2C2C2",
-    "text-halo-blur": 0,
-    "text-halo-color": "#000000",
-    "text-halo-width": 1,
+    "text-halo-blur": 0.5,
+    "text-halo-color": "#1F1F1F",
+    "text-halo-width": 1.5,
     "text-translate": [
      0,
      0
@@ -1626,8 +1626,9 @@
      0,
      2
     ],
-    "text-halo-color": "#000000",
-    "text-halo-width": 1
+    "text-halo-color": "#1F1F1F",
+    "text-halo-width": 1.5,
+    "text-halo-blur": 0.5
    }
   },
   {

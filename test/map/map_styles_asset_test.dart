@@ -107,14 +107,15 @@ void main() {
         reason: 'grass is drawn under water and roads');
   });
 
-  test('Retrail Dark labels: street names #C2C2C2 on black, places #DBDBDB',
-      () {
+  test('Retrail Dark labels: street names #C2C2C2 on a soft dark halo (a hard '
+      'black 1 px halo looked jagged on the device), places #DBDBDB', () {
     final dark = _style('retrail_dark');
     for (final id in ['highway_name_other', 'highway_name_motorway']) {
       final paint = _layer(dark, id)['paint'] as Map;
       expect(paint['text-color'], '#C2C2C2', reason: id);
-      expect(paint['text-halo-color'], '#000000', reason: id);
-      expect(paint['text-halo-width'], 1, reason: id);
+      expect(paint['text-halo-color'], '#1F1F1F', reason: id);
+      expect(paint['text-halo-width'], 1.5, reason: id);
+      expect(paint['text-halo-blur'], 0.5, reason: id);
     }
     final place = _layer(dark, 'place_town')['paint'] as Map;
     expect(place['text-color'], '#DBDBDB');
