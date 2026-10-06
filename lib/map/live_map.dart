@@ -211,11 +211,15 @@ const double _arrowSpacingPx = 60;
 const double _arrowIconSize = 4.5 / 3.5;
 
 
-/// `icon-size` for a symbol image rasterised at [pixelRatio]: MapLibre sizes
-/// a registered image by its raw pixel count in dp (see the 0.19 note on the
-/// activity badge), so a dp-sized image drawn at the device pixel ratio is
-/// scaled back down by it — crisp, at its intended dp size × [scale].
-double _iconSize(double scale, double pixelRatio) => scale / pixelRatio;
+/// How to rasterise a dp-sized symbol image shown [scale]× on a
+/// [pixelRatio] device: MapLibre sizes a registered image by its raw pixel
+/// count in dp (see the 0.19 note on the activity badge). Rasterised at
+/// `pixelRatio × scale` and shown at `icon-size` `1 / pixelRatio`, one image
+/// pixel lands on one device pixel. Rasterising at `pixelRatio` and scaling
+/// up by `icon-size` blurred the start/finish markers and arrows.
+({double rasterRatio, double iconSize}) symbolRaster(
+        double scale, double pixelRatio) =>
+    (rasterRatio: pixelRatio * scale, iconSize: 1 / pixelRatio);
 
 /// `#RRGGBB` for a token [Color], the form MapLibre paint properties expect.
 /// `toARGB32()` is the non-deprecated 32-bit accessor (replaces `Color.value`).
@@ -821,7 +825,8 @@ class _LiveMapState extends State<LiveMap>
     ));
     if (_superseded(style)) return;
     // Direction arrowheads, placed and rotated along the line by MapLibre.
-    final arrowPng = await routeArrowImagePng(colors, pixelRatio);
+    final arrow = symbolRaster(_arrowIconSize, pixelRatio);
+    final arrowPng = await routeArrowImagePng(colors, arrow.rasterRatio);
     if (_superseded(style)) return;
     await style.addImage(_arrowImage, arrowPng);
     if (_superseded(style)) return;
@@ -832,7 +837,7 @@ class _LiveMapState extends State<LiveMap>
         'symbol-placement': 'line',
         'symbol-spacing': _arrowSpacingPx,
         'icon-image': _arrowImage,
-        'icon-size': _iconSize(_arrowIconSize, pixelRatio),
+        'icon-size': arrow.iconSize,
         'icon-rotation-alignment': 'map',
         'icon-keep-upright': false,
         'icon-allow-overlap': true,
@@ -851,7 +856,7 @@ class _LiveMapState extends State<LiveMap>
             'symbol-placement': 'line',
             'symbol-spacing': _arrowSpacingPx,
             'icon-image': _arrowImage,
-            'icon-size': _iconSize(_arrowIconSize, pixelRatio),
+            'icon-size': arrow.iconSize,
             'icon-rotation-alignment': 'map',
             'icon-keep-upright': false,
             'icon-allow-overlap': true,
@@ -1034,7 +1039,8 @@ class _LiveMapState extends State<LiveMap>
       AppColors colors,
       double pixelRatio) async {
     final imageId = 'endpoint-${kind.name}';
-    final png = await routeMarkerImagePng(kind, colors, pixelRatio);
+    final raster = symbolRaster(mapEndpointMarkerScale, pixelRatio);
+    final png = await routeMarkerImagePng(kind, colors, raster.rasterRatio);
     if (_superseded(style)) return;
     await style.addImage(imageId, png);
     if (_superseded(style)) return;
@@ -1045,7 +1051,7 @@ class _LiveMapState extends State<LiveMap>
       sourceId: id,
       layout: {
         'icon-image': imageId,
-        'icon-size': _iconSize(mapEndpointMarkerScale, pixelRatio),
+        'icon-size': raster.iconSize,
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
       },
