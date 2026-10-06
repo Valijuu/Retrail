@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/features/active_ride/widgets/ride_chrome.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/map/map_attribution.dart';
 import 'package:retrail/tracking/ride_tracking_state.dart';
 
 import '../support/live_map_stub.dart';
@@ -45,6 +46,17 @@ void main() {
     expect(find.byIcon(Icons.swap_vert), findsOneWidget);
     await tester.tap(button);
     expect(taps, 1);
+  });
+
+  testWidgets('credits the map tiles, tappable', (tester) async {
+    await pumpArea(tester, onReverse: () {}, isFollowing: false);
+    final credit = tester.widget<MapAttribution>(find.byType(MapAttribution));
+    expect(credit.onOpen, isNotNull);
+  });
+
+  testWidgets('masked (leaving): no map credit over the cover', (tester) async {
+    await pumpArea(tester, masked: true);
+    expect(find.byType(MapAttribution), findsNothing);
   });
 
   testWidgets('no onReverse: no reverse button', (tester) async {

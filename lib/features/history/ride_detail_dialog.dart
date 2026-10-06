@@ -9,6 +9,7 @@ import '../../domain/formatters.dart';
 import '../../domain/ride_stats.dart';
 import '../../l10n/app_localizations.dart';
 import '../../map/live_map.dart';
+import '../../map/map_attribution.dart';
 import '../../map/preview_projection.dart';
 import '../onboarding/activity_type_ui.dart';
 import '../../core/theme/theme_context.dart';
@@ -93,6 +94,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
         child: Stack(
           children: [
             Positioned.fill(child: map),
+            const _MapCredit(),
             Positioned(
               top: 16,
               right: 16,
@@ -149,6 +151,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                             : map,
                       ),
                     ),
+                    if (points.isNotEmpty) const _MapCredit(),
                     if (points.isNotEmpty)
                       Positioned(
                         top: 8,
@@ -341,4 +344,17 @@ class _CircleIcon extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The tile credit at the bottom centre of the detail / fullscreen map.
+class _MapCredit extends StatelessWidget {
+  const _MapCredit();
+
+  @override
+  Widget build(BuildContext context) => const Positioned(
+        left: 0,
+        right: 0,
+        bottom: kMapAttributionInset,
+        child: Center(child: MapAttribution(onOpen: openMapCopyright)),
+      );
 }

@@ -11,4 +11,10 @@ abstract final class MapConfig {
   /// renderer's raster tiles, so both stay on the same basemap.
   static String vectorStyleUrl(bool dark) =>
       'https://api.maptiler.com/maps/${MapStyle.mapId(dark)}/style.json?key=$mapTilerKey';
+
+  /// Copyright pages the map credits link to (`MapAttribution`).
+  static final Uri mapTilerCopyright =
+      Uri.parse('https://www.maptiler.com/copyright/');
+  static final Uri osmCopyright =
+      Uri.parse('https://www.openstreetmap.org/copyright');
 }

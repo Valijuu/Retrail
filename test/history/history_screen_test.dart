@@ -30,6 +30,7 @@ import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/features/home/navigation_launcher.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/live_map.dart';
+import 'package:retrail/map/map_attribution.dart';
 import 'package:retrail/map/preview_projection.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview.dart';
@@ -348,6 +349,17 @@ void main() {
     await tester.pump(); // lazy per-ride trackpoints fetch (issue #21) lands
     expect(spy.warmed, containsAll([1, 2]));
     expect(spy.warmed, isNot(contains(3))); // nothing to render for no-route
+  });
+
+  testWidgets(
+      'a route preview credits its map tiles as plain text (the card is the '
+      'tap target); a card without a route has no credit', (tester) async {
+    await pump(tester, [_routedEntry(1), _entry(2)], trackpoints: {
+      1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
+    });
+    final credits = tester.widgetList<MapAttribution>(find.byType(MapAttribution));
+    expect(credits, hasLength(1));
+    expect(credits.single.onOpen, isNull);
   });
 
   testWidgets('thumbnail top corners are clipped to the card radius '

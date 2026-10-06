@@ -13,6 +13,7 @@ import 'package:retrail/features/history/edit_ride_sheet.dart';
 import 'package:retrail/features/history/ride_detail_dialog.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/live_map.dart';
+import 'package:retrail/map/map_attribution.dart';
 
 import '../support/live_map_stub.dart';
 
@@ -387,6 +388,50 @@ void main() {
         onFollowRoute: () {},
       )));
       expect(find.text('Follow route'), findsNothing);
+    });
+
+    testWidgets('the map credits its tiles, tappable, in the dialog and '
+        'in fullscreen', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
+          Trackpoint(
+              trackpointId: 0,
+              rideId: 1,
+              latitude: 52.0,
+              longitude: 13.0,
+              timestamp: 0),
+          Trackpoint(
+              trackpointId: 1,
+              rideId: 1,
+              latitude: 52.02,
+              longitude: 13.0,
+              timestamp: 1),
+        ]),
+        stats: const RideStats(
+            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
+        onDismiss: () {},
+      )));
+      expect(tester.widget<MapAttribution>(find.byType(MapAttribution)).onOpen,
+          isNotNull);
+
+      await tester.tap(find.byIcon(Icons.fullscreen));
+      await tester.pump();
+      expect(tester.widget<MapAttribution>(find.byType(MapAttribution)).onOpen,
+          isNotNull);
+    });
+
+    testWidgets('no route: no map credit', (tester) async {
+      await tester.pumpWidget(_host(RideDetailDialog(
+        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+        stats: const RideStats(
+            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
+        onDismiss: () {},
+      )));
+      expect(find.byType(MapAttribution), findsNothing);
     });
 
     testWidgets(

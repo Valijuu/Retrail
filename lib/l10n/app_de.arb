@@ -66,6 +66,8 @@
   "mapResumeRide": "Fortsetzen",
   "mapRecenterCd": "Neu zentrieren",
   "mapOfflineBanner": "Offline — Karte eventuell nicht verfügbar",
+  "mapAttributionMapTiler": "© MapTiler",
+  "mapAttributionOsm": "© OpenStreetMap-Mitwirkende",
   "rideLocationOffBanner": "Standort ist aus — deine Strecke wird nicht aufgezeichnet. Tippen zum Einschalten.",
   "followRouteAction": "Strecke nachfahren",
   "followRouteRecordTitle": "Fahrt aufzeichnen?",

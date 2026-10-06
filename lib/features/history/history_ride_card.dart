@@ -7,6 +7,7 @@ import '../../domain/activity_type.dart';
 import '../../domain/formatters.dart';
 import '../../domain/ride_title.dart';
 import '../../l10n/app_localizations.dart';
+import '../../map/map_attribution.dart';
 import '../../map/preview_projection.dart';
 import '../../map/route_preview.dart';
 import '../active_ride/active_ride_providers.dart';
@@ -307,6 +308,14 @@ class _Thumbnail extends ConsumerWidget {
                         semanticLabel: l10n.a11ySelected)
                     : null,
               ),
+            ),
+          // Plain text: the whole thumbnail is the card's tap target. Bottom
+          // left, clear of the navigate button.
+          if (hasRoute)
+            const Positioned(
+              left: kMapAttributionInset,
+              bottom: kMapAttributionInset,
+              child: IgnorePointer(child: MapAttribution()),
             ),
           if (hasRoute && !selectionMode)
             Positioned(

@@ -5,6 +5,7 @@ import '../../../domain/activity_type.dart';
 import '../../../domain/route_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../map/live_map.dart';
+import '../../../map/map_attribution.dart';
 import '../../../tracking/ride_tracking_state.dart';
 import '../../onboarding/activity_type_ui.dart';
 import '../../../core/theme/theme_context.dart';
@@ -195,6 +196,14 @@ class RideMapArea extends StatelessWidget {
         ),
         if (masked)
           Positioned.fill(child: ColoredBox(color: colors.mapTerrain)),
+        // Bottom centre, between the corner controls (recenter / reverse).
+        if (!masked)
+          const Positioned(
+            left: kMapControlSize + 2 * kMapControlInset,
+            right: kMapControlSize + 2 * kMapControlInset,
+            bottom: kMapAttributionInset,
+            child: Center(child: MapAttribution(onOpen: openMapCopyright)),
+          ),
         if (!masked && !isFollowing)
           Positioned(
             left: kMapControlInset,

@@ -67,6 +67,8 @@
   "mapResumeRide": "Resume",
   "mapRecenterCd": "Re-center",
   "mapOfflineBanner": "Offline — map tiles may not be available",
+  "mapAttributionMapTiler": "© MapTiler",
+  "mapAttributionOsm": "© OpenStreetMap contributors",
   "rideLocationOffBanner": "Location is off — your route isn't being recorded. Tap to turn it on.",
   "followRouteAction": "Follow route",
   "followRouteRecordTitle": "Record this ride?",
