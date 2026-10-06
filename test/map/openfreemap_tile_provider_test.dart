@@ -108,6 +108,31 @@ void main() {
     return bytes;
   }
 
+  group('previewHalo', () {
+    // vtr's halo: four copies of the text, offset diagonally by the halo
+    // width — on a dark map they show as jagged spikes around the letters.
+    const color = ui.Color(0xFF1F1F1F);
+    final diagonal = [
+      for (final (dx, dy) in [(-1.5, -1.5), (1.5, 1.5), (1.5, -1.5), (-1.5, 1.5)])
+        ui.Shadow(offset: ui.Offset(dx, dy), blurRadius: 1.5, color: color),
+    ];
+
+    test('turns the diagonal copies into an even glow centred on the text', () {
+      final halo = previewHalo(diagonal)!;
+      expect(halo, isNotEmpty);
+      for (final s in halo) {
+        expect(s.offset, ui.Offset.zero);
+        expect(s.color, color);
+        expect(s.blurRadius, 1.5);
+      }
+    });
+
+    test('no halo stays no halo', () {
+      expect(previewHalo(null), isNull);
+      expect(previewHalo(const []), isEmpty);
+    });
+  });
+
   const scaled = PreviewTextPainterProvider(kPreviewLabelScale);
 
   test('styles a tile one zoom level below its grid zoom: MapLibre styles '

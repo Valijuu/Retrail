@@ -164,9 +164,30 @@ class PreviewTextPainterProvider extends vtr.TextPainterProvider {
 
   @override
   TextPainter provide(vtr.StyledSymbol symbol) => TextPainter(
-        text: TextSpan(style: symbol.style.textStyle, text: symbol.text),
+        text: TextSpan(
+          style: symbol.style.textStyle.copyWith(
+            shadows: previewHalo(symbol.style.textStyle.shadows),
+          ),
+          text: symbol.text,
+        ),
         textAlign: symbol.style.textAlign,
         textDirection: TextDirection.ltr,
         textScaler: TextScaler.linear(scale),
       )..layout();
+}
+
+/// How many centred glow layers make up a preview label's halo: stacked, they
+/// read as a solid edge like MapLibre's halo instead of a faint blur.
+const int _haloLayers = 3;
+
+/// A label halo as an even glow centred on the text. `vector_tile_renderer`
+/// draws a halo as four copies of the text offset diagonally by its width; on
+/// the dark map those copies showed as jagged spikes around the letters.
+List<Shadow>? previewHalo(List<Shadow>? halo) {
+  if (halo == null || halo.isEmpty) return halo;
+  final first = halo.first;
+  return [
+    for (var i = 0; i < _haloLayers; i++)
+      Shadow(color: first.color, blurRadius: first.blurRadius),
+  ];
 }
