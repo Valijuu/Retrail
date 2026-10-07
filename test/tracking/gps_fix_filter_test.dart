@@ -257,21 +257,49 @@ void main() {
       expect([for (final f in d.pending) f.latitude], [44, 45]);
     });
 
-    // Rolling on, the GPS reports a real speed — that alone confirms, so
-    // recording follows a skater from the first metres instead of 10 s later.
+    test('confirms against the oldest held fix ≥ 10 s back, so slow progress '
+        'at poor accuracy adds up: 40 → 66 m in 20 s at ±20 m', () {
+      // Against the fix 10 s back (52 m) the 14 m gain is within the ±20 m
+      // accuracy; against the one 20 s back (40 m), 26 m is not.
+      final d = evaluate(_at(66, 920, accuracy: 20), [
+        _at(40, 900, accuracy: 20),
+        _at(46, 905, accuracy: 20),
+        _at(52, 910, accuracy: 20),
+        _at(58, 915, accuracy: 20),
+      ]);
+      expect(d.recorded, isNotEmpty);
+      expect(d.pending, isEmpty);
+    });
+
+    test('keeps the newest held fix as a reference even when older than '
+        '2 minutes, for fixes that come only every few minutes', () {
+      final d = evaluate(_at(700, 1050), [_at(40, 900)]);
+      expect(metresOf(d), [40, 700]);
+    });
+
+    // Rolling on, the GPS reports a real speed — two such fixes in a row
+    // confirm, so recording follows a skater within seconds. One alone could
+    // be a speed spike while standing.
     group('with a valid provider speed', () {
-      test('records at once, 12 m from the stop point', () {
+      test('holds the first rolling fix, 12 m from the stop point', () {
         final d = evaluate(_at(12, 900, hasSpeed: true, speed: 4));
-        expect(metresOf(d), [12]);
-        expect(d.pending, isEmpty);
+        expect(d.recorded, isEmpty);
+        expect(d.pending, hasLength(1));
       });
 
-      test('confirms and replays the held fixes', () {
+      test('a second rolling fix confirms and replays the held fixes', () {
         final d = evaluate(_at(47, 902, hasSpeed: true, speed: 4), [
           _at(35, 899),
-          _at(40, 900),
+          _at(40, 900, hasSpeed: true, speed: 4),
         ]);
         expect(metresOf(d), [35, 47]);
+      });
+
+      test('a rolling fix after a held one without speed is held too', () {
+        final d = evaluate(_at(47, 902, hasSpeed: true, speed: 4), [
+          _at(40, 900),
+        ]);
+        expect(d.recorded, isEmpty);
       });
 
       test('still needs the displacement floor: 6 m is not recorded', () {
@@ -291,6 +319,12 @@ void main() {
       final d = evaluate(_at(40, 60));
       expect(metresOf(d), [40]);
       expect(d.pending, isEmpty);
+    });
+
+    test('within a minute, a provider speed does not replace stage 4: 9 m in '
+        '30 s is drift (as in the original)', () {
+      final d = evaluate(_at(9, 30, hasSpeed: true, speed: 4));
+      expect(d.recorded, isEmpty);
     });
   });
 }

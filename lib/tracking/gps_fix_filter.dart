@@ -12,14 +12,15 @@ typedef RecordedFix = ({LocationFix fix, double distanceMetres});
 /// confirmation), and the fixes still held (see [GpsFixFilter.confirmS]).
 typedef FixDecision = ({List<RecordedFix> recorded, List<LocationFix> pending});
 
-/// The GPS recording filter, ported 1:1 from the original Kotlin `RideTracker`
-/// including its constants.
+/// The GPS recording filter, ported from the original Kotlin `RideTracker`
+/// including its constants; stage 4's time cap and stage 5 deliberately
+/// deviate from it (#70).
 ///
 /// Pure and stateless: it never mutates anything and touches no repository, so
 /// every stage is testable on its own. [RideTracker] owns the state (the last
-/// recorded fix, the held fixes, the running distance) and applies
-/// these decisions — keeping
-/// the filter maths out of the orchestration it used to be interleaved with.
+/// recorded fix, the held fixes, the running distance) and applies these
+/// decisions — keeping the filter maths out of the orchestration it used to be
+/// interleaved with.
 abstract final class GpsFixFilter {
   /// Fixes older than this are cached leftovers, not the rider's position.
   static const int maxFixAgeNanos = 5000000000; // 5 s
@@ -47,8 +48,8 @@ abstract final class GpsFixFilter {
   /// Stage 5 — after a long stop, fixes are held until a fix at least this
   /// many seconds after a held one is further from the last recorded point by
   /// [minSpeedMs] × the time between them, and by more than the accuracy of
-  /// either reading; a valid provider speed of at least [stationarySpeedMs]
-  /// confirms at once. GPS drift and Wi-Fi jumps around someone standing still
+  /// either reading; two fixes in a row with a valid provider speed of at
+  /// least [stationarySpeedMs] confirm at once (one alone may be a spike). GPS drift and Wi-Fi jumps around someone standing still
   /// also reach 30 m now and then, but they swing back instead of moving on —
   /// so a stop of hours adds no more noise than one of minutes. Once
   /// confirmed, the held fixes are recorded too, so the route follows the
@@ -103,20 +104,25 @@ abstract final class GpsFixFilter {
       );
     }
 
-    // 5. Long stop: hold until confirmed by moving on.
+    // 5. Long stop: hold until confirmed by moving on. The newest held fix
+    //    stays whatever its age, or fixes minutes apart could never confirm.
     final held = [
       for (final p in pending)
-        if (_secondsBetween(p, fix) <= maxHoldS) p,
+        if (_secondsBetween(p, fix) <= maxHoldS || identical(p, pending.last))
+          p,
     ];
-    if (_isRolling(fix) || _confirms(last, held, fix, distance, calc)) {
+    final rollingOn =
+        _isRolling(fix) && held.isNotEmpty && _isRolling(held.last);
+    if (rollingOn || _confirms(last, held, fix, distance, calc)) {
       return (recorded: _replay(last, [...held, fix], calc), pending: const []);
     }
     return (recorded: const [], pending: [...held, fix]);
   }
 
-  /// Whether [fix] is further from [last] than the newest held fix at least
+  /// Whether [fix] is further from [last] than the oldest held fix at least
   /// [confirmS] earlier, by [minSpeedMs] × the time between them and by more
-  /// than the accuracy of either reading.
+  /// than the accuracy of either reading. The oldest, so slow progress at poor
+  /// accuracy adds up over the hold instead of being judged 10 s at a time.
   static bool _confirms(
     LocationFix last,
     List<LocationFix> held,
@@ -124,7 +130,7 @@ abstract final class GpsFixFilter {
     double distance,
     DistanceCalculator calc,
   ) {
-    final reference = held.reversed
+    final reference = held
         .where((p) => _secondsBetween(p, fix) >= confirmS)
         .firstOrNull;
     if (reference == null) return false;

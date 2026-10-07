@@ -335,7 +335,7 @@ void main() {
     });
 
     test('Android stop: provider speed 0 while sitting, recorded again '
-        'within 30 s', () {
+        'within 10 s', () {
       final r = _record(
         _stream(
           _walkStopWalk(walk1, stop, pace),
@@ -343,11 +343,11 @@ void main() {
           speed: (s) => s > walk1 && s <= restart ? 0 : pace,
         ),
       );
-      expectRecovers(r, within: 40);
+      expectRecovers(r, within: 10);
     });
 
     test('supermarket: indoor fixes too vague to record, recorded again '
-        'within 30 s outside', () {
+        'within 40 s outside', () {
       final r = _record(
         _stream(
           _walkStopWalk(walk1, stop, pace),
@@ -357,6 +357,23 @@ void main() {
       );
       expectRecovers(r, within: 40);
     });
+
+    for (final accuracy in [20.0, 30.0]) {
+      test('city accuracy ±${accuracy.round()} m without provider speed: '
+          'recorded again within 60 s', () {
+        for (var seed = 0; seed < _seeds; seed++) {
+          final r = _record(
+            _stream(
+              _walkStopWalk(walk1, stop, pace),
+              until: restart + walk2,
+              noise: _whiteNoise(math.Random(seed), 1.5),
+              accuracy: (_) => accuracy,
+            ),
+          );
+          expectRecovers(r, within: 60, reason: 'seed $seed');
+        }
+      });
+    }
 
     for (final every in [5, 15, 30]) {
       test('fixes only every $every s (screen locked): bench and supermarket '
@@ -388,6 +405,39 @@ void main() {
     }
   });
 
+  test('fixes only every 150 s while riding (aggressive battery saving) still '
+      'record the ride', () {
+    const pace = 5.0, ride = 1800;
+    final r = _record(
+      _stream((s) => (y: 0, x: pace * s), until: ride, every: 150),
+    );
+    expect(r.distance, greaterThan(0.85 * pace * ride));
+  });
+
+  // Android sometimes reports a valid speed ≥ 0.8 m/s for a single fix while
+  // the phone lies still (multipath); one such spike must not count as
+  // rolling on after a long stop.
+  test('provider speed spikes while standing for an hour add no distance', () {
+    for (var seed = 0; seed < _seeds; seed++) {
+      final r = math.Random(seed);
+      final drift = _ouDrift(r, 4, 30);
+      final fixes = <_Fix>[
+        for (var s = 0; s <= 3600; s++)
+          (() {
+            final p = drift();
+            return (
+              y: p.y,
+              x: p.x,
+              s: s,
+              accuracy: 8.0,
+              speed: (0.3 * _gauss(r)).abs(),
+            );
+          })(),
+      ];
+      expect(_record(fixes).distance, 0, reason: 'seed $seed');
+    }
+  });
+
   // After a stop, a skater weaving around 30 m blocks: the route must follow
   // the weave, not cut a straight line across the blocks. At 5 m/s the 8 m
   // displacement floor records every other fix anyway, so segments of up to
@@ -403,12 +453,12 @@ void main() {
       speed: withSpeed ? (s) => s <= stop ? 0 : pace : null,
     );
 
-    test('with provider speed: recorded again within 3 s and along the '
+    test('with provider speed: recorded again within 5 s and along the '
         'weave', () {
       final r = _record(skate(withSpeed: true));
       expect(
         r.recordedAt.where((s) => s > stop).first - stop,
-        lessThanOrEqualTo(3),
+        lessThanOrEqualTo(5),
       );
       expect(r.distance, greaterThan(0.9 * ridden));
       expect(_longestSegment(r), lessThan(20));
@@ -421,6 +471,9 @@ void main() {
       // The first point after the stop must clear 30 m (stage 4 over 60 s);
       // everything after it follows the weave.
       expect(_longestSegment(r), lessThan(40));
+      // Nothing was recorded while standing, so every point after the start
+      // belongs to the ride on.
+      expect(r.recordedAt.where((s) => s > 0 && s <= stop), isEmpty);
       final afterStop = r.trackPoints.skip(1).toList();
       for (var i = 1; i < afterStop.length; i++) {
         final a = afterStop[i - 1], b = afterStop[i];

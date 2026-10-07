@@ -38,8 +38,9 @@ class RideTracker {
   final TrackpointRepository _trackpointRepository;
   final DistanceCalculator _calc;
 
-  /// Monotonic clock matching [LocationFix.elapsedRealtimeNanos]. Overridable in
-  /// tests; production uses a process [Stopwatch]. Used by the freshness filter.
+  /// Clock matching [LocationFix.elapsedRealtimeNanos]. Overridable in tests.
+  /// Used by the freshness filter and to date a recorded fix back to when it
+  /// was taken (see [_recordPoint]).
   late int Function() nowNanos;
 
   /// Wall-clock "now" in epoch ms for ride/trackpoint timestamps.

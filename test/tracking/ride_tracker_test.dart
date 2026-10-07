@@ -740,9 +740,9 @@ void main() {
         t.startTracking();
         fa.flushMicrotasks();
         at(0); // first point
-        at(900); // 100 m away after 15 min, no provider speed: held
+        at(900, rolling: true); // 100 m away after 15 min: held
         expect(t.state.trackPoints, hasLength(1));
-        at(905, rolling: true); // a valid speed confirms
+        at(905, rolling: true); // a second rolling fix confirms
         expect(t.state.trackPoints, hasLength(3));
         expect(t.state.distanceMetres, 200);
         final stamps = verify(() => tpRepo.addTrackpoint(
