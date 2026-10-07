@@ -9,7 +9,7 @@ import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
 
-// Seeded scenarios for stages 4–5 of the recording filter (#70): recording
+// Seeded scenarios for steps 8–8b of the recording filter (#70): recording
 // must pick up again quickly after a long stop or an indoor stretch, without
 // turning GPS noise around someone standing still into distance — however
 // long the stop lasts.
@@ -335,7 +335,7 @@ void main() {
     });
 
     test('Android stop: provider speed 0 while sitting, recorded again '
-        'within 10 s', () {
+        'within 15 s', () {
       final r = _record(
         _stream(
           _walkStopWalk(walk1, stop, pace),
@@ -343,7 +343,7 @@ void main() {
           speed: (s) => s > walk1 && s <= restart ? 0 : pace,
         ),
       );
-      expectRecovers(r, within: 10);
+      expectRecovers(r, within: 15);
     });
 
     test('supermarket: indoor fixes too vague to record, recorded again '
@@ -438,6 +438,75 @@ void main() {
     }
   });
 
+  test('riding with fixes 90 s apart and a provider speed records every fix '
+      'as it comes (#72)', () {
+    const pace = 5.0, ride = 1800;
+    final r = _record(
+      _stream(
+        (s) => (y: 0, x: pace * s),
+        until: ride,
+        every: 90,
+        speed: (_) => pace,
+      ),
+    );
+    expect(r.recordedAt, [for (var s = 0; s <= ride; s += 90) s]);
+    expect(r.distance, closeTo(pace * ride, 1));
+  });
+
+  test('two Wi-Fi jumps in the same direction after 15 minutes add no '
+      'distance (#72)', () {
+    final r = _record(
+      _stream(
+        (s) => (
+          y: 0,
+          x: switch (s) {
+            > 900 && <= 915 => 40.0,
+            > 915 && <= 930 => 70.0,
+            _ => 0.0,
+          },
+        ),
+        until: 1200,
+        accuracy: (s) => s > 900 && s <= 930 ? 25 : 6,
+      ),
+    );
+    expect(r.distance, 0);
+  });
+
+  // Correlated speed spikes (multipath): bursts of 2–5 fixes reporting
+  // 1–2 m/s while the phone lies still and the position drifts.
+  test('bursts of provider speed while standing for an hour record nothing '
+      'after the first minute (#72)', () {
+    for (var seed = 0; seed < _seeds; seed++) {
+      final r = math.Random(seed);
+      final drift = _ouDrift(r, 4, 30);
+      var burst = 0;
+      var burstSpeed = 0.0;
+      final fixes = <_Fix>[];
+      for (var s = 0; s <= 3600; s++) {
+        if (burst == 0 && r.nextDouble() < 1 / 120) {
+          burst = 2 + r.nextInt(4);
+          burstSpeed = 1 + r.nextDouble();
+        }
+        final p = drift();
+        fixes.add((
+          y: p.y,
+          x: p.x,
+          s: s,
+          accuracy: 8,
+          speed: burst > 0 ? burstSpeed : 0.2 * r.nextDouble(),
+        ));
+        if (burst > 0) burst--;
+      }
+      // The first minute follows the original filter unchanged (a burst
+      // there can pass, as it always could); after it, nothing may.
+      expect(
+        _record(fixes).recordedAt.where((s) => s > 60),
+        isEmpty,
+        reason: 'seed $seed',
+      );
+    }
+  });
+
   // After a stop, a skater weaving around 30 m blocks: the route must follow
   // the weave, not cut a straight line across the blocks. At 5 m/s the 8 m
   // displacement floor records every other fix anyway, so segments of up to
@@ -468,7 +537,7 @@ void main() {
         'first stretch from the stop point is straight', () {
       final r = _record(skate(withSpeed: false));
       expect(r.distance, greaterThan(0.85 * ridden));
-      // The first point after the stop must clear 30 m (stage 4 over 60 s);
+      // The first point after the stop must clear 30 m (step 8 over 60 s);
       // everything after it follows the weave.
       expect(_longestSegment(r), lessThan(40));
       // Nothing was recorded while standing, so every point after the start
@@ -496,6 +565,6 @@ void main() {
 }
 
 /// Totals the pre-#70 filter recorded for the drift and bowl scenarios above
-/// (measured once with the original stage 4 on these exact seeds/paths).
+/// (measured once with the original step 8 on these exact seeds/paths).
 const double _driftBefore70 = 43.8; // 43.78 m over the 20 seeds
 const double _bowlBefore70 = 1920;

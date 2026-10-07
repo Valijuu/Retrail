@@ -286,7 +286,7 @@ class RideTracker {
   }
 
   void onLocationReceived(LocationFix fix) {
-    // Stage 0 — freshness: drop stale cached fixes before any state update.
+    // Step 0 — freshness: drop stale cached fixes before any state update.
     if (!GpsFixFilter.isFresh(fix, nowNanos())) return;
 
     // Always update the live marker + speed (shown regardless of recording state).

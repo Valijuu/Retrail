@@ -41,7 +41,7 @@ FixDecision evaluateSegment(
 );
 
 void main() {
-  group('isFresh (stage 0)', () {
+  group('isFresh (step 0)', () {
     test('a fix captured now is fresh', () {
       expect(GpsFixFilter.isFresh(_fix(nanos: 1000000000), 1000000000), isTrue);
     });
@@ -86,7 +86,7 @@ void main() {
       expect(d.recorded.single.distanceMetres, 20.0);
     });
 
-    test('skips a trustworthy near-zero provider speed (stage 1b)', () {
+    test('skips a trustworthy near-zero provider speed (step 5)', () {
       final d = evaluateSegment(
         20,
         fix: _fix(
@@ -98,12 +98,12 @@ void main() {
       expect(d.recorded, isEmpty);
     });
 
-    test('skips a physically impossible jump (stage 2)', () {
+    test('skips a physically impossible jump (step 6)', () {
       final d = evaluateSegment(GpsFixFilter.maxSpeedMs + 1); // per second
       expect(d.recorded, isEmpty);
     });
 
-    test('skips a segment below the minimum displacement (stage 3)', () {
+    test('skips a segment below the minimum displacement (step 7)', () {
       final d = evaluateSegment(GpsFixFilter.minDistanceM - 0.1);
       expect(d.recorded, isEmpty);
     });
@@ -115,7 +115,7 @@ void main() {
       expect(evaluateSegment(20, lastAccuracy: 25).recorded, isEmpty);
     });
 
-    test('skips slow drift that clears the displacement floor (stage 4)', () {
+    test('skips slow drift that clears the displacement floor (step 8)', () {
       // 9 m in 100 s: far enough, but 0.09 m/s is drift, not riding.
       final d = GpsFixFilter.evaluate(
         fix: _fix(nanos: 100000000000),
@@ -125,7 +125,7 @@ void main() {
       expect(d.recorded, isEmpty);
     });
 
-    test('judges stage 4 over at most 60 s: 40 m after a 15 min stop clears '
+    test('judges step 8 over at most 60 s: 40 m after a 15 min stop clears '
         'it (0.67 m/s) and is held for confirmation', () {
       // Over the full 900 s that's 0.04 m/s — the freeze after a stop (#70).
       final d = GpsFixFilter.evaluate(
@@ -147,7 +147,7 @@ void main() {
       expect(d.recorded, isEmpty);
     });
 
-    test('skips a low-accuracy fix before anything else (stage 1)', () {
+    test('skips a low-accuracy fix before anything else (step 4)', () {
       final d = evaluateSegment(
         20,
         fix: _fix(
@@ -160,7 +160,7 @@ void main() {
   });
 
   // More than a minute after the last recorded point, a fix that clears
-  // stages 1–4 is held, not recorded: GPS drift and Wi-Fi jumps around someone
+  // steps 4–8 is held, not recorded: GPS drift and Wi-Fi jumps around someone
   // standing still reach 30 m too, but they don't keep moving away (#70). Once
   // movement is confirmed, the held fixes are recorded in order, so the route
   // follows the path actually taken instead of cutting straight across.
@@ -271,6 +271,21 @@ void main() {
       expect(d.pending, isEmpty);
     });
 
+    test('a jump is not progress: two Wi-Fi jumps in the same direction '
+        '(40 m, then 70 m within a second) do not confirm', () {
+      final d = evaluate(_at(70, 925, accuracy: 25), [
+        for (var s = 900; s < 915; s++) _at(40, s, accuracy: 25),
+        for (var s = 915; s < 925; s++) _at(70, s, accuracy: 25),
+      ]);
+      expect(d.recorded, isEmpty);
+    });
+
+    test('a single step between fixes far apart is progress: 40 → 79 m in '
+        '30 s', () {
+      final d = evaluate(_at(79, 930), [_at(40, 900)]);
+      expect(metresOf(d), [40, 79]);
+    });
+
     test('keeps the newest held fix as a reference even when older than '
         '2 minutes, for fixes that come only every few minutes', () {
       final d = evaluate(_at(700, 1050), [_at(40, 900)]);
@@ -288,11 +303,43 @@ void main() {
       });
 
       test('a second rolling fix confirms and replays the held fixes', () {
-        final d = evaluate(_at(47, 902, hasSpeed: true, speed: 4), [
+        final d = evaluate(_at(49, 902, hasSpeed: true, speed: 4), [
           _at(35, 899),
           _at(40, 900, hasSpeed: true, speed: 4),
         ]);
-        expect(metresOf(d), [35, 47]);
+        expect(metresOf(d), [35, 49]);
+      });
+
+      test('a burst of rolling fixes that moves by noise only does not '
+          'confirm: 40 → 41 → 40 → 42 m at a reported 2 m/s', () {
+        final d = evaluate(_at(42, 903, hasSpeed: true, speed: 2), [
+          _at(40, 900, hasSpeed: true, speed: 2),
+          _at(41, 901, hasSpeed: true, speed: 2),
+          _at(40, 902, hasSpeed: true, speed: 2),
+        ]);
+        expect(d.recorded, isEmpty);
+      });
+
+      test('two rolling fixes whose positions barely move are speed spikes, '
+          'not rolling: 40 → 40.5 m in 1 s at a reported 4 m/s', () {
+        final d = evaluate(_at(40.5, 901, hasSpeed: true, speed: 4), [
+          _at(40, 900, hasSpeed: true, speed: 4),
+        ]);
+        expect(d.recorded, isEmpty);
+      });
+
+      test('a rolling fix that kept pace with its speed since the last point '
+          'is recorded at once — riding with fixes 90 s apart, not a stop', () {
+        final d = evaluate(_at(450, 90, hasSpeed: true, speed: 5));
+        expect(metresOf(d), [450]);
+        expect(d.pending, isEmpty);
+      });
+
+      test('a rolling fix that fell far behind its speed is held: 100 m in '
+          '15 min at a reported 4 m/s', () {
+        final d = evaluate(_at(100, 900, hasSpeed: true, speed: 4));
+        expect(d.recorded, isEmpty);
+        expect(d.pending, hasLength(1));
       });
 
       test('a rolling fix after a held one without speed is held too', () {
@@ -321,7 +368,7 @@ void main() {
       expect(d.pending, isEmpty);
     });
 
-    test('within a minute, a provider speed does not replace stage 4: 9 m in '
+    test('within a minute, a provider speed does not replace step 8: 9 m in '
         '30 s is drift (as in the original)', () {
       final d = evaluate(_at(9, 30, hasSpeed: true, speed: 4));
       expect(d.recorded, isEmpty);

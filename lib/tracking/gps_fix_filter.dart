@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:collection/collection.dart';
+
 import '../domain/distance_calculator.dart';
 import 'location_fix.dart';
 
@@ -13,11 +15,12 @@ typedef RecordedFix = ({LocationFix fix, double distanceMetres});
 typedef FixDecision = ({List<RecordedFix> recorded, List<LocationFix> pending});
 
 /// The GPS recording filter, ported from the original Kotlin `RideTracker`
-/// including its constants; stage 4's time cap and stage 5 deliberately
-/// deviate from it (#70).
+/// including its constants; step 8's time cap and step 8b deliberately
+/// deviate from it (#70). Steps are numbered as in Spec 5 (A3), whose steps
+/// 1–3 live in [RideTracker].
 ///
 /// Pure and stateless: it never mutates anything and touches no repository, so
-/// every stage is testable on its own. [RideTracker] owns the state (the last
+/// every step is testable on its own. [RideTracker] owns the state (the last
 /// recorded fix, the held fixes, the running distance) and applies these
 /// decisions — keeping the filter maths out of the orchestration it used to be
 /// interleaved with.
@@ -38,23 +41,29 @@ abstract final class GpsFixFilter {
   /// A trustworthy provider speed below this means the rider is standing still.
   static const double stationarySpeedMs = 0.8;
 
-  /// Stage 4 judges the implied speed over at most this many seconds. Measured
+  /// Step 8 judges the implied speed over at most this many seconds. Measured
   /// over the full time since the last recorded point, a long stop or an
   /// indoor stretch would hold recording frozen for minutes after the rider
   /// moves on (#70). Beyond this window a fix is held until confirmed
-  /// (stage 5).
+  /// (step 8b).
   static const double speedWindowS = 60;
 
-  /// Stage 5 — after a long stop, fixes are held until a fix at least this
+  /// Step 8b — after a long stop, fixes are held until a fix at least this
   /// many seconds after a held one is further from the last recorded point by
   /// [minSpeedMs] × the time between them, and by more than the accuracy of
-  /// either reading; two fixes in a row with a valid provider speed of at
-  /// least [stationarySpeedMs] confirm at once (one alone may be a spike). GPS drift and Wi-Fi jumps around someone standing still
+  /// either reading; a run of fixes with a valid provider speed of at least
+  /// [stationarySpeedMs] confirms as soon as it covered [minDistanceM] and
+  /// kept pace with that speed (a single fix may be a spike). GPS drift and Wi-Fi jumps around someone standing still
   /// also reach 30 m now and then, but they swing back instead of moving on —
   /// so a stop of hours adds no more noise than one of minutes. Once
   /// confirmed, the held fixes are recorded too, so the route follows the
   /// path taken instead of cutting straight across.
   static const double confirmS = 10;
+
+  /// Confirmation by progress fails when one step between held fixes is more
+  /// than this many times the average step pace along the held path (and
+  /// above [minDistanceM]): a position jump, not riding.
+  static const double maxStepPaceRatio = 3;
 
   /// Held fixes older than this are dropped: whatever they were, it wasn't
   /// the start of a ride that would have been confirmed by now.
@@ -63,12 +72,12 @@ abstract final class GpsFixFilter {
   /// ~180 km/h — above this the segment is a GPS jump, not a ride.
   static const double maxSpeedMs = 50.0;
 
-  /// Stage 0 — freshness. Applies before any state update: a stale cached fix
+  /// Step 0 — freshness. Applies before any state update: a stale cached fix
   /// must not even move the live marker.
   static bool isFresh(LocationFix fix, int nowNanos) =>
       nowNanos - fix.elapsedRealtimeNanos <= maxFixAgeNanos;
 
-  /// Stages 1–5, run once a ride is active and unpaused.
+  /// Steps 4–8b, run once a ride is active and unpaused.
   ///
   /// [last] is the previously recorded fix, or null when [fix] would be the
   /// ride's first point — that first point is recorded immediately, even at
@@ -84,7 +93,7 @@ abstract final class GpsFixFilter {
     List<LocationFix> pending = const [],
     required DistanceCalculator calc,
   }) {
-    // 1. Discard low-accuracy fixes. Says nothing about motion, so held fixes
+    // 4. Discard low-accuracy fixes. Says nothing about motion, so held fixes
     //    stay as they are.
     if (fix.accuracy > accuracyThresholdM) {
       return (recorded: const [], pending: pending);
@@ -97,22 +106,25 @@ abstract final class GpsFixFilter {
     const none = (recorded: <RecordedFix>[], pending: <LocationFix>[]);
     final distance = _movedFrom(last, fix, calc);
     if (distance == null) return none;
-    if (_secondsBetween(last, fix) <= speedWindowS) {
+    // Within the window, or rolling with a position that kept pace with the
+    // reported speed since the last point — riding with sparse fixes, not
+    // moving on after a stop.
+    if (_secondsBetween(last, fix) <= speedWindowS ||
+        _keptPace(last, fix, distance)) {
       return (
         recorded: [(fix: fix, distanceMetres: distance)],
         pending: const [],
       );
     }
 
-    // 5. Long stop: hold until confirmed by moving on. The newest held fix
+    // 8b. Long stop: hold until confirmed by moving on. The newest held fix
     //    stays whatever its age, or fixes minutes apart could never confirm.
     final held = [
       for (final p in pending)
         if (_secondsBetween(p, fix) <= maxHoldS || identical(p, pending.last))
           p,
     ];
-    final rollingOn =
-        _isRolling(fix) && held.isNotEmpty && _isRolling(held.last);
+    final rollingOn = _rolledOn(held, fix, calc);
     if (rollingOn || _confirms(last, held, fix, distance, calc)) {
       return (recorded: _replay(last, [...held, fix], calc), pending: const []);
     }
@@ -123,6 +135,8 @@ abstract final class GpsFixFilter {
   /// [confirmS] earlier, by [minSpeedMs] × the time between them and by more
   /// than the accuracy of either reading. The oldest, so slow progress at poor
   /// accuracy adds up over the hold instead of being judged 10 s at a time.
+  /// The progress must be gradual: a single step far beyond the average step
+  /// pace along the held path is a position jump (Wi-Fi), not riding.
   static bool _confirms(
     LocationFix last,
     List<LocationFix> held,
@@ -146,10 +160,30 @@ abstract final class GpsFixFilter {
       minSpeedMs * _secondsBetween(reference, fix),
       math.max(reference.accuracy, fix.accuracy),
     );
-    return growth >= required;
+    if (growth < required) return false;
+
+    final path = [...held.skipWhile((p) => !identical(p, reference)), fix];
+    final steps = [
+      for (var i = 1; i < path.length; i++)
+        calc.distanceBetween(
+          path[i - 1].latitude,
+          path[i - 1].longitude,
+          path[i].latitude,
+          path[i].longitude,
+        ),
+    ];
+    final paceMs = steps.sum / _secondsBetween(reference, fix);
+    for (var i = 0; i < steps.length; i++) {
+      final allowed = math.max(
+        minDistanceM,
+        maxStepPaceRatio * paceMs * _secondsBetween(path[i], path[i + 1]),
+      );
+      if (steps[i] > allowed) return false;
+    }
+    return true;
   }
 
-  /// Runs [fixes] through stages 1b–4 in order, starting from [last], and
+  /// Runs [fixes] through steps 5–8 in order, starting from [last], and
   /// returns the ones that pass — a held fix too close to its predecessor is
   /// left out, just as it would have been while riding.
   static List<RecordedFix> _replay(
@@ -168,18 +202,48 @@ abstract final class GpsFixFilter {
     return recorded;
   }
 
+  /// Whether [fix] ends a run of held fixes with a valid moving speed that
+  /// kept pace with it and cleared [minDistanceM] — rolling on, measured over
+  /// the whole run so a burst of speed spikes over GPS noise doesn't count.
+  static bool _rolledOn(
+    List<LocationFix> held,
+    LocationFix fix,
+    DistanceCalculator calc,
+  ) {
+    final run = held.reversed.takeWhile(_isRolling).toList();
+    if (run.isEmpty) return false;
+    final start = run.last;
+    final distance = calc.distanceBetween(
+      start.latitude,
+      start.longitude,
+      fix.latitude,
+      fix.longitude,
+    );
+    return distance >= minDistanceM && _keptPace(start, fix, distance);
+  }
+
   /// A valid provider speed that says the rider is moving.
   static bool _isRolling(LocationFix fix) =>
       fix.hasSpeed && fix.speed >= stationarySpeedMs;
 
-  /// Stages 1b–4: the distance from [last] to [fix] when it is real movement,
+  /// Whether [fix] is rolling and covered at least half the ground its
+  /// reported speed implies since [from] — speed and position agree. A speed
+  /// spike while standing still moves the position by noise only.
+  static bool _keptPace(LocationFix from, LocationFix fix, double distance) {
+    final seconds = _secondsBetween(from, fix);
+    return _isRolling(fix) &&
+        seconds > 0 &&
+        distance / seconds >= fix.speed / 2;
+  }
+
+  /// Steps 5–8: the distance from [last] to [fix] when it is real movement,
   /// null when it is standing still, drift or a jump.
   static double? _movedFrom(
     LocationFix last,
     LocationFix fix,
     DistanceCalculator calc,
   ) {
-    // 1b. Stationary guard: trustworthy near-zero provider speed → skip.
+    // 5. Stationary guard: trustworthy near-zero provider speed → skip.
     if (fix.hasSpeed && fix.speed < stationarySpeedMs) return null;
 
     final distance = calc.distanceBetween(
@@ -190,17 +254,17 @@ abstract final class GpsFixFilter {
     );
     final elapsedS = _secondsBetween(last, fix);
 
-    // 2. Outlier guard: physically impossible implied speed → drop, keep last.
+    // 6. Outlier guard: physically impossible implied speed → drop, keep last.
     if (elapsedS > 0.0 && distance / elapsedS > maxSpeedMs) return null;
 
-    // 3. Displacement must exceed the accuracy margin of both readings.
+    // 7. Displacement must exceed the accuracy margin of both readings.
     final requiredDisplacement = math.max(
       minDistanceM,
       math.max(last.accuracy, fix.accuracy),
     );
     if (distance < requiredDisplacement) return null;
 
-    // 4. Implied speed must indicate real movement (catches slow drift). The
+    // 8. Implied speed must indicate real movement (catches slow drift). The
     //    time is capped so a long stop doesn't freeze recording afterwards;
     //    beyond the cap, a valid provider speed already shows movement.
     if (elapsedS > speedWindowS && _isRolling(fix)) return distance;

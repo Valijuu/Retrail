@@ -21,7 +21,7 @@ abstract interface class LocationSource {
 /// Maps a geolocator [Position] to a [LocationFix].
 ///
 /// **`elapsedRealtimeNanos` is the fix's own capture time** (`Position.timestamp`
-/// in ns), never a clock read at ingestion — the stage-0 freshness filter
+/// in ns), never a clock read at ingestion — the step-0 freshness filter
 /// compares it against "now", so a stale cached fix must carry its old time.
 ///
 /// geolocator drops Android's `hasSpeed()` flag, so we reconstruct it:
