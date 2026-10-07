@@ -133,7 +133,7 @@ search terms people actually used; tune the copy from that.
 
 **Short description:**
 
-> GPS tracker for skate, longboard & inline rides: route, speed, km. No account.
+> GPS tracker for skate & longboard rides – track your route, speed and distance
 
 **Full description:**
 
@@ -178,7 +178,7 @@ search terms people actually used; tune the copy from that.
 
 **Kurzbeschreibung:**
 
-> Strecke aufzeichnen beim Skaten & Longboarden: GPS-Tracker mit Tacho, ohne Konto
+> Strecke aufzeichnen beim Skaten & Longboarden – mit Tempo, Kilometern und Karte
 
 **Vollständige Beschreibung:**
 
