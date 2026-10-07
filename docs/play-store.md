@@ -243,8 +243,23 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
 | App icon | `store/play/icon_512.png` | 512 × 512 PNG, 32-bit, ≤ 1 MB — from `assets/branding/app_icon.png` |
 | Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language) |
 
-Still to make:
+| Phone screenshots | `store/play/screenshots/<lang>/01_ride.png` … `08_welcome.png` | 8 per language, 1080 × 1920, captions in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` |
 
-| Asset | Spec |
-|---|---|
-| Phone screenshots | 2–8, 16:9 or 9:16, each side 320–3840 px. Suggested: Home, ride screen (live map + stats), history list, ride detail, follow-route screen, dark theme. Use rides **without real home locations** (see the repo rule on real location data) |
+**How the screenshots are made** (no real location data anywhere):
+
+1. `flutter test tool/demo_rides/build_demo_db_test.dart` (and again with
+   `RETRAIL_DEMO_LANG=de`) builds `build/demo_rides/retrail_<lang>.sqlite`:
+   ten rides on Tempelhofer Feld, Berlin (public park; route geometry from
+   OpenStreetMap, ODbL, in `tool/demo_rides/routes.json`) with titles and
+   comments, dates relative to today.
+2. On an Android emulator with a debug build (`run-as` needs a debuggable
+   app): onboard with the name **Retrailer**, then copy the database into
+   `app_flutter/retrail.sqlite` via `adb push` + `run-as … cp`.
+3. Live-ride shots: feed GPS with `adb emu geo fix <lng> <lat> 40 12 <knots>`
+   once per second along a route — the speed argument matters, without it
+   the stationary filter drops every fix.
+4. Clean status bar: System UI demo mode (`sysui_demo_allowed`, clock 9:41,
+   full battery and wifi, notifications hidden).
+5. Raw shots go to `store/play/screens/raw/<lang>_<theme>_NN_<screen>.png`;
+   `tool/render_store_graphics.sh` frames them. Raw shots are 1080 × 2424
+   (ratio 2.24), which Play rejects — always upload the framed ones.

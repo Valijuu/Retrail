@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- Frame for the Play phone screenshots (1080 x 1920): caption on top, the
+     raw emulator screenshot below, cut off at the bottom edge. Rendered by
+     tool/render_store_graphics.sh with ?img=…&title=…&theme=light|dark.
+     Colours are the AppColors tokens (lib/core/theme/app_colors.dart). -->
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;800&display=block" rel="stylesheet">
+<style>
+  :root { --bg: #FFEDD5; --title: #431407; --accent: #B45309; --shadow: rgba(67,20,7,.22); }
+  :root[data-theme="dark"] { --bg: #2B2118; --title: #F3EDE8; --accent: #F59E42; --shadow: rgba(0,0,0,.55); }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+  body { font-family: Roboto, sans-serif; position: relative; }
+  h1 { position: absolute; left: 80px; right: 80px; top: 120px; margin: 0; text-align: center;
+       font-size: 76px; line-height: 1.12; font-weight: 800; letter-spacing: -1px; color: var(--title); }
+  h1 em { font-style: normal; color: var(--accent); }
+  .shot { position: absolute; left: 110px; top: 400px; width: 860px; border-radius: 56px;
+          box-shadow: 0 30px 80px var(--shadow); overflow: hidden; }
+  .shot img { display: block; width: 100%; }
+</style>
+</head>
+<body>
+  <h1 id="title"></h1>
+  <div class="shot"><img id="img" alt=""></div>
+  <script>
+    const q = new URLSearchParams(location.search);
+    document.documentElement.dataset.theme = q.get('theme') || 'light';
+    document.getElementById('title').innerHTML = q.get('title');
+    document.getElementById('img').src = q.get('img');
+  </script>
+</body>
+</html>
