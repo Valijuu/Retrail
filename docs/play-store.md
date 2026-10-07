@@ -168,8 +168,8 @@ France, Spain or Brazil would see a German page.
 >
 > YOUR RIDE HISTORY
 > • Every ride with a map preview, distance, time and speeds
-> • Your kilometres this week, today and this year on the home screen
-> • Search, filter by year, month and activity, mark favourites
+> • Your kilometers this week, today and this year on the home screen
+> • Search, filter by year, month and activity, mark favorites
 > • Rename rides, add notes, navigate to a ride's start point
 >
 > PRIVATE BY DESIGN
