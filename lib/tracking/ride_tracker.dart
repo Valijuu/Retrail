@@ -70,6 +70,9 @@ class RideTracker {
   bool _discardPendingRide = false;
   String? _pendingActivityType;
   LocationFix? _lastRecordedLocation;
+
+  /// A far-off fix after a long stop, waiting for confirmation (#70).
+  LocationFix? _candidateLocation;
   LocationFix? _lastSpeedLocation;
   Timer? _elapsedTimer;
 
@@ -162,6 +165,7 @@ class RideTracker {
     }
     _activeRideId = rideId;
     _lastRecordedLocation = null;
+    _candidateLocation = null;
     _trackPoints = const [];
     _distanceMetres = 0.0;
     _speedKmh = null;
@@ -208,6 +212,7 @@ class RideTracker {
     if (!_isTracking || !_isPaused) return;
     _isPaused = false;
     _lastRecordedLocation = null;
+    _candidateLocation = null;
     _startElapsedTimer();
     _emit();
   }
@@ -307,8 +312,10 @@ class RideTracker {
     final decision = GpsFixFilter.evaluate(
       fix: fix,
       last: _lastRecordedLocation,
+      candidate: _candidateLocation,
       calc: _calc,
     );
+    _candidateLocation = decision.candidate;
     if (!decision.record) return;
 
     _distanceMetres += decision.distanceMetres;

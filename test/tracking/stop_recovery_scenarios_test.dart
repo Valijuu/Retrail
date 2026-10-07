@@ -9,9 +9,10 @@ import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/ride_tracker.dart';
 
-// Seeded scenarios for stage 4 of the recording filter (#70): recording must
-// pick up again quickly after a long stop or an indoor stretch, without
-// turning GPS noise around someone standing still into distance.
+// Seeded scenarios for stages 4–5 of the recording filter (#70): recording
+// must pick up again quickly after a long stop or an indoor stretch, without
+// turning GPS noise around someone standing still into distance — however
+// long the stop lasts.
 //
 // Positions are plain metres on a plane (latitude = y, longitude = x), so the
 // noise models stay readable; [_PlaneCalc] measures them.
@@ -149,9 +150,43 @@ List<_Fix> _stream(
   };
 }
 
+/// Wi-Fi positioning indoors: white noise σ 1.5 m (accuracy 6), and at
+/// [perMinute] jumps per minute the position sits 30–60 m off for 1–10 s
+/// (accuracy 25–35 m).
+List<_Fix> _wifiJumps(
+  math.Random r, {
+  required int until,
+  double perMinute = 0.5,
+}) {
+  final fixes = <_Fix>[];
+  var jumpLeft = 0;
+  var jy = 0.0, jx = 0.0, ja = 0.0;
+  for (var s = 0; s <= until; s++) {
+    if (jumpLeft == 0 && r.nextDouble() < perMinute / 60) {
+      jumpLeft = 1 + r.nextInt(10);
+      final d = 30 + 30 * r.nextDouble();
+      final a = 2 * math.pi * r.nextDouble();
+      jy = d * math.sin(a);
+      jx = d * math.cos(a);
+      ja = 25 + 10 * r.nextDouble();
+    }
+    final n = (y: 1.5 * _gauss(r), x: 1.5 * _gauss(r));
+    final jumping = jumpLeft > 0;
+    if (jumping) jumpLeft--;
+    fixes.add((
+      y: n.y + (jumping ? jy : 0),
+      x: n.x + (jumping ? jx : 0),
+      s: s,
+      accuracy: jumping ? ja : 6,
+      speed: null,
+    ));
+  }
+  return fixes;
+}
+
 void main() {
-  group('standing still for 15 minutes', () {
-    test('white noise (σ 1.5 m) adds no distance', () {
+  group('standing still', () {
+    test('white noise (σ 1.5 m) for 15 minutes adds no distance', () {
       for (var seed = 0; seed < _seeds; seed++) {
         final r = _record(
           _stream(
@@ -164,25 +199,75 @@ void main() {
       }
     });
 
-    test(
-      'slow drift (OU, τ 30 s, σ 4 m) adds at most what it did before #70',
-      () {
-        // Before #70 these seeds recorded [_driftBefore70] metres in total; a
-        // segment longer than 60 s must clear 30 m, which drift of this spread
-        // never does — so the total must not grow.
-        var total = 0.0;
-        for (var seed = 0; seed < _seeds; seed++) {
-          total += _record(
-            _stream(
-              (_) => (y: 0, x: 0),
-              until: 900,
-              noise: _ouDrift(math.Random(seed), 4, 30),
-            ),
-          ).distance;
-        }
-        expect(total, lessThanOrEqualTo(_driftBefore70));
-      },
-    );
+    test('slow drift (OU, τ 30 s, σ 4 m) for 15 minutes adds at most what it '
+        'did before #70', () {
+      // Before #70 these seeds recorded [_driftBefore70] metres in total.
+      var total = 0.0;
+      for (var seed = 0; seed < _seeds; seed++) {
+        total += _record(
+          _stream(
+            (_) => (y: 0, x: 0),
+            until: 900,
+            noise: _ouDrift(math.Random(seed), 4, 30),
+          ),
+        ).distance;
+      }
+      expect(total, lessThanOrEqualTo(_driftBefore70));
+    });
+
+    // A stop can last hours. Whatever noise gets recorded happens while the
+    // last point is still fresh; after that, drift and jumps swing back
+    // instead of confirming, so the distance stops growing.
+    test('3 hours of drift (σ 4 m) or Wi-Fi jumps record nothing after the '
+        'first 5 minutes', () {
+      for (var seed = 0; seed < _seeds; seed++) {
+        final drift = _record(
+          _stream(
+            (_) => (y: 0, x: 0),
+            until: 3 * 3600,
+            noise: _ouDrift(math.Random(seed), 4, 30),
+          ),
+        );
+        final wifi = _record(_wifiJumps(math.Random(seed), until: 3 * 3600));
+        expect(
+          drift.recordedAt.where((s) => s > 300),
+          isEmpty,
+          reason: 'drift, seed $seed',
+        );
+        expect(
+          wifi.recordedAt.where((s) => s > 300),
+          isEmpty,
+          reason: 'Wi-Fi, seed $seed',
+        );
+      }
+    });
+
+    test('3 hours of slow multipath drift (σ 8 m, τ 120 s, accuracy 20 m) '
+        'add no distance', () {
+      for (var seed = 0; seed < _seeds; seed++) {
+        final r = _record(
+          _stream(
+            (_) => (y: 0, x: 0),
+            until: 3 * 3600,
+            noise: _ouDrift(math.Random(seed), 8, 120),
+            accuracy: (_) => 20,
+          ),
+        );
+        expect(r.distance, 0, reason: 'seed $seed');
+      }
+    });
+
+    test('a single 35 m Wi-Fi jump out and back after 15 minutes adds no '
+        'distance', () {
+      final r = _record(
+        _stream(
+          (s) => (y: 0, x: s > 900 && s <= 905 ? 35 : 0),
+          until: 1200,
+          accuracy: (s) => s > 900 && s <= 905 ? 30 : 6,
+        ),
+      );
+      expect(r.distance, 0);
+    });
   });
 
   group('walking on after a stop', () {
@@ -198,7 +283,7 @@ void main() {
       expect(r.distance, greaterThan(0.9 * walked), reason: reason);
     }
 
-    test('bench: recorded again within 30 s, with GPS noise while sitting', () {
+    test('bench: recorded again within 40 s, with GPS noise while sitting', () {
       for (var seed = 0; seed < _seeds; seed++) {
         final r = _record(
           _stream(
@@ -207,7 +292,7 @@ void main() {
             noise: _whiteNoise(math.Random(seed), 1.5),
           ),
         );
-        expectRecovers(r, within: 30, reason: 'seed $seed');
+        expectRecovers(r, within: 40, reason: 'seed $seed');
       }
     });
 
@@ -220,7 +305,7 @@ void main() {
           speed: (s) => s > walk1 && s <= restart ? 0 : pace,
         ),
       );
-      expectRecovers(r, within: 30);
+      expectRecovers(r, within: 40);
     });
 
     test('supermarket: indoor fixes too vague to record, recorded again '
@@ -232,12 +317,12 @@ void main() {
           accuracy: (s) => s > walk1 && s <= restart ? 60 : 6,
         ),
       );
-      expectRecovers(r, within: 30);
+      expectRecovers(r, within: 40);
     });
 
     for (final every in [5, 15, 30]) {
       test('fixes only every $every s (screen locked): bench and supermarket '
-          'are recorded again within ${every + 30} s', () {
+          'are recorded again within ${math.max(40, every + 30)} s', () {
         expectRecovers(
           _record(
             _stream(
@@ -246,7 +331,7 @@ void main() {
               every: every,
             ),
           ),
-          within: every + 30,
+          within: math.max(40, every + 30),
           reason: 'bench',
         );
         expectRecovers(
@@ -258,7 +343,7 @@ void main() {
               accuracy: (s) => s > walk1 && s <= restart ? 60 : 6,
             ),
           ),
-          within: every + 30,
+          within: math.max(40, every + 30),
           reason: 'supermarket',
         );
       });
@@ -275,6 +360,6 @@ void main() {
 }
 
 /// Totals the pre-#70 filter recorded for the drift and bowl scenarios above
-/// (measured once with the uncapped stage 4 on these exact seeds/paths).
+/// (measured once with the original stage 4 on these exact seeds/paths).
 const double _driftBefore70 = 43.8; // 43.78 m over the 20 seeds
 const double _bowlBefore70 = 1920;
