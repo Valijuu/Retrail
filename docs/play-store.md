@@ -84,6 +84,12 @@ start a ride from Home → countdown → ride screen → show the persistent
 "Recording" notification → lock the screen → unlock, distance kept growing →
 Pause / Stop from the notification.
 
+**Video:** `store/play/fgs_demo.mp4` (61 s, English captions): start a
+ride, recording, persistent notification, screen off for 30 s (shortened),
+distance kept growing, stop from the notification. Recorded on the emulator
+with simulated GPS (`adb emu screenrecord`), cut and captioned with ffmpeg.
+Upload it to YouTube as **unlisted** and paste the link into the declaration.
+
 **Foreground service description (EN):**
 
 > Retrail records skate and longboard rides with GPS. When the user starts a
