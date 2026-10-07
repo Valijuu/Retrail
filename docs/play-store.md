@@ -98,67 +98,100 @@ Pause / Stop from the notification.
 ## Store listing
 
 Limits: app name 30, short description 80, full description 4000 characters.
-No prices, rankings or emoji in the name.
+No prices, rankings, emoji or keyword lists (Play's metadata policy rejects
+repeated or unrelated keywords).
+
+### Positioning and keywords
+
+Play has no keyword field: it ranks on the **app name** (strongest), the
+**short description**, then the **full description**, and each language
+listing is searched on its own. A new app won't rank for "GPS tracker" against
+Strava, Komoot or Runtastic, so the listing leads with the niche — **the GPS
+tracker for everything on wheels** (longboard, skateboard, inline skates,
+roller skates, mountainboard, scooter) — and only mentions once that it works
+for any other activity (walks, bike rides). That is honest: the GPS filter
+(`lib/tracking/gps_fix_filter.dart`) keeps fixes from 1.8 km/h up to
+180 km/h, so walking and cycling record correctly.
+
+Target search terms, each used once, in running text:
+
+| English | German |
+|---|---|
+| skate tracker, longboard tracker, GPS tracker | Skate Tracker, Longboard, GPS-Tracker |
+| track your route / record your route | Strecke aufzeichnen |
+| speed, top speed, speedometer | Geschwindigkeit messen, Tacho |
+| distance, km | Kilometer, Distanz |
+| follow a route | Strecke / Route nachfahren |
+| inline skates, rollerblading, roller skates | Inline-Skates, Inliner, Rollschuhe |
+
+After launch, Play Console → Grow → Store listing acquisition shows the
+search terms people actually used; tune the copy from that.
 
 ### English (en-US, default)
 
-**App name:** `Retrail – Skate GPS Tracker`
+**App name:** `Retrail: Skate & Longboard GPS`
 
 **Short description:**
 
-> Record your longboard and skate rides with GPS. No account, no ads.
+> GPS tracker for skate, longboard & inline rides: route, speed, km. No account.
 
 **Full description:**
 
-> Retrail records your longboard, skateboard and rollerblade rides with GPS
-> and keeps them on your phone.
+> The GPS tracker for everything on wheels. Retrail records your longboard,
+> skateboard, inline skate and roller skate rides – route, speed and distance –
+> and keeps them on your phone. No account, no ads.
 >
-> RECORD YOUR RIDES
-> • Pick your activity: longboard, skateboard, rollerblades, roller skates,
->   mountainboard, scooter or other
-> • Live map with your route, speed, distance, duration and top speed
+> RECORD YOUR ROUTE
+> • Choose your ride: longboard, skateboard, inline skates (rollerblades),
+>   roller skates, mountainboard, scooter or other
+> • Live map with your route, speed, distance in km, duration and top speed
 > • Pause and resume any time; keeps recording with the screen off
 > • Control the ride from the notification (Android) or the Live Activity on
 >   the lock screen (iPhone)
 > • Recording works without mobile data
 >
-> RIDE A ROUTE AGAIN
+> FOLLOW A ROUTE AGAIN
 > • Open a saved ride and follow it on the map with your live position
-> • Ride it forwards or backwards — Retrail detects the direction
-> • See how far you have to go and get a heads-up when you leave the route
-> • Record the repeat ride, or just follow
+> • Ride it forwards or backwards – Retrail detects the direction
+> • See how far you have to go and get a notice when you leave the route
+> • Record the repeat ride, or just follow it
 >
-> YOUR HISTORY
+> YOUR RIDE HISTORY
 > • Every ride with a map preview, distance, time and speeds
-> • Weekly, daily and yearly totals on the home screen
+> • Your kilometres this week, today and this year on the home screen
 > • Search, filter by year, month and activity, mark favourites
 > • Rename rides, add notes, navigate to a ride's start point
 >
 > PRIVATE BY DESIGN
 > • No account, no sign-in, no ads, no tracking
 > • Your rides, routes and profile stay on your device
-> • The map is loaded from OpenFreeMap (OpenStreetMap data)
+> • The map comes from OpenFreeMap (OpenStreetMap data)
+>
+> Not on wheels today? Retrail also tracks any other activity, like a walk or
+> a bike ride.
 >
 > Light and dark theme, English and German.
 
 ### German (de-DE)
 
-**App name:** `Retrail – Skate GPS Tracker`
+**App-Name:** `Retrail: Skate & Longboard GPS`
 
 **Kurzbeschreibung:**
 
-> Longboard- und Skate-Fahrten per GPS aufzeichnen. Ohne Konto, ohne Werbung.
+> Strecke aufzeichnen beim Skaten & Longboarden: GPS-Tracker mit Tacho, ohne Konto
 
 **Vollständige Beschreibung:**
 
-> Retrail zeichnet deine Longboard-, Skateboard- und Inline-Skate-Fahrten per GPS
-> auf und speichert sie auf deinem Handy.
+> Der GPS-Tracker für alles, was rollt. Retrail zeichnet deine Fahrten mit
+> Longboard, Skateboard, Inline-Skates und Rollschuhen auf – Strecke,
+> Geschwindigkeit und Kilometer – und speichert sie auf deinem Handy. Ohne
+> Konto, ohne Werbung.
 >
-> FAHRTEN AUFZEICHNEN
-> • Wähle deine Aktivität: Longboard, Skateboard, Inline-Skates,
+> STRECKE AUFZEICHNEN
+> • Wähle deine Aktivität: Longboard, Skateboard, Inline-Skates (Inliner),
 >   Rollschuhe, Mountainboard, Roller oder Andere
-> • Live-Karte mit deiner Strecke, Geschwindigkeit, Distanz, Dauer und
->   Höchstgeschwindigkeit
+> • Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz,
+>   Dauer und Höchstgeschwindigkeit
 > • Jederzeit pausieren und weiterfahren; die Aufzeichnung läuft auch bei
 >   ausgeschaltetem Bildschirm weiter
 > • Steuerung über die Benachrichtigung (Android) oder die Live-Aktivität auf
@@ -166,16 +199,17 @@ No prices, rankings or emoji in the name.
 > • Die Aufzeichnung funktioniert auch ohne mobile Daten
 >
 > STRECKEN NACHFAHREN
-> • Öffne eine gespeicherte Fahrt und fahre sie mit deiner Live-Position auf
->   der Karte nach
+> • Öffne eine gespeicherte Fahrt und fahre die Route mit deiner Live-Position
+>   auf der Karte nach
 > • Vorwärts oder rückwärts – Retrail erkennt die Richtung
 > • Sieh, wie weit es noch ist, und erhalte einen Hinweis, wenn du die Strecke
 >   verlässt
 > • Die Fahrt aufzeichnen oder einfach nur nachfahren
 >
-> DEIN VERLAUF
+> DEIN FAHRTENVERLAUF
 > • Jede Fahrt mit Kartenvorschau, Distanz, Zeit und Geschwindigkeiten
-> • Wochen-, Tages- und Jahressummen auf dem Startbildschirm
+> • Deine Kilometer dieser Woche, von heute und des Jahres auf dem
+>   Startbildschirm
 > • Suchen, nach Jahr, Monat und Aktivität filtern, Favoriten markieren
 > • Fahrten umbenennen, Notizen ergänzen, zum Startpunkt navigieren
 >
@@ -183,6 +217,9 @@ No prices, rankings or emoji in the name.
 > • Kein Konto, keine Anmeldung, keine Werbung, kein Tracking
 > • Deine Fahrten, Strecken und dein Profil bleiben auf deinem Gerät
 > • Die Karte kommt von OpenFreeMap (Daten von OpenStreetMap)
+>
+> Heute nicht auf Rollen unterwegs? Retrail zeichnet auch jede andere
+> Aktivität auf, etwa einen Spaziergang oder eine Radtour.
 >
 > Helles und dunkles Design, Deutsch und Englisch.
 
