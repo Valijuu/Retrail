@@ -128,6 +128,15 @@ Target search terms, each used once, in running text:
 After launch, Play Console → Grow → Store listing acquisition shows the
 search terms people actually used; tune the copy from that.
 
+### Languages in Play Console
+
+Make **English (en-US) the default language** and add German (de-DE) as a
+translation (Store listing → Manage translations), each with its own texts,
+screenshots (`store/play/screenshots/<lang>/`) and feature graphic. Play shows
+the listing in the device language and falls back to the **default** for
+every language without its own listing — with German as default, riders in
+France, Spain or Brazil would see a German page.
+
 ### English (en-US, default)
 
 **App name:** `Retrail: Skate & Longboard GPS`
@@ -171,7 +180,8 @@ search terms people actually used; tune the copy from that.
 > Not on wheels today? Retrail also tracks any other activity – a walk, a
 > hike or a bike ride.
 >
-> Light and dark theme, English and German.
+> Light and dark theme. In English and German – switch the language any time
+> in the settings.
 
 ### German (de-DE)
 
@@ -222,7 +232,8 @@ search terms people actually used; tune the copy from that.
 > Heute nicht auf Rollen unterwegs? Retrail zeichnet auch jede andere
 > Aktivität auf – einen Spaziergang, eine Wanderung oder eine Radtour.
 >
-> Helles und dunkles Design, Deutsch und Englisch.
+> Helles und dunkles Design. Auf Deutsch und Englisch – die Sprache lässt
+> sich jederzeit in den Einstellungen umstellen.
 
 ### Other listing fields
 
