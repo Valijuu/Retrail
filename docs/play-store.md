@@ -109,9 +109,9 @@ listing is searched on its own. A new app won't rank for "GPS tracker" against
 Strava, Komoot or Runtastic, so the listing leads with the niche — **the GPS
 tracker for everything on wheels** (longboard, skateboard, inline skates,
 roller skates, mountainboard, scooter) — and only mentions once that it works
-for any other activity (walks, bike rides). That is honest: the GPS filter
+for any other activity (walks, hikes, bike rides). That is honest: the GPS filter
 (`lib/tracking/gps_fix_filter.dart`) keeps fixes from 1.8 km/h up to
-180 km/h, so walking and cycling record correctly.
+180 km/h, so walking, hiking and cycling record correctly.
 
 Target search terms, each used once, in running text:
 
@@ -122,6 +122,7 @@ Target search terms, each used once, in running text:
 | speed, top speed, speedometer | Geschwindigkeit messen, Tacho |
 | distance, km | Kilometer, Distanz |
 | follow a route | Strecke / Route nachfahren |
+| walk, hike, bike ride (secondary) | Spaziergang, Wanderung, Radtour (Nebenzielgruppe) |
 | inline skates, rollerblading, roller skates | Inline-Skates, Inliner, Rollschuhe |
 
 After launch, Play Console → Grow → Store listing acquisition shows the
@@ -167,8 +168,8 @@ search terms people actually used; tune the copy from that.
 > • Your rides, routes and profile stay on your device
 > • The map comes from OpenFreeMap (OpenStreetMap data)
 >
-> Not on wheels today? Retrail also tracks any other activity, like a walk or
-> a bike ride.
+> Not on wheels today? Retrail also tracks any other activity – a walk, a
+> hike or a bike ride.
 >
 > Light and dark theme, English and German.
 
@@ -219,7 +220,7 @@ search terms people actually used; tune the copy from that.
 > • Die Karte kommt von OpenFreeMap (Daten von OpenStreetMap)
 >
 > Heute nicht auf Rollen unterwegs? Retrail zeichnet auch jede andere
-> Aktivität auf, etwa einen Spaziergang oder eine Radtour.
+> Aktivität auf – einen Spaziergang, eine Wanderung oder eine Radtour.
 >
 > Helles und dunkles Design, Deutsch und Englisch.
 
