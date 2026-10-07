@@ -24,9 +24,6 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# Retired MapTiler API key file (Spec 19: no longer used). Kept ignored so a
-# leftover local copy is never committed; delete the file and this entry.
-maptiler.json
 
 # Flutter/Dart/Pub related
 **/doc/api/
