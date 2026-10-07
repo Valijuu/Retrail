@@ -249,7 +249,7 @@ France, Spain or Brazil would see a German page.
 |---|---|
 | Category | Sports (alternative: Health & Fitness) |
 | Tags | Skateboarding, GPS tracker, Sports tracking |
-| Contact email | vali_justus@live.de (same as the privacy policy; Play shows it publicly) |
+| Contact email | retrail.app@proton.me (same as the privacy policy; Play shows it publicly) |
 | Website | https://github.com/Valijuu/Retrail (optional) |
 | Privacy policy | https://valijuu.github.io/Retrail/privacy/ |
 
