@@ -243,7 +243,7 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
 | App icon | `store/play/icon_512.png` | 512 × 512 PNG, 32-bit, ≤ 1 MB — from `assets/branding/app_icon.png` |
 | Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language) |
 
-| Phone screenshots | `store/play/screenshots/<lang>/01_ride.png` … `08_welcome.png` | 8 per language, 1080 × 1920, captions in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` |
+| Phone screenshots | `store/play/screenshots/<lang>/01_track.png` … `08_welcome.png` (recording, follow, history, detail, home, dark recording, activities, welcome) | 8 per language, 1080 × 1920, captions in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` |
 
 **How the screenshots are made** (no real location data anywhere):
 

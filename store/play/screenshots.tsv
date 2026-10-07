@@ -1,9 +1,9 @@
 # out-name	raw-screenshot (store/play/screens/raw/<lang>_…)	theme	English caption	German caption
-01_ride	light_06_ride	light	Speed and distance, <em>live</em>	Tempo und Strecke, <em>live</em>
-02_follow	light_05_detail	light	Ride your routes <em>again</em>	Strecken <em>nachfahren</em>
+01_track	light_07_track	light	Speed and distance, <em>live</em>	Tempo und Strecke, <em>live</em>
+02_follow	light_06_ride	light	Ride your routes <em>again</em>	Strecken <em>nachfahren</em>
 03_history	light_04_history	light	Every ride <em>on the map</em>	Jede Fahrt <em>auf der Karte</em>
-04_home	light_03_home	light	Your week <em>in numbers</em>	Deine Woche <em>in Zahlen</em>
-05_dark_home	dark_03_home	dark	Light or <em>dark</em>	Hell oder <em>dunkel</em>
-06_dark_ride	dark_06_ride	dark	Made for <em>night sessions</em>	Auch für <em>Abendrunden</em>
+04_detail	light_05_detail	light	Every detail of <em>every ride</em>	Alle Details <em>jeder Fahrt</em>
+05_home	light_03_home	light	Your week <em>in numbers</em>	Deine Woche <em>in Zahlen</em>
+06_dark_track	dark_07_track	dark	Light or <em>dark</em>	Hell oder <em>dunkel</em>
 07_activities	light_02_activities	light	For everything <em>on wheels</em>	Für alles, <em>was rollt</em>
 08_welcome	light_01_welcome	light	No account. <em>No ads.</em>	Ohne Konto. <em>Ohne Werbung.</em>
