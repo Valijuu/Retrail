@@ -35,7 +35,11 @@ const _seeds = 20;
 typedef _Fix = ({double y, double x, int s, double accuracy, double? speed});
 
 /// What a recording made of a fix stream.
-typedef _Result = ({double distance, List<int> recordedAt});
+typedef _Result = ({
+  double distance,
+  List<int> recordedAt,
+  List<({double lat, double lng})> trackPoints,
+});
 
 /// Feeds [fixes] through a recording [RideTracker], one fix per tick of
 /// `nowNanos` like a real location stream.
@@ -80,7 +84,11 @@ _Result _record(List<_Fix> fixes) {
       );
       if (t.state.trackPoints.length > before) recordedAt.add(f.s);
     }
-    result = (distance: t.state.distanceMetres, recordedAt: recordedAt);
+    result = (
+      distance: t.state.distanceMetres,
+      recordedAt: recordedAt,
+      trackPoints: t.state.trackPoints,
+    );
     t.dispose();
   });
   return result;
@@ -182,6 +190,36 @@ List<_Fix> _wifiJumps(
     ));
   }
   return fixes;
+}
+
+/// Zigzag around blocks: 30 m east, 30 m north, 30 m west, 30 m north, …
+/// at [pace] m/s — the true position after [metres] along that path.
+({double y, double x}) _zigzagAt(double metres) {
+  const leg = 30.0;
+  final n = (metres / leg).floor();
+  final along = metres - n * leg;
+  final rows = n ~/ 2; // completed north legs before this one
+  final y = rows * leg + (n.isOdd ? along : 0);
+  final x = switch (n % 4) {
+    0 => along,
+    1 => leg,
+    2 => leg - along,
+    _ => 0.0,
+  };
+  return (y: y, x: x);
+}
+
+/// Longest straight segment of a recorded route.
+double _longestSegment(_Result r) {
+  var longest = 0.0;
+  for (var i = 1; i < r.trackPoints.length; i++) {
+    final a = r.trackPoints[i - 1], b = r.trackPoints[i];
+    longest = math.max(
+      longest,
+      const _PlaneCalc().distanceBetween(a.lat, a.lng, b.lat, b.lng),
+    );
+  }
+  return longest;
 }
 
 void main() {
@@ -348,6 +386,51 @@ void main() {
         );
       });
     }
+  });
+
+  // After a stop, a skater weaving around 30 m blocks: the route must follow
+  // the weave, not cut a straight line across the blocks. At 5 m/s the 8 m
+  // displacement floor records every other fix anyway, so segments of up to
+  // ~18 m are normal riding; a cut across a block would be 40 m or more.
+  group('skating on after an hour\'s stop', () {
+    const stop = 3600, ride = 120, pace = 5.0;
+    const ridden = pace * ride;
+
+    List<_Fix> skate({required bool withSpeed}) => _stream(
+      (s) => s <= stop ? (y: 0, x: 0) : _zigzagAt(pace * (s - stop)),
+      until: stop + ride,
+      noise: _whiteNoise(math.Random(1), 1.5),
+      speed: withSpeed ? (s) => s <= stop ? 0 : pace : null,
+    );
+
+    test('with provider speed: recorded again within 3 s and along the '
+        'weave', () {
+      final r = _record(skate(withSpeed: true));
+      expect(
+        r.recordedAt.where((s) => s > stop).first - stop,
+        lessThanOrEqualTo(3),
+      );
+      expect(r.distance, greaterThan(0.9 * ridden));
+      expect(_longestSegment(r), lessThan(20));
+    });
+
+    test('without provider speed: held fixes are filled in, so only the very '
+        'first stretch from the stop point is straight', () {
+      final r = _record(skate(withSpeed: false));
+      expect(r.distance, greaterThan(0.85 * ridden));
+      // The first point after the stop must clear 30 m (stage 4 over 60 s);
+      // everything after it follows the weave.
+      expect(_longestSegment(r), lessThan(40));
+      final afterStop = r.trackPoints.skip(1).toList();
+      for (var i = 1; i < afterStop.length; i++) {
+        final a = afterStop[i - 1], b = afterStop[i];
+        expect(
+          const _PlaneCalc().distanceBetween(a.lat, a.lng, b.lat, b.lng),
+          lessThan(20),
+          reason: 'segment $i',
+        );
+      }
+    });
   });
 
   test('back-and-forth with a 10 s period (bowl) keeps its distance', () {

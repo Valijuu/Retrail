@@ -71,8 +71,8 @@ class RideTracker {
   String? _pendingActivityType;
   LocationFix? _lastRecordedLocation;
 
-  /// A far-off fix after a long stop, waiting for confirmation (#70).
-  LocationFix? _candidateLocation;
+  /// Fixes held after a long stop until movement is confirmed (#70).
+  List<LocationFix> _pendingFixes = const [];
   LocationFix? _lastSpeedLocation;
   Timer? _elapsedTimer;
 
@@ -165,7 +165,7 @@ class RideTracker {
     }
     _activeRideId = rideId;
     _lastRecordedLocation = null;
-    _candidateLocation = null;
+    _pendingFixes = const [];
     _trackPoints = const [];
     _distanceMetres = 0.0;
     _speedKmh = null;
@@ -212,7 +212,7 @@ class RideTracker {
     if (!_isTracking || !_isPaused) return;
     _isPaused = false;
     _lastRecordedLocation = null;
-    _candidateLocation = null;
+    _pendingFixes = const [];
     _startElapsedTimer();
     _emit();
   }
@@ -312,19 +312,20 @@ class RideTracker {
     final decision = GpsFixFilter.evaluate(
       fix: fix,
       last: _lastRecordedLocation,
-      candidate: _candidateLocation,
+      pending: _pendingFixes,
       calc: _calc,
     );
-    _candidateLocation = decision.candidate;
-    if (!decision.record) return;
-
-    _distanceMetres += decision.distanceMetres;
-    _recordPoint(rideId, fix);
+    _pendingFixes = decision.pending;
+    for (final r in decision.recorded) {
+      _distanceMetres += r.distanceMetres;
+      _recordPoint(rideId, r.fix);
+    }
   }
 
-  /// Appends [fix] to the recorded route and persists it. Callers have already
-  /// run the filter stages appropriate to the fix (the first point bypasses the
-  /// stationary/displacement guards — see [onLocationReceived]).
+  /// Appends [fix] to the recorded route and persists it, stamped with the
+  /// time it was taken (a held fix is recorded seconds later). Callers have
+  /// already run the filter stages appropriate to the fix (the first point
+  /// bypasses the stationary/displacement guards — see [onLocationReceived]).
   void _recordPoint(int rideId, LocationFix fix) {
     _lastRecordedLocation = fix;
     _trackPoints = [..._trackPoints, (lat: fix.latitude, lng: fix.longitude)];
@@ -334,7 +335,8 @@ class RideTracker {
       rideId: rideId,
       latitude: fix.latitude,
       longitude: fix.longitude,
-      timestampMs: nowMs(),
+      timestampMs:
+          nowMs() - (nowNanos() - fix.elapsedRealtimeNanos) ~/ 1000000,
       speedMs: fix.hasSpeed ? fix.speed : null,
     ));
   }

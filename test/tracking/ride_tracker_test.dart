@@ -725,6 +725,58 @@ void main() {
     });
   });
 
+  // ─── Held fixes after a long stop (#70) ──────────────────────────────────
+  group('held fixes after a long stop', () {
+    test('are recorded with their own time once movement is confirmed', () {
+      runTracker((fa, t) {
+        const second = 1000000000;
+        void at(int s, {bool rolling = false}) {
+          t.nowNanos = () => s * second;
+          t.nowMs = () => 5000000 + s * 1000;
+          t.onLocationReceived(fix(52, 13,
+              hasSpeed: rolling, speed: rolling ? 4 : 0, nanos: s * second));
+        }
+
+        t.startTracking();
+        fa.flushMicrotasks();
+        at(0); // first point
+        at(900); // 100 m away after 15 min, no provider speed: held
+        expect(t.state.trackPoints, hasLength(1));
+        at(905, rolling: true); // a valid speed confirms
+        expect(t.state.trackPoints, hasLength(3));
+        expect(t.state.distanceMetres, 200);
+        final stamps = verify(() => tpRepo.addTrackpoint(
+            rideId: any(named: 'rideId'),
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            timestampMs: captureAny(named: 'timestampMs'),
+            speedMs: any(named: 'speedMs'))).captured;
+        expect(stamps, [5000000, 5900000, 5905000]);
+      });
+    });
+
+    test('are dropped on resume', () {
+      runTracker((fa, t) {
+        const second = 1000000000;
+        void at(int s, {bool rolling = false}) {
+          t.nowNanos = () => s * second;
+          t.onLocationReceived(fix(52, 13,
+              hasSpeed: rolling, speed: rolling ? 4 : 0, nanos: s * second));
+        }
+
+        t.startTracking();
+        fa.flushMicrotasks();
+        at(0);
+        at(900); // held
+        t.pause();
+        t.resume();
+        at(905, rolling: true); // first point after resume, nothing replayed
+        expect(t.state.trackPoints, hasLength(2));
+        expect(t.state.distanceMetres, 0);
+      });
+    });
+  });
+
   // ─── Persistence seam (issue #3) ─────────────────────────────────────────
   //
   // The tracker used to build Drift `RidesCompanion`/`TrackpointsCompanion`
