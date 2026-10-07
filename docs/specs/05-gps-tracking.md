@@ -47,7 +47,7 @@ Constants (unchanged): `ACCURACY_THRESHOLD_M=35`, `MIN_DISTANCE_M=8.0`, `MIN_SPE
 5. **Stationary guard:** if `hasSpeed && speed < 0.8` → return.
 6. **Outlier:** if `distance/elapsedS > 50` → return (keep last good point).
 7. **Displacement:** require `distance ≥ max(8, last.accuracy, fix.accuracy)`.
-8. **Implied speed:** if `distance/elapsedS < 0.5` → return.
+8. **Implied speed:** if `distance/min(elapsedS, 60) < 0.5` → return. **Deliberate deviation from the original (#70):** the original divided by the full time since the last *recorded* point, so after a long stop or an indoor stretch (fixes > 35 m dropped) the anchor's timestamp aged and a rider walking on stayed below 0.5 m/s for minutes (seen on a walk: 18 min without distance until pause/resume). Capping the time at `GpsFixFilter.speedWindowS` = 60 s records walking on again within ~30 s at any fix spacing up to 30 s, and since distance is still measured from the last recorded point nothing walked is lost. Within 60 s of the last point the check is unchanged, so drift while standing behaves as before; the accepted cost is that after a long stop a single ≥ 30 m jump without provider speed can pass. Covered by `test/tracking/stop_recovery_scenarios_test.dart` (seeded noise/drift while standing, bench, supermarket, Android stop, sparse fixes, back-and-forth).
 9. Passed → accumulate distance, append trackPoint, async-insert `Trackpoint` (speed = provider speed or null).
 
 ### A4. `ConnectivityObserver` (`lib/core/connectivity/connectivity_observer.dart`)

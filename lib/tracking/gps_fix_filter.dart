@@ -32,6 +32,13 @@ abstract final class GpsFixFilter {
   /// A trustworthy provider speed below this means the rider is standing still.
   static const double stationarySpeedMs = 0.8;
 
+  /// Stage 4 judges the implied speed over at most this many seconds. Measured
+  /// over the full time since the last recorded point, a long stop or an
+  /// indoor stretch would hold recording frozen for minutes after the rider
+  /// moves on (#70); capped, walking on is recorded again within ~30 s, while
+  /// drift around someone standing still would have to clear 30 m to pass.
+  static const double speedWindowS = 60;
+
   /// ~180 km/h — above this the segment is a GPS jump, not a ride.
   static const double maxSpeedMs = 50.0;
 
@@ -64,7 +71,11 @@ abstract final class GpsFixFilter {
     if (fix.hasSpeed && fix.speed < stationarySpeedMs) return skip;
 
     final distance = calc.distanceBetween(
-        last.latitude, last.longitude, fix.latitude, fix.longitude);
+      last.latitude,
+      last.longitude,
+      fix.latitude,
+      fix.longitude,
+    );
     final elapsedS =
         (fix.elapsedRealtimeNanos - last.elapsedRealtimeNanos) / 1000000000.0;
 
@@ -72,12 +83,18 @@ abstract final class GpsFixFilter {
     if (elapsedS > 0.0 && distance / elapsedS > maxSpeedMs) return skip;
 
     // 3. Displacement must exceed the accuracy margin of both readings.
-    final requiredDisplacement =
-        math.max(minDistanceM, math.max(last.accuracy, fix.accuracy));
+    final requiredDisplacement = math.max(
+      minDistanceM,
+      math.max(last.accuracy, fix.accuracy),
+    );
     if (distance < requiredDisplacement) return skip;
 
-    // 4. Implied speed must indicate real movement (catches slow drift).
-    if (elapsedS > 0.0 && distance / elapsedS < minSpeedMs) return skip;
+    // 4. Implied speed must indicate real movement (catches slow drift). The
+    //    time is capped so a long stop doesn't freeze recording afterwards.
+    if (elapsedS > 0.0 &&
+        distance / math.min(elapsedS, speedWindowS) < minSpeedMs) {
+      return skip;
+    }
 
     return (record: true, distanceMetres: distance);
   }

@@ -17,24 +17,26 @@ LocationFix _fix({
   bool hasSpeed = false,
   double speed = 0,
   int nanos = 0,
-}) =>
-    LocationFix(
-      latitude: 52,
-      longitude: 13,
-      accuracy: accuracy,
-      hasSpeed: hasSpeed,
-      speed: speed,
-      elapsedRealtimeNanos: nanos,
-    );
+}) => LocationFix(
+  latitude: 52,
+  longitude: 13,
+  accuracy: accuracy,
+  hasSpeed: hasSpeed,
+  speed: speed,
+  elapsedRealtimeNanos: nanos,
+);
 
 /// Runs the filter against a predecessor one second earlier, so the implied
 /// speed is simply `metres` per second.
-FixDecision evaluateSegment(double metres, {LocationFix? fix, double lastAccuracy = 5}) =>
-    GpsFixFilter.evaluate(
-      fix: fix ?? _fix(nanos: 1000000000),
-      last: _fix(accuracy: lastAccuracy),
-      calc: _FixedCalc(metres),
-    );
+FixDecision evaluateSegment(
+  double metres, {
+  LocationFix? fix,
+  double lastAccuracy = 5,
+}) => GpsFixFilter.evaluate(
+  fix: fix ?? _fix(nanos: 1000000000),
+  last: _fix(accuracy: lastAccuracy),
+  calc: _FixedCalc(metres),
+);
 
 void main() {
   group('isFresh (stage 0)', () {
@@ -48,7 +50,9 @@ void main() {
 
     test('a fix older than the limit is stale', () {
       expect(
-          GpsFixFilter.isFresh(_fix(), GpsFixFilter.maxFixAgeNanos + 1), isFalse);
+        GpsFixFilter.isFresh(_fix(), GpsFixFilter.maxFixAgeNanos + 1),
+        isFalse,
+      );
     });
   });
 
@@ -86,9 +90,10 @@ void main() {
       final d = evaluateSegment(
         20,
         fix: _fix(
-            hasSpeed: true,
-            speed: GpsFixFilter.stationarySpeedMs - 0.1,
-            nanos: 1000000000),
+          hasSpeed: true,
+          speed: GpsFixFilter.stationarySpeedMs - 0.1,
+          nanos: 1000000000,
+        ),
       );
       expect(d.record, isFalse);
     });
@@ -121,11 +126,35 @@ void main() {
       expect(d.record, isFalse);
     });
 
+    test('judges stage 4 over at most 60 s: 40 m after a 15 min stop is '
+        'recorded (0.67 m/s)', () {
+      // Over the full 900 s that's 0.04 m/s — the freeze after a stop (#70).
+      final d = GpsFixFilter.evaluate(
+        fix: _fix(nanos: 900 * 1000000000),
+        last: _fix(),
+        calc: const _FixedCalc(40),
+      );
+      expect(d.record, isTrue);
+      expect(d.distanceMetres, 40.0);
+    });
+
+    test('still skips drift after a long stop: 25 m after 15 min → 0.42 m/s '
+        'over the capped 60 s', () {
+      final d = GpsFixFilter.evaluate(
+        fix: _fix(nanos: 900 * 1000000000),
+        last: _fix(),
+        calc: const _FixedCalc(25),
+      );
+      expect(d.record, isFalse);
+    });
+
     test('skips a low-accuracy fix before anything else (stage 1)', () {
       final d = evaluateSegment(
         20,
         fix: _fix(
-            accuracy: GpsFixFilter.accuracyThresholdM + 1, nanos: 1000000000),
+          accuracy: GpsFixFilter.accuracyThresholdM + 1,
+          nanos: 1000000000,
+        ),
       );
       expect(d.record, isFalse);
     });
