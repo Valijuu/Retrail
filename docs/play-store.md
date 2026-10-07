@@ -179,7 +179,7 @@ search terms people actually used; tune the copy from that.
 
 **Kurzbeschreibung:**
 
-> Strecke aufzeichnen beim Skaten & Longboarden – mit Tempo, Kilometern und Karte
+> GPS-Tracker fürs Skaten & Longboarden: Strecke, Tempo und Kilometer aufzeichnen
 
 **Vollständige Beschreibung:**
 
