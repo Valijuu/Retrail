@@ -9,6 +9,7 @@ import '../domain/max_speed.dart';
 import 'gps_fix_filter.dart';
 import 'location_fix.dart';
 import 'ride_tracking_state.dart';
+import 'route_recorder.dart';
 
 /// Holds all live ride-recording state and the GPS recording pipeline.
 ///
@@ -19,9 +20,9 @@ import 'ride_tracking_state.dart';
 /// Pure Dart — no Flutter imports, and no Drift: persistence goes through the
 /// repositories' intent-revealing methods ([RideRepository.startRide],
 /// [TrackpointRepository.addTrackpoint]), never their companion types. The
-/// GPS filter maths lives in [GpsFixFilter]; this class owns the state it
-/// operates on and the orchestration around it. Ported 1:1 from the original
-/// Kotlin `RideTracker`.
+/// route itself is built by [RouteRecorder] (the GPS filter maths lives in
+/// [GpsFixFilter]); this class owns the ride lifecycle around it. Ported from
+/// the original Kotlin `RideTracker`.
 class RideTracker {
   RideTracker(
     this._rideRepository,
@@ -29,7 +30,7 @@ class RideTracker {
     this._calc, {
     int Function()? nowMs,
     int Function()? nowNanos,
-  }) {
+  }) : _route = RouteRecorder(_calc) {
     this.nowMs = nowMs ?? _defaultNowMs;
     this.nowNanos = nowNanos ?? _defaultNowNanos;
   }
@@ -40,7 +41,7 @@ class RideTracker {
 
   /// Clock matching [LocationFix.elapsedRealtimeNanos]. Overridable in tests.
   /// Used by the freshness filter and to date a recorded fix back to when it
-  /// was taken (see [_recordPoint]).
+  /// was taken (see [_persistPoint]).
   late int Function() nowNanos;
 
   /// Wall-clock "now" in epoch ms for ride/trackpoint timestamps.
@@ -49,8 +50,7 @@ class RideTracker {
   // ─── Live state (mirrors the original MutableStateFlows) ─────────────────
   LocationFix? _location;
   bool _isTracking = false;
-  List<RoutePoint> _trackPoints = const [];
-  double _distanceMetres = 0.0;
+  final RouteRecorder _route;
   double? _speedKmh;
   double _maxSpeedKmh = 0.0;
   int _elapsedSeconds = 0;
@@ -70,10 +70,6 @@ class RideTracker {
   /// orphaning it in the history.
   bool _discardPendingRide = false;
   String? _pendingActivityType;
-  LocationFix? _lastRecordedLocation;
-
-  /// Fixes held after a long stop until movement is confirmed (#70).
-  List<LocationFix> _pendingFixes = const [];
   LocationFix? _lastSpeedLocation;
   Timer? _elapsedTimer;
 
@@ -87,8 +83,8 @@ class RideTracker {
   RideTrackingState get state => RideTrackingState(
         location: _location,
         isTracking: _isTracking,
-        trackPoints: List.unmodifiable(_trackPoints),
-        distanceMetres: _distanceMetres,
+        trackPoints: List.unmodifiable(_route.points),
+        distanceMetres: _route.distanceMetres,
         speedKmh: _speedKmh,
         maxSpeedKmh: _maxSpeedKmh,
         elapsedSeconds: _elapsedSeconds,
@@ -165,10 +161,7 @@ class RideTracker {
       return;
     }
     _activeRideId = rideId;
-    _lastRecordedLocation = null;
-    _pendingFixes = const [];
-    _trackPoints = const [];
-    _distanceMetres = 0.0;
+    _route.clear();
     _speedKmh = null;
     _elapsedSeconds = 0;
     _startElapsedTimer();
@@ -207,13 +200,12 @@ class RideTracker {
     _emit();
   }
 
-  /// Resumes a paused ride. Clears [_lastRecordedLocation] so the pause gap isn't
-  /// counted as one big distance jump. No-op when not tracking or not paused.
+  /// Resumes a paused ride, breaking the route so the pause gap isn't counted
+  /// as one big distance jump. No-op when not tracking or not paused.
   void resume() {
     if (!_isTracking || !_isPaused) return;
     _isPaused = false;
-    _lastRecordedLocation = null;
-    _pendingFixes = const [];
+    _route.breakSegment();
     _startElapsedTimer();
     _emit();
   }
@@ -240,8 +232,7 @@ class RideTracker {
     _isTracking = false;
     _isPaused = false;
     _lastCompletedRideId = null;
-    _trackPoints = const [];
-    _distanceMetres = 0.0;
+    _route.clear();
     _elapsedSeconds = 0;
     _emit();
     if (rideId != null) {
@@ -266,8 +257,7 @@ class RideTracker {
     // Only reset the live counters when no NEW ride has started meanwhile — a
     // deferred discard of the previous ride must not clobber an active one.
     if (!_isTracking) {
-      _trackPoints = const [];
-      _distanceMetres = 0.0;
+      _route.clear();
       _elapsedSeconds = 0;
       _emit();
     }
@@ -310,28 +300,17 @@ class RideTracker {
     final rideId = _activeRideId;
     if (rideId == null) return;
 
-    final decision = GpsFixFilter.evaluate(
-      fix: fix,
-      last: _lastRecordedLocation,
-      pending: _pendingFixes,
-      calc: _calc,
-    );
-    _pendingFixes = decision.pending;
-    for (final r in decision.recorded) {
-      _distanceMetres += r.distanceMetres;
-      _recordPoint(rideId, r.fix);
+    final recorded = _route.add(fix);
+    if (recorded.isEmpty) return;
+    _emit();
+    for (final f in recorded) {
+      _persistPoint(rideId, f);
     }
   }
 
-  /// Appends [fix] to the recorded route and persists it, stamped with the
-  /// time it was taken (a held fix is recorded seconds later). Callers have
-  /// already run the filter stages appropriate to the fix (the first point
-  /// bypasses the stationary/displacement guards — see [onLocationReceived]).
-  void _recordPoint(int rideId, LocationFix fix) {
-    _lastRecordedLocation = fix;
-    _trackPoints = [..._trackPoints, (lat: fix.latitude, lng: fix.longitude)];
-    _emit();
-
+  /// Persists a recorded [fix], stamped with the time it was taken (a held fix
+  /// is recorded seconds later).
+  void _persistPoint(int rideId, LocationFix fix) {
     unawaited(_trackpointRepository.addTrackpoint(
       rideId: rideId,
       latitude: fix.latitude,
