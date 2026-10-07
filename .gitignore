@@ -62,3 +62,6 @@ lib/l10n/app_localizations*.dart
 
 # Real ride traces for the local replay test (private location data, never commit)
 /test/fixtures/real_rides.json
+
+# Signed Play bundles from tool/build_release.sh — never commit them.
+/release/

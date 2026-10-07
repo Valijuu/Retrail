@@ -76,11 +76,11 @@ bundles).
 ## Build and check
 
 ```sh
-flutter build appbundle --release
-keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab
+tool/build_release.sh
 ```
 
-The certificate printed must be the upload key above (`CN=Valijuu`, same
-SHA-256), not `CN=Android Debug`. Upload
-`build/app/outputs/bundle/release/app-release.aab` in the Play Console. Bump
+It runs `flutter build appbundle --release`, checks with `keytool` that the
+bundle is signed with the upload key above (`CN=Valijuu`), not
+`CN=Android Debug`, and stores it as `release/retrail-<version>.aab`
+(gitignored). Upload that file in the Play Console. Bump
 `version:` in `pubspec.yaml` (the `+N` build number) for every upload.
