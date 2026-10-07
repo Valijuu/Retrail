@@ -158,11 +158,11 @@ France, Spain or Brazil would see a German page.
 > • Pause and resume any time; keeps recording with the screen off
 > • Control the ride from the notification (Android) or the Live Activity on
 >   the lock screen (iPhone)
-> • Recording works without mobile data
+> • Recording works without cellular data
 >
 > FOLLOW A ROUTE AGAIN
 > • Open a saved ride and follow it on the map with your live position
-> • Ride it forwards or backwards – Retrail detects the direction
+> • Ride it forward or backward – Retrail detects the direction
 > • See how far you have to go and get a notice when you leave the route
 > • Record the repeat ride, or just follow it
 >
