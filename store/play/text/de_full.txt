@@ -1,0 +1,29 @@
+Der GPS-Tracker für alles, was rollt. Retrail zeichnet deine Fahrten mit Longboard, Skateboard, Inline-Skates und Rollschuhen auf – Strecke, Geschwindigkeit und Kilometer – und speichert sie auf deinem Handy. Ohne Konto, ohne Werbung.
+
+STRECKE AUFZEICHNEN
+• Wähle deine Aktivität: Longboard, Skateboard, Inline-Skates (Inliner), Rollschuhe, Mountainboard, Roller oder Andere
+• Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz, Dauer und Höchstgeschwindigkeit
+• Jederzeit pausieren und weiterfahren; die Aufzeichnung läuft auch bei ausgeschaltetem Bildschirm weiter
+• Steuerung über die Benachrichtigung (Android) oder die Live-Aktivität auf dem Sperrbildschirm (iPhone)
+• Die Aufzeichnung funktioniert auch ohne mobile Daten
+
+STRECKEN NACHFAHREN
+• Öffne eine gespeicherte Fahrt und fahre die Route mit deiner Live-Position auf der Karte nach
+• Vorwärts oder rückwärts – Retrail erkennt die Richtung
+• Sieh, wie weit es noch ist, und erhalte einen Hinweis, wenn du die Strecke verlässt
+• Die Fahrt aufzeichnen oder einfach nur nachfahren
+
+DEIN FAHRTENVERLAUF
+• Jede Fahrt mit Kartenvorschau, Distanz, Zeit und Geschwindigkeiten
+• Deine Kilometer dieser Woche, von heute und des Jahres auf dem Startbildschirm
+• Suchen, nach Jahr, Monat und Aktivität filtern, Favoriten markieren
+• Fahrten umbenennen, Notizen ergänzen, zum Startpunkt navigieren
+
+PRIVATSPHÄRE
+• Kein Konto, keine Anmeldung, keine Werbung, kein Tracking
+• Deine Fahrten, Strecken und dein Profil bleiben auf deinem Gerät
+• Die Karte kommt von OpenFreeMap (Daten von OpenStreetMap)
+
+Heute nicht auf Rollen unterwegs? Retrail zeichnet auch jede andere Aktivität auf – einen Spaziergang, eine Wanderung oder eine Radtour.
+
+Helles und dunkles Design. Auf Deutsch und Englisch – die Sprache lässt sich jederzeit in den Einstellungen umstellen.

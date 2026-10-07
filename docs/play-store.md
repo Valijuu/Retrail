@@ -101,6 +101,8 @@ Limits: app name 30, short description 80, full description 4000 characters.
 No prices, rankings, emoji or keyword lists (Play's metadata policy rejects
 repeated or unrelated keywords).
 
+Copy-ready plain-text versions (no `> ` quoting, no hard line breaks): `store/play/text/<lang>_short.txt`, `<lang>_full.txt` — regenerate them whenever the texts below change.
+
 ### Positioning and keywords
 
 Play has no keyword field: it ranks on the **app name** (strongest), the
