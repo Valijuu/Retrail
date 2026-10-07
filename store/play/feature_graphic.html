@@ -1,0 +1,92 @@
+<!doctype html>
+<!-- Source of the Play feature graphic (1024 x 500). Render with
+     tool/render_store_graphics.sh. Colours are the AppColors light tokens
+     (lib/core/theme/app_colors.dart); the mark is assets/branding/app_icon.svg. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;800&display=block" rel="stylesheet">
+<style>
+  :root {
+    --surface: #FFF8F5; --primary: #B45309; --on-primary-container: #431407;
+    --on-surface-variant: #857470; --terrain: #DDE8DD; --grid: #CCE0CC;
+    --route: #2563EB; --halo: #FFFFFF; --start: #16A34A; --chip: #FFEDD5;
+  }
+  html, body { margin: 0; width: 1024px; height: 500px; overflow: hidden; background: var(--surface); }
+  body { font-family: Roboto, sans-serif; position: relative; }
+  .copy { position: absolute; left: 72px; top: 0; bottom: 0; width: 560px;
+          display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand svg { width: 92px; height: 111px; }
+  .name { font-size: 76px; font-weight: 800; letter-spacing: -1.5px; color: var(--on-primary-container); }
+  .tagline { margin-top: 26px; font-size: 34px; line-height: 1.22; font-weight: 500; color: var(--on-primary-container); }
+  .tagline em { font-style: normal; color: var(--primary); }
+  .chips { margin-top: 26px; display: flex; gap: 8px; flex-wrap: nowrap; }
+  .chip { background: var(--chip); color: var(--on-primary-container); border-radius: 999px;
+          padding: 7px 14px; font-size: 17px; font-weight: 500; }
+  .map { position: absolute; right: -40px; top: -40px; width: 470px; height: 580px; }
+</style>
+</head>
+<body>
+  <svg class="map" viewBox="0 0 470 580" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="grid" width="46" height="46" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+        <path d="M46 0H0V46" fill="none" stroke="var(--grid)" stroke-width="3"/>
+      </pattern>
+      <clipPath id="card"><path d="M120 0H470V580H60C80 470 30 400 70 300C110 200 60 120 120 0Z"/></clipPath>
+      <linearGradient id="pin" x1="420" y1="210" x2="640" y2="720" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#D97808"/><stop offset="0.5" stop-color="#B8560A"/><stop offset="1" stop-color="#8E3F0C"/>
+      </linearGradient>
+    </defs>
+    <g clip-path="url(#card)">
+      <rect width="470" height="580" fill="var(--terrain)"/>
+      <rect width="470" height="580" fill="url(#grid)"/>
+      <path id="r" d="M150 480 C200 450 180 400 240 380 S330 395 340 330 S265 265 300 220 S385 205 375 165"
+            fill="none" stroke="var(--halo)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M150 480 C200 450 180 400 240 380 S330 395 340 330 S265 265 300 220 S385 205 375 165"
+            fill="none" stroke="var(--route)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="150" cy="480" r="15" fill="var(--start)" stroke="var(--halo)" stroke-width="6"/>
+    </g>
+    <!-- the pin from the app icon, sitting on the route's end -->
+    <g transform="translate(375 165) scale(0.2) translate(-557 -726)">
+      <path fill="url(#pin)" fill-rule="evenodd" d="M557 726 C522 688 350 548 350 403 A207 207 0 0 1 764 403 C764 548 592 688 557 726 Z M557 340 A48 48 0 1 0 557 436 A48 48 0 1 0 557 340 Z"/>
+      <circle cx="557" cy="388" r="66" fill="none" stroke="#431407" stroke-width="36"/>
+    </g>
+  </svg>
+
+  <div class="copy">
+    <div class="brand">
+      <svg viewBox="250 180 540 650" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="pin2" x1="420" y1="210" x2="640" y2="720" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#D97808"/><stop offset="0.5" stop-color="#B8560A"/><stop offset="1" stop-color="#8E3F0C"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="557" cy="745" rx="74" ry="16" fill="#E3D2C5"/>
+        <path d="M296 768 Q320 660 438 578" fill="none" stroke="#FED7A9" stroke-width="18" stroke-linecap="round" stroke-dasharray="30 30"/>
+        <circle cx="287" cy="795" r="24" fill="none" stroke="#C07A45" stroke-width="12"/>
+        <path fill="url(#pin2)" fill-rule="evenodd" d="M557 726 C522 688 350 548 350 403 A207 207 0 0 1 764 403 C764 548 592 688 557 726 Z M557 340 A48 48 0 1 0 557 436 A48 48 0 1 0 557 340 Z"/>
+        <circle cx="557" cy="388" r="66" fill="none" stroke="#431407" stroke-width="36"/>
+        <ellipse cx="482" cy="274" rx="47" ry="29" transform="rotate(-15 482 274)" fill="#FFFFFF" fill-opacity="0.28"/>
+      </svg>
+      <div class="name">Retrail</div>
+    </div>
+    <div class="tagline" id="tagline"></div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <script>
+    const copy = {
+      en: { tagline: 'The GPS tracker for<br><em>everything on wheels</em>',
+            chips: ['Longboard', 'Skateboard', 'Inline skates', 'No account'] },
+      de: { tagline: 'Der GPS-Tracker für<br><em>alles, was rollt</em>',
+            chips: ['Longboard', 'Skateboard', 'Inline-Skates', 'Ohne Konto'] },
+    };
+    const lang = new URLSearchParams(location.search).get('lang') || 'en';
+    document.documentElement.lang = lang;
+    document.getElementById('tagline').innerHTML = copy[lang].tagline;
+    document.getElementById('chips').innerHTML =
+      copy[lang].chips.map(c => `<span class="chip">${c}</span>`).join('');
+  </script>
+</body>
+</html>

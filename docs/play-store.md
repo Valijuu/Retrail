@@ -233,10 +233,17 @@ search terms people actually used; tune the copy from that.
 | Website | https://github.com/Valijuu/Retrail (optional) |
 | Privacy policy | https://valijuu.github.io/Retrail/privacy/ |
 
-### Graphics still to make
+### Graphics
+
+Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
+
+| Asset | File | Spec |
+|---|---|---|
+| App icon | `store/play/icon_512.png` | 512 × 512 PNG, 32-bit, ≤ 1 MB — from `assets/branding/app_icon.png` |
+| Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language) |
+
+Still to make:
 
 | Asset | Spec |
 |---|---|
-| App icon | 512 × 512 PNG, 32-bit, ≤ 1 MB (export from `assets/branding/app_icon.png`) |
-| Feature graphic | 1024 × 500 PNG/JPG, no alpha |
 | Phone screenshots | 2–8, 16:9 or 9:16, each side 320–3840 px. Suggested: Home, ride screen (live map + stats), history list, ride detail, follow-route screen, dark theme. Use rides **without real home locations** (see the repo rule on real location data) |
