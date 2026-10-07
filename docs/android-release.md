@@ -84,3 +84,16 @@ bundle is signed with the upload key above (`CN=Valijuu`), not
 `CN=Android Debug`, and stores it as `release/retrail-<version>.aab`
 (gitignored). Upload that file in the Play Console. Bump
 `version:` in `pubspec.yaml` (the `+N` build number) for every upload.
+
+## Play Console state
+
+Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.
+
+| Version | Track | Date | Status |
+|---|---|---|---|
+| 1.0.0+1 | Internal test | 2026-10-07 | active (unreviewed, internal tests need no review) |
+| 1.0.0+1 | Closed test (Alpha) | 2026-10-07 | submitted for review |
+
+Next: 12+ testers for 14 days from opt-in, an update during the test (#66),
+then apply for production access; #67 before the public launch. Releases
+follow the global `play-release` skill (`~/.claude/skills/play-release/`).
