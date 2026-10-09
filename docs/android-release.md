@@ -95,7 +95,7 @@ Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.
 |---|---|---|---|
 | 1.0.0+1 | Internal test | 2026-10-07 | active (unreviewed, internal tests need no review) |
 | 1.0.0+1 | Closed test (Alpha) | 2026-10-07 | published (first review took ~2 h) — recruiting testers |
-| 1.0.1+2 | Closed test (Alpha) | 2026-10-09 | built, uploaded to the closed test (test day 3) — fix for recording after a long stop (#70, #72) |
+| 1.0.1+2 | Closed test (Alpha) | 2026-10-09 | published (test day 3) — fix for recording after a long stop (#70, #72) |
 
 Next: 12+ testers for 14 days from opt-in; a second update during the test
 (#66, #68, #69), then apply for production access; #67 before the public launch. Releases
