@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'app_shapes.dart';
 import 'app_typography.dart';
 
 /// Builds Retrail's Material 3 [ThemeData] for the given [brightness].
@@ -9,8 +10,9 @@ import 'app_typography.dart';
 /// (dynamic color OFF) and stock M3 typography, and attaches the [AppColors]
 /// token set as a theme extension. Shapes/component styling are applied
 /// per-widget in the screen phases (the original defined no global component
-/// themes), so the only global component tweak here is a seamless app bar that
-/// blends into the surface — matching the original's status-bar behavior.
+/// themes), so the global component tweaks here are a seamless app bar that
+/// blends into the surface — matching the original's status-bar behavior — and
+/// floating, card-shaped snack bars in the warm brand container.
 ThemeData buildTheme(Brightness brightness) {
   final tokens = brightness == Brightness.dark ? AppColors.dark : AppColors.light;
 
@@ -42,6 +44,17 @@ ThemeData buildTheme(Brightness brightness) {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: tokens.primaryContainer,
+      contentTextStyle: appTextTheme(brightness)
+          .bodyMedium
+          ?.copyWith(color: tokens.onPrimaryContainer),
+      actionTextColor: tokens.primary,
+      closeIconColor: tokens.onPrimaryContainer,
+      shape: const RoundedRectangleBorder(borderRadius: AppShapes.card),
+      elevation: 2,
     ),
     extensions: <ThemeExtension<dynamic>>[tokens],
   );

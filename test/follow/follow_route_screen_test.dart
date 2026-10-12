@@ -273,6 +273,19 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('the direction notice can be closed and goes away on its own',
+      (tester) async {
+    await pump(tester, _state(direction: FollowDirection.undecided));
+    follow.emit(_state(
+        progress: _p(),
+        direction: FollowDirection.reverse,
+        reverseNotice: FollowReverseNotice.atFinish));
+    await tester.pump();
+    final bar = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(bar.showCloseIcon, isTrue);
+    expect(bar.duration, const Duration(seconds: 3));
+  });
+
   testWidgets('an opposite direction detected on the way tells the rider',
       (tester) async {
     await pump(tester, _state(direction: FollowDirection.undecided));

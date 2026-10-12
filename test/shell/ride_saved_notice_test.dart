@@ -116,6 +116,25 @@ void main() {
       expect(find.text('Evening roll'), findsOneWidget);
     });
 
+    testWidgets('closes on its own after a few seconds', (tester) async {
+      await pump(tester, _ride);
+      await tester.pumpAndSettle();
+      final bar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(bar.persist, isFalse);
+      expect(bar.duration, const Duration(seconds: 4));
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+      expect(find.text('Ride saved'), findsNothing);
+    });
+
+    testWidgets('the close icon dismisses it', (tester) async {
+      await pump(tester, _ride);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      expect(find.text('Ride saved'), findsNothing);
+    });
+
     testWidgets('nothing parked → no snack bar', (tester) async {
       await pump(tester, null);
       expect(find.text('Ride saved'), findsNothing);

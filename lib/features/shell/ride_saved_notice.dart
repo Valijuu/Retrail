@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/app_snack_bar.dart';
 import '../../data/db/app_database.dart' show Ride;
 import '../../data/repositories/data_providers.dart';
 import '../../data/repositories/preferences_repository.dart';
@@ -50,8 +51,6 @@ class RideSavedNotice extends ConsumerStatefulWidget {
 
 class _RideSavedNoticeState extends ConsumerState<RideSavedNotice>
     with WidgetsBindingObserver {
-  static const _duration = Duration(seconds: 8);
-
   bool _taking = false;
 
   @override
@@ -84,9 +83,9 @@ class _RideSavedNoticeState extends ConsumerState<RideSavedNotice>
       final ride = await ref.read(rideSavedNoticeControllerProvider).take();
       if (ride == null || !mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-        content: Text(l10n.rideSavedNotice),
-        duration: _duration,
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(appSnackBar(
+        icon: Icons.check_circle,
+        message: l10n.rideSavedNotice,
         action: SnackBarAction(
           label: l10n.rideSavedAddDetails,
           onPressed: () {

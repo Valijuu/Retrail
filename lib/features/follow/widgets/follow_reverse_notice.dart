@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_snack_bar.dart';
 import '../../../l10n/app_localizations.dart';
 import '../route_follow_providers.dart';
 
@@ -15,11 +16,13 @@ void listenFollowReverseNotice(WidgetRef ref, BuildContext context) {
     if (prev != null || next == null) return;
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(
-        content: Text(switch (next) {
+      appSnackBar(
+        icon: Icons.swap_horiz,
+        duration: const Duration(seconds: 3),
+        message: switch (next) {
           FollowReverseNotice.atFinish => l10n.followReverseAtFinish,
           FollowReverseNotice.detected => l10n.followReverseDetected,
-        }),
+        },
       ),
     );
   });

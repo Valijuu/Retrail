@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_colors.dart';
+import 'package:retrail/core/theme/app_shapes.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 
 void main() {
@@ -36,6 +37,23 @@ void main() {
       expect(theme.appBarTheme.backgroundColor, AppColors.light.surface);
       expect(theme.appBarTheme.elevation, 0);
       expect(theme.scaffoldBackgroundColor, AppColors.light.surface);
+    });
+
+    test('snack bars float as rounded cards in the warm brand container',
+        () {
+      for (final (b, t) in [
+        (Brightness.light, AppColors.light),
+        (Brightness.dark, AppColors.dark),
+      ]) {
+        final sb = buildTheme(b).snackBarTheme;
+        expect(sb.behavior, SnackBarBehavior.floating);
+        expect(sb.backgroundColor, t.primaryContainer);
+        expect(sb.contentTextStyle?.color, t.onPrimaryContainer);
+        expect(sb.actionTextColor, t.primary);
+        expect(sb.closeIconColor, t.onPrimaryContainer);
+        expect((sb.shape! as RoundedRectangleBorder).borderRadius,
+            AppShapes.card);
+      }
     });
 
     test('dynamic color is off — primary is the brand color, not seed-derived',
