@@ -33,11 +33,19 @@ class ConfirmStopDialog extends StatelessWidget {
 }
 
 /// "Discard ride?" confirmation (destructive). Ports `DiscardRideConfirmDialog`.
+/// Also guards the post-ride summary's Discard (issue #73); there the ride
+/// has already stopped, so [rideStopped] swaps "Keep riding" for "Cancel".
 class DiscardRideConfirmDialog extends StatelessWidget {
-  const DiscardRideConfirmDialog({super.key, required this.onDismiss, required this.onConfirm});
+  const DiscardRideConfirmDialog({
+    super.key,
+    required this.onDismiss,
+    required this.onConfirm,
+    this.rideStopped = false,
+  });
 
   final VoidCallback onDismiss;
   final VoidCallback onConfirm;
+  final bool rideStopped;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +54,7 @@ class DiscardRideConfirmDialog extends StatelessWidget {
     return _ConfirmScaffold(
       title: l10n.discardRideTitle,
       body: l10n.discardRideBody,
-      dismissLabel: l10n.confirmStopKeep,
+      dismissLabel: rideStopped ? l10n.actionCancel : l10n.confirmStopKeep,
       confirmLabel: l10n.discardRideConfirm,
       confirmBg: colors.deleteActionText,
       confirmFg: colors.onPrimary,

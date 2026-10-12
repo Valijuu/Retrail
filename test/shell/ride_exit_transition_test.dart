@@ -242,7 +242,10 @@ void main() {
     await tester.pump();
     expect(find.text('How was your ride?'), findsOneWidget);
 
+    // Discard asks first (#73); the exit starts on the confirmation.
     await tester.tap(find.text('Discard ride'));
+    await tester.pump();
+    await tester.tap(find.text('Discard'));
     await assertCleanExitToHome(tester);
   });
 }

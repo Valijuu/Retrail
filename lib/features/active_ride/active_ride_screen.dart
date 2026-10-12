@@ -300,21 +300,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   _recording.stop();
                 },
               )),
-            if (_showDiscardConfirm)
-              _modal(DiscardRideConfirmDialog(
-                onDismiss: () => setState(() => _showDiscardConfirm = false),
-                onConfirm: () {
-                  setState(() => _showDiscardConfirm = false);
-                  // Stop+discard runs now (before navigation) so isTrackingProvider
-                  // is false before the home screen becomes interactive. Deferring
-                  // this to dispose() left a window during GoRouter's exit animation
-                  // where "Start Tracking" could read isTracking=true and skip the
-                  // timer. discardActiveRide() is synchronous inside stop(), so the
-                  // state flip happens in this call frame.
-                  unawaited(_recording.stop(discard: true));
-                  _goHome();
-                },
-              )),
             if (_showSummary)
               _modal(PostRideSummaryDialog(
                 // _goHome() flips _isLeaving in the same frame the dialog
@@ -332,9 +317,33 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   );
                   _goHome();
                 },
-                onDiscard: () {
-                  setState(() => _showSummary = false);
-                  _controller.discardRide();
+                // Asks first: one stray tap used to erase the ride (#73).
+                onDiscard: () => setState(() => _showDiscardConfirm = true),
+              )),
+            // After the summary so its confirmation stacks on top of it; the
+            // summary stays mounted underneath and keeps the entered text.
+            if (_showDiscardConfirm)
+              _modal(DiscardRideConfirmDialog(
+                rideStopped: _showSummary,
+                onDismiss: () => setState(() => _showDiscardConfirm = false),
+                onConfirm: () {
+                  final fromSummary = _showSummary;
+                  setState(() {
+                    _showDiscardConfirm = false;
+                    _showSummary = false;
+                  });
+                  if (fromSummary) {
+                    _controller.discardRide();
+                  } else {
+                    // Stop+discard runs now (before navigation) so
+                    // isTrackingProvider is false before the home screen
+                    // becomes interactive. Deferring this to dispose() left a
+                    // window during GoRouter's exit animation where "Start
+                    // Tracking" could read isTracking=true and skip the timer.
+                    // discardActiveRide() is synchronous inside stop(), so the
+                    // state flip happens in this call frame.
+                    unawaited(_recording.stop(discard: true));
+                  }
                   _goHome();
                 },
               )),

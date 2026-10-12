@@ -56,8 +56,23 @@ void main() {
       onConfirm: () => confirmed = true,
     )));
     expect(find.text('Discard ride?'), findsOneWidget);
+    expect(find.text('Keep riding'), findsOneWidget);
     await tester.tap(find.text('Discard'));
     expect(confirmed, isTrue);
+  });
+
+  testWidgets(
+      'DiscardRideConfirmDialog after the stop offers Cancel, not Keep riding',
+      (tester) async {
+    var dismissed = false;
+    await tester.pumpWidget(_host(DiscardRideConfirmDialog(
+      rideStopped: true,
+      onDismiss: () => dismissed = true,
+      onConfirm: () {},
+    )));
+    expect(find.text('Keep riding'), findsNothing);
+    await tester.tap(find.text('Cancel'));
+    expect(dismissed, isTrue);
   });
 
   testWidgets('PostRideSummaryDialog saves entered title/comment/favorite',

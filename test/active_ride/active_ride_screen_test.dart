@@ -392,17 +392,50 @@ void main() {
     expect(find.text('home'), findsOneWidget);
   });
 
-  testWidgets('summary Discard calls discardRide and navigates home',
-      (tester) async {
+  // Issue #73: one stray tap on "Discard ride" used to erase the recording.
+  Future<void> openSummaryDiscardConfirm(WidgetTester tester) async {
     await pumpScreen(tester);
     await tester.tap(find.text('Stop ride'));
     await tester.pump();
     await tester.tap(find.text('Stop'));
     await tester.pump();
+    await tester.enterText(find.byType(TextField).first, 'Evening roll');
     await tester.tap(find.text('Discard ride'));
+    await tester.pump();
+  }
+
+  testWidgets('summary Discard asks first; confirming discards and goes home',
+      (tester) async {
+    await openSummaryDiscardConfirm(tester);
+    expect(find.text('Discard ride?'), findsOneWidget);
+    expect(controller.calls, isNot(contains('discard')));
+
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(controller.calls, contains('discard'));
     expect(find.text('home'), findsOneWidget);
+  });
+
+  testWidgets(
+      'cancelling the summary discard keeps the summary and its entered text',
+      (tester) async {
+    await openSummaryDiscardConfirm(tester);
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    expect(find.text('Discard ride?'), findsNothing);
+    expect(find.text('Evening roll'), findsOneWidget);
+    expect(controller.calls, isNot(contains('discard')));
+  });
+
+  testWidgets('back with the summary discard confirm open only dismisses it',
+      (tester) async {
+    await openSummaryDiscardConfirm(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.text('Discard ride?'), findsNothing);
+    expect(find.text('Evening roll'), findsOneWidget);
+    expect(controller.calls, isNot(contains('discard')));
+    expect(recording.calls, isNot(contains('stop:discard')));
   });
 
   testWidgets(
