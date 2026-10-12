@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/features/history/history_filter.dart';
 
 // 2024-06-12 12:00 (fixed reference, matches history_range_test.dart /
@@ -134,6 +135,36 @@ void main() {
     test('activeFilterCount counts monthFrom alone as active', () {
       const f = HistoryFilter(monthFrom: 3);
       expect(activeFilterCount(f), 1);
+    });
+  });
+
+  // Issue #74: an empty list under a narrowing filter or search is "no
+  // matches", not "no rides yet". Sorting alone hides nothing.
+  group('narrowsRides', () {
+    test('default filter does not narrow', () {
+      expect(narrowsRides(const HistoryFilter()), isFalse);
+    });
+
+    test('a different sort order alone does not narrow', () {
+      expect(narrowsRides(const HistoryFilter(sort: SortOrder.distance)),
+          isFalse);
+    });
+
+    test('a blank search query does not narrow', () {
+      expect(narrowsRides(const HistoryFilter(query: '   ')), isFalse);
+    });
+
+    test('each narrowing filter narrows', () {
+      for (final f in [
+        const HistoryFilter(query: 'roll'),
+        const HistoryFilter(favoritesOnly: true),
+        const HistoryFilter(activities: {ActivityType.longboard}),
+        const HistoryFilter(year: 2020),
+        const HistoryFilter(monthFrom: _nowMonth),
+        const HistoryFilter(monthTo: _nowMonth),
+      ]) {
+        expect(narrowsRides(f), isTrue, reason: '$f');
+      }
     });
   });
 }

@@ -246,6 +246,36 @@ void main() {
   testWidgets('empty state when there are no rides', (tester) async {
     await pump(tester, const []);
     expect(find.text('No rides yet'), findsOneWidget);
+    expect(find.text('Reset filters'), findsNothing);
+  });
+
+  // Issue #74: the badge said "1" while the list claimed there were no rides.
+  testWidgets('no matches under an active filter says so and offers a reset',
+      (tester) async {
+    await pump(tester, const []);
+    container.read(historyFilterProvider.notifier).setFavoritesOnly(true);
+    await tester.pump();
+
+    expect(find.text('No rides yet'), findsNothing);
+    expect(find.text('No rides match your filters'), findsOneWidget);
+    await tester.tap(find.text('Reset filters'));
+    await tester.pump();
+    expect(container.read(historyFilterProvider), const HistoryFilter());
+  });
+
+  testWidgets('a search without matches shows the no-matches state',
+      (tester) async {
+    await pump(tester, const []);
+    container.read(historyFilterProvider.notifier).setQuery('xyz');
+    await tester.pump();
+    expect(find.text('No rides match your filters'), findsOneWidget);
+  });
+
+  testWidgets('sorting alone keeps the plain empty state', (tester) async {
+    await pump(tester, const []);
+    container.read(historyFilterProvider.notifier).setSort(SortOrder.distance);
+    await tester.pump();
+    expect(find.text('No rides yet'), findsOneWidget);
   });
 
   testWidgets(

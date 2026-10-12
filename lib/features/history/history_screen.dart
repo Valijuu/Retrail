@@ -17,6 +17,7 @@ import 'history_items.dart';
 import 'history_providers.dart';
 import 'history_ride_card.dart';
 import 'ride_detail_dialog.dart';
+import 'widgets/history_empty_state.dart';
 import '../../data/db/app_database.dart' show Ride, Trackpoint;
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../data/repositories/data_providers.dart';
@@ -305,7 +306,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       }
     });
 
-    final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final items = ref.watch(historyItemsProvider).asData?.value ?? const [];
     final hasRides = items.any((i) => i is RideEntryItem);
@@ -367,13 +367,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       separatorBuilder: (_, _) => const SizedBox(height: 6),
                       itemBuilder: (context, i) => _buildItem(items[i]),
                     )
-                  : Center(
-                      child: Text(l10n.historyEmpty,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: colors.onSurfaceVariant)),
-                    ),
+                  : const HistoryEmptyState(),
             ),
           ],
         ),

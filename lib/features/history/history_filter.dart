@@ -96,3 +96,14 @@ int activeFilterCount(HistoryFilter f) {
   if (f.monthFrom != null || f.monthTo != null) count++;
   return count;
 }
+
+/// True when [f] can hide rides — a search query or any filter except the sort
+/// order. An empty list under such a filter means "no matches", not "no rides
+/// yet" (issue #74).
+bool narrowsRides(HistoryFilter f) =>
+    f.query.trim().isNotEmpty ||
+    f.favoritesOnly ||
+    f.activities.isNotEmpty ||
+    f.year != null ||
+    f.monthFrom != null ||
+    f.monthTo != null;

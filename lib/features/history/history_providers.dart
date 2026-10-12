@@ -70,6 +70,11 @@ final historyFilterProvider =
 final activeFilterCountProvider =
     Provider<int>((ref) => activeFilterCount(ref.watch(historyFilterProvider)));
 
+/// Whether the filter/search can hide rides (see [narrowsRides]) — picks the
+/// History empty state.
+final historyNarrowsRidesProvider =
+    Provider<bool>((ref) => narrowsRides(ref.watch(historyFilterProvider)));
+
 /// The filtered/sorted/date-grouped history list. Recomputes when rides or the
 /// filter change. Widget tests stub this with a finite stream (Drift `.watch()`
 /// never closes — see the established test rule).

@@ -99,6 +99,8 @@
   "historyFilterCd": "Filter",
   "historySearchPlaceholder": "Fahrt suchen…",
   "historyEmpty": "Noch keine Fahrten",
+  "historyNoMatches": "Keine Fahrten passen zu deinen Filtern",
+  "historyResetFilters": "Filter zurücksetzen",
   "historyFilterTitle": "Filter",
   "historySectionYear": "JAHR",
   "historySectionMonthRange": "MONATSBEREICH",

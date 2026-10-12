@@ -100,6 +100,8 @@
   "historyFilterCd": "Filter",
   "historySearchPlaceholder": "Search rides…",
   "historyEmpty": "No rides yet",
+  "historyNoMatches": "No rides match your filters",
+  "historyResetFilters": "Reset filters",
   "historyFilterTitle": "Filter",
   "historySectionYear": "YEAR",
   "historySectionMonthRange": "MONTH RANGE",
