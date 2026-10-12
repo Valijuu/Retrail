@@ -288,8 +288,10 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
 Per release, as entered in the Play Console (≤ 500 characters per language,
 line breaks included). Style: `Neu:` / `Behoben:` headings (EN `New:` /
 `Fixed:`) with one `•` per change, the section with the biggest change first,
-user benefit instead of internals; the closed test names fixes concretely,
-production stays shorter and positive. Rules: `play-release` skill,
+user benefit instead of internals; the closed test names fixes concretely and
+ends with "Danke fürs Testen! / Thanks for testing!" — production stays
+shorter and positive and never says "testing" (at most a neutral contact line
+"Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
 ### 1.1.0+3 (closed test, 2026-10-12)
