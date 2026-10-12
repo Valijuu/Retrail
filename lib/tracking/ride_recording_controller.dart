@@ -84,6 +84,13 @@ class RideRecordingController {
   /// (which left a zombie "tracking" state after a fast back → discard).
   int _epoch = 0;
 
+  /// Countdown state (#77): [arm] brought the service + feed up and the ride
+  /// waits for [beginArmedRide]. [_arming] is the in-flight [arm];
+  /// [_armCancelled] records a [stop] (notification Stop) during the countdown.
+  bool _armed = false;
+  Future<void>? _arming;
+  bool _armCancelled = false;
+
   /// Runs the permission gate **without** starting recording: notification +
   /// location permission (requesting once if undecided) and, on success, the
   /// background escalation. Returns the outcome so the Start-tracking press can
@@ -140,19 +147,75 @@ class RideRecordingController {
   /// Resolves permission (requesting once if undecided), and on success starts
   /// the source + service + tracker. Returns the gate outcome so the UI can show
   /// the rationale / enable-location prompt when not [LocationStartAction.proceed].
+  /// Already armed by the countdown → only begins the ride.
   Future<LocationStartAction> start() async {
     if (_tracker.state.isTracking) return LocationStartAction.proceed;
+    if (_armed || _arming != null) {
+      await beginArmedRide();
+      return LocationStartAction.proceed;
+    }
     final epoch = _epoch;
 
     final action = await _runGate();
     if (action != LocationStartAction.proceed) return action;
     if (epoch != _epoch) return LocationStartAction.proceed; // stopped meanwhile
 
+    if (await _startFeedAndService(epoch)) _tracker.startTracking();
+    return LocationStartAction.proceed;
+  }
+
+  /// Brings the service + GPS feed up while the countdown is on screen — the
+  /// app is surely in front, which Android requires to start a location
+  /// foreground service and iOS to keep running once locked (#77). The ride
+  /// itself waits for [beginArmedRide]; until then fixes only move the marker.
+  Future<void> arm() {
+    if (_tracker.state.isTracking || _armed) return Future.value();
+    return _arming ??= _arm().whenComplete(() => _arming = null);
+  }
+
+  Future<void> _arm() async {
+    _armCancelled = false;
+    final epoch = _epoch;
+    final action = await _runGate();
+    if (action != LocationStartAction.proceed || epoch != _epoch) return;
+    if (await _startFeedAndService(epoch)) _armed = true;
+  }
+
+  /// The countdown reached 0 (or Start now): begins the armed ride with no
+  /// platform call, so it starts even with the phone already pocketed. Returns
+  /// false when a [stop] cancelled the countdown — the caller then goes home.
+  /// Not armed for another reason (gate blocked) → true: the ride screen's
+  /// [start] takes over and shows its prompt.
+  Future<bool> beginArmedRide() async {
+    await _arming;
+    if (_armCancelled) return false;
+    if (_armed) {
+      _armed = false;
+      _tracker.startTracking();
+    }
+    return true;
+  }
+
+  /// The countdown was left without starting: tears the armed service + feed
+  /// down again. Never touches a ride in progress.
+  Future<void> disarm() async {
+    if (_tracker.state.isTracking || (!_armed && _arming == null)) return;
+    _epoch++; // an in-flight arm() must not bring the service back
+    _armed = false;
+    _armCancelled = true;
+    await _cancelSubscriptions();
+    await _service.stop();
+  }
+
+  /// Seeds the map, subscribes the fix/service/state streams and starts the
+  /// foreground service. False when a stop/disarm won the race meanwhile
+  /// (everything is undone again).
+  Future<bool> _startFeedAndService(int epoch) async {
     // Centre the map on the last-known fix immediately (display only — it may be
     // stale on a cold start, which the recording path would drop), then stream
     // fresh fixes. seedLocation no-ops once a real fix has set the position.
     final seed = await _source.lastKnown();
-    if (epoch != _epoch) return LocationStartAction.proceed;
+    if (epoch != _epoch) return false;
     if (seed != null) _tracker.seedLocation(seed);
     // onError: a platform error on the fix stream (e.g. location services
     // switched off) must not escape as an unhandled exception; the service
@@ -176,10 +239,9 @@ class RideRecordingController {
       // instead of resurrecting a ride the user already left/discarded.
       await _cancelSubscriptions();
       await _service.stop();
-      return LocationStartAction.proceed;
+      return false;
     }
-    _tracker.startTracking();
-    return LocationStartAction.proceed;
+    return true;
   }
 
   void pauseOrResume(bool isPaused) =>
@@ -202,6 +264,9 @@ class RideRecordingController {
   /// "last rides" while the service teardown ran).
   Future<void> stop({bool discard = false}) async {
     _epoch++; // an in-flight start() must not resurrect the ride (see above)
+    // A Stop during the countdown cancels the pending start (#77).
+    if (_armed || _arming != null) _armCancelled = true;
+    _armed = false;
     if (discard) {
       _tracker.discardActiveRide();
     } else {
@@ -232,6 +297,7 @@ class RideRecordingController {
   /// stop: disposing a container must not write an endTime or finalize a ride.
   void dispose() {
     _epoch++; // an in-flight start() must not resurrect the subscriptions
+    _armed = false;
     unawaited(_fixSub?.cancel());
     _fixSub = null;
     unawaited(_stateSub?.cancel());

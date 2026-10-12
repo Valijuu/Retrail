@@ -98,6 +98,12 @@ class _FakeRecording extends RideRecordingController {
   @override
   Future<LocationStartAction> start() async => LocationStartAction.proceed;
   @override
+  Future<void> arm() async {}
+  @override
+  Future<bool> beginArmedRide() async => true;
+  @override
+  Future<void> disarm() async {}
+  @override
   Future<void> stop({bool discard = false}) async {}
 }
 

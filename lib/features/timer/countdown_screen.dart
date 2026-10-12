@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
+import '../../tracking/ride_recording_controller.dart';
+import '../../tracking/tracking_providers.dart';
 import '../home/home_providers.dart';
 import '../onboarding/activity_type_ui.dart';
 import '../shell/routes.dart';
@@ -15,7 +18,12 @@ import 'countdown_timer.dart';
 
 /// Pre-ride countdown. Ports `TimerPage`: an animated 5→0 ring, the read-only
 /// activity chip, a +5 action, a static GPS-signal row and a Start-now button.
-/// Reaching 0 (or Start now) navigates to the active-ride screen.
+/// Reaching 0 (or Start now) begins the ride and navigates to the active-ride
+/// screen.
+///
+/// The recording is armed (service + GPS feed) as soon as this opens, while
+/// the app is surely in front, and the ride begins at 0 before navigating —
+/// so pocketing the phone during the countdown still records (#77).
 ///
 /// Always rendered in the original's fixed palette — dark surfaces with
 /// light-theme accents — independent of the app's current theme.
@@ -34,10 +42,13 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
   final CountdownTimer _timer = CountdownTimer();
   int _total = 5;
   bool _navigated = false;
+  late final RideRecordingController _recording;
 
   @override
   void initState() {
     super.initState();
+    _recording = ref.read(rideRecordingControllerProvider);
+    unawaited(_recording.arm());
     _timer.addListener(_onTick);
     _timer.start();
   }
@@ -50,15 +61,21 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
     if (_timer.isFinished) _goToRide();
   }
 
-  void _goToRide() {
+  Future<void> _goToRide() async {
     if (_navigated) return;
     _navigated = true;
     _timer.stop();
-    context.go(AppRoutes.ride);
+    // Before navigating: in the background no frame builds the ride screen,
+    // so the ride must not wait for it. False = a notification Stop
+    // cancelled the start meanwhile.
+    final proceed = await _recording.beginArmedRide();
+    if (!mounted) return;
+    context.go(proceed ? AppRoutes.ride : AppRoutes.main);
   }
 
   @override
   void dispose() {
+    if (!_navigated) unawaited(_recording.disarm());
     _timer.removeListener(_onTick);
     _timer.dispose();
     super.dispose();

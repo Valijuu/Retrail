@@ -399,4 +399,115 @@ void main() {
     expect(tracker.state.location?.latitude, 52.0);
     await c.stop();
   });
+
+  // Issue #77: the service + GPS feed come up while the countdown is on screen
+  // (app guaranteed in front); the ride itself begins at 0 without any
+  // platform call, so it starts even when the phone was pocketed meanwhile.
+  group('arm / beginArmedRide / disarm (countdown, #77)', () {
+    _FakePermissions granted() => _FakePermissions(
+          serviceEnabled: true,
+          permission: LocationPermission.whileInUse,
+        );
+
+    test('arm() starts service + feed but no ride', () async {
+      final c = controller(granted());
+      await c.arm();
+      await pumpEventQueue();
+      expect(service.starts, 1);
+      expect(tracker.state.isTracking, isFalse);
+      expect(await db.rideDao.getAll().first, isEmpty);
+      // The feed is live: the marker moves, nothing is recorded.
+      source.emit(_fix(52.0, 13.0, 8000000000));
+      await pumpEventQueue();
+      expect(tracker.state.location, isNotNull);
+      expect(tracker.state.trackPoints, isEmpty);
+    });
+
+    test('beginArmedRide() starts the ride with no second gate or service '
+        'start', () async {
+      final perms = granted();
+      final c = controller(perms);
+      await c.arm();
+      final gateCalls = perms.backgroundCount;
+      expect(await c.beginArmedRide(), isTrue);
+      expect(tracker.state.isTracking, isTrue);
+      expect(service.starts, 1);
+      expect(perms.backgroundCount, gateCalls);
+      await pumpEventQueue();
+      expect(await db.rideDao.getAll().first, hasLength(1));
+      // The ride screen's own start() afterwards is a no-op.
+      expect(await c.start(), LocationStartAction.proceed);
+      expect(service.starts, 1);
+    });
+
+    test('beginArmedRide() while arm() is still in flight waits for it — '
+        'one service start, the ride begins', () async {
+      final release = Completer<void>();
+      service.startDelay = release.future;
+      final c = controller(granted());
+      unawaited(c.arm());
+      final begun = c.beginArmedRide();
+      await pumpEventQueue();
+      expect(tracker.state.isTracking, isFalse);
+      release.complete();
+      expect(await begun, isTrue);
+      expect(tracker.state.isTracking, isTrue);
+      expect(service.starts, 1);
+    });
+
+    test('disarm() stops service + feed, no ride', () async {
+      final c = controller(granted());
+      await c.arm();
+      await c.disarm();
+      expect(service.stops, 1);
+      source.emit(_fix(52.0, 13.0, 8000000000));
+      await pumpEventQueue();
+      expect(tracker.state.location, isNull);
+      expect(await db.rideDao.getAll().first, isEmpty);
+    });
+
+    test('disarm() during an in-flight arm() — nothing is left running',
+        () async {
+      final release = Completer<void>();
+      service.startDelay = release.future;
+      final c = controller(granted());
+      final arming = c.arm();
+      await pumpEventQueue();
+      await c.disarm();
+      release.complete();
+      await arming;
+      expect(service.stops, greaterThanOrEqualTo(1));
+      expect(await c.beginArmedRide(), isFalse);
+      expect(tracker.state.isTracking, isFalse);
+    });
+
+    test('a notification Stop during the countdown cancels the start',
+        () async {
+      final c = controller(granted());
+      await c.arm();
+      await c.stop();
+      expect(service.stops, 1);
+      expect(await c.beginArmedRide(), isFalse);
+      expect(tracker.state.isTracking, isFalse);
+      await pumpEventQueue();
+      expect(await db.rideDao.getAll().first, isEmpty);
+    });
+
+    test('not armed (arm never ran) → beginArmedRide lets the ride screen '
+        'start it', () async {
+      final c = controller(granted());
+      expect(await c.beginArmedRide(), isTrue);
+      expect(tracker.state.isTracking, isFalse);
+      expect(service.starts, 0);
+    });
+
+    test('a new arm() after a cancelled one works again', () async {
+      final c = controller(granted());
+      await c.arm();
+      await c.stop();
+      await c.arm();
+      expect(await c.beginArmedRide(), isTrue);
+      expect(tracker.state.isTracking, isTrue);
+    });
+  });
 }

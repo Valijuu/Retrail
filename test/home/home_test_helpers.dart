@@ -101,6 +101,18 @@ class FakeRecordingController extends RideRecordingController {
   }
 
   @override
+  Future<void> arm() async => calls.add('arm');
+
+  @override
+  Future<bool> beginArmedRide() async {
+    calls.add('begin');
+    return true;
+  }
+
+  @override
+  Future<void> disarm() async => calls.add('disarm');
+
+  @override
   Future<void> stop({bool discard = false}) async =>
       calls.add(discard ? 'stop:discard' : 'stop');
 

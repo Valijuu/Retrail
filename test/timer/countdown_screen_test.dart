@@ -4,17 +4,30 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
 import 'package:retrail/features/timer/countdown_screen.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/tracking/ride_recording_controller.dart';
+import 'package:retrail/tracking/tracking_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _MockRecording extends Mock implements RideRecordingController {}
+
+late _MockRecording _recording;
 
 Future<Widget> _app(WidgetTester tester,
     {Map<String, Object> prefs = const {'last_activity_type': 'SCOOTER'},
-    Brightness brightness = Brightness.light}) async {
+    Brightness brightness = Brightness.light,
+    bool beginProceeds = true}) async {
+  _recording = _MockRecording();
+  when(() => _recording.arm()).thenAnswer((_) async {});
+  when(() => _recording.disarm()).thenAnswer((_) async {});
+  when(() => _recording.beginArmedRide())
+      .thenAnswer((_) async => beginProceeds);
   tester.view.physicalSize = const Size(400, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -22,13 +35,19 @@ Future<Widget> _app(WidgetTester tester,
   SharedPreferences.setMockInitialValues(prefs);
   final repo = PreferencesRepository(await SharedPreferences.getInstance());
   final router = GoRouter(initialLocation: '/timer', routes: [
+    GoRoute(
+        path: '/',
+        builder: (c, s) => const Scaffold(body: Center(child: Text('home')))),
     GoRoute(path: '/timer', builder: (c, s) => const CountdownScreen()),
     GoRoute(
         path: '/ride',
         builder: (c, s) => const Scaffold(body: Center(child: Text('ride')))),
   ]);
   return ProviderScope(
-    overrides: [preferencesRepositoryProvider.overrideWithValue(repo)],
+    overrides: [
+      preferencesRepositoryProvider.overrideWithValue(repo),
+      rideRecordingControllerProvider.overrideWithValue(_recording),
+    ],
     child: MaterialApp.router(
       theme: buildTheme(brightness),
       localizationsDelegates: const [
@@ -91,6 +110,49 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('ride'), findsOneWidget);
+  });
+
+  // Issue #77: arm while the app is surely in front; begin the ride at 0
+  // before navigating, so it never waits for the ride screen to be built.
+  testWidgets('opening the countdown arms the recording', (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    verify(() => _recording.arm()).called(1);
+    verifyNever(() => _recording.beginArmedRide());
+  });
+
+  testWidgets('reaching 0 begins the armed ride before navigating',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
+    verify(() => _recording.beginArmedRide()).called(1);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('ride'), findsOneWidget);
+    // Leaving for the ride screen must not tear the armed recording down.
+    verifyNever(() => _recording.disarm());
+  });
+
+  testWidgets('a start cancelled meanwhile (notification Stop) goes home',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester, beginProceeds: false));
+    await tester.pump();
+    await tester.tap(find.text('Start now'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('home'), findsOneWidget);
+    expect(find.text('ride'), findsNothing);
+  });
+
+  testWidgets('leaving the countdown without starting disarms', (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+    verify(() => _recording.disarm()).called(1);
+    verifyNever(() => _recording.beginArmedRide());
   });
 
   /// The ring's current sweep (0 = empty, 1 = full), read off its painter.
