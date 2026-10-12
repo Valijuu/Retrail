@@ -282,3 +282,41 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
 5. Raw shots go to `store/play/screens/raw/<lang>_<theme>_NN_<screen>.png`;
    `tool/render_store_graphics.sh` frames them. Raw shots are 1080 × 2424
    (ratio 2.24), which Play rejects — always upload the framed ones.
+
+## Release notes
+
+Per release, as entered in the Play Console (≤ 500 characters per language,
+line breaks included). Style: `Neu:` / `Behoben:` headings (EN `New:` /
+`Fixed:`) with one `•` per change, the section with the biggest change first,
+user benefit instead of internals; the closed test names fixes concretely,
+production stays shorter and positive. Rules: `play-release` skill,
+`references/update.md` § 5.
+
+### 1.1.0+3 (closed test, 2026-10-12)
+
+```
+<de-DE>
+Behoben:
+• Aufzeichnung startet zuverlässig, auch wenn du das Handy während des Countdowns wegsteckst
+• „Fahrt verwerfen" fragt vorher nach, damit keine Fahrt versehentlich verloren geht
+• Verlauf zeigt klar, wenn ein Filter keine Treffer hat
+
+Neu:
+• Favoriten auch beim Bearbeiten einer Fahrt setzen
+• Nach „Beenden" in der Benachrichtigung direkt Titel und Notiz ergänzen
+
+Danke fürs Testen! Feedback an retrail.app@proton.me
+</de-DE>
+<en-US>
+Fixed:
+• Recording starts reliably, even if you pocket your phone during the countdown
+• "Discard ride" asks first, so no ride gets lost by accident
+• History tells you when a filter has no matches
+
+New:
+• Mark rides as favorite in the edit sheet
+• After stopping from the notification, add a title and note right away
+
+Thanks for testing! Feedback to retrail.app@proton.me
+</en-US>
+```
