@@ -122,7 +122,7 @@
   "@selectionCount": { "placeholders": { "count": { "type": "int" } } },
   "selectAll": "Select all",
   "editRideTitle": "Edit ride",
-  "editRideSubtitle": "Adjust title, activity and comment.",
+  "editRideSubtitle": "Adjust title, activity, comment and favorite.",
   "editRideActivityLabel": "Activity",
   "detailDistanceLabel": "Distance",
   "detailDurationLabel": "Duration",

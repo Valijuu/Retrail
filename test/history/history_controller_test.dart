@@ -66,12 +66,34 @@ void main() {
 
   test('updateRideDetails writes description, comment and type', () async {
     final id = await insertRide(typ: 'LONGBOARD');
+    final before = (await repo.getById(id).first)!;
     await controller.updateRideDetails(
-        id, 'Sunset', 'nice', ActivityType.scooter);
+        before, 'Sunset', 'nice', ActivityType.scooter, false);
     final ride = (await repo.getById(id).first)!;
     expect(ride.description, 'Sunset');
     expect(ride.comment, 'nice');
     expect(ride.typ, 'SCOOTER');
+  });
+
+  // Issue #76: the Edit sheet can (un)favorite an older ride.
+  test('updateRideDetails writes a changed favorite flag', () async {
+    final id = await insertRide();
+    final before = (await repo.getById(id).first)!;
+    await controller.updateRideDetails(before, null, null, null, true);
+    final ride = (await repo.getById(id).first)!;
+    expect(ride.isFavorite, isTrue);
+    expect(ride.favoritedAt, 1000);
+  });
+
+  test('updateRideDetails keeps favoritedAt when the flag is unchanged',
+      () async {
+    final id = await insertRide();
+    await db.rideDao.updateFavorite(id, true, 42);
+    final before = (await repo.getById(id).first)!;
+    await controller.updateRideDetails(before, 'Sunset', null, null, true);
+    final ride = (await repo.getById(id).first)!;
+    expect(ride.isFavorite, isTrue);
+    expect(ride.favoritedAt, 42, reason: 'Recent favorites order stays put');
   });
 
   test('toggleFavorite flips the flag', () async {

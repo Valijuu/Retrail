@@ -237,12 +237,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           initialDescription: ride.description,
           initialComment: ride.comment,
           initialType: ActivityType.fromId(ride.typ),
+          initialFavorite: ride.isFavorite,
           onDismiss: () => Navigator.of(context).pop(),
-          onSave: (description, comment, type) {
+          onSave: (description, comment, type, favorite) {
             Navigator.of(context).pop();
             ref
                 .read(historyControllerProvider)
-                .updateRideDetails(ride.rideId, description, comment, type);
+                .updateRideDetails(ride, description, comment, type, favorite);
           },
         ),
       );

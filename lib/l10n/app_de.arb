@@ -121,7 +121,7 @@
   "@selectionCount": { "placeholders": { "count": { "type": "int" } } },
   "selectAll": "Alle auswählen",
   "editRideTitle": "Fahrt bearbeiten",
-  "editRideSubtitle": "Titel, Aktivität und Kommentar anpassen.",
+  "editRideSubtitle": "Titel, Aktivität, Kommentar und Favorit anpassen.",
   "editRideActivityLabel": "Aktivität",
   "detailDistanceLabel": "Strecke",
   "detailDurationLabel": "Dauer",

@@ -26,16 +26,22 @@ class HistoryController {
     }
   }
 
-  /// Writes title + comment and the (re-assignable) activity type. Editing these
-  /// doesn't change the route, so the preview is left intact.
+  /// Writes title + comment, the (re-assignable) activity type and the
+  /// favorite flag (#76). Editing these doesn't change the route, so the
+  /// preview is left intact. The flag is only written when it changed, so an
+  /// unchanged favorite keeps its `favoritedAt` (Home's recent-favorites order).
   Future<void> updateRideDetails(
-    int rideId,
+    Ride ride,
     String? description,
     String? comment,
     ActivityType? type,
+    bool favorite,
   ) async {
-    await _repo.updateRideDetails(rideId, description, comment);
-    await _repo.updateRideType(rideId, type?.id);
+    await _repo.updateRideDetails(ride.rideId, description, comment);
+    await _repo.updateRideType(ride.rideId, type?.id);
+    if (favorite != ride.isFavorite) {
+      await _repo.updateFavorite(ride.rideId, favorite);
+    }
   }
 
   Future<void> toggleFavorite(Ride ride) =>

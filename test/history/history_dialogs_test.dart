@@ -61,7 +61,7 @@ void main() {
         initialDescription: 'Old title',
         initialType: ActivityType.longboard,
         onDismiss: () {},
-        onSave: (t, c, type) {
+        onSave: (t, c, type, _) {
           savedTitle = t;
           savedType = type;
         },
@@ -77,6 +77,30 @@ void main() {
       expect(savedType, isNull);
     });
 
+    // Issue #76: favorite an older ride without hunting for the card heart.
+    testWidgets('favorite toggle starts from the ride and is saved',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      bool? savedFavorite;
+      await tester.pumpWidget(_host(EditRideSheet(
+        initialFavorite: true,
+        onDismiss: () {},
+        onSave: (_, _, _, favorite) => savedFavorite = favorite,
+      )));
+      expect(find.byIcon(Icons.favorite), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.favorite));
+      await tester.pump();
+      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
+      expect(savedFavorite, isFalse);
+    });
+
     testWidgets(
         'activity chips draw no checkmark over their glyph (issue #29) — '
         'selection shows through the chip fill instead', (tester) async {
@@ -88,7 +112,7 @@ void main() {
       await tester.pumpWidget(_host(EditRideSheet(
         initialType: ActivityType.skateboard,
         onDismiss: () {},
-        onSave: (_, _, _) {},
+        onSave: (_, _, _, _) {},
       )));
 
       final chips = tester.widgetList<FilterChip>(find.byType(FilterChip));

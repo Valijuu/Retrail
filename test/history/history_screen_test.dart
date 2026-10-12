@@ -19,6 +19,7 @@ import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/ride_stats.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_controller.dart';
+import 'package:retrail/features/history/edit_ride_sheet.dart';
 import 'package:retrail/features/history/filter_sheet.dart';
 import 'package:retrail/features/history/history_filter.dart';
 import 'package:retrail/features/history/history_items.dart';
@@ -45,9 +46,9 @@ class FakeHistoryController extends HistoryController {
   Future<void> deleteRides(Iterable<int> ids) async =>
       calls.add('deleteRides:${ids.toList()}');
   @override
-  Future<void> updateRideDetails(
-          int id, String? d, String? c, ActivityType? t) async =>
-      calls.add('update:$id');
+  Future<void> updateRideDetails(Ride ride, String? d, String? c,
+          ActivityType? t, bool favorite) async =>
+      calls.add('update:${ride.rideId}:fav=$favorite');
   @override
   Future<void> toggleFavorite(Ride ride) async =>
       calls.add('fav:${ride.rideId}');
@@ -541,6 +542,24 @@ void main() {
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
     expect(find.text('Edit ride'), findsOneWidget);
+  });
+
+  testWidgets('Edit sheet saves the favorite flag for that ride (#76)',
+      (tester) async {
+    await pump(tester, [_entry(1, desc: 'Morning roll', fav: true)]);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    final sheet = find.byType(EditRideSheet);
+    await tester.tap(
+        find.descendant(of: sheet, matching: find.byIcon(Icons.favorite)));
+    await tester.pump();
+    final save = find.descendant(of: sheet, matching: find.text('Save'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(controller.calls, contains('update:1:fav=false'));
   });
 
   testWidgets(

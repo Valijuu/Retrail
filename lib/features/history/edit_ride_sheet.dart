@@ -9,13 +9,15 @@ import '../../core/theme/theme_context.dart';
 
 const _descMaxLength = 60;
 
-/// Edit a saved ride's title, activity type and comment. Ports `EditRideSheet`.
+/// Edit a saved ride's title, activity type, comment and favorite flag. Ports
+/// `EditRideSheet`; the favorite row (#76) mirrors the post-ride summary's.
 class EditRideSheet extends StatefulWidget {
   const EditRideSheet({
     super.key,
     this.initialDescription,
     this.initialComment,
     this.initialType,
+    this.initialFavorite = false,
     this.scrollController,
     required this.onDismiss,
     required this.onSave,
@@ -24,13 +26,14 @@ class EditRideSheet extends StatefulWidget {
   final String? initialDescription;
   final String? initialComment;
   final ActivityType? initialType;
+  final bool initialFavorite;
 
   /// The enclosing sheet's controller, so dragging the content down moves
   /// (and closes) the sheet instead of only scrolling.
   final ScrollController? scrollController;
   final VoidCallback onDismiss;
-  final void Function(String? description, String? comment, ActivityType? type)
-      onSave;
+  final void Function(String? description, String? comment, ActivityType? type,
+      bool favorite) onSave;
 
   @override
   State<EditRideSheet> createState() => _EditRideSheetState();
@@ -42,6 +45,7 @@ class _EditRideSheetState extends State<EditRideSheet> {
   late final _commentController =
       TextEditingController(text: widget.initialComment ?? '');
   late ActivityType? _type = widget.initialType;
+  late bool _favorite = widget.initialFavorite;
 
   @override
   void dispose() {
@@ -115,7 +119,29 @@ class _EditRideSheetState extends State<EditRideSheet> {
                 minLines: 3,
                 maxLines: 5,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(l10n.summaryMarkFavorite,
+                        style:
+                            text.bodyMedium?.copyWith(color: colors.onSurface)),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _favorite = !_favorite),
+                    icon: Icon(
+                      _favorite ? Icons.favorite : Icons.favorite_border,
+                      color:
+                          _favorite ? colors.primary : colors.onSurfaceVariant,
+                      size: 28,
+                    ),
+                    tooltip: _favorite
+                        ? l10n.a11yFavoriteRemove
+                        : l10n.a11yFavoriteAdd,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -138,6 +164,7 @@ class _EditRideSheetState extends State<EditRideSheet> {
                             ? null
                             : _commentController.text,
                         _type,
+                        _favorite,
                       ),
                     ),
                   ),
