@@ -47,4 +47,25 @@ void main() {
     await prefs.setHomeStatsPeriod('year');
     expect(await prefs.homeStatsPeriod.first, 'year');
   });
+
+  // Issue #75: a ride stopped from the notification waits here for the
+  // in-app "Ride saved" hint — across a process restart.
+  test('pending ride details persist until cleared', () async {
+    final prefs = await build();
+    expect(prefs.pendingRideDetailsNow, isNull);
+    await prefs.setPendingRideDetails(7);
+    expect(prefs.pendingRideDetailsNow, 7);
+    final reopened = PreferencesRepository(await SharedPreferences.getInstance());
+    expect(reopened.pendingRideDetailsNow, 7);
+    await prefs.setPendingRideDetails(null);
+    expect(prefs.pendingRideDetailsNow, isNull);
+  });
+
+  test('pending ride details stream re-emits on write', () async {
+    final prefs = await build();
+    final future = prefs.pendingRideDetails.take(2).toList();
+    await Future<void>.delayed(Duration.zero);
+    await prefs.setPendingRideDetails(3);
+    expect(await future, [null, 3]);
+  });
 }

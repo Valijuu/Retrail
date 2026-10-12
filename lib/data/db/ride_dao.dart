@@ -102,6 +102,10 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
         hasRoute: Value(hasRoute),
       ));
 
+  /// One ride row, or null when it is gone (the "Ride saved" hint, #75).
+  Future<Ride?> findById(int rideId) =>
+      (select(rides)..where((r) => r.rideId.equals(rideId))).getSingleOrNull();
+
   Future<void> updateRideDetails(int rideId, String? description, String? comment) =>
       (update(rides)..where((r) => r.rideId.equals(rideId))).write(
           RidesCompanion(description: Value(description), comment: Value(comment)));

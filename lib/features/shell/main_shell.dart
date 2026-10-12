@@ -13,6 +13,7 @@ import '../../core/theme/theme_context.dart';
 import '../../core/widgets/app_bottom_sheet.dart';
 import '../home/greeting_selector.dart';
 import '../home/greetings.dart';
+import 'ride_saved_notice.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
 /// the History tab and the History screen scrolls to it, then clears this.
@@ -119,7 +120,10 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       backgroundColor: colors.surface,
-      body: NotificationListener<ScrollEndNotification>(
+      // Shell-level, so the "Ride saved" hint (#75) shows on whichever tab
+      // the rider lands on after a notification stop.
+      body: RideSavedNotice(
+        child: NotificationListener<ScrollEndNotification>(
         onNotification: (n) {
           if (n.depth == 0) _onPageSettled();
           return false;
@@ -146,7 +150,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             const SettingsScreen(),
           ],
         ),
-      ),
+      )),
       // The back scope lives with the bottom bar so a tab change rebuilds
       // only this subtree, not the PageView.
       bottomNavigationBar: ValueListenableBuilder<int>(

@@ -20,6 +20,7 @@ class PreferencesRepository {
   static const _kCurrentPhoto = 'current_profile_photo';
   static const _kRecentPhotos = 'profile_photos';
   static const _kHomeStatsPeriod = 'home_stats_period';
+  static const _kPendingRideDetails = 'pending_ride_details';
 
   static const defaultUserName = 'Retrailer';
   static const defaultThemeMode = 'system';
@@ -65,6 +66,21 @@ class PreferencesRepository {
 
   Future<void> setHomeStatsPeriod(String period) async {
     await _prefs.setString(_kHomeStatsPeriod, period);
+    _notify();
+  }
+
+  /// A ride stopped from the notification / Live Activity, saved without the
+  /// post-ride summary: the app offers "Add details" next time it is in front
+  /// (#75). Persisted — the process may die once the recording service stops.
+  Stream<int?> get pendingRideDetails => _watch(() => pendingRideDetailsNow);
+  int? get pendingRideDetailsNow => _prefs.getInt(_kPendingRideDetails);
+
+  Future<void> setPendingRideDetails(int? rideId) async {
+    if (rideId == null) {
+      await _prefs.remove(_kPendingRideDetails);
+    } else {
+      await _prefs.setInt(_kPendingRideDetails, rideId);
+    }
     _notify();
   }
 

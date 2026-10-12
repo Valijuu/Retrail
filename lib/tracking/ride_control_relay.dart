@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/repositories/data_providers.dart';
 import '../features/shell/startup_provider.dart';
 import 'ride_notification.dart';
 import 'tracking_providers.dart';
@@ -23,6 +24,17 @@ void rideControlRelay(ProviderContainer container, String id) {
     case RideAction.resume:
       controller.pauseOrResume(true); // currently paused → resume
     case RideAction.stop:
+      // Stopped outside the app, so no post-ride summary ran: park the ride
+      // for the in-app "Ride saved · Add details" hint (#75). The tracker
+      // records the ride id synchronously inside stop().
+      final tracker = container.read(rideTrackerProvider);
+      final wasRecording = tracker.state.isTracking;
       controller.stop(); // finalize the ride
+      final rideId = tracker.lastCompletedRideId;
+      if (wasRecording && rideId != null) {
+        container
+            .read(preferencesRepositoryProvider)
+            .setPendingRideDetails(rideId);
+      }
   }
 }

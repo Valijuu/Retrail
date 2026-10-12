@@ -11,17 +11,16 @@ import '../../l10n/app_localizations.dart';
 import '../follow/follow_route_launcher.dart';
 import '../shell/main_shell.dart';
 import 'confirm_delete_dialog.dart';
-import 'edit_ride_sheet.dart';
 import 'filter_sheet.dart';
 import 'history_items.dart';
 import 'history_providers.dart';
 import 'history_ride_card.dart';
+import 'open_edit_ride_sheet.dart';
 import 'ride_detail_dialog.dart';
 import 'widgets/history_empty_state.dart';
 import '../../data/db/app_database.dart' show Ride, Trackpoint;
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../data/repositories/data_providers.dart';
-import '../../domain/activity_type.dart';
 import '../../map/preview_projection.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../../core/theme/theme_context.dart';
@@ -230,24 +229,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Future<void> _openEdit(Ride ride) => showAppScrollableSheet<void>(
-        context: context,
-        builder: (_, scrollController) => EditRideSheet(
-          scrollController: scrollController,
-          initialDescription: ride.description,
-          initialComment: ride.comment,
-          initialType: ActivityType.fromId(ride.typ),
-          initialFavorite: ride.isFavorite,
-          onDismiss: () => Navigator.of(context).pop(),
-          onSave: (description, comment, type, favorite) {
-            Navigator.of(context).pop();
-            ref
-                .read(historyControllerProvider)
-                .updateRideDetails(ride, description, comment, type, favorite);
-          },
-        ),
-      );
-
   /// Fetches this ride's trackpoints on demand — the list itself doesn't have
   /// them (issue #21) — then opens the read-only detail dialog.
   Future<void> _openDetail(RideEntryItem entry) async {
@@ -419,7 +400,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           onTap: () => _toggleSelected(rideId),
           onOpenMap: () => _openDetail(item),
           onLongPress: () => _toggleSelected(rideId),
-          onEdit: () => _openEdit(item.ride),
+          onEdit: () => showEditRideSheet(context, ref, item.ride),
           onDelete: () => _confirmDelete(single: rideId),
           onFollowRoute: () => _followRoute(item.ride),
           onToggleFavorite: () =>

@@ -24,6 +24,12 @@ void main() {
     expect(fetched.isFavorite, false);
   });
 
+  test('findById reads one ride, null for an unknown id (#75)', () async {
+    final id = await db.rideDao.insert(ride(title: 'Morning cruise'));
+    expect((await db.rideDao.findById(id))!.description, 'Morning cruise');
+    expect(await db.rideDao.findById(id + 1), isNull);
+  });
+
   test('getAll returns every inserted ride', () async {
     await db.rideDao.insert(ride(title: 'A'));
     await db.rideDao.insert(ride(title: 'B'));

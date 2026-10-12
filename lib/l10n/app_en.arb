@@ -102,6 +102,8 @@
   "historyEmpty": "No rides yet",
   "historyNoMatches": "No rides match your filters",
   "historyResetFilters": "Reset filters",
+  "rideSavedNotice": "Ride saved",
+  "rideSavedAddDetails": "Add details",
   "historyFilterTitle": "Filter",
   "historySectionYear": "YEAR",
   "historySectionMonthRange": "MONTH RANGE",

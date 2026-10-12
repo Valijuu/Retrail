@@ -101,6 +101,8 @@
   "historyEmpty": "Noch keine Fahrten",
   "historyNoMatches": "Keine Fahrten passen zu deinen Filtern",
   "historyResetFilters": "Filter zurücksetzen",
+  "rideSavedNotice": "Fahrt gespeichert",
+  "rideSavedAddDetails": "Details ergänzen",
   "historyFilterTitle": "Filter",
   "historySectionYear": "JAHR",
   "historySectionMonthRange": "MONATSBEREICH",

@@ -73,6 +73,8 @@ class RideRepository {
   Future<void> updateRideType(int rideId, String? typ) =>
       _dao.updateRideType(rideId, typ);
 
+  Future<Ride?> findById(int rideId) => _dao.findById(rideId);
+
   /// Sets/clears the favorite flag, stamping `favoritedAt` with "now" when
   /// favoriting and clearing it when un-favoriting (so the home screen can sort
   /// recent favorites by when they were hearted).
