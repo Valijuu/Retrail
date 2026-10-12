@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -28,6 +30,7 @@ Future<Widget> _app(WidgetTester tester,
   when(() => _recording.disarm()).thenAnswer((_) async {});
   when(() => _recording.beginArmedRide())
       .thenAnswer((_) async => beginProceeds);
+  when(() => _recording.armCancelled).thenReturn(false);
   tester.view.physicalSize = const Size(400, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -145,6 +148,31 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('home'), findsOneWidget);
     expect(find.text('ride'), findsNothing);
+  });
+
+  testWidgets('back right after Start now, before the ride began, disarms',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    final begin = Completer<bool>();
+    when(() => _recording.beginArmedRide()).thenAnswer((_) => begin.future);
+    await tester.pump();
+    await tester.tap(find.text('Start now'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+    verify(() => _recording.disarm()).called(1);
+    begin.complete(false);
+  });
+
+  testWidgets('a Stop from the notification during the countdown leaves at '
+      'once', (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    when(() => _recording.armCancelled).thenReturn(true);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('home'), findsOneWidget);
+    verifyNever(() => _recording.beginArmedRide());
   });
 
   testWidgets('leaving the countdown without starting disarms', (tester) async {

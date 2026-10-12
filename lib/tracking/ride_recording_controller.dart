@@ -89,7 +89,12 @@ class RideRecordingController {
   /// [_armCancelled] records a [stop] (notification Stop) during the countdown.
   bool _armed = false;
   Future<void>? _arming;
+  int _armingEpoch = 0;
   bool _armCancelled = false;
+
+  /// A [stop] (notification Stop) or [disarm] cancelled the countdown's
+  /// start; the countdown polls it to leave at once.
+  bool get armCancelled => _armCancelled;
 
   /// Runs the permission gate **without** starting recording: notification +
   /// location permission (requesting once if undecided) and, on success, the
@@ -152,7 +157,8 @@ class RideRecordingController {
     if (_tracker.state.isTracking) return LocationStartAction.proceed;
     if (_armed || _arming != null) {
       await beginArmedRide();
-      return LocationStartAction.proceed;
+      if (_tracker.state.isTracking) return LocationStartAction.proceed;
+      // The arm was cancelled meanwhile (countdown left): start normally.
     }
     final epoch = _epoch;
 
@@ -170,12 +176,23 @@ class RideRecordingController {
   /// itself waits for [beginArmedRide]; until then fixes only move the marker.
   Future<void> arm() {
     if (_tracker.state.isTracking || _armed) return Future.value();
-    return _arming ??= _arm().whenComplete(() => _arming = null);
+    _armCancelled = false;
+    final pending = _arming;
+    if (pending != null && _armingEpoch == _epoch) return pending;
+    // A cancelled arm may still be in flight: arm afresh once it settled,
+    // under the current epoch.
+    final epoch = _armingEpoch = _epoch;
+    late final Future<void> arming;
+    arming = (pending ?? Future<void>.value())
+        .then((_) => _arm(epoch))
+        .whenComplete(() {
+      if (identical(_arming, arming)) _arming = null;
+    });
+    return _arming = arming;
   }
 
-  Future<void> _arm() async {
-    _armCancelled = false;
-    final epoch = _epoch;
+  Future<void> _arm(int epoch) async {
+    if (epoch != _epoch) return;
     final action = await _runGate();
     if (action != LocationStartAction.proceed || epoch != _epoch) return;
     if (await _startFeedAndService(epoch)) _armed = true;

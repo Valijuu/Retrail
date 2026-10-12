@@ -42,6 +42,10 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
   final CountdownTimer _timer = CountdownTimer();
   int _total = 5;
   bool _navigated = false;
+
+  /// Set once [RideRecordingController.beginArmedRide] returned — until then
+  /// leaving must still disarm (Start now, then back at once).
+  bool _begun = false;
   late final RideRecordingController _recording;
 
   @override
@@ -55,6 +59,14 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
 
   void _onTick() {
     if (!mounted) return;
+    // Stop from the notification during the countdown: leave right away.
+    if (_recording.armCancelled && !_navigated) {
+      _navigated = true;
+      _begun = true; // already torn down by the stop
+      _timer.stop();
+      context.go(AppRoutes.main);
+      return;
+    }
     setState(() {
       if (_timer.value > _total) _total = _timer.value;
     });
@@ -69,13 +81,14 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
     // so the ride must not wait for it. False = a notification Stop
     // cancelled the start meanwhile.
     final proceed = await _recording.beginArmedRide();
+    _begun = true;
     if (!mounted) return;
     context.go(proceed ? AppRoutes.ride : AppRoutes.main);
   }
 
   @override
   void dispose() {
-    if (!_navigated) unawaited(_recording.disarm());
+    if (!_begun) unawaited(_recording.disarm());
     _timer.removeListener(_onTick);
     _timer.dispose();
     super.dispose();

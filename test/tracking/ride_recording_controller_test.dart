@@ -501,6 +501,45 @@ void main() {
       expect(service.starts, 0);
     });
 
+    // Review findings on #77.
+    test('start() after a cancelled arm (body tap during the countdown) '
+        'falls back to a normal gated start', () async {
+      final release = Completer<void>();
+      service.startDelay = release.future;
+      final c = controller(granted());
+      unawaited(c.arm());
+      final started = c.start(); // ride screen via the deep link
+      await pumpEventQueue();
+      await c.disarm(); // the countdown goes away
+      release.complete();
+      expect(await started, LocationStartAction.proceed);
+      expect(tracker.state.isTracking, isTrue);
+    });
+
+    test('a quick re-arm while the cancelled arm is still in flight arms '
+        'afresh', () async {
+      final release = Completer<void>();
+      service.startDelay = release.future;
+      final c = controller(granted());
+      unawaited(c.arm()); // countdown A
+      await pumpEventQueue();
+      await c.disarm(); // back
+      final b = c.arm(); // countdown B, before A's service start returned
+      release.complete();
+      await b;
+      expect(c.armCancelled, isFalse);
+      expect(await c.beginArmedRide(), isTrue);
+      expect(tracker.state.isTracking, isTrue);
+    });
+
+    test('armCancelled reports a Stop during the countdown', () async {
+      final c = controller(granted());
+      await c.arm();
+      expect(c.armCancelled, isFalse);
+      await c.stop();
+      expect(c.armCancelled, isTrue);
+    });
+
     test('a new arm() after a cancelled one works again', () async {
       final c = controller(granted());
       await c.arm();
