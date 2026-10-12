@@ -90,6 +90,7 @@ class RideRecordingController {
   bool _armed = false;
   Future<void>? _arming;
   int _armingEpoch = 0;
+  Future<void>? _disarming;
   bool _armCancelled = false;
 
   /// A [stop] (notification Stop) or [disarm] cancelled the countdown's
@@ -192,8 +193,17 @@ class RideRecordingController {
   }
 
   Future<void> _arm(int epoch) async {
+    // A back + instant restart: the old countdown's teardown must land
+    // before this one's service start, or it would stop it again.
+    await _disarming;
     if (epoch != _epoch) return;
-    final action = await _runGate();
+    final LocationStartAction action;
+    try {
+      action = await _runGate();
+    } catch (_) {
+      // Unarmed: at 0 the ride screen's own start() takes over (and reports).
+      return;
+    }
     if (action != LocationStartAction.proceed || epoch != _epoch) return;
     if (await _startFeedAndService(epoch)) _armed = true;
   }
@@ -220,8 +230,12 @@ class RideRecordingController {
     _epoch++; // an in-flight arm() must not bring the service back
     _armed = false;
     _armCancelled = true;
-    await _cancelSubscriptions();
-    await _service.stop();
+    final disarming = _disarming = () async {
+      await _cancelSubscriptions();
+      await _service.stop();
+    }();
+    await disarming;
+    if (identical(_disarming, disarming)) _disarming = null;
   }
 
   /// Seeds the map, subscribes the fix/service/state streams and starts the
@@ -243,8 +257,11 @@ class RideRecordingController {
     _tracker.setLocationServiceEnabled(true);
     _serviceSub =
         _source.serviceEnabled.listen(_tracker.setLocationServiceEnabled);
-    // Keep the ongoing notification's live stats in sync.
-    _stateSub = _tracker.changes.listen((s) => _service.update(
+    // Keep the ongoing notification's live stats in sync — from the ride's
+    // start only: while armed the countdown would show stale or ticking-back
+    // stats (#77).
+    _stateSub = _tracker.changes.where((s) => s.isTracking).listen((s) =>
+        _service.update(
           isPaused: s.isPaused,
           elapsedSeconds: s.elapsedSeconds,
           distanceMetres: s.distanceMetres,

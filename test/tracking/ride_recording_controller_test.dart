@@ -53,8 +53,15 @@ class _FakePermissions implements LocationPermissionService {
   int backgroundCount = 0;
   int openLocationSettingsCount = 0;
 
+  /// When set, the gate's first platform call throws (PlatformException).
+  Object? throwOnServiceCheck;
+
   @override
-  Future<bool> isLocationServiceEnabled() async => serviceEnabled;
+  Future<bool> isLocationServiceEnabled() async {
+    final error = throwOnServiceCheck;
+    if (error != null) throw error;
+    return serviceEnabled;
+  }
   @override
   Future<LocationPermission> checkPermission() async => permission;
   @override
@@ -86,6 +93,11 @@ class _FakePermissions implements LocationPermissionService {
 class _FakeService implements RideForegroundService {
   int starts = 0;
   int stops = 0;
+  int updates = 0;
+  bool running = false;
+
+  /// When set, [stop] waits for it before stopping.
+  Future<void>? stopDelay;
   bool notificationGranted = true;
 
   /// When set, [start] waits for it — simulates the slow platform binder call
@@ -97,15 +109,21 @@ class _FakeService implements RideForegroundService {
     final delay = startDelay;
     if (delay != null) await delay;
     starts++;
+    running = true;
   }
   @override
-  Future<void> stop() async => stops++;
+  Future<void> stop() async {
+    final delay = stopDelay;
+    if (delay != null) await delay;
+    stops++;
+    running = false;
+  }
   @override
   Future<void> update({
     required bool isPaused,
     required int elapsedSeconds,
     required double distanceMetres,
-  }) async {}
+  }) async => updates++;
   @override
   Future<bool> ensureNotificationPermission() async => notificationGranted;
 }
@@ -538,6 +556,47 @@ void main() {
       expect(c.armCancelled, isFalse);
       await c.stop();
       expect(c.armCancelled, isTrue);
+    });
+
+    // Final review findings on #77.
+    test('a gate that throws leaves arm() unarmed instead of hanging the '
+        'countdown', () async {
+      final perms = granted()..throwOnServiceCheck = Exception('platform');
+      final c = controller(perms);
+      await c.arm(); // must not throw
+      expect(await c.beginArmedRide(), isTrue); // ride screen takes over
+      expect(tracker.state.isTracking, isFalse);
+      expect(service.starts, 0);
+    });
+
+    test('back + instant restart: the old disarm cannot stop the new arm\'s '
+        'service', () async {
+      final c = controller(granted());
+      await c.arm(); // countdown A
+      final stopping = Completer<void>();
+      service.stopDelay = stopping.future;
+      final disarm = c.disarm(); // back — service stop still pending
+      final b = c.arm(); // countdown B
+      await pumpEventQueue();
+      stopping.complete();
+      service.stopDelay = null;
+      await disarm;
+      await b;
+      expect(service.running, isTrue);
+      expect(await c.beginArmedRide(), isTrue);
+      expect(tracker.state.isTracking, isTrue);
+    });
+
+    test('no stats reach the notification / Live Activity before the ride '
+        'begins', () async {
+      final c = controller(granted());
+      await c.arm();
+      source.emit(_fix(52.0, 13.0, 8000000000)); // tracker emits
+      await pumpEventQueue();
+      expect(service.updates, 0);
+      await c.beginArmedRide();
+      await pumpEventQueue();
+      expect(service.updates, greaterThan(0));
     });
 
     test('a new arm() after a cancelled one works again', () async {
