@@ -135,17 +135,59 @@ void main() {
     test('keep-alive: nothing changed but 10 min since the last push → true '
         '(keeps a long pause / standstill from going stale)', () {
       const tenMinutesMs = 10 * 60 * 1000;
+      // Elapsed ticks along with the clock (standstill while recording), so
+      // only the keep-alive interval decides.
       final last = _content(nowEpochMs: _snapshotEpochMs);
-      final next = _content(nowEpochMs: _snapshotEpochMs + tenMinutesMs);
+      final next = _content(
+        elapsedSeconds: 600,
+        nowEpochMs: _snapshotEpochMs + tenMinutesMs,
+      );
       expect(shouldPush(last, next), isTrue);
     });
     test('nothing changed, just under 10 min since the last push → false', () {
       const justUnderTenMinutesMs = 10 * 60 * 1000 - 1;
       final last = _content(nowEpochMs: _snapshotEpochMs);
       final next = _content(
+        elapsedSeconds: 599,
         nowEpochMs: _snapshotEpochMs + justUnderTenMinutesMs,
       );
       expect(shouldPush(last, next), isFalse);
+    });
+    // #77 review: the widget counts elapsed time natively from the last
+    // snapshot; when that count drifts from the real elapsed time (the
+    // countdown armed the activity before the ride began at 0) → push.
+    group('elapsed drift', () {
+      test('ride begins after a 5 s countdown (0 s @0 → 0 s @5000 ms; the '
+          'widget would show 5 s) → true', () {
+        final armed = _content(elapsedSeconds: 0, nowEpochMs: 0);
+        final begun = _content(elapsedSeconds: 0, nowEpochMs: 5000);
+        expect(shouldPush(armed, begun), isTrue);
+      });
+      test('one second of tick jitter (10 s @0 → 10 s @1000 ms) → false',
+          () {
+        final last = _content(elapsedSeconds: 10, nowEpochMs: 0);
+        final next = _content(elapsedSeconds: 10, nowEpochMs: 1000);
+        expect(shouldPush(last, next), isFalse);
+      });
+      test('drift of exactly 2 s (10 s @0 → 10 s @2000 ms) → true', () {
+        final last = _content(elapsedSeconds: 10, nowEpochMs: 0);
+        final next = _content(elapsedSeconds: 10, nowEpochMs: 2000);
+        expect(shouldPush(last, next), isTrue);
+      });
+      test('widget behind the real time (10 s @0 → 13 s @1000 ms) → true',
+          () {
+        final last = _content(elapsedSeconds: 10, nowEpochMs: 0);
+        final next = _content(elapsedSeconds: 13, nowEpochMs: 1000);
+        expect(shouldPush(last, next), isTrue);
+      });
+      test('paused on both sides, time passes (10 s @0 → 10 s @60000 ms) — '
+          'the widget does not count while paused → false', () {
+        final last =
+            _content(isPaused: true, elapsedSeconds: 10, nowEpochMs: 0);
+        final next =
+            _content(isPaused: true, elapsedSeconds: 10, nowEpochMs: 60000);
+        expect(shouldPush(last, next), isFalse);
+      });
     });
   });
 }

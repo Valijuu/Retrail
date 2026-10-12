@@ -17,6 +17,11 @@ const _snapshotEpochMsKey = 'snapshotEpochMs';
 // never lets the lock-screen widget go stale.
 const _keepAlivePushInterval = Duration(minutes: 10);
 
+// How far the widget's natively counted elapsed time may drift from the ride
+// — ahead or behind — before a push corrects it; absorbs one second of tick
+// jitter between the snapshot clock and the ride timer.
+const _elapsedDriftTolerance = Duration(seconds: 1);
+
 /// The content state of the ride Live Activity: everything the lock-screen /
 /// Dynamic Island widget renders for one snapshot of the active ride.
 class LiveActivityContent {
@@ -95,18 +100,35 @@ LiveActivityContent liveActivityContent({
 /// Whether [next] differs from the [last] pushed snapshot in something the
 /// widget can't derive on its own — i.e. whether it is worth an update.
 ///
-/// [LiveActivityContent.elapsedSeconds] is deliberately ignored: the widget
-/// counts elapsed time natively from the last snapshot, so ticking time alone
-/// never needs a push. [LiveActivityContent.snapshotEpochMs] only matters for
-/// the keep-alive: once [_keepAlivePushInterval] has passed since [last], a
-/// push is due even if nothing else changed, so the activity never reaches its
-/// staleDate. Distance is compared by its formatted text (`X.XX km`), whose
-/// resolution caps distance-driven updates at roughly one per 10 m.
+/// [LiveActivityContent.elapsedSeconds] normally needs no push: the widget
+/// counts elapsed time natively from the last snapshot (and stops counting
+/// while that snapshot is paused), so ticking time alone never needs an
+/// update. A push is due only when the widget's count drifts from the ride's,
+/// ahead or behind, by more than [_elapsedDriftTolerance] — e.g. the activity
+/// was armed at countdown start and the ride then begins at 0 (#77).
+/// [LiveActivityContent.snapshotEpochMs] also drives the keep-alive: once
+/// [_keepAlivePushInterval] has passed since [last], a push is due even if
+/// nothing else changed, so the activity never reaches its staleDate.
+/// Distance is compared by its formatted text (`X.XX km`), whose resolution
+/// caps distance-driven updates at roughly one per 10 m.
 /// Always true when nothing has been pushed yet ([last] is null).
-bool shouldPush(LiveActivityContent? last, LiveActivityContent next) =>
-    last == null ||
-    last.distanceText != next.distanceText ||
-    last.isPaused != next.isPaused ||
-    last.title != next.title ||
-    next.snapshotEpochMs - last.snapshotEpochMs >=
-        _keepAlivePushInterval.inMilliseconds;
+bool shouldPush(LiveActivityContent? last, LiveActivityContent next) {
+  if (last == null) return true;
+  final sinceLastPushMs = next.snapshotEpochMs - last.snapshotEpochMs;
+  final elapsedDriftSeconds =
+      (_widgetElapsedSeconds(last, sinceLastPushMs) - next.elapsedSeconds)
+          .abs();
+  return last.distanceText != next.distanceText ||
+      last.isPaused != next.isPaused ||
+      last.title != next.title ||
+      sinceLastPushMs >= _keepAlivePushInterval.inMilliseconds ||
+      elapsedDriftSeconds > _elapsedDriftTolerance.inSeconds;
+}
+
+// The elapsed seconds the widget shows [sinceLastPushMs] after [last] was
+// pushed: it counts on from [last] natively, but freezes while [last] is
+// paused (mirrors ios/RideActivityExtension/RideActivityWidget.swift).
+int _widgetElapsedSeconds(LiveActivityContent last, int sinceLastPushMs) =>
+    last.isPaused
+    ? last.elapsedSeconds
+    : last.elapsedSeconds + sinceLastPushMs ~/ Duration.millisecondsPerSecond;
