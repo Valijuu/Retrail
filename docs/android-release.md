@@ -84,7 +84,7 @@ bundle is signed with the upload key above (`CN=Valijuu`), not
 `CN=Android Debug`, and stores it as `release/retrail-<version>.aab`
 (gitignored). The global skill script does the same:
 `~/.claude/skills/play-release/scripts/build-release.sh --expect-owner "CN=Valijuu" --name retrail`
-(used for 1.0.1+2; 1.1.0+3 was built with `tool/build_release.sh`). Upload that file in the Play Console. Bump
+(used for 1.0.1+2; 1.1.0+3 and 1.1.1+4 were built with `tool/build_release.sh`). Upload that file in the Play Console. Bump
 `version:` in `pubspec.yaml` (the `+N` build number) for every upload.
 
 ## Play Console state
@@ -96,8 +96,9 @@ Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.
 | 1.0.0+1 | Internal test | 2026-10-07 | active (unreviewed, internal tests need no review) |
 | 1.0.0+1 | Closed test (Alpha) | 2026-10-07 | published (first review took ~2 h) — recruiting testers |
 | 1.0.1+2 | Closed test (Alpha) | 2026-10-09 | published (test day 3) — fix for recording after a long stop (#70, #72) |
-| 1.1.0+3 | Closed test (Alpha) | 2026-10-12 | built, upload pending — QA report fixes (#73–#76), countdown recording fix (#77), floating snack bars |
+| 1.1.0+3 | Closed test (Alpha) | 2026-10-12 | published — QA report fixes (#73–#76), countdown recording fix (#77), floating snack bars |
+| 1.1.1+4 | Closed test (Alpha) | 2026-10-14 | built, upload pending — status bar icons on the dark ride screens (#66), live GPS status in the countdown (#69) |
 
 Next: 12+ testers for 14 days from opt-in; a further update during the test
-(#66, #68, #69), then apply for production access; #67 before the public launch. Releases
+(#68; iOS check of #78; retake the ride screenshots for #66), then apply for production access; #67 before the public launch. Releases
 follow the global `play-release` skill (`~/.claude/skills/play-release/`).

@@ -294,6 +294,25 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
+### 1.1.1+4 (closed test, 2026-10-14)
+
+```
+<de-DE>
+Behoben:
+• Der Countdown zeigt jetzt wirklich, ob das GPS-Signal bereit ist, noch gesucht wird oder ausgeschaltet ist
+• Im hellen Design sind Uhrzeit und Akku in der Statusleiste beim Fahren und im Countdown wieder gut lesbar
+
+Danke fürs Testen! Feedback an retrail.app@proton.me
+</de-DE>
+<en-US>
+Fixed:
+• The countdown now really shows whether the GPS signal is ready, still searching or switched off
+• In the light theme, the clock and battery in the status bar are readable again while riding and during the countdown
+
+Thanks for testing! Feedback to retrail.app@proton.me
+</en-US>
+```
+
 ### 1.1.0+3 (closed test, 2026-10-12)
 
 ```
