@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -123,6 +124,13 @@ void main() {
     expect(find.text('Rhein'), findsOneWidget);
     expect(find.text('0.81 km to go'), findsOneWidget);
     expect(follow.calls, contains('resume'));
+  });
+
+  testWidgets('light theme: light status bar icons over the dark header (#66)',
+      (tester) async {
+    await pump(tester, _state(progress: _p()));
+    expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
+    expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
   });
 
   testWidgets('before the first fix: the remaining line shows the route length',

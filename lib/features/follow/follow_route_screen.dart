@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/theme_context.dart';
+import '../../core/widgets/status_bar_style.dart';
 import '../../domain/route_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/ride_tracking_state.dart';
@@ -107,14 +108,17 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
-    if (follow == null) return Scaffold(backgroundColor: rideChromeBg.surface);
+    if (follow == null) {
+      return DarkChromeStatusBar(
+          child: Scaffold(backgroundColor: rideChromeBg.surface));
+    }
     final progress = follow.progress;
     final banner = followBanner(context, progress);
     final notJoined = progress == null || !progress.hasJoined;
     final title = follow.rideTitle?.trim();
     final start = follow.track.points.first;
 
-    return PopScope(
+    return DarkChromeStatusBar(child: PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _confirmEnd();
@@ -227,6 +231,6 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
           ),
         ),
       ),
-    );
+    ));
   }
 }

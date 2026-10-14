@@ -100,6 +100,7 @@ ios/
 - `routeFollowProvider` (Spec 17) holds a followed reference route, process-lifetime like `RideTracker` but separate from it: recording follows read the recorder's position, follow-only (`/follow`) runs its own foreground GPS feed. Null = no reference; every screen then behaves as without the feature. It also holds the riding direction (auto-detected or flipped by hand, Spec 18), the oriented track and the ridden parts.
 - Naming: files `snake_case.dart`, types `UpperCamelCase`, providers `camelCaseProvider`.
 - Bottom sheets open through `core/widgets/app_bottom_sheet.dart`: `showAppScrollableSheet` for forms/filters (drag handle, 90 % height, drag-to-close from scrolled content), `showAppBottomSheet` for short pickers and short forms that should hug their content (profile edit — no empty band below the buttons on tall phones; still capped at 90 % and drag-to-close while the content fits). Confirmations stay dialogs.
+- Status bar icons follow the app theme via `ThemeStatusBar` (`core/widgets/status_bar_style.dart`, in `MaterialApp.builder`); a screen with the fixed dark chrome (ride, follow, countdown) wraps itself in `DarkChromeStatusBar` for light icons in both themes.
 - Snack bars go through `core/widgets/app_snack_bar.dart` (`appSnackBar`: leading brand icon, close icon, auto-dismiss even with an action); their floating card look comes from `snackBarTheme` in `app_theme.dart`. Never build a bare `SnackBar`.
 
 ---

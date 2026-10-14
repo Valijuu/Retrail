@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -249,6 +249,13 @@ void main() {
     expect(find.text('00:00'), findsOneWidget);
     expect(find.text('Stop ride'), findsOneWidget);
     expect(find.text('Live'), findsNothing); // badge waits for real tracking
+  });
+
+  testWidgets('light theme: light status bar icons over the dark header (#66)',
+      (tester) async {
+    await pumpScreen(tester);
+    expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
+    expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
   });
 
   testWidgets('paused state shows Paused badge and Resume', (tester) async {

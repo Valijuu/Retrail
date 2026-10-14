@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,6 +77,14 @@ void main() {
     expect(find.textContaining('Stay balanced'), findsOneWidget);
     expect(find.text('GPS signal'), findsOneWidget);
     expect(find.text('ready'), findsOneWidget);
+  });
+
+  testWidgets('light theme: light status bar icons on the dark screen (#66)',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
+    expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
   });
 
   testWidgets('the countdown block is horizontally centred', (tester) async {

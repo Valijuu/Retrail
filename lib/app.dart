@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/widgets/status_bar_style.dart';
 import 'features/settings/settings_providers.dart';
 import 'features/shell/app_router.dart';
 import 'features/shell/theme_mode_provider.dart';
@@ -27,6 +28,7 @@ class RetrailApp extends ConsumerWidget {
       themeMode: themeMode,
       locale: locale,
       routerConfig: router,
+      builder: (context, child) => ThemeStatusBar(child: child!),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

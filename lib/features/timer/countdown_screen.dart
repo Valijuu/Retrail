@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
+import '../../core/widgets/status_bar_style.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/ride_recording_controller.dart';
@@ -108,7 +109,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
     final ringFrom = _total > 0 ? value / _total : 0.0;
     final ringTo = _total > 0 && value > 0 ? (value - 1) / _total : 0.0;
 
-    return Scaffold(
+    return DarkChromeStatusBar(child: Scaffold(
       backgroundColor: _surface.surface,
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
@@ -183,7 +184,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 

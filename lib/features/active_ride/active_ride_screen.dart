@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/theme_context.dart';
+import '../../core/widgets/status_bar_style.dart';
 import '../../l10n/app_localizations.dart';
 import '../../tracking/location_permission.dart';
 import '../../tracking/permission_gate_dialog.dart';
@@ -232,7 +233,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           : null,
     );
 
-    return PopScope(
+    return DarkChromeStatusBar(child: PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _onBack();
@@ -374,6 +375,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
