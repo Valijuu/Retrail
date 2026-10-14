@@ -12,8 +12,10 @@ import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
+import 'package:retrail/features/timer/countdown_providers.dart';
 import 'package:retrail/features/timer/countdown_screen.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/tracking/gps_signal.dart';
 import 'package:retrail/tracking/ride_recording_controller.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +27,9 @@ late _MockRecording _recording;
 Future<Widget> _app(WidgetTester tester,
     {Map<String, Object> prefs = const {'last_activity_type': 'SCOOTER'},
     Brightness brightness = Brightness.light,
-    bool beginProceeds = true}) async {
+    bool beginProceeds = true,
+    GpsSignal gps = GpsSignal.ready,
+    Locale? locale}) async {
   _recording = _MockRecording();
   when(() => _recording.arm()).thenAnswer((_) async {});
   when(() => _recording.disarm()).thenAnswer((_) async {});
@@ -51,6 +55,7 @@ Future<Widget> _app(WidgetTester tester,
     overrides: [
       preferencesRepositoryProvider.overrideWithValue(repo),
       rideRecordingControllerProvider.overrideWithValue(_recording),
+      countdownGpsSignalProvider.overrideWith((ref) => gps),
     ],
     child: MaterialApp.router(
       theme: buildTheme(brightness),
@@ -61,6 +66,7 @@ Future<Widget> _app(WidgetTester tester,
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      locale: locale,
       routerConfig: router,
     ),
   );
@@ -85,6 +91,36 @@ void main() {
     await tester.pump();
     expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
     expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
+  });
+
+  testWidgets('no accurate fix yet: the GPS row says searching (#69)',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester, gps: GpsSignal.searching));
+    await tester.pump();
+    expect(find.text('searching…'), findsOneWidget);
+    expect(find.text('ready'), findsNothing);
+  });
+
+  testWidgets('location services off: the GPS row says off (#69)',
+      (tester) async {
+    await tester.pumpWidget(await _app(tester, gps: GpsSignal.off));
+    await tester.pump();
+    expect(find.text('off'), findsOneWidget);
+    expect(find.text('ready'), findsNothing);
+  });
+
+  testWidgets('German copy for searching (#69)', (tester) async {
+    await tester.pumpWidget(await _app(tester,
+        gps: GpsSignal.searching, locale: const Locale('de')));
+    await tester.pump();
+    expect(find.text('wird gesucht…'), findsOneWidget);
+  });
+
+  testWidgets('German copy for off (#69)', (tester) async {
+    await tester.pumpWidget(
+        await _app(tester, gps: GpsSignal.off, locale: const Locale('de')));
+    await tester.pump();
+    expect(find.text('aus'), findsOneWidget);
   });
 
   testWidgets('the countdown block is horizontally centred', (tester) async {

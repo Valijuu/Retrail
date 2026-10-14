@@ -10,15 +10,18 @@ import '../../core/theme/app_shapes.dart';
 import '../../core/widgets/status_bar_style.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
+import '../../tracking/gps_signal.dart';
 import '../../tracking/ride_recording_controller.dart';
 import '../../tracking/tracking_providers.dart';
 import '../home/home_providers.dart';
 import '../onboarding/activity_type_ui.dart';
 import '../shell/routes.dart';
+import 'countdown_providers.dart';
 import 'countdown_timer.dart';
 
 /// Pre-ride countdown. Ports `TimerPage`: an animated 5→0 ring, the read-only
-/// activity chip, a +5 action, a static GPS-signal row and a Start-now button.
+/// activity chip, a +5 action, a live GPS-signal row (#69) and a Start-now
+/// button.
 /// Reaching 0 (or Start now) begins the ride and navigates to the active-ride
 /// screen.
 ///
@@ -238,13 +241,23 @@ class _AddTimeChip extends StatelessWidget {
   }
 }
 
-class _GpsStatusRow extends StatelessWidget {
+/// The GPS status from the fixes the armed recording streams (#69): the
+/// original's row was static and always said "ready". Display only — the
+/// ride still starts at 0 either way.
+class _GpsStatusRow extends ConsumerWidget {
   const _GpsStatusRow();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
+    final signal = ref.watch(countdownGpsSignalProvider);
+    final ready = signal == GpsSignal.ready;
+    final status = switch (signal) {
+      GpsSignal.ready => l10n.gpsStatusReady,
+      GpsSignal.searching => l10n.gpsStatusSearching,
+      GpsSignal.off => l10n.gpsStatusOff,
+    };
     return Container(
       decoration: BoxDecoration(
           color: _surface.surfaceContainer, borderRadius: AppShapes.input),
@@ -255,16 +268,20 @@ class _GpsStatusRow extends StatelessWidget {
           Container(
               width: 8,
               height: 8,
-              decoration:
-                  BoxDecoration(color: _accent.primary, shape: BoxShape.circle)),
+              decoration: BoxDecoration(
+                  color: ready ? _accent.primary : _accent.onSurfaceVariant,
+                  shape: BoxShape.circle)),
           const SizedBox(width: 10),
           Text(l10n.gpsStatusLabel,
               style:
                   text.labelMedium?.copyWith(color: _accent.onSurfaceVariant)),
           const SizedBox(width: 10),
-          Text(l10n.gpsStatusReady,
+          Text(status,
               style: text.labelMedium?.copyWith(
-                  color: _accent.primaryContainer, fontWeight: FontWeight.w500)),
+                  color: ready
+                      ? _accent.primaryContainer
+                      : _accent.onSurfaceVariant,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );

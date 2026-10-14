@@ -53,6 +53,8 @@
   "timerAddFiveSec": "+5 Sek.",
   "gpsStatusLabel": "GPS-Signal",
   "gpsStatusReady": "bereit",
+  "gpsStatusSearching": "wird gesucht…",
+  "gpsStatusOff": "aus",
 
   "mapActiveRideTitle": "Retrail-Fahrt",
   "mapLiveBadge": "Live",
