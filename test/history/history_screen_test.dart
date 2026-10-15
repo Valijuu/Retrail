@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
+import 'package:retrail/core/theme/app_shapes.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_dao.dart';
 import 'package:retrail/data/db/trackpoint_dao.dart';
@@ -607,6 +608,23 @@ void main() {
       expect(controller.calls, contains('deleteRides:[1, 2, 3]'));
     },
   );
+
+  testWidgets('3-dot menu uses the Surface token without M3 tint, not the '
+      'seed-generated pink surfaceContainer', (tester) async {
+    await pump(tester, [_entry(1)]);
+    final button = tester.widget<PopupMenuButton<Object?>>(
+      find.byWidgetPredicate((w) => w is PopupMenuButton),
+    );
+    final colors = Theme.of(
+      tester.element(find.byIcon(Icons.more_vert)),
+    ).extension<AppColors>()!;
+    expect(button.color, colors.surface);
+    expect(button.surfaceTintColor, Colors.transparent);
+    expect(
+      button.shape,
+      const RoundedRectangleBorder(borderRadius: AppShapes.card),
+    );
+  });
 
   testWidgets('3-dot menu Edit opens the edit dialog', (tester) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);

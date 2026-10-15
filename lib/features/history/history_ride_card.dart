@@ -397,6 +397,12 @@ class _OverflowMenu extends StatelessWidget {
     final colors = context.colors;
     return PopupMenuButton<_MenuAction>(
       tooltip: l10n.a11yMoreOptions,
+      // The M3 default is the seed-generated surfaceContainer, a pink that
+      // clashes with the beige card and the grey map; Surface + no tint
+      // matches the floating map buttons instead.
+      color: colors.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(borderRadius: AppShapes.card),
       icon: Icon(Icons.more_vert, size: 20, color: colors.onSurfaceVariant),
       onSelected: (v) => switch (v) {
         _MenuAction.follow => onFollowRoute?.call(),
