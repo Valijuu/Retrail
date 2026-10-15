@@ -9,8 +9,10 @@ void main() {
   setUpAll(() => initializeDateFormatting('en'));
 
   test('non-blank description is used verbatim', () {
-    expect(rideDisplayTitle(buildRide(description: 'Sunset cruise')),
-        'Sunset cruise');
+    expect(
+      rideDisplayTitle(buildRide(description: 'Sunset cruise')),
+      'Sunset cruise',
+    );
   });
 
   test('blank or null description falls back to the FULL date', () {
@@ -18,8 +20,13 @@ void main() {
     final expected = DateFormat.yMMMMEEEEd('en').format(DateTime(2026, 6, 15));
 
     expect(rideDisplayTitle(buildRide(date: ts), locale: 'en'), expected);
-    expect(rideDisplayTitle(buildRide(description: '   ', date: ts), locale: 'en'),
-        expected);
+    expect(
+      rideDisplayTitle(
+        buildRide(description: '   ', date: ts),
+        locale: 'en',
+      ),
+      expected,
+    );
   });
 
   test('uses startTime when date is null, and is never empty', () {

@@ -11,13 +11,16 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        preferencesRepositoryProvider
-            .overrideWithValue(PreferencesRepository(prefs)),
-      ],
-      child: const RetrailApp(),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          preferencesRepositoryProvider.overrideWithValue(
+            PreferencesRepository(prefs),
+          ),
+        ],
+        child: const RetrailApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Boots without error and mounts the router. First run (onboarding not

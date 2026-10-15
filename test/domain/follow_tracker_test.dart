@@ -19,8 +19,13 @@ LatLng at(double northM, double eastM) => (
 final _straight = [at(0, 0), at(100, 0), at(200, 0), at(300, 0)];
 
 /// A 100 m square loop ending [endEastM] east of its start.
-List<LatLng> _loop(double endEastM) =>
-    [at(0, 0), at(100, 0), at(100, 100), at(0, 100), at(0, endEastM)];
+List<LatLng> _loop(double endEastM) => [
+  at(0, 0),
+  at(100, 0),
+  at(100, 100),
+  at(0, 100),
+  at(0, endEastM),
+];
 
 /// A closed 100 m square loop, L = 400 m.
 final _square = _loop(0);
@@ -103,13 +108,15 @@ void main() {
       expect(identical(t.orientedTrack, t.track), isTrue);
     });
 
-    test('join mid-route, 15 m forward → still undecided, forward progress',
-        () {
-      final t = _ride(_straight, [at(150, 0), at(165, 0)]);
-      expect(t.direction, FollowDirection.undecided);
-      expect(t.progress!.alongM, closeTo(165, 0.5));
-      expect(identical(t.orientedTrack, t.track), isTrue);
-    });
+    test(
+      'join mid-route, 15 m forward → still undecided, forward progress',
+      () {
+        final t = _ride(_straight, [at(150, 0), at(165, 0)]);
+        expect(t.direction, FollowDirection.undecided);
+        expect(t.progress!.alongM, closeTo(165, 0.5));
+        expect(identical(t.orientedTrack, t.track), isTrue);
+      },
+    );
 
     test('join mid-route + 40 m forward → forward, range 150–190', () {
       final t = _ride(_straight, [at(150, 0), at(170, 0), at(190, 0)]);
@@ -215,19 +222,19 @@ void main() {
       expect(t.direction, FollowDirection.reverse);
     });
 
-    test('loop joined at its finish end and ridden backwards (M3) → reverse',
-        () {
-      final t = _ride(_loop(5), [
-        for (var e = 5.0; e <= 85; e += 10) at(0, e),
-      ]);
-      expect(t.direction, FollowDirection.reverse);
-    });
+    test(
+      'loop joined at its finish end and ridden backwards (M3) → reverse',
+      () {
+        final t = _ride(_loop(5), [
+          for (var e = 5.0; e <= 85; e += 10) at(0, e),
+        ]);
+        expect(t.direction, FollowDirection.reverse);
+      },
+    );
 
     test('loop ridden backwards from its finish end (M3): the range stays on '
         'the last leg', () {
-      final t = _ride(_loop(5), [
-        for (var e = 5.0; e <= 85; e += 10) at(0, e),
-      ]);
+      final t = _ride(_loop(5), [for (var e = 5.0; e <= 85; e += 10) at(0, e)]);
       // The range is in metres of the route laid out twice: either lap.
       final lapM = t.track.lengthM;
       expect(t.range!.loM % lapM, closeTo(315, 0.5));
@@ -247,10 +254,13 @@ void main() {
 
     test('out-and-back joined at 190 and ridden south on the return leg → '
         'forward, no ghost range on the way out', () {
-      final t = _ride([at(0, 0), at(200, 0), at(0, 3)], [
-        at(190, 0),
-        for (var n = 180.0; n >= 140; n -= 10) at(n, 3 * (200 - n) / 200),
-      ]);
+      final t = _ride(
+        [at(0, 0), at(200, 0), at(0, 3)],
+        [
+          at(190, 0),
+          for (var n = 180.0; n >= 140; n -= 10) at(n, 3 * (200 - n) / 200),
+        ],
+      );
       expect(t.direction, FollowDirection.forward);
       expect(t.range!.loM, greaterThanOrEqualTo(189));
     });
@@ -302,10 +312,12 @@ void main() {
     });
 
     test('flip while off route keeps the mirrored along, joined', () {
-      final t = _ride(
-        _straight,
-        [at(150, 0), at(180, 0), at(200, 0), at(200, 80)],
-      ).flip();
+      final t = _ride(_straight, [
+        at(150, 0),
+        at(180, 0),
+        at(200, 0),
+        at(200, 80),
+      ]).flip();
       expect(t.progress!.isOffRoute, isTrue);
       expect(t.progress!.hasJoined, isTrue);
       expect(t.progress!.alongM, closeTo(100, 0.5));
@@ -330,47 +342,41 @@ void main() {
       expect(t.riddenIntervals, isEmpty);
     });
 
-    test(
-      'loop decided forward to 45, then a jump to 340 and on to 360 (#51): '
-      'intervals 0–45 and 340–360, not the skipped part between',
-      () {
-        final t = _ride(_loop(5), [
-          at(0, 1),
-          at(15, 0),
-          at(30, 0),
-          at(45, 0),
-          at(0, 60),
-          at(0, 50),
-          at(0, 40),
-        ]);
-        expect(t.riddenIntervals, hasLength(2));
-        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
-        expect(from1, lessThanOrEqualTo(1));
-        expect(to1, closeTo(45, 0.5));
-        expect(from2, closeTo(340, 0.5));
-        expect(to2, closeTo(360, 0.5));
-      },
-    );
+    test('loop decided forward to 45, then a jump to 340 and on to 360 (#51): '
+        'intervals 0–45 and 340–360, not the skipped part between', () {
+      final t = _ride(_loop(5), [
+        at(0, 1),
+        at(15, 0),
+        at(30, 0),
+        at(45, 0),
+        at(0, 60),
+        at(0, 50),
+        at(0, 40),
+      ]);
+      expect(t.riddenIntervals, hasLength(2));
+      final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+      expect(from1, lessThanOrEqualTo(1));
+      expect(to1, closeTo(45, 0.5));
+      expect(from2, closeTo(340, 0.5));
+      expect(to2, closeTo(360, 0.5));
+    });
 
-    test(
-      'open U route ridden to 100, a shortcut across to 350 and on to 390 '
-      '(#51): intervals 0–100 and 350–390',
-      () {
-        // 200 m north, 50 m east, 200 m back south: L = 450.
-        final u = [at(0, 0), at(200, 0), at(200, 50), at(0, 50)];
-        final t = _ride(u, [
-          for (var n = 0.0; n <= 100; n += 10) at(n, 0),
-          for (var n = 100.0; n >= 60; n -= 10) at(n, 50),
-        ]);
-        expect(t.direction, FollowDirection.forward);
-        expect(t.riddenIntervals, hasLength(2));
-        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
-        expect(from1, closeTo(0, 0.5));
-        expect(to1, closeTo(100, 0.5));
-        expect(from2, closeTo(350, 0.5));
-        expect(to2, closeTo(390, 0.5));
-      },
-    );
+    test('open U route ridden to 100, a shortcut across to 350 and on to 390 '
+        '(#51): intervals 0–100 and 350–390', () {
+      // 200 m north, 50 m east, 200 m back south: L = 450.
+      final u = [at(0, 0), at(200, 0), at(200, 50), at(0, 50)];
+      final t = _ride(u, [
+        for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+        for (var n = 100.0; n >= 60; n -= 10) at(n, 50),
+      ]);
+      expect(t.direction, FollowDirection.forward);
+      expect(t.riddenIntervals, hasLength(2));
+      final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+      expect(from1, closeTo(0, 0.5));
+      expect(to1, closeTo(100, 0.5));
+      expect(from2, closeTo(350, 0.5));
+      expect(to2, closeTo(390, 0.5));
+    });
 
     test(
       'open U route 120 m wide ridden to 100, then across it off route and on '
@@ -393,21 +399,18 @@ void main() {
       },
     );
 
-    test(
-      'off route alongside the route and back on 140 m further (#51): no '
-      'shortcut, one interval 0–240',
-      () {
-        final t = _ride(_straight, [
-          for (var n = 0.0; n <= 100; n += 10) at(n, 0),
-          for (var n = 120.0; n <= 180; n += 20) at(n, 40),
-          at(240, 0),
-        ]);
-        expect(t.riddenIntervals, hasLength(1));
-        final (from, to) = t.riddenIntervals.single;
-        expect(from, closeTo(0, 0.5));
-        expect(to, closeTo(240, 0.5));
-      },
-    );
+    test('off route alongside the route and back on 140 m further (#51): no '
+        'shortcut, one interval 0–240', () {
+      final t = _ride(_straight, [
+        for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+        for (var n = 120.0; n <= 180; n += 20) at(n, 40),
+        at(240, 0),
+      ]);
+      expect(t.riddenIntervals, hasLength(1));
+      final (from, to) = t.riddenIntervals.single;
+      expect(from, closeTo(0, 0.5));
+      expect(to, closeTo(240, 0.5));
+    });
 
     test(
       'a straight route left at 100 for another road 100 m away and rejoined '
@@ -430,28 +433,25 @@ void main() {
       },
     );
 
-    test(
-      'a U-turn flip on a loop after a jump keeps both ridden parts, 0–45 '
-      'and 340–360 (#51)',
-      () {
-        final t = _ride(_loop(5), [
-          at(0, 1),
-          at(15, 0),
-          at(30, 0),
-          at(45, 0),
-          at(0, 60),
-          at(0, 50),
-          at(0, 40),
-        ]).flip();
-        expect(t.direction, FollowDirection.reverse);
-        expect(t.riddenIntervals, hasLength(2));
-        final [(from1, to1), (from2, to2)] = t.riddenIntervals;
-        expect(from1, lessThanOrEqualTo(1));
-        expect(to1, closeTo(45, 0.5));
-        expect(from2, closeTo(340, 0.5));
-        expect(to2, closeTo(360, 0.5));
-      },
-    );
+    test('a U-turn flip on a loop after a jump keeps both ridden parts, 0–45 '
+        'and 340–360 (#51)', () {
+      final t = _ride(_loop(5), [
+        at(0, 1),
+        at(15, 0),
+        at(30, 0),
+        at(45, 0),
+        at(0, 60),
+        at(0, 50),
+        at(0, 40),
+      ]).flip();
+      expect(t.direction, FollowDirection.reverse);
+      expect(t.riddenIntervals, hasLength(2));
+      final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+      expect(from1, lessThanOrEqualTo(1));
+      expect(to1, closeTo(45, 0.5));
+      expect(from2, closeTo(340, 0.5));
+      expect(to2, closeTo(360, 0.5));
+    });
 
     test('open route: one ridden interval, 150–190', () {
       final t = _ride(_straight, [at(150, 0), at(170, 0), at(190, 0)]);
@@ -470,9 +470,10 @@ void main() {
 
     test('square loop joined at 340 and ridden across the seam: along strictly '
         'increases after the decision', () {
-      final decided = _trace(_square, _acrossSeam)
-          .where((t) => t.direction == FollowDirection.forward)
-          .toList();
+      final decided = _trace(
+        _square,
+        _acrossSeam,
+      ).where((t) => t.direction == FollowDirection.forward).toList();
       expect(decided, hasLength(greaterThan(5)));
       for (var i = 1; i < decided.length; i++) {
         expect(
@@ -602,9 +603,7 @@ void main() {
 
     test('flip on a loop in lap 1 keeps the ridden part where it is: one '
         'interval 340–380', () {
-      final t = _ride(_square, [
-        for (var e = 60.0; e >= 20; e -= 10) at(0, e),
-      ]);
+      final t = _ride(_square, [for (var e = 60.0; e >= 20; e -= 10) at(0, e)]);
       expect(t.direction, FollowDirection.forward);
       final f = t.flip().next(at(0, 30)).next(at(0, 40));
       expect(f.riddenIntervals, hasLength(1), reason: '${f.riddenIntervals}');
@@ -615,9 +614,7 @@ void main() {
 
     test('flip on a loop after deciding reverse in lap 1: one interval 10–50, '
         'remaining ≈ 370', () {
-      final t = _ride(_square, [
-        for (var n = 50.0; n >= 10; n -= 10) at(n, 0),
-      ]);
+      final t = _ride(_square, [for (var n = 50.0; n >= 10; n -= 10) at(n, 0)]);
       expect(t.direction, FollowDirection.reverse);
       final f = t.flip().next(at(20, 0)).next(at(30, 0)).next(at(40, 0));
       expect(f.riddenIntervals, hasLength(1), reason: '${f.riddenIntervals}');
@@ -687,18 +684,21 @@ void main() {
     });
 
     for (final joinM in <double>[2, 5, 8, 12, 20]) {
-      test('out-and-back joined ${joinM.round()} m past its start and ridden forward to '
-          '60 → never reverse, forward', () {
-        final trace = _trace(_outAndBack, [
-          at(joinM, 0),
-          for (final n in <double>[20, 30, 40, 50, 60])
-            if (n > joinM) at(n, 0),
-        ]);
-        for (final t in trace) {
-          expect(t.direction, isNot(FollowDirection.reverse));
-        }
-        expect(trace.last.direction, FollowDirection.forward);
-      });
+      test(
+        'out-and-back joined ${joinM.round()} m past its start and ridden forward to '
+        '60 → never reverse, forward',
+        () {
+          final trace = _trace(_outAndBack, [
+            at(joinM, 0),
+            for (final n in <double>[20, 30, 40, 50, 60])
+              if (n > joinM) at(n, 0),
+          ]);
+          for (final t in trace) {
+            expect(t.direction, isNot(FollowDirection.reverse));
+          }
+          expect(trace.last.direction, FollowDirection.forward);
+        },
+      );
     }
 
     test('lollipop joined at north 10 and ridden round → forward, remaining '

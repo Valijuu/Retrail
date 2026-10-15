@@ -9,8 +9,7 @@ import 'package:maplibre/maplibre.dart';
 import '../core/theme/app_colors.dart';
 import '../domain/activity_type.dart';
 import '../domain/distance_calculator.dart';
-import '../domain/heading.dart'
-    show HeadingState, nextHeading, splitRouteTail;
+import '../domain/heading.dart' show HeadingState, nextHeading, splitRouteTail;
 import '../domain/route_progress.dart' show RouteTrack;
 import '../l10n/app_localizations.dart';
 import '../features/onboarding/activity_type_ui.dart';
@@ -99,7 +98,9 @@ String routeLineGeoJson(List<RoutePoint> points) {
     'type': 'Feature',
     'geometry': {
       'type': 'LineString',
-      'coordinates': [for (final p in points) [p.lng, p.lat]],
+      'coordinates': [
+        for (final p in points) [p.lng, p.lat],
+      ],
     },
     'properties': <String, Object?>{},
   });
@@ -115,7 +116,10 @@ const double kReferenceRouteOpacity = 0.45;
 String _multiLineGeoJson(List<List<RoutePoint>> segments) {
   final lines = [
     for (final s in segments)
-      if (s.length >= 2) [for (final p in s) [p.lng, p.lat]],
+      if (s.length >= 2)
+        [
+          for (final p in s) [p.lng, p.lat],
+        ],
   ];
   if (lines.isEmpty) return _emptyGeoJson;
   return jsonEncode({
@@ -130,11 +134,12 @@ String _multiLineGeoJson(List<List<RoutePoint>> segments) {
 /// loop ridden across its start/finish; null = nothing ridden yet), greyed on
 /// top of it.
 ({String done, String ahead}) referenceGeoJson(
-        RouteTrack track, List<List<RoutePoint>>? done) =>
-    (
-      done: _multiLineGeoJson(done ?? const []),
-      ahead: routeLineGeoJson(track.points),
-    );
+  RouteTrack track,
+  List<List<RoutePoint>>? done,
+) => (
+  done: _multiLineGeoJson(done ?? const []),
+  ahead: routeLineGeoJson(track.points),
+);
 
 /// What a reference update pushes: the ridden parts ([done]) always, the
 /// whole line ([ahead]) only when [track] is not the one [lastPushed] into
@@ -144,13 +149,10 @@ String _multiLineGeoJson(List<List<RoutePoint>> segments) {
   RouteTrack track,
   List<List<RoutePoint>>? done, {
   required RouteTrack? lastPushed,
-}) =>
-    (
-      done: _multiLineGeoJson(done ?? const []),
-      ahead: identical(track, lastPushed)
-          ? null
-          : routeLineGeoJson(track.points),
-    );
+}) => (
+  done: _multiLineGeoJson(done ?? const []),
+  ahead: identical(track, lastPushed) ? null : routeLineGeoJson(track.points),
+);
 
 /// Where the followed reference's markers go for the endpoint [style] drawn
 /// at style load: the start (or combined loop) marker on the first of
@@ -159,11 +161,12 @@ String _multiLineGeoJson(List<List<RoutePoint>> segments) {
 /// no markers to move). After a flip [points] is the reversed route, so both
 /// markers swap ends.
 ({RoutePoint start, RoutePoint? end}) referenceMarkerPoints(
-        RouteEndpointStyle style, List<RoutePoint> points) =>
-    (
-      start: points.first,
-      end: style == RouteEndpointStyle.open ? points.last : null,
-    );
+  RouteEndpointStyle style,
+  List<RoutePoint> points,
+) => (
+  start: points.first,
+  end: style == RouteEndpointStyle.open ? points.last : null,
+);
 
 /// Which reference to push into the `reference` sources, or null to push
 /// nothing. [drawn] is the reference whose sources the current style load
@@ -174,8 +177,7 @@ String _multiLineGeoJson(List<List<RoutePoint>> segments) {
 RouteTrack? referencePushTarget({
   required RouteTrack? drawn,
   required RouteTrack? current,
-}) =>
-    drawn == null ? null : current;
+}) => drawn == null ? null : current;
 
 /// Linear interpolation between two coordinates. Safe for the short per-fix
 /// distances the marker glide covers (metres — curvature is irrelevant).
@@ -190,15 +192,22 @@ const double _markerSnapThresholdM = 150;
 /// Whether the marker should snap straight to [to] (true) or glide from [from]
 /// (false). Pure, so the decision is unit-tested without pumping the map.
 bool markerShouldSnap(RoutePoint from, RoutePoint to) =>
-    const HaversineDistanceCalculator()
-        .distanceBetween(from.lat, from.lng, to.lat, to.lng) >
+    const HaversineDistanceCalculator().distanceBetween(
+      from.lat,
+      from.lng,
+      to.lat,
+      to.lng,
+    ) >
     _markerSnapThresholdM;
 
 String _pointGeoJson(RoutePoint p) => jsonEncode({
-      'type': 'Feature',
-      'geometry': {'type': 'Point', 'coordinates': [p.lng, p.lat]},
-      'properties': <String, Object?>{},
-    });
+  'type': 'Feature',
+  'geometry': {
+    'type': 'Point',
+    'coordinates': [p.lng, p.lat],
+  },
+  'properties': <String, Object?>{},
+});
 
 /// MapLibre image id of the direction arrowhead.
 const _arrowImage = 'route-arrow';
@@ -210,7 +219,6 @@ const double _arrowSpacingPx = 60;
 /// 4.5dp wide, so its arrowheads scale by the same ratio.
 const double _arrowIconSize = 4.5 / 3.5;
 
-
 /// How to rasterise a dp-sized symbol image shown [scale]× on a
 /// [pixelRatio] device: MapLibre sizes a registered image by its raw pixel
 /// count in dp (see the 0.19 note on the activity badge). Rasterised at
@@ -218,8 +226,9 @@ const double _arrowIconSize = 4.5 / 3.5;
 /// pixel lands on one device pixel. Rasterising at `pixelRatio` and scaling
 /// up by `icon-size` blurred the start/finish markers and arrows.
 ({double rasterRatio, double iconSize}) symbolRaster(
-        double scale, double pixelRatio) =>
-    (rasterRatio: pixelRatio * scale, iconSize: 1 / pixelRatio);
+  double scale,
+  double pixelRatio,
+) => (rasterRatio: pixelRatio * scale, iconSize: 1 / pixelRatio);
 
 /// `#RRGGBB` for a token [Color], the form MapLibre paint properties expect.
 /// `toARGB32()` is the non-deprecated 32-bit accessor (replaces `Color.value`).
@@ -245,14 +254,17 @@ Future<Uint8List> activityBadgePngFromLoader(BytesLoader loader) async {
   final canvas = Canvas(recorder);
   // The badge is rendered to a PNG without a BuildContext, so it reads the
   // light palette's token directly rather than duplicating its hex.
-  canvas.drawCircle(const Offset(size / 2, size / 2), size / 2,
-      Paint()..color = AppColors.light.primary);
+  canvas.drawCircle(
+    const Offset(size / 2, size / 2),
+    size / 2,
+    Paint()..color = AppColors.light.primary,
+  );
   final info = await vg.loadPicture(loader, null);
   canvas.saveLayer(
-      const Rect.fromLTWH(0, 0, size, size),
-      Paint()
-        ..colorFilter =
-            ColorFilter.mode(AppColors.light.onMap, BlendMode.srcIn));
+    const Rect.fromLTWH(0, 0, size, size),
+    Paint()
+      ..colorFilter = ColorFilter.mode(AppColors.light.onMap, BlendMode.srcIn),
+  );
   canvas.save();
   canvas.translate(pad, pad);
   canvas.scale(inner / 960);
@@ -366,8 +378,7 @@ class LiveMap extends StatefulWidget {
   State<LiveMap> createState() => _LiveMapState();
 }
 
-class _LiveMapState extends State<LiveMap>
-    with SingleTickerProviderStateMixin {
+class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   MapController? _controller;
   StyleController? _style;
 
@@ -461,7 +472,8 @@ class _LiveMapState extends State<LiveMap>
 
   /// Centre target: the current fix if any, else the last recorded point.
   Geographic get _centerPosition {
-    final c = widget.current ??
+    final c =
+        widget.current ??
         (widget.points.isNotEmpty ? widget.points.last : null);
     return c != null
         ? Geographic(lon: c.lng, lat: c.lat)
@@ -481,8 +493,11 @@ class _LiveMapState extends State<LiveMap>
   /// null before layout / for an empty route.
   RouteCamera? get _fitCamera => _viewportSize.isEmpty
       ? null
-      : fitRouteCamera(widget.points,
-          width: _viewportSize.width, height: _viewportSize.height);
+      : fitRouteCamera(
+          widget.points,
+          width: _viewportSize.width,
+          height: _viewportSize.height,
+        );
 
   @override
   void didUpdateWidget(LiveMap oldWidget) {
@@ -539,27 +554,31 @@ class _LiveMapState extends State<LiveMap>
     if (decision.instant) {
       // Jump, don't fly: iOS flies (0,0)→rider zoomed far out and reports that
       // mid-flight zoom, which the next passive follow would then keep.
-      _ignoreCancel(_jumpCamera(
-        center: _centerPosition,
-        zoom: widget.initialZoom,
-        bearing: _heading.bearing ?? 0,
-      ));
+      _ignoreCancel(
+        _jumpCamera(
+          center: _centerPosition,
+          zoom: widget.initialZoom,
+          bearing: _heading.bearing ?? 0,
+        ),
+      );
     } else {
-      _ignoreCancel(_controller?.animateCamera(
-        center: _centerPosition,
-        // Always ride zoom, never controller.camera.zoom: mid-flight on iOS
-        // that is the zoomed-out fly-to arc, which would then stick (#40).
-        zoom: widget.initialZoom,
-        // Heading-up while following. Null keeps the camera's bearing (the
-        // read-only detail map, or no movement measured yet on a passive
-        // follow); a recenter before any movement turns the map north.
-        bearing: widget.fitBounds
-            ? null
-            : (decision.resetBearing
-                ? (_heading.bearing ?? 0)
-                : _heading.bearing),
-        nativeDuration: _followAnimationDuration,
-      ));
+      _ignoreCancel(
+        _controller?.animateCamera(
+          center: _centerPosition,
+          // Always ride zoom, never controller.camera.zoom: mid-flight on iOS
+          // that is the zoomed-out fly-to arc, which would then stick (#40).
+          zoom: widget.initialZoom,
+          // Heading-up while following. Null keeps the camera's bearing (the
+          // read-only detail map, or no movement measured yet on a passive
+          // follow); a recenter before any movement turns the map north.
+          bearing: widget.fitBounds
+              ? null
+              : (decision.resetBearing
+                    ? (_heading.bearing ?? 0)
+                    : _heading.bearing),
+          nativeDuration: _followAnimationDuration,
+        ),
+      );
     }
   }
 
@@ -580,7 +599,9 @@ class _LiveMapState extends State<LiveMap>
   void _pushRoute() {
     if (widget.fitBounds) {
       _style?.updateGeoJsonSource(
-          id: 'route', data: routeLineGeoJson(widget.points));
+        id: 'route',
+        data: routeLineGeoJson(widget.points),
+      );
       return;
     }
     final split = splitRouteTail(widget.points, widget.current);
@@ -589,7 +610,9 @@ class _LiveMapState extends State<LiveMap>
       _pushedPoints = widget.points;
       _tailStart = split.tailStart;
       _style?.updateGeoJsonSource(
-          id: 'route', data: routeLineGeoJson(split.body));
+        id: 'route',
+        data: routeLineGeoJson(split.body),
+      );
     }
     _pushTail(_renderedCurrent);
   }
@@ -600,10 +623,15 @@ class _LiveMapState extends State<LiveMap>
   /// additionally skips it when this style load created no reference sources.
   void _pushReference() {
     final reference = referencePushTarget(
-        drawn: _drawnReference, current: widget.reference);
+      drawn: _drawnReference,
+      current: widget.reference,
+    );
     if (reference == null) return;
-    final g = referenceUpdateGeoJson(reference, widget.referenceDone,
-        lastPushed: _lastPushedReference);
+    final g = referenceUpdateGeoJson(
+      reference,
+      widget.referenceDone,
+      lastPushed: _lastPushedReference,
+    );
     final ahead = g.ahead;
     if (ahead != null) {
       _style?.updateGeoJsonSource(id: 'reference', data: ahead);
@@ -770,59 +798,70 @@ class _LiveMapState extends State<LiveMap>
       if (_superseded(style)) return;
       _drawnReference = reference;
       _lastPushedReference = reference;
-      await style.addLayer(LineStyleLayer(
-        id: 'reference-halo',
-        sourceId: 'reference',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {
-          'line-color': halo,
-          'line-width': 8.0,
-          'line-opacity': kReferenceRouteOpacity,
-        },
-      ));
+      await style.addLayer(
+        LineStyleLayer(
+          id: 'reference-halo',
+          sourceId: 'reference',
+          layout: const {'line-cap': 'round', 'line-join': 'round'},
+          paint: {
+            'line-color': halo,
+            'line-width': 8.0,
+            'line-opacity': kReferenceRouteOpacity,
+          },
+        ),
+      );
       if (_superseded(style)) return;
-      await style.addLayer(LineStyleLayer(
-        id: 'reference-line',
-        sourceId: 'reference',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {
-          'line-color': blue,
-          'line-width': 4.5,
-          'line-opacity': kReferenceRouteOpacity,
-        },
-      ));
+      await style.addLayer(
+        LineStyleLayer(
+          id: 'reference-line',
+          sourceId: 'reference',
+          layout: const {'line-cap': 'round', 'line-join': 'round'},
+          paint: {
+            'line-color': blue,
+            'line-width': 4.5,
+            'line-opacity': kReferenceRouteOpacity,
+          },
+        ),
+      );
       if (_superseded(style)) return;
       // The ridden parts on top of the whole reference line (Spec 18), still
       // below every live layer added next.
-      await style.addLayer(LineStyleLayer(
-        id: 'reference-done-line',
-        sourceId: 'reference-done',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {
-          'line-color': _hex(colors.onSurfaceVariant),
-          'line-width': 4.5,
-          'line-opacity': kReferenceRouteOpacity,
-        },
-      ));
+      await style.addLayer(
+        LineStyleLayer(
+          id: 'reference-done-line',
+          sourceId: 'reference-done',
+          layout: const {'line-cap': 'round', 'line-join': 'round'},
+          paint: {
+            'line-color': _hex(colors.onSurfaceVariant),
+            'line-width': 4.5,
+            'line-opacity': kReferenceRouteOpacity,
+          },
+        ),
+      );
       if (_superseded(style)) return;
     }
 
     await style.addSource(
-        GeoJsonSource(id: 'route', data: routeLineGeoJson(widget.points)));
+      GeoJsonSource(id: 'route', data: routeLineGeoJson(widget.points)),
+    );
     if (_superseded(style)) return;
-    await style.addLayer(LineStyleLayer(
-      id: 'route-halo',
-      sourceId: 'route',
-      layout: const {'line-cap': 'round', 'line-join': 'round'},
-      paint: {'line-color': halo, 'line-width': 8.0},
-    ));
+    await style.addLayer(
+      LineStyleLayer(
+        id: 'route-halo',
+        sourceId: 'route',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {'line-color': halo, 'line-width': 8.0},
+      ),
+    );
     if (_superseded(style)) return;
-    await style.addLayer(LineStyleLayer(
-      id: 'route-line',
-      sourceId: 'route',
-      layout: const {'line-cap': 'round', 'line-join': 'round'},
-      paint: {'line-color': blue, 'line-width': 4.5},
-    ));
+    await style.addLayer(
+      LineStyleLayer(
+        id: 'route-line',
+        sourceId: 'route',
+        layout: const {'line-cap': 'round', 'line-join': 'round'},
+        paint: {'line-color': blue, 'line-width': 4.5},
+      ),
+    );
     if (_superseded(style)) return;
     // Direction arrowheads, placed and rotated along the line by MapLibre.
     final arrow = symbolRaster(_arrowIconSize, pixelRatio);
@@ -830,20 +869,22 @@ class _LiveMapState extends State<LiveMap>
     if (_superseded(style)) return;
     await style.addImage(_arrowImage, arrowPng);
     if (_superseded(style)) return;
-    await style.addLayer(SymbolStyleLayer(
-      id: 'route-arrows',
-      sourceId: 'route',
-      layout: {
-        'symbol-placement': 'line',
-        'symbol-spacing': _arrowSpacingPx,
-        'icon-image': _arrowImage,
-        'icon-size': arrow.iconSize,
-        'icon-rotation-alignment': 'map',
-        'icon-keep-upright': false,
-        'icon-allow-overlap': true,
-        'icon-ignore-placement': true,
-      },
-    ));
+    await style.addLayer(
+      SymbolStyleLayer(
+        id: 'route-arrows',
+        sourceId: 'route',
+        layout: {
+          'symbol-placement': 'line',
+          'symbol-spacing': _arrowSpacingPx,
+          'icon-image': _arrowImage,
+          'icon-size': arrow.iconSize,
+          'icon-rotation-alignment': 'map',
+          'icon-keep-upright': false,
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+        },
+      ),
+    );
     if (_superseded(style)) return;
     if (reference != null) {
       // The reference's own arrowheads reuse the image registered just above
@@ -872,7 +913,8 @@ class _LiveMapState extends State<LiveMap>
       // The live line's last stretch, drawn up to the gliding marker (see
       // _pushTail) in the route's own halo + blue.
       await style.addSource(
-          const GeoJsonSource(id: 'route-tail', data: _emptyGeoJson));
+        const GeoJsonSource(id: 'route-tail', data: _emptyGeoJson),
+      );
       if (_superseded(style)) return;
       // Halo BELOW the route's blue line: on top, its wider white cap would
       // cut a white crescent into the blue where body and tail meet.
@@ -886,12 +928,14 @@ class _LiveMapState extends State<LiveMap>
         belowLayerId: 'route-line',
       );
       if (_superseded(style)) return;
-      await style.addLayer(LineStyleLayer(
-        id: 'route-tail-line',
-        sourceId: 'route-tail',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {'line-color': blue, 'line-width': 4.5},
-      ));
+      await style.addLayer(
+        LineStyleLayer(
+          id: 'route-tail-line',
+          sourceId: 'route-tail',
+          layout: const {'line-cap': 'round', 'line-join': 'round'},
+          paint: {'line-color': blue, 'line-width': 4.5},
+        ),
+      );
       if (_superseded(style)) return;
     }
 
@@ -905,19 +949,43 @@ class _LiveMapState extends State<LiveMap>
         case RouteEndpointStyle.none:
           break;
         case RouteEndpointStyle.startOnly:
-          await _addEndpointMarker(style, 'start', points.first,
-              RouteMarkerImage.start, colors, pixelRatio);
+          await _addEndpointMarker(
+            style,
+            'start',
+            points.first,
+            RouteMarkerImage.start,
+            colors,
+            pixelRatio,
+          );
           if (_superseded(style)) return;
         case RouteEndpointStyle.open:
-          await _addEndpointMarker(style, 'start', points.first,
-              RouteMarkerImage.start, colors, pixelRatio);
+          await _addEndpointMarker(
+            style,
+            'start',
+            points.first,
+            RouteMarkerImage.start,
+            colors,
+            pixelRatio,
+          );
           if (_superseded(style)) return;
-          await _addEndpointMarker(style, 'end', points.last,
-              RouteMarkerImage.finish, colors, pixelRatio);
+          await _addEndpointMarker(
+            style,
+            'end',
+            points.last,
+            RouteMarkerImage.finish,
+            colors,
+            pixelRatio,
+          );
           if (_superseded(style)) return;
         case RouteEndpointStyle.loop:
-          await _addEndpointMarker(style, 'start', points.first,
-              RouteMarkerImage.loop, colors, pixelRatio);
+          await _addEndpointMarker(
+            style,
+            'start',
+            points.first,
+            RouteMarkerImage.loop,
+            colors,
+            pixelRatio,
+          );
           if (_superseded(style)) return;
       }
     } else {
@@ -930,19 +998,43 @@ class _LiveMapState extends State<LiveMap>
           case RouteEndpointStyle.none:
             break;
           case RouteEndpointStyle.startOnly:
-            await _addEndpointMarker(style, 'ref-start', rp.first,
-                RouteMarkerImage.start, colors, pixelRatio);
+            await _addEndpointMarker(
+              style,
+              'ref-start',
+              rp.first,
+              RouteMarkerImage.start,
+              colors,
+              pixelRatio,
+            );
             if (_superseded(style)) return;
           case RouteEndpointStyle.open:
-            await _addEndpointMarker(style, 'ref-start', rp.first,
-                RouteMarkerImage.start, colors, pixelRatio);
+            await _addEndpointMarker(
+              style,
+              'ref-start',
+              rp.first,
+              RouteMarkerImage.start,
+              colors,
+              pixelRatio,
+            );
             if (_superseded(style)) return;
-            await _addEndpointMarker(style, 'ref-end', rp.last,
-                RouteMarkerImage.finish, colors, pixelRatio);
+            await _addEndpointMarker(
+              style,
+              'ref-end',
+              rp.last,
+              RouteMarkerImage.finish,
+              colors,
+              pixelRatio,
+            );
             if (_superseded(style)) return;
           case RouteEndpointStyle.loop:
-            await _addEndpointMarker(style, 'ref-start', rp.first,
-                RouteMarkerImage.loop, colors, pixelRatio);
+            await _addEndpointMarker(
+              style,
+              'ref-start',
+              rp.first,
+              RouteMarkerImage.loop,
+              colors,
+              pixelRatio,
+            );
             if (_superseded(style)) return;
         }
         // Only now do the marker sources exist; a flip moves them from here
@@ -955,10 +1047,12 @@ class _LiveMapState extends State<LiveMap>
       // didUpdateWidget). Seeded empty until there is a fix.
       final cur = widget.current;
       _renderedCurrent = cur; // glide baseline = the seeded marker position
-      await style.addSource(GeoJsonSource(
-        id: 'current',
-        data: cur != null ? _pointGeoJson(cur) : _emptyGeoJson,
-      ));
+      await style.addSource(
+        GeoJsonSource(
+          id: 'current',
+          data: cur != null ? _pointGeoJson(cur) : _emptyGeoJson,
+        ),
+      );
       if (_superseded(style)) return;
       final markerType = widget.activityType;
       await _addCurrentMarker(style, markerType, blue);
@@ -1008,14 +1102,17 @@ class _LiveMapState extends State<LiveMap>
       // controller exists, which would leave the camera stranded at null island
       // (a blank light-blue ocean) even though recording works. Snapping here —
       // when the controller and style are both ready — recovers that race.
-      final c = widget.current ??
+      final c =
+          widget.current ??
           (widget.points.isNotEmpty ? widget.points.last : null);
       if (c != null) {
-        _ignoreCancel(_jumpCamera(
-          center: Geographic(lon: c.lng, lat: c.lat),
-          zoom: widget.initialZoom,
-          bearing: _heading.bearing,
-        ));
+        _ignoreCancel(
+          _jumpCamera(
+            center: Geographic(lon: c.lng, lat: c.lat),
+            zoom: widget.initialZoom,
+            bearing: _heading.bearing,
+          ),
+        );
       }
     }
 
@@ -1032,12 +1129,13 @@ class _LiveMapState extends State<LiveMap>
   /// A start/finish/loop marker (see route_marker_painter.dart) as a symbol on
   /// its own point source [id].
   Future<void> _addEndpointMarker(
-      StyleController style,
-      String id,
-      RoutePoint at,
-      RouteMarkerImage kind,
-      AppColors colors,
-      double pixelRatio) async {
+    StyleController style,
+    String id,
+    RoutePoint at,
+    RouteMarkerImage kind,
+    AppColors colors,
+    double pixelRatio,
+  ) async {
     final imageId = 'endpoint-${kind.name}';
     final raster = symbolRaster(mapEndpointMarkerScale, pixelRatio);
     final png = await routeMarkerImagePng(kind, colors, raster.rasterRatio);
@@ -1046,23 +1144,28 @@ class _LiveMapState extends State<LiveMap>
     if (_superseded(style)) return;
     await style.addSource(GeoJsonSource(id: id, data: _pointGeoJson(at)));
     if (_superseded(style)) return;
-    await style.addLayer(SymbolStyleLayer(
-      id: '$id-marker',
-      sourceId: id,
-      layout: {
-        'icon-image': imageId,
-        'icon-size': raster.iconSize,
-        'icon-allow-overlap': true,
-        'icon-ignore-placement': true,
-      },
-    ));
+    await style.addLayer(
+      SymbolStyleLayer(
+        id: '$id-marker',
+        sourceId: id,
+        layout: {
+          'icon-image': imageId,
+          'icon-size': raster.iconSize,
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+        },
+      ),
+    );
   }
 
   /// Adds the live `current-dot` marker layer for [type]: the amber activity
   /// badge (Android `makeIconBitmap` parity) for known types, or the plain blue
   /// dot ([blue]) for null/OTHER. Each badge image is rasterized once.
   Future<void> _addCurrentMarker(
-      StyleController style, ActivityType? type, String blue) async {
+    StyleController style,
+    ActivityType? type,
+    String blue,
+  ) async {
     final ring = _hex(context.colors.onMap);
     if (rideMarkerIsBadge(type)) {
       final imageId = 'marker-${type!.name}';
@@ -1072,36 +1175,40 @@ class _LiveMapState extends State<LiveMap>
         await style.addImage(imageId, png);
         if (_superseded(style)) return;
       }
-      await style.addLayer(SymbolStyleLayer(
-        id: 'current-dot',
-        sourceId: 'current',
-        layout: {
-          'icon-image': imageId,
-          // maplibre 0.3.5 fixed Android's addImage() to respect
-          // devicePixelRatio (it previously registered bitmaps at raw-pixel
-          // size, rendering symbols ~pixelRatio× too small there). That made
-          // this 96px badge render correctly-sized but much larger than the
-          // pre-upgrade appearance this value was tuned against. 0.19 (~18dp
-          // on a 420dpi/2.625x device) restores that footprint, now
-          // consistently across every device rather than shrinking on
-          // higher-density screens as before.
-          'icon-size': 0.19,
-          'icon-allow-overlap': true,
-          'icon-ignore-placement': true,
-        },
-      ));
+      await style.addLayer(
+        SymbolStyleLayer(
+          id: 'current-dot',
+          sourceId: 'current',
+          layout: {
+            'icon-image': imageId,
+            // maplibre 0.3.5 fixed Android's addImage() to respect
+            // devicePixelRatio (it previously registered bitmaps at raw-pixel
+            // size, rendering symbols ~pixelRatio× too small there). That made
+            // this 96px badge render correctly-sized but much larger than the
+            // pre-upgrade appearance this value was tuned against. 0.19 (~18dp
+            // on a 420dpi/2.625x device) restores that footprint, now
+            // consistently across every device rather than shrinking on
+            // higher-density screens as before.
+            'icon-size': 0.19,
+            'icon-allow-overlap': true,
+            'icon-ignore-placement': true,
+          },
+        ),
+      );
       if (_superseded(style)) return;
     } else {
-      await style.addLayer(CircleStyleLayer(
-        id: 'current-dot',
-        sourceId: 'current',
-        paint: {
-          'circle-radius': 7.0,
-          'circle-color': blue,
-          'circle-stroke-width': 3.0,
-          'circle-stroke-color': ring,
-        },
-      ));
+      await style.addLayer(
+        CircleStyleLayer(
+          id: 'current-dot',
+          sourceId: 'current',
+          paint: {
+            'circle-radius': 7.0,
+            'circle-color': blue,
+            'circle-stroke-width': 3.0,
+            'circle-stroke-color': ring,
+          },
+        ),
+      );
     }
   }
 
@@ -1159,116 +1266,122 @@ class _LiveMapState extends State<LiveMap>
     if (override != null) return override(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
     final colors = context.colors;
-    return LayoutBuilder(builder: (context, constraints) {
-      final size = constraints.biggest;
-      // The detail dialog moves this same map into fullscreen and back (one
-      // GlobalKey): re-frame the whole route for the new size once laid out.
-      if (widget.fitBounds && _sourcesReady && size != _viewportSize) {
-        _resizeCovered = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _refit());
-      }
-      final covered = !_styleReady || _resizeCovered;
-      _viewportSize = size;
-      final fit = widget.fitBounds ? _fitCamera : null;
-      // While following a saved route, the live map's placeholder already
-      // shows that route (framed whole) instead of bare terrain. Computed on
-      // every build (not only while covered) so the sketch stays the fading
-      // child through the reveal instead of vanishing in one frame.
-      final referenceFit = !widget.fitBounds && widget.reference != null
-          ? fitRouteCamera(widget.reference!.points,
-              width: size.width, height: size.height)
-          : null;
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          MapLibreMap(
-            // Rebuild on brightness change to reload Retrail Light / Retrail Dark.
-            key: ValueKey(dark),
-            options: MapOptions(
-              initStyle: liveMapStyle(dark),
-              // The detail map starts on its whole-route framing already, so
-              // even the first native frame shows the full ride.
-              initCenter: fit != null
-                  ? Geographic(lon: fit.lng, lat: fit.lat)
-                  : _centerPosition,
-              initZoom: fit?.zoom ?? widget.initialZoom,
-              minZoom: kLiveMapMinZoom,
-              maxZoom: kLiveMapMaxZoom,
-              // Texture-based composition (trial, issue #11): Hybrid
-              // Composition rendered the native map via its own independent
-              // Android Surface, and on a real device that surface could get
-              // recomposited mid-navigation-transition showing a stale buffer
-              // from an unrelated earlier screen (a one-frame flash of the
-              // countdown page when leaving /ride). Texture mode routes the
-              // map's output through Flutter's own Skia/Impeller frame instead,
-              // so there's no separate native surface left to go stale — at
-              // the cost of touch/animation smoothness vs. Hybrid Composition.
-              androidTextureMode: true,
-              androidMode: AndroidPlatformViewMode.tlhc_vd,
-            ),
-            onMapCreated: (c) {
-              _detachMap(); // the new map's style hasn't loaded yet
-              _controller = c;
-            },
-            onStyleLoaded: _onStyleLoaded,
-            onEvent: (e) {
-              // Drop follow only on a real user gesture — programmatic moves
-              // report developerAnimation/apiAnimation, so our own camera
-              // animations don't trip this.
-              if (e is MapEventStartMoveCamera &&
-                  e.reason == CameraChangeReason.apiGesture) {
-                widget.onGesture?.call();
-              }
-            },
-            // Live map only: shown once the map is turned away from north and
-            // not following (hand-panned / rotated); a tap turns it back
-            // north. While following, the map is heading-up on purpose. The
-            // read-only detail / fullscreen map has no compass.
-            children: [
-              if (!widget.fitBounds && !widget.isFollowing)
-                MapCompass(
-                  hideIfRotatedNorth: true,
-                  // Bottom-left, stacked above the recenter button: both appear
-                  // once the map is moved by hand, and both are in thumb reach.
-                  alignment: Alignment.bottomLeft,
-                  padding: EdgeInsets.only(
-                    left: kMapControlInset,
-                    bottom: kMapControlInset + widget.compassClearance,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        // The detail dialog moves this same map into fullscreen and back (one
+        // GlobalKey): re-frame the whole route for the new size once laid out.
+        if (widget.fitBounds && _sourcesReady && size != _viewportSize) {
+          _resizeCovered = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _refit());
+        }
+        final covered = !_styleReady || _resizeCovered;
+        _viewportSize = size;
+        final fit = widget.fitBounds ? _fitCamera : null;
+        // While following a saved route, the live map's placeholder already
+        // shows that route (framed whole) instead of bare terrain. Computed on
+        // every build (not only while covered) so the sketch stays the fading
+        // child through the reveal instead of vanishing in one frame.
+        final referenceFit = !widget.fitBounds && widget.reference != null
+            ? fitRouteCamera(
+                widget.reference!.points,
+                width: size.width,
+                height: size.height,
+              )
+            : null;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            MapLibreMap(
+              // Rebuild on brightness change to reload Retrail Light / Retrail Dark.
+              key: ValueKey(dark),
+              options: MapOptions(
+                initStyle: liveMapStyle(dark),
+                // The detail map starts on its whole-route framing already, so
+                // even the first native frame shows the full ride.
+                initCenter: fit != null
+                    ? Geographic(lon: fit.lng, lat: fit.lat)
+                    : _centerPosition,
+                initZoom: fit?.zoom ?? widget.initialZoom,
+                minZoom: kLiveMapMinZoom,
+                maxZoom: kLiveMapMaxZoom,
+                // Texture-based composition (trial, issue #11): Hybrid
+                // Composition rendered the native map via its own independent
+                // Android Surface, and on a real device that surface could get
+                // recomposited mid-navigation-transition showing a stale buffer
+                // from an unrelated earlier screen (a one-frame flash of the
+                // countdown page when leaving /ride). Texture mode routes the
+                // map's output through Flutter's own Skia/Impeller frame instead,
+                // so there's no separate native surface left to go stale — at
+                // the cost of touch/animation smoothness vs. Hybrid Composition.
+                androidTextureMode: true,
+                androidMode: AndroidPlatformViewMode.tlhc_vd,
+              ),
+              onMapCreated: (c) {
+                _detachMap(); // the new map's style hasn't loaded yet
+                _controller = c;
+              },
+              onStyleLoaded: _onStyleLoaded,
+              onEvent: (e) {
+                // Drop follow only on a real user gesture — programmatic moves
+                // report developerAnimation/apiAnimation, so our own camera
+                // animations don't trip this.
+                if (e is MapEventStartMoveCamera &&
+                    e.reason == CameraChangeReason.apiGesture) {
+                  widget.onGesture?.call();
+                }
+              },
+              // Live map only: shown once the map is turned away from north and
+              // not following (hand-panned / rotated); a tap turns it back
+              // north. While following, the map is heading-up on purpose. The
+              // read-only detail / fullscreen map has no compass.
+              children: [
+                if (!widget.fitBounds && !widget.isFollowing)
+                  MapCompass(
+                    hideIfRotatedNorth: true,
+                    // Bottom-left, stacked above the recenter button: both appear
+                    // once the map is moved by hand, and both are in thumb reach.
+                    alignment: Alignment.bottomLeft,
+                    padding: EdgeInsets.only(
+                      left: kMapControlInset,
+                      bottom: kMapControlInset + widget.compassClearance,
+                    ),
+                    child: _CompassButton(colors: colors),
                   ),
-                  child: _CompassButton(colors: colors),
-                ),
-            ],
-          ),
-          // Terrain-colored placeholder over the map until the style has loaded
-          // and centered, then crossfade it out — so the reveal is a smooth fade
-          // to an already-positioned map instead of a flash of the (0,0) ocean or
-          // tiles popping in. Fading a plain widget avoids platform-view opacity
-          // quirks; IgnorePointer lets gestures through once revealed.
-          IgnorePointer(
-            ignoring: !covered,
-            child: AnimatedOpacity(
-              opacity: covered ? 1.0 : 0.0,
-              // Covering is instant (a resize must not show through); only
-              // the reveal fades.
-              duration: covered
-                  ? Duration.zero
-                  : const Duration(milliseconds: 350),
-              curve: Curves.easeOut,
-              // The detail map shows its route as a flat sketch right away —
-              // framed exactly like the map it fades into — and keeps it if
-              // the style never loads (offline with nothing cached).
-              child: fit != null
-                  ? RouteSketch(points: widget.points, camera: fit)
-                  : referenceFit != null
-                      ? RouteSketch(
-                          points: widget.reference!.points,
-                          camera: referenceFit)
-                      : ColoredBox(color: colors.mapTerrain),
+              ],
             ),
-          ),
-        ],
-      );
-    });
+            // Terrain-colored placeholder over the map until the style has loaded
+            // and centered, then crossfade it out — so the reveal is a smooth fade
+            // to an already-positioned map instead of a flash of the (0,0) ocean or
+            // tiles popping in. Fading a plain widget avoids platform-view opacity
+            // quirks; IgnorePointer lets gestures through once revealed.
+            IgnorePointer(
+              ignoring: !covered,
+              child: AnimatedOpacity(
+                opacity: covered ? 1.0 : 0.0,
+                // Covering is instant (a resize must not show through); only
+                // the reveal fades.
+                duration: covered
+                    ? Duration.zero
+                    : const Duration(milliseconds: 350),
+                curve: Curves.easeOut,
+                // The detail map shows its route as a flat sketch right away —
+                // framed exactly like the map it fades into — and keeps it if
+                // the style never loads (offline with nothing cached).
+                child: fit != null
+                    ? RouteSketch(points: widget.points, camera: fit)
+                    : referenceFit != null
+                    ? RouteSketch(
+                        points: widget.reference!.points,
+                        camera: referenceFit,
+                      )
+                    : ColoredBox(color: colors.mapTerrain),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

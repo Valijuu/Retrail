@@ -16,8 +16,8 @@ enum RideAction { pause, resume, stop }
 /// Maps a notification button id to a [RideAction], or null if unrecognized.
 /// Pure, so the relay is unit-tested without the platform.
 RideAction? rideActionFromId(String id) => switch (id) {
-      RideNotificationIds.pause => RideAction.pause,
-      RideNotificationIds.resume => RideAction.resume,
-      RideNotificationIds.stop => RideAction.stop,
-      _ => null,
-    };
+  RideNotificationIds.pause => RideAction.pause,
+  RideNotificationIds.resume => RideAction.resume,
+  RideNotificationIds.stop => RideAction.stop,
+  _ => null,
+};

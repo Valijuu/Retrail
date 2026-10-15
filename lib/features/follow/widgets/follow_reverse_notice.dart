@@ -9,10 +9,7 @@ import '../route_follow_providers.dart';
 /// the opposite direction on its own (Spec 18): why "· opposite direction"
 /// shows. Call from the build of a screen that shows the follow chrome.
 void listenFollowReverseNotice(WidgetRef ref, BuildContext context) {
-  ref.listen(routeFollowProvider.select((s) => s?.reverseNotice), (
-    prev,
-    next,
-  ) {
+  ref.listen(routeFollowProvider.select((s) => s?.reverseNotice), (prev, next) {
     if (prev != null || next == null) return;
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(

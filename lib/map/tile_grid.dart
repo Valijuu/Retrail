@@ -46,13 +46,15 @@ List<TileRef> tilesFor(StaticFraming f) {
     for (var ty = tyMin; ty <= tyMax; ty++) {
       if (ty < 0 || ty >= tilesPerAxis) continue;
       final safeTx = ((tx % tilesPerAxis) + tilesPerAxis) % tilesPerAxis;
-      tiles.add(TileRef(
-        z: z,
-        x: safeTx,
-        y: ty,
-        offsetXDp: tx * tileSize - left,
-        offsetYDp: ty * tileSize - top,
-      ));
+      tiles.add(
+        TileRef(
+          z: z,
+          x: safeTx,
+          y: ty,
+          offsetXDp: tx * tileSize - left,
+          offsetYDp: ty * tileSize - top,
+        ),
+      );
     }
   }
   return tiles;

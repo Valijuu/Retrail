@@ -24,33 +24,40 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        preferencesRepositoryProvider.overrideWithValue(prefs),
-        currentProfilePhotoProvider.overrideWith((ref) => Stream.value(null)),
-        recentProfilePhotosProvider.overrideWith((ref) => Stream.value(const [])),
-      ],
-      child: MaterialApp(
-        theme: buildTheme(Brightness.light),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          preferencesRepositoryProvider.overrideWithValue(prefs),
+          currentProfilePhotoProvider.overrideWith((ref) => Stream.value(null)),
+          recentProfilePhotosProvider.overrideWith(
+            (ref) => Stream.value(const []),
+          ),
         ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        // resizeToAvoidBottomInset: false so the Scaffold does NOT consume the
-        // keyboard insets — matching showModalBottomSheet, where the sheet
-        // sees MediaQuery.viewInsets itself (the behavior under test).
-        home: const Scaffold(
-            resizeToAvoidBottomInset: false, body: ProfileEditSheet()),
+        child: MaterialApp(
+          theme: buildTheme(Brightness.light),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          // resizeToAvoidBottomInset: false so the Scaffold does NOT consume the
+          // keyboard insets — matching showModalBottomSheet, where the sheet
+          // sees MediaQuery.viewInsets itself (the behavior under test).
+          home: const Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: ProfileEditSheet(),
+          ),
+        ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
-  testWidgets('renders the title and the name seeded from prefs',
-      (tester) async {
+  testWidgets('renders the title and the name seeded from prefs', (
+    tester,
+  ) async {
     await pump(tester);
     expect(find.text('Edit profile'), findsOneWidget);
     expect(find.text('Alex'), findsOneWidget); // seeded name
@@ -74,8 +81,9 @@ void main() {
     // The scroll viewport ends above the keyboard (900 - 500), so a focused
     // field is scrolled into sight rather than behind the keyboard.
     expect(
-        tester.getBottomLeft(find.byType(SingleChildScrollView).first).dy,
-        lessThanOrEqualTo(400));
+      tester.getBottomLeft(find.byType(SingleChildScrollView).first).dy,
+      lessThanOrEqualTo(400),
+    );
     expect(tester.takeException(), isNull); // and nothing overflows
   });
 

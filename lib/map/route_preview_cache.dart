@@ -9,8 +9,11 @@ import 'preview_snapshot.dart' show PreviewResult;
 /// composes this from the snapshot renderer (online) or the flat sketch
 /// (offline) — see Spec 12 wiring. The result says whether it is final quality
 /// or a degraded fallback ([PreviewResult.complete]).
-typedef PreviewRenderer = Future<PreviewResult> Function(
-    List<RoutePoint> points, Brightness brightness);
+typedef PreviewRenderer =
+    Future<PreviewResult> Function(
+      List<RoutePoint> points,
+      Brightness brightness,
+    );
 
 /// Disk cache of ride-preview PNGs, keyed by `rideId` **and brightness** (light
 /// + dark variants coexist). Generated once per variant (at save or first view)
@@ -40,12 +43,14 @@ const String _versionDir = 'ride_previews_v$_cacheVersion';
 final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
 
 class RoutePreviewCache {
-  RoutePreviewCache(
-      {required this.baseDir,
-      required this.render,
-      this.maxConcurrentRenders = 3})
-      : _renderLanes =
-            List.generate(maxConcurrentRenders, (_) => Future<void>.value());
+  RoutePreviewCache({
+    required this.baseDir,
+    required this.render,
+    this.maxConcurrentRenders = 3,
+  }) : _renderLanes = List.generate(
+         maxConcurrentRenders,
+         (_) => Future<void>.value(),
+       );
 
   final Directory baseDir;
   final PreviewRenderer render;
@@ -112,8 +117,11 @@ class RoutePreviewCache {
   /// Returns the cached preview file for [brightness], rendering + writing it
   /// once if missing. A stale (degraded) preview is re-rendered on each call
   /// until a complete render replaces it.
-  Future<File> ensurePreview(int rideId, List<RoutePoint> points,
-      {required Brightness brightness}) async {
+  Future<File> ensurePreview(
+    int rideId,
+    List<RoutePoint> points, {
+    required Brightness brightness,
+  }) async {
     final key = _key(rideId, brightness);
     final resolved = _resolved[key];
     if (resolved != null) return resolved;
@@ -142,7 +150,9 @@ class RoutePreviewCache {
       } else {
         // Still degraded: keep already-written bytes (same sketch — no churn),
         // only write when there is nothing to show yet; stays marked stale.
-        if (!await file.exists()) await file.writeAsBytes(result.bytes, flush: true);
+        if (!await file.exists()) {
+          await file.writeAsBytes(result.bytes, flush: true);
+        }
         await marker.create();
       }
       return file;

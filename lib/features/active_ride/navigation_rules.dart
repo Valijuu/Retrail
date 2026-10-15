@@ -6,5 +6,4 @@ bool shouldNavigateHomeOnStop({
   required bool rideWasActive,
   required bool isTracking,
   required bool anyDialogOpen,
-}) =>
-    rideWasActive && !isTracking && !anyDialogOpen;
+}) => rideWasActive && !isTracking && !anyDialogOpen;

@@ -17,18 +17,19 @@ import 'preview_renderer.dart';
 /// Resolves the brightness the app is *currently* showing, so a ride saved in
 /// dark mode pre-generates the dark preview (system mode reads the platform).
 ui.Brightness _resolveBrightness(ThemeMode mode) => switch (mode) {
-      ThemeMode.light => ui.Brightness.light,
-      ThemeMode.dark => ui.Brightness.dark,
-      ThemeMode.system =>
-        WidgetsBinding.instance.platformDispatcher.platformBrightness,
-    };
+  ThemeMode.light => ui.Brightness.light,
+  ThemeMode.dark => ui.Brightness.dark,
+  ThemeMode.system =>
+    WidgetsBinding.instance.platformDispatcher.platformBrightness,
+};
 
 /// App documents directory holding cached preview PNGs. Overridden in `main()`
 /// with the awaited `getApplicationDocumentsDirectory()` (same pattern as
 /// [preferencesRepositoryProvider]).
 final previewCacheDirProvider = Provider<Directory>(
   (ref) => throw UnimplementedError(
-      'previewCacheDirProvider must be overridden in main()'),
+    'previewCacheDirProvider must be overridden in main()',
+  ),
 );
 
 /// The single owner of the ride-preview disk cache. History/home consume this
@@ -67,6 +68,7 @@ final activeRideControllerProvider = Provider<ActiveRideController>(
     ref.watch(rideTrackerProvider),
     ref.watch(routePreviewCacheProvider),
     currentBrightness: () => _resolveBrightness(
-        ref.read(themeModeProvider).asData?.value ?? ThemeMode.system),
+      ref.read(themeModeProvider).asData?.value ?? ThemeMode.system,
+    ),
   ),
 );

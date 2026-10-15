@@ -48,8 +48,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     ),
     routes: [
       GoRoute(
-          path: AppRoutes.splash,
-          pageBuilder: (c, s) => _fade(const RoutePlaceholder('Retrail'), s)),
+        path: AppRoutes.splash,
+        pageBuilder: (c, s) => _fade(const RoutePlaceholder('Retrail'), s),
+      ),
       // Onboarding steps nest (name → photo → activity) so `go` to a later
       // step stacks the earlier ones beneath it: system back steps back one
       // screen instead of closing the app mid-onboarding (issue #32).
@@ -62,8 +63,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (c, s) => _fade(const ProfilePictureScreen(), s),
             routes: [
               GoRoute(
-                  path: 'activity',
-                  pageBuilder: (c, s) => _fade(const ActivityInitScreen(), s)),
+                path: 'activity',
+                pageBuilder: (c, s) => _fade(const ActivityInitScreen(), s),
+              ),
             ],
           ),
         ],
@@ -78,14 +80,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         // /ride, so it cannot reappear during the exit transition.
         routes: [
           GoRoute(
-              path: 'timer',
-              pageBuilder: (c, s) => _fade(const CountdownScreen(), s)),
+            path: 'timer',
+            pageBuilder: (c, s) => _fade(const CountdownScreen(), s),
+          ),
           GoRoute(
-              path: 'ride',
-              pageBuilder: (c, s) => _rideEnter(const ActiveRideScreen(), s)),
+            path: 'ride',
+            pageBuilder: (c, s) => _rideEnter(const ActiveRideScreen(), s),
+          ),
           GoRoute(
-              path: 'follow',
-              pageBuilder: (c, s) => _rideEnter(const FollowRouteScreen(), s)),
+            path: 'follow',
+            pageBuilder: (c, s) => _rideEnter(const FollowRouteScreen(), s),
+          ),
         ],
       ),
     ],
@@ -114,8 +119,10 @@ CustomTransitionPage<void> _rideEnter(Widget child, GoRouterState state) =>
       transitionDuration: const Duration(milliseconds: 340),
       reverseTransitionDuration: const Duration(milliseconds: 220),
       transitionsBuilder: (context, animation, secondary, child) {
-        final eased =
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final eased = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: eased,
           child: ScaleTransition(

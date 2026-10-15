@@ -32,18 +32,25 @@ class EditRideSheet extends StatefulWidget {
   /// (and closes) the sheet instead of only scrolling.
   final ScrollController? scrollController;
   final VoidCallback onDismiss;
-  final void Function(String? description, String? comment, ActivityType? type,
-      bool favorite) onSave;
+  final void Function(
+    String? description,
+    String? comment,
+    ActivityType? type,
+    bool favorite,
+  )
+  onSave;
 
   @override
   State<EditRideSheet> createState() => _EditRideSheetState();
 }
 
 class _EditRideSheetState extends State<EditRideSheet> {
-  late final _titleController =
-      TextEditingController(text: widget.initialDescription ?? '');
-  late final _commentController =
-      TextEditingController(text: widget.initialComment ?? '');
+  late final _titleController = TextEditingController(
+    text: widget.initialDescription ?? '',
+  );
+  late final _commentController = TextEditingController(
+    text: widget.initialComment ?? '',
+  );
   late ActivityType? _type = widget.initialType;
   late bool _favorite = widget.initialFavorite;
 
@@ -63,8 +70,9 @@ class _EditRideSheetState extends State<EditRideSheet> {
       // Keyboard inset outside the scroll view: the viewport ends above the
       // keyboard, so a focused input scrolls into sight instead of behind it.
       child: Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: SingleChildScrollView(
           controller: widget.scrollController,
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
@@ -73,15 +81,20 @@ class _EditRideSheetState extends State<EditRideSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: Text(l10n.editRideTitle,
-                    style: text.titleLarge?.copyWith(color: colors.onSurface)),
+                child: Text(
+                  l10n.editRideTitle,
+                  style: text.titleLarge?.copyWith(color: colors.onSurface),
+                ),
               ),
               const SizedBox(height: 6),
               Center(
-                child: Text(l10n.editRideSubtitle,
-                    textAlign: TextAlign.center,
-                    style:
-                        text.bodyMedium?.copyWith(color: colors.onSurfaceVariant)),
+                child: Text(
+                  l10n.editRideSubtitle,
+                  textAlign: TextAlign.center,
+                  style: text.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               SheetInputField(
@@ -91,8 +104,12 @@ class _EditRideSheetState extends State<EditRideSheet> {
                 maxLength: _descMaxLength,
               ),
               const SizedBox(height: 12),
-              Text(l10n.editRideActivityLabel,
-                  style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
+              Text(
+                l10n.editRideActivityLabel,
+                style: text.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -102,7 +119,8 @@ class _EditRideSheetState extends State<EditRideSheet> {
                     FilterChip(
                       selected: _type == option,
                       onSelected: (_) => setState(
-                          () => _type = _type == option ? null : option),
+                        () => _type = _type == option ? null : option,
+                      ),
                       avatar: option.glyph(size: 18),
                       // M3 draws the checkmark on top of the avatar glyph —
                       // the fill already marks the selection (issue #29).
@@ -123,16 +141,18 @@ class _EditRideSheetState extends State<EditRideSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(l10n.summaryMarkFavorite,
-                        style:
-                            text.bodyMedium?.copyWith(color: colors.onSurface)),
+                    child: Text(
+                      l10n.summaryMarkFavorite,
+                      style: text.bodyMedium?.copyWith(color: colors.onSurface),
+                    ),
                   ),
                   IconButton(
                     onPressed: () => setState(() => _favorite = !_favorite),
                     icon: Icon(
                       _favorite ? Icons.favorite : Icons.favorite_border,
-                      color:
-                          _favorite ? colors.primary : colors.onSurfaceVariant,
+                      color: _favorite
+                          ? colors.primary
+                          : colors.onSurfaceVariant,
                       size: 28,
                     ),
                     tooltip: _favorite
@@ -159,7 +179,9 @@ class _EditRideSheetState extends State<EditRideSheet> {
                       bg: colors.primary,
                       fg: colors.onPrimary,
                       onTap: () => widget.onSave(
-                        _titleController.text.isEmpty ? null : _titleController.text,
+                        _titleController.text.isEmpty
+                            ? null
+                            : _titleController.text,
                         _commentController.text.isEmpty
                             ? null
                             : _commentController.text,

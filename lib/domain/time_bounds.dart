@@ -16,7 +16,10 @@ Bounds dayBounds({int? nowMs}) {
   final now = DateTime.fromMillisecondsSinceEpoch(_nowMs(nowMs));
   final start = DateTime(now.year, now.month, now.day);
   final endExclusive = DateTime(now.year, now.month, now.day + 1);
-  return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
+  return (
+    start.millisecondsSinceEpoch,
+    endExclusive.millisecondsSinceEpoch - 1,
+  );
 }
 
 /// Monday 00:00:00.000 → Sunday 23:59:59.999 of the current week (local).
@@ -25,9 +28,15 @@ Bounds weekBounds({int? nowMs}) {
   // DateTime.weekday: Mon=1 … Sun=7, so Mon→0 … Sun→6.
   final daysFromMonday = (now.weekday - DateTime.monday) % _daysInWeek;
   final start = DateTime(now.year, now.month, now.day - daysFromMonday);
-  final endExclusive =
-      DateTime(start.year, start.month, start.day + _daysInWeek);
-  return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
+  final endExclusive = DateTime(
+    start.year,
+    start.month,
+    start.day + _daysInWeek,
+  );
+  return (
+    start.millisecondsSinceEpoch,
+    endExclusive.millisecondsSinceEpoch - 1,
+  );
 }
 
 /// Day-of-month component for the first day of a month.
@@ -44,7 +53,10 @@ Bounds monthRangeBounds({required int year, int? monthFrom, int? monthTo}) {
   final start = DateTime(year, firstMonth, _firstDayOfMonth);
   // Month overflow (13) rolls into January of the next year.
   final endExclusive = DateTime(year, lastMonth + 1, _firstDayOfMonth);
-  return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
+  return (
+    start.millisecondsSinceEpoch,
+    endExclusive.millisecondsSinceEpoch - 1,
+  );
 }
 
 /// Whether [epochMs]'s local calendar month falls within the inclusive
@@ -70,5 +82,8 @@ Bounds yearBounds({int? year, int? nowMs}) {
   final selectedYear = year ?? now.year;
   final start = DateTime(selectedYear, DateTime.january, 1);
   final endExclusive = DateTime(selectedYear + 1, DateTime.january, 1);
-  return (start.millisecondsSinceEpoch, endExclusive.millisecondsSinceEpoch - 1);
+  return (
+    start.millisecondsSinceEpoch,
+    endExclusive.millisecondsSinceEpoch - 1,
+  );
 }

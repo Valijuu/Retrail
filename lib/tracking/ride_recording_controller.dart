@@ -58,11 +58,11 @@ class RideRecordingController {
     required LocationPermissionService permissions,
     required RideForegroundService service,
     bool servicesOffReportsDenied = false,
-  })  : _tracker = tracker,
-        _source = source,
-        _permissions = permissions,
-        _service = service,
-        _servicesOffReportsDenied = servicesOffReportsDenied;
+  }) : _tracker = tracker,
+       _source = source,
+       _permissions = permissions,
+       _service = service,
+       _servicesOffReportsDenied = servicesOffReportsDenied;
 
   // ignore_for_file: prefer_initializing_formals — public named params kept
   // (callers shouldn't pass private field names like `_tracker:`).
@@ -116,22 +116,25 @@ class RideRecordingController {
     final serviceEnabled = await _permissions.isLocationServiceEnabled();
     var permission = await _permissions.checkPermission();
     var action = permissionGateDecision(
-        serviceEnabled: serviceEnabled,
-        permission: permission,
-        servicesOffReportsDenied: _servicesOffReportsDenied);
+      serviceEnabled: serviceEnabled,
+      permission: permission,
+      servicesOffReportsDenied: _servicesOffReportsDenied,
+    );
 
     if (action == LocationStartAction.requestPermission) {
       permission = await _permissions.requestPermission();
       action = permissionGateDecision(
-          serviceEnabled: serviceEnabled,
-          permission: permission,
-          servicesOffReportsDenied: _servicesOffReportsDenied);
+        serviceEnabled: serviceEnabled,
+        permission: permission,
+        servicesOffReportsDenied: _servicesOffReportsDenied,
+      );
     }
     if (action == LocationStartAction.proceed) {
       action = permissionGateDecision(
-          serviceEnabled: serviceEnabled,
-          permission: permission,
-          precise: await _permissions.isPreciseLocation());
+        serviceEnabled: serviceEnabled,
+        permission: permission,
+        precise: await _permissions.isPreciseLocation(),
+      );
     }
     if (action == LocationStartAction.requestPreciseLocation) {
       // One OS prompt to upgrade to precise; if it's declined the gate
@@ -139,9 +142,10 @@ class RideRecordingController {
       await _permissions.requestPreciseLocation();
       permission = await _permissions.checkPermission();
       action = permissionGateDecision(
-          serviceEnabled: serviceEnabled,
-          permission: permission,
-          precise: await _permissions.isPreciseLocation());
+        serviceEnabled: serviceEnabled,
+        permission: permission,
+        precise: await _permissions.isPreciseLocation(),
+      );
     }
     if (action != LocationStartAction.proceed) return action;
 
@@ -165,7 +169,9 @@ class RideRecordingController {
 
     final action = await _runGate();
     if (action != LocationStartAction.proceed) return action;
-    if (epoch != _epoch) return LocationStartAction.proceed; // stopped meanwhile
+    if (epoch != _epoch) {
+      return LocationStartAction.proceed; // stopped meanwhile
+    }
 
     if (await _startFeedAndService(epoch)) _tracker.startTracking();
     return LocationStartAction.proceed;
@@ -187,8 +193,8 @@ class RideRecordingController {
     arming = (pending ?? Future<void>.value())
         .then((_) => _arm(epoch))
         .whenComplete(() {
-      if (identical(_arming, arming)) _arming = null;
-    });
+          if (identical(_arming, arming)) _arming = null;
+        });
     return _arming = arming;
   }
 
@@ -251,21 +257,27 @@ class RideRecordingController {
     // onError: a platform error on the fix stream (e.g. location services
     // switched off) must not escape as an unhandled exception; the service
     // stream below reports that state to the UI instead (issue #33).
-    _fixSub = _source.fixes.listen(_tracker.onLocationReceived,
-        onError: (Object _) {});
+    _fixSub = _source.fixes.listen(
+      _tracker.onLocationReceived,
+      onError: (Object _) {},
+    );
     // The gate just confirmed services are on; track changes from here.
     _tracker.setLocationServiceEnabled(true);
-    _serviceSub =
-        _source.serviceEnabled.listen(_tracker.setLocationServiceEnabled);
+    _serviceSub = _source.serviceEnabled.listen(
+      _tracker.setLocationServiceEnabled,
+    );
     // Keep the ongoing notification's live stats in sync — from the ride's
     // start only: while armed the countdown would show stale or ticking-back
     // stats (#77).
-    _stateSub = _tracker.changes.where((s) => s.isTracking).listen((s) =>
-        _service.update(
-          isPaused: s.isPaused,
-          elapsedSeconds: s.elapsedSeconds,
-          distanceMetres: s.distanceMetres,
-        ));
+    _stateSub = _tracker.changes
+        .where((s) => s.isTracking)
+        .listen(
+          (s) => _service.update(
+            isPaused: s.isPaused,
+            elapsedSeconds: s.elapsedSeconds,
+            distanceMetres: s.distanceMetres,
+          ),
+        );
 
     await _service.start();
     if (epoch != _epoch) {

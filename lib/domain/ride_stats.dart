@@ -46,8 +46,9 @@ RideStats computeRideStats(RideWithTrackpoints rwt, DistanceCalculator calc) {
   final speeds = trackpoints.map((t) => t.speed).whereType<double>();
   final maxSpeedKmh = speeds.isEmpty ? 0.0 : speeds.reduce(math.max) * 3.6;
 
-  final avgSpeedKmh =
-      durationMs > 0 ? (distanceMetres / 1000.0 / (durationMs / 3600000.0)) : 0.0;
+  final avgSpeedKmh = durationMs > 0
+      ? (distanceMetres / 1000.0 / (durationMs / 3600000.0))
+      : 0.0;
 
   return RideStats(
     durationMs: durationMs,

@@ -32,20 +32,25 @@ String _hms(int totalSeconds) {
 /// `dd.MM.yyyy  HH:mm` (two spaces), or `—` when null.
 String formatRideDate(int? timestampMs, {String? locale}) => timestampMs == null
     ? '—'
-    : _cachedFormat('dd.MM.yyyy  HH:mm', locale)
-        .format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
+    : _cachedFormat(
+        'dd.MM.yyyy  HH:mm',
+        locale,
+      ).format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
 /// `HH:mm`, or `—` when null.
 String formatRideTime(int? timestampMs, {String? locale}) => timestampMs == null
     ? '—'
-    : _cachedFormat('HH:mm', locale)
-        .format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
+    : _cachedFormat(
+        'HH:mm',
+        locale,
+      ).format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
 /// `yyyy-MM-dd` grouping key, or `0000-00-00` when null.
 String formatRideDayKey(int? timestampMs) => timestampMs == null
     ? '0000-00-00'
-    : _cachedFormat('yyyy-MM-dd')
-        .format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
+    : _cachedFormat(
+        'yyyy-MM-dd',
+      ).format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
 const String _dayKeyPattern = 'yyyy-MM-dd';
 const String _localizedDateLabelPattern = 'yMMMMd';
@@ -63,11 +68,13 @@ String formatDateLabel(
   int? nowMs,
 }) {
   final now = DateTime.fromMillisecondsSinceEpoch(
-      nowMs ?? DateTime.now().millisecondsSinceEpoch);
+    nowMs ?? DateTime.now().millisecondsSinceEpoch,
+  );
   final keyFormat = _cachedFormat(_dayKeyPattern);
   final today = keyFormat.format(DateTime(now.year, now.month, now.day));
-  final yesterday =
-      keyFormat.format(DateTime(now.year, now.month, now.day - 1));
+  final yesterday = keyFormat.format(
+    DateTime(now.year, now.month, now.day - 1),
+  );
 
   if (dayKey == today) return todayLabel;
   if (dayKey == yesterday) return yesterdayLabel;
@@ -93,7 +100,9 @@ final _numberFormatCache = <String, NumberFormat>{};
 NumberFormat _cachedNumberFormat(String pattern, String? locale) {
   final resolvedLocale = locale ?? Intl.getCurrentLocale();
   return _numberFormatCache.putIfAbsent(
-      '$pattern|$resolvedLocale', () => NumberFormat(pattern, resolvedLocale));
+    '$pattern|$resolvedLocale',
+    () => NumberFormat(pattern, resolvedLocale),
+  );
 }
 
 /// `NumberFormat` pattern for exactly [decimals] fraction digits, no grouping

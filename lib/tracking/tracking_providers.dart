@@ -18,8 +18,9 @@ import 'ride_recording_controller.dart';
 import 'ride_tracker.dart';
 import 'ride_tracking_state.dart';
 
-final distanceCalculatorProvider =
-    Provider<DistanceCalculator>((ref) => const HaversineDistanceCalculator());
+final distanceCalculatorProvider = Provider<DistanceCalculator>(
+  (ref) => const HaversineDistanceCalculator(),
+);
 
 /// Process-lifetime ride recorder.
 final rideTrackerProvider = Provider<RideTracker>((ref) {
@@ -34,7 +35,9 @@ final rideTrackerProvider = Provider<RideTracker>((ref) {
 
 /// Live tracking state — seeded from the tracker's current snapshot (the
 /// `changes` stream does not replay), then following its updates.
-final rideTrackingStateProvider = StreamProvider<RideTrackingState>((ref) async* {
+final rideTrackingStateProvider = StreamProvider<RideTrackingState>((
+  ref,
+) async* {
   final tracker = ref.watch(rideTrackerProvider);
   yield tracker.state;
   yield* tracker.changes;
@@ -42,18 +45,21 @@ final rideTrackingStateProvider = StreamProvider<RideTrackingState>((ref) async*
 
 /// Whether a ride is currently being recorded.
 final isTrackingProvider = Provider<bool>(
-  (ref) => ref.watch(rideTrackingStateProvider).asData?.value.isTracking ?? false,
+  (ref) =>
+      ref.watch(rideTrackingStateProvider).asData?.value.isTracking ?? false,
 );
 
 // ─── Spec 5B: platform GPS plumbing ──────────────────────────────────────────
 
 /// Production GPS source (geolocator). Faked in recording-controller tests.
-final locationSourceProvider =
-    Provider<LocationSource>((ref) => const GeolocatorLocationSource());
+final locationSourceProvider = Provider<LocationSource>(
+  (ref) => const GeolocatorLocationSource(),
+);
 
 /// Production permission/location-services seam (geolocator).
 final locationPermissionServiceProvider = Provider<LocationPermissionService>(
-    (ref) => const GeolocatorPermissionService());
+  (ref) => const GeolocatorPermissionService(),
+);
 
 /// Current-locale copy for the recording notification (the service has no
 /// BuildContext). Falls back to English for unsupported locales — but reads
@@ -65,7 +71,8 @@ final locationPermissionServiceProvider = Provider<LocationPermissionService>(
 final rideNotificationCopyProvider = Provider<RideNotificationCopy>((ref) {
   final locale = ref.watch(effectiveLocaleProvider);
   final l = lookupAppLocalizations(
-      Locale(locale.languageCode == 'de' ? 'de' : 'en'));
+    Locale(locale.languageCode == 'de' ? 'de' : 'en'),
+  );
   return RideNotificationCopy(
     channelName: l.notifChannelName,
     recordingTitle: l.notifRecordingTitle,
@@ -96,7 +103,9 @@ final rideForegroundServiceProvider = Provider<RideForegroundService>((ref) {
 });
 
 /// Orchestrates permission gate → location source → tracker → foreground service.
-final rideRecordingControllerProvider = Provider<RideRecordingController>((ref) {
+final rideRecordingControllerProvider = Provider<RideRecordingController>((
+  ref,
+) {
   final controller = RideRecordingController(
     tracker: ref.watch(rideTrackerProvider),
     source: ref.watch(locationSourceProvider),

@@ -88,12 +88,12 @@ class _GrantedPerms implements LocationPermissionService {
 /// foreground service.
 class FakeRecording extends RideRecordingController {
   FakeRecording(RideTracker tracker)
-      : super(
-          tracker: tracker,
-          source: _NoopSource(),
-          permissions: _GrantedPerms(),
-          service: _NoopService(),
-        );
+    : super(
+        tracker: tracker,
+        source: _NoopSource(),
+        permissions: _GrantedPerms(),
+        service: _NoopService(),
+      );
 
   final calls = <String>[];
   LocationStartAction next = LocationStartAction.proceed;
@@ -109,7 +109,8 @@ class FakeRecording extends RideRecordingController {
       calls.add(discard ? 'stop:discard' : 'stop');
 
   @override
-  Future<void> openLocationSettings() async => calls.add('openLocationSettings');
+  Future<void> openLocationSettings() async =>
+      calls.add('openLocationSettings');
 }
 
 /// Records intent calls without touching the DB / preview pipeline.
@@ -124,7 +125,11 @@ class RecordingController extends ActiveRideController {
   @override
   void pauseOrResume(bool isPaused) => calls.add('pauseOrResume:$isPaused');
   @override
-  Future<void> saveRide({String? title, String? comment, bool favorite = false}) async {
+  Future<void> saveRide({
+    String? title,
+    String? comment,
+    bool favorite = false,
+  }) async {
     saved = (title: title, comment: comment, favorite: favorite);
     calls.add('save');
   }
@@ -140,14 +145,16 @@ void main() {
   setUp(() {
     db = AppDatabase.memory();
     final tracker = RideTracker(
-        RideRepository(RideDao(db)),
-        TrackpointRepository(TrackpointDao(db)),
-        const HaversineDistanceCalculator());
+      RideRepository(RideDao(db)),
+      TrackpointRepository(TrackpointDao(db)),
+      const HaversineDistanceCalculator(),
+    );
     controller = RecordingController(
       tracker,
       RoutePreviewCache(
-          baseDir: Directory.systemTemp,
-          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
+        baseDir: Directory.systemTemp,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      ),
     );
     recording = FakeRecording(tracker);
   });
@@ -166,39 +173,47 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final router = GoRouter(initialLocation: '/ride', routes: [
-      GoRoute(path: '/ride', builder: (c, s) => const ActiveRideScreen()),
-      GoRoute(
+    final router = GoRouter(
+      initialLocation: '/ride',
+      routes: [
+        GoRoute(path: '/ride', builder: (c, s) => const ActiveRideScreen()),
+        GoRoute(
           path: '/',
-          builder: (c, s) => const Scaffold(body: Center(child: Text('home')))),
-    ]);
-
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        rideTrackingStateProvider
-            .overrideWith((ref) => stateStream ?? Stream.value(state)),
-        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
-        activeRideControllerProvider.overrideWithValue(controller),
-        rideRecordingControllerProvider.overrideWithValue(recording),
+          builder: (c, s) => const Scaffold(body: Center(child: Text('home'))),
+        ),
       ],
-      child: MaterialApp.router(
-        theme: buildTheme(brightness),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          rideTrackingStateProvider.overrideWith(
+            (ref) => stateStream ?? Stream.value(state),
+          ),
+          isOnlineProvider.overrideWith((ref) => Stream.value(online)),
+          activeRideControllerProvider.overrideWithValue(controller),
+          rideRecordingControllerProvider.overrideWithValue(recording),
         ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: router,
+        child: MaterialApp.router(
+          theme: buildTheme(brightness),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
       ),
-    ));
+    );
     await tester.pump(); // post-frame (start) + stream emission
     await tester.pump();
   }
 
-  testWidgets('renders title, Live badge and the stat grid while tracking',
-      (tester) async {
+  testWidgets('renders title, Live badge and the stat grid while tracking', (
+    tester,
+  ) async {
     await pumpScreen(
       tester,
       state: const RideTrackingState(
@@ -220,43 +235,53 @@ void main() {
   });
 
   testWidgets(
-      'a freshly mounted screen renders the max speed carried in the tracking '
-      'state (issue #1: it used to live in widget State and reset on rebuild)',
-      (tester) async {
-    // Simulates reopening the ride screen mid-ride (backgrounding + notification
-    // tap, deep-link, navigation replace): the screen is brand new, the ride is
-    // not. The top speed must come from the process-lifetime tracker's state,
-    // not from a counter the fresh widget starts at 0.
-    await pumpScreen(
-      tester,
-      state: const RideTrackingState(
-        isTracking: true,
-        speedKmh: 5.0, // currently crawling
-        maxSpeedKmh: 42.0, // but the ride already hit 42 before the rebuild
-      ),
-    );
-    expect(find.text('42.0 km/h'), findsOneWidget); // top speed preserved
-    expect(find.text('5.0 km/h'), findsOneWidget); // current speed
-  });
+    'a freshly mounted screen renders the max speed carried in the tracking '
+    'state (issue #1: it used to live in widget State and reset on rebuild)',
+    (tester) async {
+      // Simulates reopening the ride screen mid-ride (backgrounding + notification
+      // tap, deep-link, navigation replace): the screen is brand new, the ride is
+      // not. The top speed must come from the process-lifetime tracker's state,
+      // not from a counter the fresh widget starts at 0.
+      await pumpScreen(
+        tester,
+        state: const RideTrackingState(
+          isTracking: true,
+          speedKmh: 5.0, // currently crawling
+          maxSpeedKmh: 42.0, // but the ride already hit 42 before the rebuild
+        ),
+      );
+      expect(find.text('42.0 km/h'), findsOneWidget); // top speed preserved
+      expect(find.text('5.0 km/h'), findsOneWidget); // current speed
+    },
+  );
 
   testWidgets(
-      'stats panel shows from the FIRST frame, before tracking has started '
-      '(instant blend-in after the timer, even while the map loads)',
-      (tester) async {
-    await pumpScreen(tester, state: const RideTrackingState()); // not tracking
-    expect(find.text('-- km/h'), findsWidgets); // speed + top speed
-    expect(find.text('0.00 km'), findsOneWidget);
-    expect(find.text('00:00'), findsOneWidget);
-    expect(find.text('Stop ride'), findsOneWidget);
-    expect(find.text('Live'), findsNothing); // badge waits for real tracking
-  });
+    'stats panel shows from the FIRST frame, before tracking has started '
+    '(instant blend-in after the timer, even while the map loads)',
+    (tester) async {
+      await pumpScreen(
+        tester,
+        state: const RideTrackingState(),
+      ); // not tracking
+      expect(find.text('-- km/h'), findsWidgets); // speed + top speed
+      expect(find.text('0.00 km'), findsOneWidget);
+      expect(find.text('00:00'), findsOneWidget);
+      expect(find.text('Stop ride'), findsOneWidget);
+      expect(find.text('Live'), findsNothing); // badge waits for real tracking
+    },
+  );
 
-  testWidgets('light theme: light status bar icons over the dark header (#66)',
-      (tester) async {
-    await pumpScreen(tester);
-    expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
-    expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
-  });
+  testWidgets(
+    'light theme: light status bar icons over the dark header (#66)',
+    (tester) async {
+      await pumpScreen(tester);
+      expect(
+        SystemChrome.latestStyle?.statusBarIconBrightness,
+        Brightness.light,
+      );
+      expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
+    },
+  );
 
   testWidgets('paused state shows Paused badge and Resume', (tester) async {
     await pumpScreen(
@@ -269,32 +294,42 @@ void main() {
 
   testWidgets('offline shows the offline banner', (tester) async {
     await pumpScreen(tester, online: false);
-    expect(find.text('Offline — map tiles may not be available'), findsOneWidget);
+    expect(
+      find.text('Offline — map tiles may not be available'),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
-      'location services off mid-ride: warning banner, speed shows "--", and '
-      'tapping the banner opens the location settings (issue #33)',
-      (tester) async {
-    await pumpScreen(tester,
+    'location services off mid-ride: warning banner, speed shows "--", and '
+    'tapping the banner opens the location settings (issue #33)',
+    (tester) async {
+      await pumpScreen(
+        tester,
         state: const RideTrackingState(
-            isTracking: true, locationServiceEnabled: false));
-    const banner = "Location is off — your route isn't being recorded. "
-        'Tap to turn it on.';
-    expect(find.text(banner), findsOneWidget);
-    expect(find.text('-- km/h'), findsOneWidget);
+          isTracking: true,
+          locationServiceEnabled: false,
+        ),
+      );
+      const banner =
+          "Location is off — your route isn't being recorded. "
+          'Tap to turn it on.';
+      expect(find.text(banner), findsOneWidget);
+      expect(find.text('-- km/h'), findsOneWidget);
 
-    await tester.tap(find.text(banner));
-    expect(recording.calls, contains('openLocationSettings'));
-  });
+      await tester.tap(find.text(banner));
+      expect(recording.calls, contains('openLocationSettings'));
+    },
+  );
 
   testWidgets('no location banner while services are on', (tester) async {
     await pumpScreen(tester);
     expect(find.textContaining('Location is off'), findsNothing);
   });
 
-  testWidgets('Stop → confirm opens the summary and stops the recording',
-      (tester) async {
+  testWidgets('Stop → confirm opens the summary and stops the recording', (
+    tester,
+  ) async {
     await pumpScreen(tester);
     await tester.tap(find.text('Stop ride'));
     await tester.pump();
@@ -306,87 +341,96 @@ void main() {
   });
 
   testWidgets(
-      'summary dialog freezes the ride chrome (stats panel + Live badge stay) '
-      'and a barrier blocks the screen behind it', (tester) async {
-    final states = StreamController<RideTrackingState>();
-    addTearDown(states.close);
-    await pumpScreen(tester, stateStream: states.stream);
-    states.add(const RideTrackingState(isTracking: true, speedKmh: 12));
-    await tester.pump();
-    await tester.pump();
+    'summary dialog freezes the ride chrome (stats panel + Live badge stay) '
+    'and a barrier blocks the screen behind it',
+    (tester) async {
+      final states = StreamController<RideTrackingState>();
+      addTearDown(states.close);
+      await pumpScreen(tester, stateStream: states.stream);
+      states.add(const RideTrackingState(isTracking: true, speedKmh: 12));
+      await tester.pump();
+      await tester.pump();
 
-    await tester.tap(find.text('Stop ride'));
-    await tester.pump();
-    await tester.tap(find.text('Stop')); // confirm
-    await tester.pump();
-    // The tracker reports the stop (isTracking flips false) while the summary
-    // is open — nothing behind the dialog may change.
-    states.add(const RideTrackingState(isTracking: false, speedKmh: 12));
-    await tester.pump();
-    await tester.pump();
+      await tester.tap(find.text('Stop ride'));
+      await tester.pump();
+      await tester.tap(find.text('Stop')); // confirm
+      await tester.pump();
+      // The tracker reports the stop (isTracking flips false) while the summary
+      // is open — nothing behind the dialog may change.
+      states.add(const RideTrackingState(isTracking: false, speedKmh: 12));
+      await tester.pump();
+      await tester.pump();
 
-    expect(find.text('How was your ride?'), findsOneWidget);
-    expect(find.text('Stop ride'), findsOneWidget); // stats panel frozen
-    expect(find.text('Live'), findsOneWidget); // badge frozen
-    // A modal scrim swallows taps on everything behind the dialog.
-    expect(
-      find.byWidgetPredicate(
-          (w) => w is ModalBarrier && w.color == Colors.black54),
-      findsOneWidget,
-    );
+      expect(find.text('How was your ride?'), findsOneWidget);
+      expect(find.text('Stop ride'), findsOneWidget); // stats panel frozen
+      expect(find.text('Live'), findsOneWidget); // badge frozen
+      // A modal scrim swallows taps on everything behind the dialog.
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is ModalBarrier && w.color == Colors.black54,
+        ),
+        findsOneWidget,
+      );
 
-    // Saving closes the dialog but the chrome must STAY frozen (panel, badge,
-    // scrim) while the exit transition to home plays — no flicker frame.
-    await tester.enterText(find.byType(TextField).first, 'Ride');
-    await tester.tap(find.text('Save'));
-    await tester.pump(); // dialog closed, navigation started — mid-transition
-    expect(find.text('How was your ride?'), findsNothing);
-    expect(find.text('Stop ride'), findsOneWidget); // panel still there
-    expect(find.text('Live'), findsOneWidget); // badge still there
-    expect(
-      find.byWidgetPredicate(
-          (w) => w is ModalBarrier && w.color == Colors.black54),
-      findsOneWidget, // scrim kept up through the exit
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('home'), findsOneWidget);
-  });
+      // Saving closes the dialog but the chrome must STAY frozen (panel, badge,
+      // scrim) while the exit transition to home plays — no flicker frame.
+      await tester.enterText(find.byType(TextField).first, 'Ride');
+      await tester.tap(find.text('Save'));
+      await tester.pump(); // dialog closed, navigation started — mid-transition
+      expect(find.text('How was your ride?'), findsNothing);
+      expect(find.text('Stop ride'), findsOneWidget); // panel still there
+      expect(find.text('Live'), findsOneWidget); // badge still there
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is ModalBarrier && w.color == Colors.black54,
+        ),
+        findsOneWidget, // scrim kept up through the exit
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('home'), findsOneWidget);
+    },
+  );
 
   testWidgets(
-      'summary dialog rises above the keyboard without overflowing, while '
-      'the ride layout behind stays untouched', (tester) async {
-    await pumpScreen(tester);
-    await tester.tap(find.text('Stop ride'));
-    await tester.pump();
-    await tester.tap(find.text('Stop'));
-    await tester.pump();
-    expect(find.text('How was your ride?'), findsOneWidget);
+    'summary dialog rises above the keyboard without overflowing, while '
+    'the ride layout behind stays untouched',
+    (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('Stop ride'));
+      await tester.pump();
+      await tester.tap(find.text('Stop'));
+      await tester.pump();
+      expect(find.text('How was your ride?'), findsOneWidget);
 
-    // Keyboard opens for the title/comment inputs. Dialog avoids the insets
-    // itself via an AnimatedPadding — pump past its animation.
-    tester.view.viewInsets = const FakeViewPadding(bottom: 500);
-    addTearDown(tester.view.resetViewInsets);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+      // Keyboard opens for the title/comment inputs. Dialog avoids the insets
+      // itself via an AnimatedPadding — pump past its animation.
+      tester.view.viewInsets = const FakeViewPadding(bottom: 500);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-    expect(tester.takeException(), isNull); // no "bottom overflowed" banner
-    // The dialog content is lifted above the keyboard (900 - 500 = 400)…
-    expect(tester.getRect(find.text('How was your ride?')).bottom,
-        lessThanOrEqualTo(400));
-    // resizeToAvoidBottomInset: false — the map area behind keeps its size.
-    expect(find.text('Stop ride'), findsOneWidget); // panel not squeezed away
+      expect(tester.takeException(), isNull); // no "bottom overflowed" banner
+      // The dialog content is lifted above the keyboard (900 - 500 = 400)…
+      expect(
+        tester.getRect(find.text('How was your ride?')).bottom,
+        lessThanOrEqualTo(400),
+      );
+      // resizeToAvoidBottomInset: false — the map area behind keeps its size.
+      expect(find.text('Stop ride'), findsOneWidget); // panel not squeezed away
 
-    // …and stays fully usable: content scrolls inside the card, Save is
-    // reachable and completes the flow (regression: double inset padding once
-    // shoved the dialog off-screen and made it untappable).
-    await tester.ensureVisible(find.text('Save'));
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
-    expect(find.text('home'), findsOneWidget);
-  });
+      // …and stays fully usable: content scrolls inside the card, Save is
+      // reachable and completes the flow (regression: double inset padding once
+      // shoved the dialog off-screen and made it untappable).
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(find.text('home'), findsOneWidget);
+    },
+  );
 
-  testWidgets('summary Save persists details and navigates home',
-      (tester) async {
+  testWidgets('summary Save persists details and navigates home', (
+    tester,
+  ) async {
     await pumpScreen(tester);
     await tester.tap(find.text('Stop ride'));
     await tester.pump();
@@ -411,8 +455,9 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('summary Discard asks first; confirming discards and goes home',
-      (tester) async {
+  testWidgets('summary Discard asks first; confirming discards and goes home', (
+    tester,
+  ) async {
     await openSummaryDiscardConfirm(tester);
     expect(find.text('Discard ride?'), findsOneWidget);
     expect(controller.calls, isNot(contains('discard')));
@@ -424,18 +469,20 @@ void main() {
   });
 
   testWidgets(
-      'cancelling the summary discard keeps the summary and its entered text',
-      (tester) async {
-    await openSummaryDiscardConfirm(tester);
-    await tester.tap(find.text('Cancel'));
-    await tester.pump();
-    expect(find.text('Discard ride?'), findsNothing);
-    expect(find.text('Evening roll'), findsOneWidget);
-    expect(controller.calls, isNot(contains('discard')));
-  });
+    'cancelling the summary discard keeps the summary and its entered text',
+    (tester) async {
+      await openSummaryDiscardConfirm(tester);
+      await tester.tap(find.text('Cancel'));
+      await tester.pump();
+      expect(find.text('Discard ride?'), findsNothing);
+      expect(find.text('Evening roll'), findsOneWidget);
+      expect(controller.calls, isNot(contains('discard')));
+    },
+  );
 
-  testWidgets('back with the summary discard confirm open only dismisses it',
-      (tester) async {
+  testWidgets('back with the summary discard confirm open only dismisses it', (
+    tester,
+  ) async {
     await openSummaryDiscardConfirm(tester);
     await tester.binding.handlePopRoute();
     await tester.pump();
@@ -446,28 +493,31 @@ void main() {
   });
 
   testWidgets(
-      'back with the stop dialog open dismisses it instead of stacking the '
-      'discard dialog on top', (tester) async {
-    await pumpScreen(tester);
-    await tester.tap(find.text('Stop ride'));
-    await tester.pump();
-    expect(find.text('Stop ride?'), findsOneWidget);
+    'back with the stop dialog open dismisses it instead of stacking the '
+    'discard dialog on top',
+    (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('Stop ride'));
+      await tester.pump();
+      expect(find.text('Stop ride?'), findsOneWidget);
 
-    // System back: closes the stop dialog, does NOT add another (the app-bar
-    // arrow is behind the modal barrier, so only system back reaches here).
-    await tester.binding.handlePopRoute();
-    await tester.pump();
-    expect(find.text('Stop ride?'), findsNothing);
-    expect(find.text('Discard ride?'), findsNothing);
+      // System back: closes the stop dialog, does NOT add another (the app-bar
+      // arrow is behind the modal barrier, so only system back reaches here).
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(find.text('Stop ride?'), findsNothing);
+      expect(find.text('Discard ride?'), findsNothing);
 
-    // Back again, with no dialog open → discard confirmation as usual.
-    await tester.binding.handlePopRoute();
-    await tester.pump();
-    expect(find.text('Discard ride?'), findsOneWidget);
-  });
+      // Back again, with no dialog open → discard confirmation as usual.
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(find.text('Discard ride?'), findsOneWidget);
+    },
+  );
 
-  testWidgets('back → confirm discard → dispose stops and discards the ride',
-      (tester) async {
+  testWidgets('back → confirm discard → dispose stops and discards the ride', (
+    tester,
+  ) async {
     await pumpScreen(tester);
     // Tap the app-bar back arrow while tracking → discard-confirm dialog.
     await tester.tap(find.byIcon(Icons.arrow_back));
@@ -489,8 +539,9 @@ void main() {
     expect(controller.calls, contains('pauseOrResume:false'));
   });
 
-  testWidgets('recenter FAB appears after a map gesture and re-follows',
-      (tester) async {
+  testWidgets('recenter FAB appears after a map gesture and re-follows', (
+    tester,
+  ) async {
     await pumpScreen(tester);
     expect(find.byIcon(Icons.refresh), findsNothing);
 
@@ -507,34 +558,40 @@ void main() {
 
   for (final brightness in Brightness.values) {
     testWidgets(
-        'recenter FAB matches the compass: round, app surface + primary icon '
-        '(${brightness.name} mode)', (tester) async {
-      await pumpScreen(tester, brightness: brightness);
-      tester.widget<LiveMap>(find.byType(LiveMap)).onGesture!();
-      await tester.pump();
+      'recenter FAB matches the compass: round, app surface + primary icon '
+      '(${brightness.name} mode)',
+      (tester) async {
+        await pumpScreen(tester, brightness: brightness);
+        tester.widget<LiveMap>(find.byType(LiveMap)).onGesture!();
+        await tester.pump();
 
-      final fab = tester.widget<FloatingActionButton>(
-          find.byType(FloatingActionButton));
-      final colors =
-          brightness == Brightness.dark ? AppColors.dark : AppColors.light;
-      expect(fab.backgroundColor, colors.surface);
-      expect(fab.foregroundColor, colors.primary);
-      expect(fab.shape, isA<CircleBorder>());
-    });
+        final fab = tester.widget<FloatingActionButton>(
+          find.byType(FloatingActionButton),
+        );
+        final colors = brightness == Brightness.dark
+            ? AppColors.dark
+            : AppColors.light;
+        expect(fab.backgroundColor, colors.surface);
+        expect(fab.foregroundColor, colors.primary);
+        expect(fab.shape, isA<CircleBorder>());
+      },
+    );
   }
 
   testWidgets(
-      'the live map keeps the compass clear of the recenter button: it stacks '
-      'directly above it, one control plus one gap up', (tester) async {
-    await pumpScreen(tester);
-    final map = tester.widget<LiveMap>(find.byType(LiveMap));
-    expect(map.compassClearance, kMapControlSize + kMapControlInset);
+    'the live map keeps the compass clear of the recenter button: it stacks '
+    'directly above it, one control plus one gap up',
+    (tester) async {
+      await pumpScreen(tester);
+      final map = tester.widget<LiveMap>(find.byType(LiveMap));
+      expect(map.compassClearance, kMapControlSize + kMapControlInset);
 
-    map.onGesture!(); // drop follow → recenter shows
-    await tester.pump();
-    final fab = find.byType(FloatingActionButton);
-    final mapRect = tester.getRect(find.byType(LiveMap));
-    expect(tester.getBottomLeft(fab).dy, mapRect.bottom - kMapControlInset);
-    expect(tester.getBottomLeft(fab).dx, mapRect.left + kMapControlInset);
-  });
+      map.onGesture!(); // drop follow → recenter shows
+      await tester.pump();
+      final fab = find.byType(FloatingActionButton);
+      final mapRect = tester.getRect(find.byType(LiveMap));
+      expect(tester.getBottomLeft(fab).dy, mapRect.bottom - kMapControlInset);
+      expect(tester.getBottomLeft(fab).dx, mapRect.left + kMapControlInset);
+    },
+  );
 }

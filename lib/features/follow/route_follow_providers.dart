@@ -189,13 +189,16 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     if (epoch != _feedEpoch || state == null) return;
     state = state!.copyWith(locationServiceEnabled: serviceOn);
     if (seed != null && _isFresh(seed)) onFix(seed);
-    _fixSub = source.fixes.listen(onFix, onError: (Object _) {
-      // Show the location banner rather than silently freezing the position.
-      final cur = state;
-      if (cur == null) return;
-      _feedFailed = true;
-      state = cur.copyWith(locationServiceEnabled: false);
-    });
+    _fixSub = source.fixes.listen(
+      onFix,
+      onError: (Object _) {
+        // Show the location banner rather than silently freezing the position.
+        final cur = state;
+        if (cur == null) return;
+        _feedFailed = true;
+        state = cur.copyWith(locationServiceEnabled: false);
+      },
+    );
     _serviceSub = source.serviceEnabled.listen((on) {
       final cur = state;
       if (cur != null) state = cur.copyWith(locationServiceEnabled: on);
@@ -283,9 +286,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
       for (final (from, to) in intervals) track.segmentBetween(from, to),
     ]..removeWhere((segment) => segment.isEmpty);
     if (direction != FollowDirection.reverse) return segments;
-    return [
-      for (final segment in segments.reversed) segment.reversed.toList(),
-    ];
+    return [for (final segment in segments.reversed) segment.reversed.toList()];
   }
 
   void _cancelFeed() {
@@ -309,5 +310,6 @@ final routeFollowProvider =
 /// see `fixFromPosition`), like `RideTracker`'s default clock. Overridden in
 /// tests.
 final followNowNanosProvider = Provider<int Function()>(
-  (ref) => () => DateTime.now().microsecondsSinceEpoch * 1000,
+  (ref) =>
+      () => DateTime.now().microsecondsSinceEpoch * 1000,
 );

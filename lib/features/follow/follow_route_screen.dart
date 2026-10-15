@@ -89,11 +89,13 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
         content: Text(l10n.followEndConfirmBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: Text(l10n.actionCancel)),
+            onPressed: () => Navigator.pop(c, false),
+            child: Text(l10n.actionCancel),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(l10n.followEndAction)),
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(l10n.followEndAction),
+          ),
         ],
       ),
     );
@@ -103,14 +105,16 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
   @override
   Widget build(BuildContext context) {
     listenFollowReverseNotice(ref, context);
-    final follow = ref.watch(routeFollowProvider) ?? (_leaving ? _frozen : null);
+    final follow =
+        ref.watch(routeFollowProvider) ?? (_leaving ? _frozen : null);
     final isOnline = ref.watch(isOnlineProvider).asData?.value ?? true;
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
     if (follow == null) {
       return DarkChromeStatusBar(
-          child: Scaffold(backgroundColor: rideChromeBg.surface));
+        child: Scaffold(backgroundColor: rideChromeBg.surface),
+      );
     }
     final progress = follow.progress;
     final banner = followBanner(context, progress);
@@ -118,119 +122,137 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen>
     final title = follow.rideTitle?.trim();
     final start = follow.track.points.first;
 
-    return DarkChromeStatusBar(child: PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _confirmEnd();
-      },
-      child: Scaffold(
-        backgroundColor: rideChromeBg.surface,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Container(
-                color: rideChromeBg.surface,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _confirmEnd,
-                      icon: const Icon(Icons.arrow_back),
-                      color: rideChromeAccent.hintText,
-                      tooltip: l10n.a11yBack,
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(l10n.followRouteTitle,
-                              style: text.titleMedium
-                                  ?.copyWith(color: rideChromeAccent.surface)),
-                          if (title != null && title.isNotEmpty)
-                            Text(title,
+    return DarkChromeStatusBar(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _confirmEnd();
+        },
+        child: Scaffold(
+          backgroundColor: rideChromeBg.surface,
+          body: SafeArea(
+            child: Column(
+              children: [
+                Container(
+                  color: rideChromeBg.surface,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: _confirmEnd,
+                        icon: const Icon(Icons.arrow_back),
+                        color: rideChromeAccent.hintText,
+                        tooltip: l10n.a11yBack,
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.followRouteTitle,
+                              style: text.titleMedium?.copyWith(
+                                color: rideChromeAccent.surface,
+                              ),
+                            ),
+                            if (title != null && title.isNotEmpty)
+                              Text(
+                                title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: text.bodySmall
-                                    ?.copyWith(color: rideChromeAccent.hintText)),
+                                style: text.bodySmall?.copyWith(
+                                  color: rideChromeAccent.hintText,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isOnline) RideWarningBanner(label: l10n.mapOfflineBanner),
+                if (!follow.locationServiceEnabled)
+                  RideWarningBanner(
+                    label: l10n.followLocationOffBanner,
+                    onTap: ref
+                        .read(rideRecordingControllerProvider)
+                        .openLocationSettings,
+                  ),
+                ?banner,
+                Expanded(
+                  child: RideMapArea(
+                    state: RideTrackingState(location: follow.lastFix),
+                    isFollowing: _isFollowing,
+                    masked: _leaving,
+                    reference: follow.orientedTrack,
+                    referenceDone: follow.ridden,
+                    headingTrail: follow.trail,
+                    onGesture: () {
+                      if (_isFollowing) setState(() => _isFollowing = false);
+                    },
+                    onRecenter: () => setState(() => _isFollowing = true),
+                    // Spec 18: flipping only makes sense once on the route.
+                    onReverse: notJoined ? null : _follow.flipDirection,
+                  ),
+                ),
+                // One bottom bar: the progress text beside End, and before the
+                // join a full-width "Navigate to start" below them.
+                Container(
+                  color: colors.surface,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              followProgressLabel(
+                                context,
+                                progress: follow.displayProgress,
+                                totalM: follow.track.lengthM,
+                                reversed: follow.isReversed,
+                              ),
+                              style: text.titleMedium?.copyWith(
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          FilledButton(
+                            onPressed: _confirmEnd,
+                            child: Text(l10n.followEndAction),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isOnline) RideWarningBanner(label: l10n.mapOfflineBanner),
-              if (!follow.locationServiceEnabled)
-                RideWarningBanner(
-                  label: l10n.followLocationOffBanner,
-                  onTap: ref.read(rideRecordingControllerProvider).openLocationSettings,
-                ),
-              ?banner,
-              Expanded(
-                child: RideMapArea(
-                  state: RideTrackingState(location: follow.lastFix),
-                  isFollowing: _isFollowing,
-                  masked: _leaving,
-                  reference: follow.orientedTrack,
-                  referenceDone: follow.ridden,
-                  headingTrail: follow.trail,
-                  onGesture: () {
-                    if (_isFollowing) setState(() => _isFollowing = false);
-                  },
-                  onRecenter: () => setState(() => _isFollowing = true),
-                  // Spec 18: flipping only makes sense once on the route.
-                  onReverse: notJoined ? null : _follow.flipDirection,
-                ),
-              ),
-              // One bottom bar: the progress text beside End, and before the
-              // join a full-width "Navigate to start" below them.
-              Container(
-                color: colors.surface,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                              followProgressLabel(context,
-                                  progress: follow.displayProgress,
-                                  totalM: follow.track.lengthM,
-                                  reversed: follow.isReversed),
-                              style: text.titleMedium
-                                  ?.copyWith(color: colors.onSurface)),
-                        ),
-                        const SizedBox(width: 12),
-                        FilledButton(
-                          onPressed: _confirmEnd,
-                          child: Text(l10n.followEndAction),
-                        ),
-                      ],
-                    ),
-                    if (notJoined) ...[
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.tonalIcon(
-                          onPressed: () => navigateTo(
+                      if (notJoined) ...[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () => navigateTo(
                               context,
                               ref.read(navigationLauncherProvider),
                               start.lat,
                               start.lng,
                               (title == null || title.isEmpty)
                                   ? l10n.followRouteTitle
-                                  : title),
-                          icon: const Icon(Icons.directions),
-                          label: Text(l10n.followNavigateToStart),
+                                  : title,
+                            ),
+                            icon: const Icon(Icons.directions),
+                            label: Text(l10n.followNavigateToStart),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 }

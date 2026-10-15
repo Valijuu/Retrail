@@ -164,16 +164,16 @@ class PreviewTextPainterProvider extends vtr.TextPainterProvider {
 
   @override
   TextPainter provide(vtr.StyledSymbol symbol) => TextPainter(
-        text: TextSpan(
-          style: symbol.style.textStyle.copyWith(
-            shadows: previewHalo(symbol.style.textStyle.shadows),
-          ),
-          text: symbol.text,
-        ),
-        textAlign: symbol.style.textAlign,
-        textDirection: TextDirection.ltr,
-        textScaler: TextScaler.linear(scale),
-      )..layout();
+    text: TextSpan(
+      style: symbol.style.textStyle.copyWith(
+        shadows: previewHalo(symbol.style.textStyle.shadows),
+      ),
+      text: symbol.text,
+    ),
+    textAlign: symbol.style.textAlign,
+    textDirection: TextDirection.ltr,
+    textScaler: TextScaler.linear(scale),
+  )..layout();
 }
 
 /// How many centred glow layers make up a preview label's halo: stacked, they

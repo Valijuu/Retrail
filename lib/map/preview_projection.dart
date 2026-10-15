@@ -35,8 +35,8 @@ const double previewPixelRatio = 3.0;
 /// width ([previewRenderWidthDp] × [previewPixelRatio]). Shared by the history
 /// card's `cacheWidth` and the scroll pre-warmer so their [ImageCache] entries
 /// are the same key.
-final int previewImageCacheWidth =
-    (previewRenderWidthDp * previewPixelRatio).round();
+final int previewImageCacheWidth = (previewRenderWidthDp * previewPixelRatio)
+    .round();
 
 /// Web-Mercator framing for a preview slot.
 class StaticFraming {
@@ -60,7 +60,11 @@ double _log2(double x) => math.log(x) / math.ln2;
 /// Computes the bounding-box center + fit zoom for [points] in a [widthDp] ×
 /// [heightDp] slot. Caps zoom at [maxPreviewZoom]; degenerate boxes
 /// (single point / standstill jitter) use [maxPreviewZoom] directly.
-StaticFraming computeFraming(List<RoutePoint> points, int widthDp, int heightDp) {
+StaticFraming computeFraming(
+  List<RoutePoint> points,
+  int widthDp,
+  int heightDp,
+) {
   final lats = points.map((p) => p.lat);
   final lons = points.map((p) => p.lng);
   final north = lats.reduce(math.max);
@@ -87,7 +91,10 @@ StaticFraming computeFraming(List<RoutePoint> points, int widthDp, int heightDp)
     final zoomLat = _log2(targetH / (256.0 * safeLatFrac));
     // Integer zoom (tile math needs int; floor also guarantees the route fits);
     // capped so tiny rides don't zoom to z19 and show a featureless tile.
-    zoom = math.min(zoomLon, zoomLat).floorToDouble().clamp(1.0, maxPreviewZoom);
+    zoom = math
+        .min(zoomLon, zoomLat)
+        .floorToDouble()
+        .clamp(1.0, maxPreviewZoom);
   }
   return StaticFraming(
     centerLat: centerLat,

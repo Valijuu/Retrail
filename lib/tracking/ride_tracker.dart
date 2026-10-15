@@ -81,17 +81,17 @@ class RideTracker {
 
   /// Current immutable snapshot.
   RideTrackingState get state => RideTrackingState(
-        location: _location,
-        isTracking: _isTracking,
-        trackPoints: List.unmodifiable(_route.points),
-        distanceMetres: _route.distanceMetres,
-        speedKmh: _speedKmh,
-        maxSpeedKmh: _maxSpeedKmh,
-        elapsedSeconds: _elapsedSeconds,
-        isPaused: _isPaused,
-        activityType: _activityType,
-        locationServiceEnabled: _locationServiceEnabled,
-      );
+    location: _location,
+    isTracking: _isTracking,
+    trackPoints: List.unmodifiable(_route.points),
+    distanceMetres: _route.distanceMetres,
+    speedKmh: _speedKmh,
+    maxSpeedKmh: _maxSpeedKmh,
+    elapsedSeconds: _elapsedSeconds,
+    isPaused: _isPaused,
+    activityType: _activityType,
+    locationServiceEnabled: _locationServiceEnabled,
+  );
 
   /// Emits on every state change (for the UI / Riverpod). Broadcast and does NOT
   /// replay — a new subscriber should seed from [state] then append [changes].
@@ -145,7 +145,9 @@ class RideTracker {
   Future<void> _beginRide() async {
     final now = nowMs();
     final rideId = await _rideRepository.startRide(
-        activityTypeId: _pendingActivityType, startedAtMs: now);
+      activityTypeId: _pendingActivityType,
+      startedAtMs: now,
+    );
     _beginInFlight = false;
     // A stop (and possibly discard) arrived while the insert was in flight —
     // don't resurrect the ride. Honour the latched discard, else finalize it
@@ -210,8 +212,11 @@ class RideTracker {
     _emit();
   }
 
-  void saveRideDetails(String? description, String? comment,
-      {bool isFavorite = false}) {
+  void saveRideDetails(
+    String? description,
+    String? comment, {
+    bool isFavorite = false,
+  }) {
     final rideId = _lastCompletedRideId;
     if (rideId == null) return;
     unawaited(() async {
@@ -311,14 +316,16 @@ class RideTracker {
   /// Persists a recorded [fix], stamped with the time it was taken (a held fix
   /// is recorded seconds later).
   void _persistPoint(int rideId, LocationFix fix) {
-    unawaited(_trackpointRepository.addTrackpoint(
-      rideId: rideId,
-      latitude: fix.latitude,
-      longitude: fix.longitude,
-      timestampMs:
-          nowMs() - (nowNanos() - fix.elapsedRealtimeNanos) ~/ 1000000,
-      speedMs: fix.hasSpeed ? fix.speed : null,
-    ));
+    unawaited(
+      _trackpointRepository.addTrackpoint(
+        rideId: rideId,
+        latitude: fix.latitude,
+        longitude: fix.longitude,
+        timestampMs:
+            nowMs() - (nowNanos() - fix.elapsedRealtimeNanos) ~/ 1000000,
+        speedMs: fix.hasSpeed ? fix.speed : null,
+      ),
+    );
   }
 
   /// Prefer the provider's speed; else fall back to displacement / time between
@@ -331,7 +338,11 @@ class RideTracker {
     if (prev == null) return null;
     return fallbackSpeedKmh(
       distanceMetres: _calc.distanceBetween(
-          prev.latitude, prev.longitude, fix.latitude, fix.longitude),
+        prev.latitude,
+        prev.longitude,
+        fix.latitude,
+        fix.longitude,
+      ),
       elapsedSeconds:
           (fix.elapsedRealtimeNanos - prev.elapsedRealtimeNanos) / 1000000000.0,
       accuracyA: prev.accuracy,

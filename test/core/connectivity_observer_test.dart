@@ -10,13 +10,12 @@ void main() {
     required Future<http.Response> Function(http.Request) handler,
     bool hasNetwork = true,
     Stream<void>? onChange,
-  }) =>
-      ConnectivityObserver(
-        httpClient: MockClient((req) => handler(req)),
-        hasNetwork: () async => hasNetwork,
-        onChange: onChange ?? const Stream.empty(),
-        pollInterval: const Duration(hours: 1), // keep the poll out of the way
-      );
+  }) => ConnectivityObserver(
+    httpClient: MockClient((req) => handler(req)),
+    hasNetwork: () async => hasNetwork,
+    onChange: onChange ?? const Stream.empty(),
+    pollInterval: const Duration(hours: 1), // keep the poll out of the way
+  );
 
   group('checkNow', () {
     test('no network → offline without probing', () async {

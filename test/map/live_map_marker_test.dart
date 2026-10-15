@@ -9,8 +9,9 @@ void main() {
       expect(rideMarkerIsBadge(ActivityType.other), isFalse);
     });
     test('every other activity uses the icon badge', () {
-      for (final t
-          in ActivityType.values.where((t) => t != ActivityType.other)) {
+      for (final t in ActivityType.values.where(
+        (t) => t != ActivityType.other,
+      )) {
         expect(rideMarkerIsBadge(t), isTrue);
       }
     });

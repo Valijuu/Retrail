@@ -7,14 +7,16 @@ import 'package:retrail/core/widgets/status_bar_style.dart';
 final _navigator = GlobalKey<NavigatorState>();
 
 Future<void> _pumpApp(WidgetTester tester, ThemeMode mode) async {
-  await tester.pumpWidget(MaterialApp(
-    navigatorKey: _navigator,
-    theme: buildTheme(Brightness.light),
-    darkTheme: buildTheme(Brightness.dark),
-    themeMode: mode,
-    builder: (context, child) => ThemeStatusBar(child: child!),
-    home: const Scaffold(body: Text('home')),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      navigatorKey: _navigator,
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: mode,
+      builder: (context, child) => ThemeStatusBar(child: child!),
+      home: const Scaffold(body: Text('home')),
+    ),
+  );
   await tester.pump();
 }
 
@@ -34,16 +36,21 @@ void main() {
   });
 
   testWidgets(
-      'light theme: a dark-chrome screen gets light icons, leaving it restores '
-      'the dark ones (#66)', (tester) async {
-    await _pumpApp(tester, ThemeMode.light);
-    _navigator.currentState!.push(MaterialPageRoute<void>(
-        builder: (_) => const DarkChromeStatusBar(child: Scaffold())));
-    await tester.pumpAndSettle();
-    expect(_icons, Brightness.light);
+    'light theme: a dark-chrome screen gets light icons, leaving it restores '
+    'the dark ones (#66)',
+    (tester) async {
+      await _pumpApp(tester, ThemeMode.light);
+      _navigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const DarkChromeStatusBar(child: Scaffold()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(_icons, Brightness.light);
 
-    _navigator.currentState!.pop();
-    await tester.pumpAndSettle();
-    expect(_icons, Brightness.dark);
-  });
+      _navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(_icons, Brightness.dark);
+    },
+  );
 }

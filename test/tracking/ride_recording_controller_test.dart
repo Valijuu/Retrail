@@ -41,8 +41,8 @@ class _FakePermissions implements LocationPermissionService {
     LocationPermission? afterRequest,
     this.precise = true,
     bool? preciseAfterRequest,
-  })  : afterRequest = afterRequest ?? permission,
-        preciseAfterRequest = preciseAfterRequest ?? precise;
+  }) : afterRequest = afterRequest ?? permission,
+       preciseAfterRequest = preciseAfterRequest ?? precise;
 
   bool serviceEnabled;
   LocationPermission permission;
@@ -62,6 +62,7 @@ class _FakePermissions implements LocationPermissionService {
     if (error != null) throw error;
     return serviceEnabled;
   }
+
   @override
   Future<LocationPermission> checkPermission() async => permission;
   @override
@@ -111,6 +112,7 @@ class _FakeService implements RideForegroundService {
     starts++;
     running = true;
   }
+
   @override
   Future<void> stop() async {
     final delay = stopDelay;
@@ -118,6 +120,7 @@ class _FakeService implements RideForegroundService {
     stops++;
     running = false;
   }
+
   @override
   Future<void> update({
     required bool isPaused,
@@ -129,13 +132,13 @@ class _FakeService implements RideForegroundService {
 }
 
 LocationFix _fix(double lat, double lng, int nanos) => LocationFix(
-      latitude: lat,
-      longitude: lng,
-      accuracy: 5,
-      hasSpeed: true,
-      speed: 5,
-      elapsedRealtimeNanos: nanos,
-    );
+  latitude: lat,
+  longitude: lng,
+  accuracy: 5,
+  hasSpeed: true,
+  speed: 5,
+  elapsedRealtimeNanos: nanos,
+);
 
 void main() {
   late AppDatabase db;
@@ -198,10 +201,12 @@ void main() {
   });
 
   test('start() while already tracking is a no-op — no second ride', () async {
-    final c = controller(_FakePermissions(
-      serviceEnabled: true,
-      permission: LocationPermission.whileInUse,
-    ));
+    final c = controller(
+      _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.whileInUse,
+      ),
+    );
 
     await c.start();
     await pumpEventQueue(); // first ride inserted
@@ -233,30 +238,32 @@ void main() {
     expect(service.stops, 1);
   });
 
-  test('stop() during an in-flight start() wins — the tracker never starts '
-      'and the service ends stopped (no zombie tracking after a fast discard)',
-      () async {
-    final perms = _FakePermissions(
-      serviceEnabled: true,
-      permission: LocationPermission.whileInUse,
-    );
-    // The platform service start is slow (binder call) — the discard window.
-    final serviceStarted = Completer<void>();
-    service.startDelay = serviceStarted.future;
-    final c = controller(perms);
+  test(
+    'stop() during an in-flight start() wins — the tracker never starts '
+    'and the service ends stopped (no zombie tracking after a fast discard)',
+    () async {
+      final perms = _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.whileInUse,
+      );
+      // The platform service start is slow (binder call) — the discard window.
+      final serviceStarted = Completer<void>();
+      service.startDelay = serviceStarted.future;
+      final c = controller(perms);
 
-    final starting = c.start(); // ride screen mount
-    await pumpEventQueue(); // start() is now awaiting _service.start()
-    await c.stop(discard: true); // user backed out + discarded meanwhile
-    serviceStarted.complete(); // the slow platform call finally returns
-    await starting;
-    await pumpEventQueue();
+      final starting = c.start(); // ride screen mount
+      await pumpEventQueue(); // start() is now awaiting _service.start()
+      await c.stop(discard: true); // user backed out + discarded meanwhile
+      serviceStarted.complete(); // the slow platform call finally returns
+      await starting;
+      await pumpEventQueue();
 
-    expect(tracker.state.isTracking, isFalse); // start() must NOT resurrect
-    expect(service.stops, greaterThanOrEqualTo(service.starts));
-    final rides = await db.rideDao.getAll().first;
-    expect(rides, isEmpty); // no zombie ride row
-  });
+      expect(tracker.state.isTracking, isFalse); // start() must NOT resurrect
+      expect(service.stops, greaterThanOrEqualTo(service.starts));
+      final rides = await db.rideDao.getAll().first;
+      expect(rides, isEmpty); // no zombie ride row
+    },
+  );
 
   test('stop(discard: true) deletes the active ride immediately — no endTime '
       'write, nothing left for home\'s recents to flash', () async {
@@ -293,28 +300,33 @@ void main() {
   });
 
   test('deniedForever → showRationale, nothing started', () async {
-    final action = await controller(_FakePermissions(
-      serviceEnabled: true,
-      permission: LocationPermission.deniedForever,
-    )).start();
+    final action = await controller(
+      _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.deniedForever,
+      ),
+    ).start();
     expect(action, LocationStartAction.showRationale);
     expect(tracker.state.isTracking, isFalse);
     expect(service.starts, 0);
   });
 
-  test('granted but services off → openLocationSettings, nothing started',
-      () async {
-    final action = await controller(_FakePermissions(
-      serviceEnabled: false,
-      permission: LocationPermission.whileInUse,
-    )).start();
-    expect(action, LocationStartAction.openLocationSettings);
-    expect(tracker.state.isTracking, isFalse);
-    expect(service.starts, 0);
-  });
-
   test(
-      'iOS: services off reads as denied → openLocationSettings, not the '
+    'granted but services off → openLocationSettings, nothing started',
+    () async {
+      final action = await controller(
+        _FakePermissions(
+          serviceEnabled: false,
+          permission: LocationPermission.whileInUse,
+        ),
+      ).start();
+      expect(action, LocationStartAction.openLocationSettings);
+      expect(tracker.state.isTracking, isFalse);
+      expect(service.starts, 0);
+    },
+  );
+
+  test('iOS: services off reads as denied → openLocationSettings, not the '
       'rationale', () async {
     final action = await RideRecordingController(
       tracker: tracker,
@@ -346,10 +358,12 @@ void main() {
   });
 
   test('prepare() blocked → reports the action, starts nothing', () async {
-    final action = await controller(_FakePermissions(
-      serviceEnabled: true,
-      permission: LocationPermission.deniedForever,
-    )).prepare();
+    final action = await controller(
+      _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.deniedForever,
+      ),
+    ).prepare();
     expect(action, LocationStartAction.showRationale);
     expect(tracker.state.isTracking, isFalse);
     expect(service.starts, 0);
@@ -385,10 +399,12 @@ void main() {
 
   test('location services switched off / on mid-ride reach the tracker '
       '(issue #33)', () async {
-    final c = controller(_FakePermissions(
-      serviceEnabled: true,
-      permission: LocationPermission.whileInUse,
-    ));
+    final c = controller(
+      _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.whileInUse,
+      ),
+    );
     await c.start();
     await pumpEventQueue();
 
@@ -402,30 +418,34 @@ void main() {
     await c.stop();
   });
 
-  test('an error on the fix stream is contained and later fixes still record',
-      () async {
-    final c = controller(_FakePermissions(
-      serviceEnabled: true,
-      permission: LocationPermission.whileInUse,
-    ));
-    await c.start();
-    await pumpEventQueue();
+  test(
+    'an error on the fix stream is contained and later fixes still record',
+    () async {
+      final c = controller(
+        _FakePermissions(
+          serviceEnabled: true,
+          permission: LocationPermission.whileInUse,
+        ),
+      );
+      await c.start();
+      await pumpEventQueue();
 
-    source.emitError(Exception('location service disabled'));
-    source.emit(_fix(52.0, 13.0, 9000000000));
-    await pumpEventQueue();
-    expect(tracker.state.location?.latitude, 52.0);
-    await c.stop();
-  });
+      source.emitError(Exception('location service disabled'));
+      source.emit(_fix(52.0, 13.0, 9000000000));
+      await pumpEventQueue();
+      expect(tracker.state.location?.latitude, 52.0);
+      await c.stop();
+    },
+  );
 
   // Issue #77: the service + GPS feed come up while the countdown is on screen
   // (app guaranteed in front); the ride itself begins at 0 without any
   // platform call, so it starts even when the phone was pocketed meanwhile.
   group('arm / beginArmedRide / disarm (countdown, #77)', () {
     _FakePermissions granted() => _FakePermissions(
-          serviceEnabled: true,
-          permission: LocationPermission.whileInUse,
-        );
+      serviceEnabled: true,
+      permission: LocationPermission.whileInUse,
+    );
 
     test('arm() starts service + feed but no ride', () async {
       final c = controller(granted());
@@ -484,32 +504,36 @@ void main() {
       expect(await db.rideDao.getAll().first, isEmpty);
     });
 
-    test('disarm() during an in-flight arm() — nothing is left running',
-        () async {
-      final release = Completer<void>();
-      service.startDelay = release.future;
-      final c = controller(granted());
-      final arming = c.arm();
-      await pumpEventQueue();
-      await c.disarm();
-      release.complete();
-      await arming;
-      expect(service.stops, greaterThanOrEqualTo(1));
-      expect(await c.beginArmedRide(), isFalse);
-      expect(tracker.state.isTracking, isFalse);
-    });
+    test(
+      'disarm() during an in-flight arm() — nothing is left running',
+      () async {
+        final release = Completer<void>();
+        service.startDelay = release.future;
+        final c = controller(granted());
+        final arming = c.arm();
+        await pumpEventQueue();
+        await c.disarm();
+        release.complete();
+        await arming;
+        expect(service.stops, greaterThanOrEqualTo(1));
+        expect(await c.beginArmedRide(), isFalse);
+        expect(tracker.state.isTracking, isFalse);
+      },
+    );
 
-    test('a notification Stop during the countdown cancels the start',
-        () async {
-      final c = controller(granted());
-      await c.arm();
-      await c.stop();
-      expect(service.stops, 1);
-      expect(await c.beginArmedRide(), isFalse);
-      expect(tracker.state.isTracking, isFalse);
-      await pumpEventQueue();
-      expect(await db.rideDao.getAll().first, isEmpty);
-    });
+    test(
+      'a notification Stop during the countdown cancels the start',
+      () async {
+        final c = controller(granted());
+        await c.arm();
+        await c.stop();
+        expect(service.stops, 1);
+        expect(await c.beginArmedRide(), isFalse);
+        expect(tracker.state.isTracking, isFalse);
+        await pumpEventQueue();
+        expect(await db.rideDao.getAll().first, isEmpty);
+      },
+    );
 
     test('not armed (arm never ran) → beginArmedRide lets the ride screen '
         'start it', () async {

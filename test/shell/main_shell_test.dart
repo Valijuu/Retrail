@@ -23,8 +23,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../home/home_test_helpers.dart';
 
-Future<Widget> _app(WidgetTester tester,
-    {List<HistoryItem> historyItems = const []}) async {
+Future<Widget> _app(
+  WidgetTester tester, {
+  List<HistoryItem> historyItems = const [],
+}) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = PreferencesRepository(await SharedPreferences.getInstance());
   final db = AppDatabase.memory();
@@ -80,8 +82,9 @@ void main() {
     expect(find.text('THEME'), findsOneWidget);
   });
 
-  testWidgets('tapping the Home avatar opens the profile edit sheet',
-      (tester) async {
+  testWidgets('tapping the Home avatar opens the profile edit sheet', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -98,62 +101,75 @@ void main() {
     expect(find.text('Edit profile'), findsOneWidget);
   });
 
-  testWidgets('the profile sheet has a drag handle and closes when dragged down',
-      (tester) async {
-    await tester.pumpWidget(await _app(tester));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byType(ProfileAvatar));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+  testWidgets(
+    'the profile sheet has a drag handle and closes when dragged down',
+    (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.byType(ProfileAvatar));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
-    expect(tester.widget<BottomSheet>(find.byType(BottomSheet)).showDragHandle,
-        isTrue);
-    await tester.drag(find.text('Edit profile'), const Offset(0, 600));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.byType(ProfileEditSheet), findsNothing);
-    // iOS too: while the content fits, even bouncing physics claim no drag.
-  }, variant: const TargetPlatformVariant(
-      {TargetPlatform.android, TargetPlatform.iOS}));
+      expect(
+        tester.widget<BottomSheet>(find.byType(BottomSheet)).showDragHandle,
+        isTrue,
+      );
+      await tester.drag(find.text('Edit profile'), const Offset(0, 600));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(ProfileEditSheet), findsNothing);
+      // iOS too: while the content fits, even bouncing physics claim no drag.
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+    }),
+  );
 
   testWidgets(
-      'with the keyboard up the profile sheet stays capped below the top — '
-      'it never grows to the screen edge', (tester) async {
-    tester.view.physicalSize = const Size(400, 900);
-    tester.view.devicePixelRatio = 1.0;
-    tester.view.viewInsets = const FakeViewPadding(bottom: 350);
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(await _app(tester));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byType(ProfileAvatar));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    'with the keyboard up the profile sheet stays capped below the top — '
+    'it never grows to the screen edge',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.viewInsets = const FakeViewPadding(bottom: 350);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.byType(ProfileAvatar));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
-    // A clear strip stays free above the sheet (drag handle included).
-    expect(tester.getTopLeft(find.byType(BottomSheet)).dy,
-        greaterThanOrEqualTo(900 * 0.08));
-  });
+      // A clear strip stays free above the sheet (drag handle included).
+      expect(
+        tester.getTopLeft(find.byType(BottomSheet)).dy,
+        greaterThanOrEqualTo(900 * 0.08),
+      );
+    },
+  );
 
   testWidgets(
-      'on a tall phone the profile sheet hugs its content — Save sits at the '
-      'bottom, no empty band below the buttons', (tester) async {
-    tester.view.physicalSize = const Size(400, 1000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(await _app(tester));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byType(ProfileAvatar));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    'on a tall phone the profile sheet hugs its content — Save sits at the '
+    'bottom, no empty band below the buttons',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.byType(ProfileAvatar));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
-    // Only the content's own bottom spacing is left below Save, whatever the
-    // screen height — not the rest of a fixed 90 %-tall sheet.
-    final save = find.widgetWithText(FilledButton, 'Save');
-    expect(1000 - tester.getBottomLeft(save).dy, lessThanOrEqualTo(24));
-  });
+      // Only the content's own bottom spacing is left below Save, whatever the
+      // screen height — not the rest of a fixed 90 %-tall sheet.
+      final save = find.widgetWithText(FilledButton, 'Save');
+      expect(1000 - tester.getBottomLeft(save).dy, lessThanOrEqualTo(24));
+    },
+  );
 
   Future<void> settle(WidgetTester tester) async {
     await tester.pump();
@@ -161,63 +177,67 @@ void main() {
   }
 
   testWidgets(
-      'system back on a non-Home tab returns to Home instead of closing the '
-      'app (issue #32)', (tester) async {
-    await tester.pumpWidget(await _app(tester));
-    await settle(tester);
-    await tester.tap(find.text('Settings'));
-    await settle(tester);
-    expect(find.text('THEME'), findsOneWidget);
+    'system back on a non-Home tab returns to Home instead of closing the '
+    'app (issue #32)',
+    (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await settle(tester);
+      await tester.tap(find.text('Settings'));
+      await settle(tester);
+      expect(find.text('THEME'), findsOneWidget);
 
-    expect(await tester.binding.handlePopRoute(), isTrue); // consumed
-    await settle(tester);
-    expect(find.text('Recent rides'), findsOneWidget);
-    expect(find.text('THEME'), findsNothing);
-  });
-
-  testWidgets(
-      'system back retraces the visited tabs: Settings → History → Home',
-      (tester) async {
-    await tester.pumpWidget(await _app(tester));
-    await settle(tester);
-    await tester.tap(find.text('History'));
-    await settle(tester);
-    await tester.tap(find.text('Settings'));
-    await settle(tester);
-    expect(find.text('THEME'), findsOneWidget);
-
-    expect(await tester.binding.handlePopRoute(), isTrue);
-    await settle(tester);
-    expect(find.text('Ride history'), findsOneWidget); // back on History
-
-    expect(await tester.binding.handlePopRoute(), isTrue);
-    await settle(tester);
-    expect(find.text('Recent rides'), findsOneWidget); // then Home
-  });
+      expect(await tester.binding.handlePopRoute(), isTrue); // consumed
+      await settle(tester);
+      expect(find.text('Recent rides'), findsOneWidget);
+      expect(find.text('THEME'), findsNothing);
+    },
+  );
 
   testWidgets(
-      'revisiting a tab moves it to the top of the back history instead of '
-      'stacking duplicates', (tester) async {
-    await tester.pumpWidget(await _app(tester));
-    await settle(tester);
-    await tester.tap(find.text('History'));
-    await settle(tester);
-    await tester.tap(find.text('Settings'));
-    await settle(tester);
-    await tester.tap(find.text('History'));
-    await settle(tester);
+    'system back retraces the visited tabs: Settings → History → Home',
+    (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await settle(tester);
+      await tester.tap(find.text('History'));
+      await settle(tester);
+      await tester.tap(find.text('Settings'));
+      await settle(tester);
+      expect(find.text('THEME'), findsOneWidget);
 
-    expect(await tester.binding.handlePopRoute(), isTrue);
-    await settle(tester);
-    expect(find.text('THEME'), findsOneWidget); // Settings, not History again
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await settle(tester);
+      expect(find.text('Ride history'), findsOneWidget); // back on History
 
-    expect(await tester.binding.handlePopRoute(), isTrue);
-    await settle(tester);
-    expect(find.text('Recent rides'), findsOneWidget);
-  });
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await settle(tester);
+      expect(find.text('Recent rides'), findsOneWidget); // then Home
+    },
+  );
 
   testWidgets(
-      'system back in History selection mode only exits the selection '
+    'revisiting a tab moves it to the top of the back history instead of '
+    'stacking duplicates',
+    (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await settle(tester);
+      await tester.tap(find.text('History'));
+      await settle(tester);
+      await tester.tap(find.text('Settings'));
+      await settle(tester);
+      await tester.tap(find.text('History'));
+      await settle(tester);
+
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await settle(tester);
+      expect(find.text('THEME'), findsOneWidget); // Settings, not History again
+
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await settle(tester);
+      expect(find.text('Recent rides'), findsOneWidget);
+    },
+  );
+
+  testWidgets('system back in History selection mode only exits the selection '
       '(issue #32)', (tester) async {
     final ride = RideEntryItem(
       const Ride(
@@ -233,10 +253,11 @@ void main() {
         hasRoute: false,
       ),
       const RideStats(
-          durationMs: 600000,
-          distanceMetres: 1000,
-          maxSpeedKmh: 10,
-          avgSpeedKmh: 6),
+        durationMs: 600000,
+        distanceMetres: 1000,
+        maxSpeedKmh: 10,
+        avgSpeedKmh: 6,
+      ),
     );
     await tester.pumpWidget(await _app(tester, historyItems: [ride]));
     await settle(tester);
@@ -257,8 +278,7 @@ void main() {
     expect(find.text('Recent rides'), findsOneWidget); // now back on Home
   });
 
-  testWidgets(
-      'the greeting stays put while leaving and returning to Home, and '
+  testWidgets('the greeting stays put while leaving and returning to Home, and '
       're-rolls once on arrival', (tester) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
@@ -266,10 +286,14 @@ void main() {
     // The greeting as rendered — not HomeScreen's prop — so state re-rolling
     // inside Home would be caught too.
     String shown() => tester
-        .widget<RichText>(find
-            .descendant(
-                of: find.byType(TopHeader), matching: find.byType(RichText))
-            .first)
+        .widget<RichText>(
+          find
+              .descendant(
+                of: find.byType(TopHeader),
+                matching: find.byType(RichText),
+              )
+              .first,
+        )
         .text
         .toPlainText();
     final before = shown();

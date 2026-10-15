@@ -12,23 +12,25 @@ import 'package:retrail/tracking/tracking_providers.dart';
 const _start = 100 * 1000000000; // 100 s
 
 LocationFix _fix(int atNanos, {double accuracy = 5}) => LocationFix(
-      latitude: 50.0,
-      longitude: 8.0,
-      accuracy: accuracy,
-      hasSpeed: false,
-      speed: 0,
-      elapsedRealtimeNanos: atNanos,
-    );
+  latitude: 50.0,
+  longitude: 8.0,
+  accuracy: accuracy,
+  hasSpeed: false,
+  speed: 0,
+  elapsedRealtimeNanos: atNanos,
+);
 
 void main() {
   late StreamController<RideTrackingState> states;
   late int now;
 
   ProviderContainer container() {
-    final c = ProviderContainer(overrides: [
-      rideTrackingStateProvider.overrideWith((ref) => states.stream),
-      gpsNowNanosProvider.overrideWithValue(() => now),
-    ]);
+    final c = ProviderContainer(
+      overrides: [
+        rideTrackingStateProvider.overrideWith((ref) => states.stream),
+        gpsNowNanosProvider.overrideWithValue(() => now),
+      ],
+    );
     addTearDown(c.dispose);
     // Keep the auto-dispose provider alive like the countdown does.
     c.listen(countdownGpsSignalProvider, (_, _) {});
@@ -58,8 +60,7 @@ void main() {
     expect(c.read(countdownGpsSignalProvider), GpsSignal.off);
   });
 
-  test('no newer fix arrives: back to searching once the fix is stale',
-      () {
+  test('no newer fix arrives: back to searching once the fix is stale', () {
     fakeAsync((fa) {
       final c = container();
       states.add(RideTrackingState(location: _fix(_start)));

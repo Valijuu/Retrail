@@ -22,25 +22,29 @@ class TopHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final base = Theme.of(context)
-        .textTheme
-        .titleLarge
-        ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w500);
+    final base = Theme.of(context).textTheme.titleLarge?.copyWith(
+      color: colors.onSurface,
+      fontWeight: FontWeight.w500,
+    );
     final parts = greetingTemplate.split('%s');
 
     return Row(
       children: [
         Expanded(
           child: Text.rich(
-            TextSpan(children: [
-              TextSpan(text: parts.isNotEmpty ? parts[0] : ''),
-              TextSpan(
-                text: name,
-                style: base?.copyWith(
-                    color: colors.primary, fontWeight: FontWeight.bold),
-              ),
-              if (parts.length > 1) TextSpan(text: parts[1]),
-            ]),
+            TextSpan(
+              children: [
+                TextSpan(text: parts.isNotEmpty ? parts[0] : ''),
+                TextSpan(
+                  text: name,
+                  style: base?.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (parts.length > 1) TextSpan(text: parts[1]),
+              ],
+            ),
             style: base,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

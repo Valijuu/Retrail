@@ -20,16 +20,22 @@ void main() {
 
   test('previews live in ride_previews_v17 (Spec 19: every preview re-renders '
       'with OpenFreeMap, Retrail Light)', () {
-    final cache =
-        RoutePreviewCache(baseDir: tempDir, render: (_, _) async => _png([1]));
-    expect(cache.fileFor(1, brightness: Brightness.light).path,
-        '${tempDir.path}/ride_previews_v17/1.png');
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1]),
+    );
+    expect(
+      cache.fileFor(1, brightness: Brightness.light).path,
+      '${tempDir.path}/ride_previews_v17/1.png',
+    );
   });
 
   test('purgeOutdatedVersions deletes older preview dirs, keeps the current '
       'one and anything unrelated', () async {
-    final cache =
-        RoutePreviewCache(baseDir: tempDir, render: (_, _) async => _png([1]));
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1]),
+    );
     await cache.ensurePreview(7, points, brightness: Brightness.light);
     final current = cache.fileFor(7, brightness: Brightness.light).parent;
     final old4 = Directory('${tempDir.path}/ride_previews_v4')..createSync();
@@ -37,7 +43,8 @@ void main() {
     File('${old5.path}/7.png').writeAsBytesSync([1]);
     final unrelated = Directory('${tempDir.path}/ride_previews_backup')
       ..createSync();
-    final dbFile = File('${tempDir.path}/retrail.sqlite')..writeAsBytesSync([1]);
+    final dbFile = File('${tempDir.path}/retrail.sqlite')
+      ..writeAsBytesSync([1]);
 
     await cache.purgeOutdatedVersions();
 
@@ -58,13 +65,19 @@ void main() {
       },
     );
 
-    final first =
-        await cache.ensurePreview(7, points, brightness: Brightness.light);
+    final first = await cache.ensurePreview(
+      7,
+      points,
+      brightness: Brightness.light,
+    );
     expect(await first.exists(), isTrue);
     expect(renders, 1);
 
-    final second =
-        await cache.ensurePreview(7, points, brightness: Brightness.light);
+    final second = await cache.ensurePreview(
+      7,
+      points,
+      brightness: Brightness.light,
+    );
     expect(second.path, first.path);
     expect(renders, 1); // reused, not re-rendered
   });
@@ -76,10 +89,16 @@ void main() {
       render: (_, b) async => _png([b == Brightness.dark ? 1 : 0]),
     );
 
-    final light =
-        await cache.ensurePreview(5, points, brightness: Brightness.light);
-    final dark =
-        await cache.ensurePreview(5, points, brightness: Brightness.dark);
+    final light = await cache.ensurePreview(
+      5,
+      points,
+      brightness: Brightness.light,
+    );
+    final dark = await cache.ensurePreview(
+      5,
+      points,
+      brightness: Brightness.dark,
+    );
 
     expect(light.path, isNot(dark.path)); // keyed by brightness, not just id
     expect(await light.exists(), isTrue);
@@ -93,10 +112,16 @@ void main() {
       baseDir: tempDir,
       render: (_, _) async => _png([9]),
     );
-    final light =
-        await cache.ensurePreview(3, points, brightness: Brightness.light);
-    final dark =
-        await cache.ensurePreview(3, points, brightness: Brightness.dark);
+    final light = await cache.ensurePreview(
+      3,
+      points,
+      brightness: Brightness.light,
+    );
+    final dark = await cache.ensurePreview(
+      3,
+      points,
+      brightness: Brightness.dark,
+    );
     expect(await light.exists(), isTrue);
     expect(await dark.exists(), isTrue);
 
@@ -118,13 +143,17 @@ void main() {
     );
 
     // 1st call: incomplete (e.g. offline sketch) → written + stale-marked.
-    final file =
-        await cache.ensurePreview(7, points, brightness: Brightness.light);
+    final file = await cache.ensurePreview(
+      7,
+      points,
+      brightness: Brightness.light,
+    );
     expect(await file.exists(), isTrue);
     expect(renders, 1);
     expect(
-        await cache.staleMarkerFor(7, brightness: Brightness.light).exists(),
-        isTrue);
+      await cache.staleMarkerFor(7, brightness: Brightness.light).exists(),
+      isTrue,
+    );
 
     // 2nd call, now "online": re-renders, upgrades the PNG, clears the marker.
     completeNow = true;
@@ -132,8 +161,9 @@ void main() {
     expect(renders, 2);
     expect(await file.readAsBytes(), [2]); // upgraded bytes
     expect(
-        await cache.staleMarkerFor(7, brightness: Brightness.light).exists(),
-        isFalse);
+      await cache.staleMarkerFor(7, brightness: Brightness.light).exists(),
+      isFalse,
+    );
 
     // 3rd call: complete + unmarked → cached fast path, no re-render.
     await cache.ensurePreview(7, points, brightness: Brightness.light);
@@ -154,7 +184,11 @@ void main() {
     await cache.ensurePreview(7, points, brightness: Brightness.light); // stale
     completeNow = true;
     await cache.ensurePreview(8, points, brightness: Brightness.light); // fresh
-    await cache.ensurePreview(7, points, brightness: Brightness.light); // upgrade
+    await cache.ensurePreview(
+      7,
+      points,
+      brightness: Brightness.light,
+    ); // upgrade
     await pumpEventQueue();
     expect(announced, [7]);
   });
@@ -170,31 +204,42 @@ void main() {
       },
     );
 
-    final file =
-        await cache.ensurePreview(4, points, brightness: Brightness.dark);
+    final file = await cache.ensurePreview(
+      4,
+      points,
+      brightness: Brightness.dark,
+    );
     await cache.ensurePreview(4, points, brightness: Brightness.dark);
     expect(renders, 2); // stale → retried
     expect(await file.readAsBytes(), [1]); // same sketch — first write kept
     expect(
-        await cache.staleMarkerFor(4, brightness: Brightness.dark).exists(),
-        isTrue);
-  });
-
-  test('resolvedFileFor is null until a complete render, then synchronous',
-      () async {
-    final cache = RoutePreviewCache(
-      baseDir: tempDir,
-      render: (_, _) async => _png([1]),
+      await cache.staleMarkerFor(4, brightness: Brightness.dark).exists(),
+      isTrue,
     );
-    expect(cache.resolvedFileFor(7, brightness: Brightness.light), isNull);
-
-    final file =
-        await cache.ensurePreview(7, points, brightness: Brightness.light);
-    expect(cache.resolvedFileFor(7, brightness: Brightness.light)?.path,
-        file.path); // known synchronously → jank-free list builds
-    // Other variant still unknown.
-    expect(cache.resolvedFileFor(7, brightness: Brightness.dark), isNull);
   });
+
+  test(
+    'resolvedFileFor is null until a complete render, then synchronous',
+    () async {
+      final cache = RoutePreviewCache(
+        baseDir: tempDir,
+        render: (_, _) async => _png([1]),
+      );
+      expect(cache.resolvedFileFor(7, brightness: Brightness.light), isNull);
+
+      final file = await cache.ensurePreview(
+        7,
+        points,
+        brightness: Brightness.light,
+      );
+      expect(
+        cache.resolvedFileFor(7, brightness: Brightness.light)?.path,
+        file.path,
+      ); // known synchronously → jank-free list builds
+      // Other variant still unknown.
+      expect(cache.resolvedFileFor(7, brightness: Brightness.dark), isNull);
+    },
+  );
 
   test('an incomplete (stale) render is never memoized as resolved', () async {
     final cache = RoutePreviewCache(
@@ -264,12 +309,14 @@ void main() {
     );
     await cache.ensurePreview(9, points, brightness: Brightness.light);
     expect(
-        await cache.staleMarkerFor(9, brightness: Brightness.light).exists(),
-        isTrue);
+      await cache.staleMarkerFor(9, brightness: Brightness.light).exists(),
+      isTrue,
+    );
 
     await cache.evict(9);
     expect(
-        await cache.staleMarkerFor(9, brightness: Brightness.light).exists(),
-        isFalse);
+      await cache.staleMarkerFor(9, brightness: Brightness.light).exists(),
+      isFalse,
+    );
   });
 }

@@ -47,15 +47,21 @@ class _ActivityInitScreenState extends ConsumerState<ActivityInitScreen> {
                 child: ListView(
                   children: [
                     const SizedBox(height: 48),
-                    Text(l10n.activityPickerTitle,
-                        textAlign: TextAlign.center,
-                        style: text.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.w500)),
+                    Text(
+                      l10n.activityPickerTitle,
+                      textAlign: TextAlign.center,
+                      style: text.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    Text(l10n.initActivityHint,
-                        textAlign: TextAlign.center,
-                        style: text.bodyLarge
-                            ?.copyWith(color: colors.onSurfaceVariant)),
+                    Text(
+                      l10n.initActivityHint,
+                      textAlign: TextAlign.center,
+                      style: text.bodyLarge?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 32),
                     GridView(
                       shrinkWrap: true,
@@ -65,11 +71,11 @@ class _ActivityInitScreenState extends ConsumerState<ActivityInitScreen> {
                       // tile width.
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        mainAxisExtent: 94,
-                      ),
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            mainAxisExtent: 94,
+                          ),
                       children: [
                         for (final type in types)
                           ActivityTile(
@@ -87,8 +93,9 @@ class _ActivityInitScreenState extends ConsumerState<ActivityInitScreen> {
                       onPressed: _finish,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
-                        shape:
-                            RoundedRectangleBorder(borderRadius: AppShapes.pill),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppShapes.pill,
+                        ),
                       ),
                       child: Text(l10n.actionContinue),
                     ),

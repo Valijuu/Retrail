@@ -21,19 +21,18 @@ const _sheetMaxWidth = 640.0;
 Future<T?> showAppBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
-}) =>
-    showModalBottomSheet<T>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: context.colors.surface,
-      constraints: BoxConstraints(
-        maxWidth: _sheetMaxWidth,
-        maxHeight: MediaQuery.sizeOf(context).height * sheetMaxHeightFactor,
-      ),
-      builder: (context) => SafeArea(top: false, child: builder(context)),
-    );
+}) => showModalBottomSheet<T>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  showDragHandle: true,
+  backgroundColor: context.colors.surface,
+  constraints: BoxConstraints(
+    maxWidth: _sheetMaxWidth,
+    maxHeight: MediaQuery.sizeOf(context).height * sheetMaxHeightFactor,
+  ),
+  builder: (context) => SafeArea(top: false, child: builder(context)),
+);
 
 /// Sheet for taller, scrolling content (forms, filters) that drags like one
 /// surface: the content scrolls, and dragging down past its top shrinks the
@@ -46,18 +45,17 @@ Future<T?> showAppBottomSheet<T>({
 Future<T?> showAppScrollableSheet<T>({
   required BuildContext context,
   required ScrollableWidgetBuilder builder,
-}) =>
-    showModalBottomSheet<T>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: context.colors.surface,
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: sheetMaxHeightFactor,
-        maxChildSize: sheetMaxHeightFactor,
-        minChildSize: _sheetCloseFactor,
-        builder: builder,
-      ),
-    );
+}) => showModalBottomSheet<T>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  showDragHandle: true,
+  backgroundColor: context.colors.surface,
+  builder: (_) => DraggableScrollableSheet(
+    expand: false,
+    initialChildSize: sheetMaxHeightFactor,
+    maxChildSize: sheetMaxHeightFactor,
+    minChildSize: _sheetCloseFactor,
+    builder: builder,
+  ),
+);

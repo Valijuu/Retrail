@@ -18,9 +18,11 @@ String rideDisplayTitle(Ride ride, {String? locale, int? nowMs}) {
   if (description != null && description.trim().isNotEmpty) {
     return description;
   }
-  final ts = ride.date ??
+  final ts =
+      ride.date ??
       ride.startTime ??
       (nowMs ?? DateTime.now().millisecondsSinceEpoch);
-  return _titleDateFormat(locale)
-      .format(DateTime.fromMillisecondsSinceEpoch(ts));
+  return _titleDateFormat(
+    locale,
+  ).format(DateTime.fromMillisecondsSinceEpoch(ts));
 }

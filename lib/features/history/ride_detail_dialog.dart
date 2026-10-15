@@ -56,8 +56,8 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
   late List<RoutePoint> _points = _routeOf(widget.rwt);
 
   static List<RoutePoint> _routeOf(RideWithTrackpoints rwt) => [
-        for (final tp in rwt.trackpoints) (lat: tp.latitude, lng: tp.longitude),
-      ];
+    for (final tp in rwt.trackpoints) (lat: tp.latitude, lng: tp.longitude),
+  ];
 
   @override
   void didUpdateWidget(RideDetailDialog oldWidget) {
@@ -352,9 +352,9 @@ class _MapCredit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Positioned(
-        left: 0,
-        right: 0,
-        bottom: kMapAttributionInset,
-        child: Center(child: MapAttribution(onOpen: openMapCopyright)),
-      );
+    left: 0,
+    right: 0,
+    bottom: kMapAttributionInset,
+    child: Center(child: MapAttribution(onOpen: openMapCopyright)),
+  );
 }

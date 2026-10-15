@@ -46,9 +46,13 @@ class FakeHistoryController extends HistoryController {
   Future<void> deleteRides(Iterable<int> ids) async =>
       calls.add('deleteRides:${ids.toList()}');
   @override
-  Future<void> updateRideDetails(Ride ride, String? d, String? c,
-          ActivityType? t, bool favorite) async =>
-      calls.add('update:${ride.rideId}:fav=$favorite');
+  Future<void> updateRideDetails(
+    Ride ride,
+    String? d,
+    String? c,
+    ActivityType? t,
+    bool favorite,
+  ) async => calls.add('update:${ride.rideId}:fav=$favorite');
   @override
   Future<void> toggleFavorite(Ride ride) async =>
       calls.add('fav:${ride.rideId}');
@@ -57,17 +61,20 @@ class FakeHistoryController extends HistoryController {
 /// Records which rides the screen pre-warms previews for (no real IO).
 class WarmSpyCache extends RoutePreviewCache {
   WarmSpyCache()
-      : super(
-            baseDir: Directory.systemTemp,
-            render: (_, _) async =>
-                PreviewResult(Uint8List(0), complete: true));
+    : super(
+        baseDir: Directory.systemTemp,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      );
 
   final warmed = <int>[];
   final warmedVariants = <(int, Brightness)>[];
 
   @override
-  Future<File> ensurePreview(int rideId, List<RoutePoint> points,
-      {required Brightness brightness}) async {
+  Future<File> ensurePreview(
+    int rideId,
+    List<RoutePoint> points, {
+    required Brightness brightness,
+  }) async {
     warmed.add(rideId);
     warmedVariants.add((rideId, brightness));
     return File('${Directory.systemTemp.path}/warm_$rideId.png');
@@ -77,12 +84,16 @@ class WarmSpyCache extends RoutePreviewCache {
 class FakeNavigationLauncher implements NavigationLauncher {
   final launches = <(double, double, String)>[];
   @override
-  Future<List<NavigationApp>> availableApps() async =>
-      const [NavigationApp.system];
+  Future<List<NavigationApp>> availableApps() async => const [
+    NavigationApp.system,
+  ];
   @override
   Future<void> launch(
-          NavigationApp app, double lat, double lng, String label) async =>
-      launches.add((lat, lng, label));
+    NavigationApp app,
+    double lat,
+    double lng,
+    String label,
+  ) async => launches.add((lat, lng, label));
 }
 
 /// Serves canned trackpoints per ride id, synchronously (`Stream.value`) —
@@ -91,7 +102,7 @@ class FakeNavigationLauncher implements NavigationLauncher {
 /// list used to carry. `super(TrackpointDao(...))` is never actually queried.
 class FakeTrackpointRepository extends TrackpointRepository {
   FakeTrackpointRepository(AppDatabase db, this._byRideId)
-      : super(TrackpointDao(db));
+    : super(TrackpointDao(db));
   final Map<int, List<Trackpoint>> _byRideId;
 
   @override
@@ -100,12 +111,12 @@ class FakeTrackpointRepository extends TrackpointRepository {
 }
 
 Trackpoint _tp(int rideId, double lat, double lng) => Trackpoint(
-      trackpointId: 0,
-      rideId: rideId,
-      latitude: lat,
-      longitude: lng,
-      timestamp: 0,
-    );
+  trackpointId: 0,
+  rideId: rideId,
+  latitude: lat,
+  longitude: lng,
+  timestamp: 0,
+);
 
 /// A ride with a route (`hasRoute: true`); pass the same [trackpoints] map to
 /// `pump(... trackpoints: ...)` so `_Thumbnail`'s/`_warmPreviews`'/the
@@ -114,32 +125,41 @@ RideEntryItem _routedEntry(int id, {double distanceMetres = 1200}) =>
     RideEntryItem(
       _ride(id, desc: 'Routed ride', hasRoute: true),
       RideStats(
-          durationMs: 600000,
-          distanceMetres: distanceMetres,
-          maxSpeedKmh: 22,
-          avgSpeedKmh: 15),
+        durationMs: 600000,
+        distanceMetres: distanceMetres,
+        maxSpeedKmh: 22,
+        avgSpeedKmh: 15,
+      ),
     );
 
-Ride _ride(int id,
-        {String? desc, String? typ, bool fav = false, bool hasRoute = false}) =>
-    Ride(
-      rideId: id,
-      description: desc,
-      typ: typ,
-      startTime: 0,
-      endTime: 600000, // 10 min
-      date: 1718193600000,
-      comment: null,
-      isFavorite: fav,
-      favoritedAt: null,
-      hasRoute: hasRoute,
-    );
+Ride _ride(
+  int id, {
+  String? desc,
+  String? typ,
+  bool fav = false,
+  bool hasRoute = false,
+}) => Ride(
+  rideId: id,
+  description: desc,
+  typ: typ,
+  startTime: 0,
+  endTime: 600000, // 10 min
+  date: 1718193600000,
+  comment: null,
+  isFavorite: fav,
+  favoritedAt: null,
+  hasRoute: hasRoute,
+);
 
 RideEntryItem _entry(int id, {String? desc, String? typ, bool fav = false}) =>
     RideEntryItem(
       _ride(id, desc: desc, typ: typ, fav: fav),
       const RideStats(
-          durationMs: 600000, distanceMetres: 4200, maxSpeedKmh: 22, avgSpeedKmh: 15),
+        durationMs: 600000,
+        distanceMetres: 4200,
+        maxSpeedKmh: 22,
+        avgSpeedKmh: 15,
+      ),
     );
 
 void main() {
@@ -152,8 +172,9 @@ void main() {
     controller = FakeHistoryController(
       RideRepository(RideDao(db)),
       RoutePreviewCache(
-          baseDir: Directory.systemTemp,
-          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
+        baseDir: Directory.systemTemp,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      ),
     );
   });
   tearDown(() {
@@ -176,45 +197,51 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    container = ProviderContainer(overrides: [
-      previewCacheDirProvider.overrideWithValue(Directory.systemTemp),
-      // A card fetches its own trackpoints lazily now (issue #21).
-      trackpointRepositoryProvider
-          .overrideWithValue(FakeTrackpointRepository(db, trackpoints)),
-      historyItemsProvider.overrideWith((ref) => Stream.value(items)),
-      historyControllerProvider.overrideWithValue(controller),
-      if (previewCache != null)
-        routePreviewCacheProvider.overrideWithValue(previewCache),
-      if (navLauncher != null)
-        navigationLauncherProvider.overrideWithValue(navLauncher),
-      isOnlineProvider.overrideWith((ref) => online ?? Stream.value(true)),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        previewCacheDirProvider.overrideWithValue(Directory.systemTemp),
+        // A card fetches its own trackpoints lazily now (issue #21).
+        trackpointRepositoryProvider.overrideWithValue(
+          FakeTrackpointRepository(db, trackpoints),
+        ),
+        historyItemsProvider.overrideWith((ref) => Stream.value(items)),
+        historyControllerProvider.overrideWithValue(controller),
+        if (previewCache != null)
+          routePreviewCacheProvider.overrideWithValue(previewCache),
+        if (navLauncher != null)
+          navigationLauncherProvider.overrideWithValue(navLauncher),
+        isOnlineProvider.overrideWith((ref) => online ?? Stream.value(true)),
+      ],
+    );
     // Simulate Home parking a jump target *before* the History screen mounts
     // (the PageView builds it lazily on navigation).
     if (presetTarget != null) {
       container.read(historyTargetRideProvider.notifier).state = presetTarget;
     }
 
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp(
-        locale: locale,
-        theme: buildTheme(Brightness.light),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(body: HistoryScreen()),
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          locale: locale,
+          theme: buildTheme(Brightness.light),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(body: HistoryScreen()),
+        ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
-  testWidgets('renders ride cards with title, distance, meta and chips',
-      (tester) async {
+  testWidgets('renders ride cards with title, distance, meta and chips', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1, desc: 'Morning roll', typ: 'SCOOTER')]);
     expect(find.text('Morning roll'), findsOneWidget);
     expect(find.text('4.2 km'), findsOneWidget);
@@ -225,24 +252,29 @@ void main() {
   });
 
   testWidgets(
-      'date headers stand out as section titles: titleSmall in full-strength '
-      'onSurface, not dimmed uppercase labelSmall', (tester) async {
-    // An unparseable day key is shown verbatim by formatDateLabel, so the
-    // rendered text is fixed regardless of today's date.
-    await pump(tester, [const DateHeaderItem('Some day'), _entry(1)]);
+    'date headers stand out as section titles: titleSmall in full-strength '
+    'onSurface, not dimmed uppercase labelSmall',
+    (tester) async {
+      // An unparseable day key is shown verbatim by formatDateLabel, so the
+      // rendered text is fixed regardless of today's date.
+      await pump(tester, [const DateHeaderItem('Some day'), _entry(1)]);
 
-    final header = tester.widget<Text>(find.text('Some day'));
-    final context = tester.element(find.text('Some day'));
-    final theme = Theme.of(context);
-    expect(header.style?.fontSize, theme.textTheme.titleSmall?.fontSize);
-    expect(header.style?.fontWeight, theme.textTheme.titleSmall?.fontWeight);
-    expect(header.style?.color, theme.extension<AppColors>()!.onSurface);
-    // …followed by a rule running out to the edge, like a chapter divider.
-    final row = find.ancestor(
-        of: find.text('Some day'), matching: find.byType(Row)).first;
-    expect(find.descendant(of: row, matching: find.byType(Divider)),
-        findsOneWidget);
-  });
+      final header = tester.widget<Text>(find.text('Some day'));
+      final context = tester.element(find.text('Some day'));
+      final theme = Theme.of(context);
+      expect(header.style?.fontSize, theme.textTheme.titleSmall?.fontSize);
+      expect(header.style?.fontWeight, theme.textTheme.titleSmall?.fontWeight);
+      expect(header.style?.color, theme.extension<AppColors>()!.onSurface);
+      // …followed by a rule running out to the edge, like a chapter divider.
+      final row = find
+          .ancestor(of: find.text('Some day'), matching: find.byType(Row))
+          .first;
+      expect(
+        find.descendant(of: row, matching: find.byType(Divider)),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('empty state when there are no rides', (tester) async {
     await pump(tester, const []);
@@ -251,8 +283,9 @@ void main() {
   });
 
   // Issue #74: the badge said "1" while the list claimed there were no rides.
-  testWidgets('no matches under an active filter says so and offers a reset',
-      (tester) async {
+  testWidgets('no matches under an active filter says so and offers a reset', (
+    tester,
+  ) async {
     await pump(tester, const []);
     container.read(historyFilterProvider.notifier).setFavoritesOnly(true);
     await tester.pump();
@@ -264,8 +297,9 @@ void main() {
     expect(container.read(historyFilterProvider), const HistoryFilter());
   });
 
-  testWidgets('a search without matches shows the no-matches state',
-      (tester) async {
+  testWidgets('a search without matches shows the no-matches state', (
+    tester,
+  ) async {
     await pump(tester, const []);
     container.read(historyFilterProvider.notifier).setQuery('xyz');
     await tester.pump();
@@ -279,11 +313,11 @@ void main() {
     expect(find.text('No rides yet'), findsOneWidget);
   });
 
-  testWidgets(
-      'the filter sheet never grows above the top safe area, even once '
+  testWidgets('the filter sheet never grows above the top safe area, even once '
       'selecting several ACTIVITY TYPE chips wraps that section onto '
-      'another line (regression: showModalBottomSheet needs useSafeArea)',
-      (tester) async {
+      'another line (regression: showModalBottomSheet needs useSafeArea)', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1)]);
 
     // Simulate a phone status bar / notch after the initial pump (which
@@ -315,56 +349,61 @@ void main() {
   });
 
   testWidgets(
-      'coming back online re-warms previews so stale offline sketches get '
-      're-rendered as real maps (issue #31)', (tester) async {
-    final spy = WarmSpyCache();
-    final online = StreamController<bool>.broadcast();
-    // Don't await close(): a paused (unlistened) subscription never delivers
-    // the done event, so an awaited close hangs the whole test run.
-    addTearDown(() => unawaited(online.close()));
-    await pump(
-      tester,
-      [_routedEntry(1)],
-      previewCache: spy,
-      trackpoints: {
-        1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
-      },
-      online: online.stream,
-    );
-    online.add(false);
-    await tester.pump();
-    await tester.pump();
-    spy.warmed.clear();
+    'coming back online re-warms previews so stale offline sketches get '
+    're-rendered as real maps (issue #31)',
+    (tester) async {
+      final spy = WarmSpyCache();
+      final online = StreamController<bool>.broadcast();
+      // Don't await close(): a paused (unlistened) subscription never delivers
+      // the done event, so an awaited close hangs the whole test run.
+      addTearDown(() => unawaited(online.close()));
+      await pump(
+        tester,
+        [_routedEntry(1)],
+        previewCache: spy,
+        trackpoints: {
+          1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
+        },
+        online: online.stream,
+      );
+      online.add(false);
+      await tester.pump();
+      await tester.pump();
+      spy.warmed.clear();
 
-    online.add(true);
-    await tester.pump();
-    await tester.pump();
-    expect(spy.warmed.toSet(), {1});
-  });
-
-  testWidgets(
-      'pre-warms BOTH theme variants, the active one first — so a light/dark '
-      'switch finds its previews already rendered', (tester) async {
-    final spy = WarmSpyCache();
-    await pump(
-      tester,
-      [_routedEntry(1)],
-      previewCache: spy,
-      trackpoints: {
-        1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
-      },
-    );
-    await tester.pump(); // post-frame warm pass
-    await tester.pump(); // lazy per-ride trackpoints fetch lands
-    await tester.pump(); // the other variant follows the active one
-    final variants = spy.warmedVariants;
-    expect(variants, contains((1, Brightness.dark)));
-    expect(variants.indexOf((1, Brightness.light)),
-        lessThan(variants.indexOf((1, Brightness.dark))));
-  });
+      online.add(true);
+      await tester.pump();
+      await tester.pump();
+      expect(spy.warmed.toSet(), {1});
+    },
+  );
 
   testWidgets(
-      'pre-warms previews for listed rides as soon as items load — '
+    'pre-warms BOTH theme variants, the active one first — so a light/dark '
+    'switch finds its previews already rendered',
+    (tester) async {
+      final spy = WarmSpyCache();
+      await pump(
+        tester,
+        [_routedEntry(1)],
+        previewCache: spy,
+        trackpoints: {
+          1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
+        },
+      );
+      await tester.pump(); // post-frame warm pass
+      await tester.pump(); // lazy per-ride trackpoints fetch lands
+      await tester.pump(); // the other variant follows the active one
+      final variants = spy.warmedVariants;
+      expect(variants, contains((1, Brightness.dark)));
+      expect(
+        variants.indexOf((1, Brightness.light)),
+        lessThan(variants.indexOf((1, Brightness.dark))),
+      );
+    },
+  );
+
+  testWidgets('pre-warms previews for listed rides as soon as items load — '
       'not only when their card scrolls into view', (tester) async {
     final spy = WarmSpyCache();
     await pump(
@@ -383,31 +422,43 @@ void main() {
   });
 
   testWidgets(
-      'a route preview credits its map tiles as plain text (the card is the '
-      'tap target); a card without a route has no credit', (tester) async {
-    await pump(tester, [_routedEntry(1), _entry(2)], trackpoints: {
-      1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
-    });
-    final credits = tester.widgetList<MapAttribution>(find.byType(MapAttribution));
-    expect(credits, hasLength(1));
-    expect(credits.single.onOpen, isNull);
-  });
+    'a route preview credits its map tiles as plain text (the card is the '
+    'tap target); a card without a route has no credit',
+    (tester) async {
+      await pump(
+        tester,
+        [_routedEntry(1), _entry(2)],
+        trackpoints: {
+          1: [_tp(1, 52.0, 13.0), _tp(1, 52.01, 13.0)],
+        },
+      );
+      final credits = tester.widgetList<MapAttribution>(
+        find.byType(MapAttribution),
+      );
+      expect(credits, hasLength(1));
+      expect(credits.single.onOpen, isNull);
+    },
+  );
 
   testWidgets('thumbnail top corners are clipped to the card radius '
       '(so the highlight border fits the corners)', (tester) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);
     expect(
-      find.byWidgetPredicate((w) =>
-          w is ClipRRect &&
-          w.borderRadius is BorderRadius &&
-          (w.borderRadius as BorderRadius).topLeft == const Radius.circular(14) &&
-          (w.borderRadius as BorderRadius).bottomLeft == Radius.zero),
+      find.byWidgetPredicate(
+        (w) =>
+            w is ClipRRect &&
+            w.borderRadius is BorderRadius &&
+            (w.borderRadius as BorderRadius).topLeft ==
+                const Radius.circular(14) &&
+            (w.borderRadius as BorderRadius).bottomLeft == Radius.zero,
+      ),
       findsOneWidget,
     );
   });
 
-  testWidgets('search toggle reveals the field and drives the query filter',
-      (tester) async {
+  testWidgets('search toggle reveals the field and drives the query filter', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);
     await tester.tap(find.byIcon(Icons.search));
     await tester.pump();
@@ -416,8 +467,9 @@ void main() {
     expect(container.read(historyFilterProvider).query, 'sunset');
   });
 
-  testWidgets('filter sheet chip updates the filter and the badge',
-      (tester) async {
+  testWidgets('filter sheet chip updates the filter and the badge', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1)]);
     await tester.tap(find.byIcon(Icons.filter_list));
     await tester.pumpAndSettle();
@@ -436,27 +488,36 @@ void main() {
       expect(find.byType(HistoryFilterSheet), findsOneWidget);
     }
 
-    testWidgets('dragging down on the sheet content closes it', (tester) async {
-      await openSheetOnIPhone8(tester);
+    testWidgets(
+      'dragging down on the sheet content closes it',
+      (tester) async {
+        await openSheetOnIPhone8(tester);
 
-      // Drag on the content (the title), not on a dedicated handle: on iOS
-      // the scrollable content used to swallow the drag and just bounce.
-      await tester.fling(find.text('Filter'), const Offset(0, 600), 2000);
-      await tester.pumpAndSettle();
+        // Drag on the content (the title), not on a dedicated handle: on iOS
+        // the scrollable content used to swallow the drag and just bounce.
+        await tester.fling(find.text('Filter'), const Offset(0, 600), 2000);
+        await tester.pumpAndSettle();
 
-      expect(find.byType(HistoryFilterSheet), findsNothing);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+        expect(find.byType(HistoryFilterSheet), findsNothing);
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+    );
 
-    testWidgets('the sheet leaves the top of the screen free', (tester) async {
-      await openSheetOnIPhone8(tester);
+    testWidgets(
+      'the sheet leaves the top of the screen free',
+      (tester) async {
+        await openSheetOnIPhone8(tester);
 
-      final sheetTop = tester.getTopLeft(find.byType(HistoryFilterSheet)).dy;
-      expect(sheetTop, greaterThanOrEqualTo(667 * 0.1));
-    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+        final sheetTop = tester.getTopLeft(find.byType(HistoryFilterSheet)).dy;
+        expect(sheetTop, greaterThanOrEqualTo(667 * 0.1));
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+    );
   });
 
-  testWidgets('Reset clears the search query and the visible field',
-      (tester) async {
+  testWidgets('Reset clears the search query and the visible field', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1)]);
     await tester.tap(find.byIcon(Icons.search));
     await tester.pump();
@@ -470,29 +531,38 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(historyFilterProvider).query, '');
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '');
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '',
+    );
   });
 
   testWidgets(
-      'batch delete is disabled while nothing is selected (issue #30)',
-      (tester) async {
-    await pump(tester, [_entry(1), _entry(2)]);
-    await tester.longPress(find.byType(HistoryRideCard).first);
-    await tester.pump();
-    await tester.tap(find.byType(HistoryRideCard).first); // deselect again
-    await tester.pump();
-    expect(find.text('0 selected'), findsOneWidget);
+    'batch delete is disabled while nothing is selected (issue #30)',
+    (tester) async {
+      await pump(tester, [_entry(1), _entry(2)]);
+      await tester.longPress(find.byType(HistoryRideCard).first);
+      await tester.pump();
+      await tester.tap(find.byType(HistoryRideCard).first); // deselect again
+      await tester.pump();
+      expect(find.text('0 selected'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.delete));
-    await tester.pumpAndSettle();
-    expect(find.text('Delete 0 rides'), findsNothing);
-    final button = tester.widget<IconButton>(
-        find.ancestor(of: find.byIcon(Icons.delete), matching: find.byType(IconButton)));
-    expect(button.onPressed, isNull);
-  });
+      await tester.tap(find.byIcon(Icons.delete));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete 0 rides'), findsNothing);
+      final button = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.delete),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(button.onPressed, isNull);
+    },
+  );
 
-  testWidgets('the selected card\'s check mark is announced as "Selected"',
-      (tester) async {
+  testWidgets('the selected card\'s check mark is announced as "Selected"', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     await pump(tester, [_entry(1), _entry(2)]);
     expect(find.bySemanticsLabel(RegExp(r'\bSelected\b')), findsNothing);
@@ -502,8 +572,9 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('long-press enters selection; batch delete confirms',
-      (tester) async {
+  testWidgets('long-press enters selection; batch delete confirms', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1), _entry(2)]);
     await tester.longPress(find.byType(HistoryRideCard).first);
     await tester.pump();
@@ -517,23 +588,25 @@ void main() {
   });
 
   testWidgets(
-      '"select all" selects every visible ride; confirming delete removes '
-      'exactly those', (tester) async {
-    await pump(tester, [_entry(1), _entry(2), _entry(3)]);
-    await tester.longPress(find.byType(HistoryRideCard).first);
-    await tester.pump();
-    expect(find.text('1 selected'), findsOneWidget);
+    '"select all" selects every visible ride; confirming delete removes '
+    'exactly those',
+    (tester) async {
+      await pump(tester, [_entry(1), _entry(2), _entry(3)]);
+      await tester.longPress(find.byType(HistoryRideCard).first);
+      await tester.pump();
+      expect(find.text('1 selected'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.select_all));
-    await tester.pump();
-    expect(find.text('3 selected'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.select_all));
+      await tester.pump();
+      expect(find.text('3 selected'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.delete));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
-    expect(controller.calls, contains('deleteRides:[1, 2, 3]'));
-  });
+      await tester.tap(find.byIcon(Icons.delete));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      expect(controller.calls, contains('deleteRides:[1, 2, 3]'));
+    },
+  );
 
   testWidgets('3-dot menu Edit opens the edit dialog', (tester) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);
@@ -544,8 +617,9 @@ void main() {
     expect(find.text('Edit ride'), findsOneWidget);
   });
 
-  testWidgets('Edit sheet saves the favorite flag for that ride (#76)',
-      (tester) async {
+  testWidgets('Edit sheet saves the favorite flag for that ride (#76)', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1, desc: 'Morning roll', fav: true)]);
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
@@ -553,7 +627,8 @@ void main() {
     await tester.pumpAndSettle();
     final sheet = find.byType(EditRideSheet);
     await tester.tap(
-        find.descendant(of: sheet, matching: find.byIcon(Icons.favorite)));
+      find.descendant(of: sheet, matching: find.byIcon(Icons.favorite)),
+    );
     await tester.pump();
     final save = find.descendant(of: sheet, matching: find.text('Save'));
     await tester.ensureVisible(save);
@@ -563,39 +638,47 @@ void main() {
   });
 
   testWidgets(
-      'with the keyboard up the edit sheet stays capped below the top',
-      (tester) async {
-    await pump(tester, [_entry(1, desc: 'Morning roll')]);
-    tester.view.viewInsets = const FakeViewPadding(bottom: 350);
-    addTearDown(tester.view.resetViewInsets);
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    'with the keyboard up the edit sheet stays capped below the top',
+    (tester) async {
+      await pump(tester, [_entry(1, desc: 'Morning roll')]);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 350);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
 
-    // A clear strip stays free above the sheet (drag handle included).
-    expect(tester.getTopLeft(find.byType(BottomSheet)).dy,
-        greaterThanOrEqualTo(900 * 0.08));
-  });
+      // A clear strip stays free above the sheet (drag handle included).
+      expect(
+        tester.getTopLeft(find.byType(BottomSheet)).dy,
+        greaterThanOrEqualTo(900 * 0.08),
+      );
+    },
+  );
 
   testWidgets(
-      'the edit view is a bottom sheet with a drag handle that closes when '
-      'dragged down', (tester) async {
-    await pump(tester, [_entry(1, desc: 'Morning roll')]);
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    'the edit view is a bottom sheet with a drag handle that closes when '
+    'dragged down',
+    (tester) async {
+      await pump(tester, [_entry(1, desc: 'Morning roll')]);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
 
-    expect(tester.widget<BottomSheet>(find.byType(BottomSheet)).showDragHandle,
-        isTrue);
-    await tester.drag(find.text('Edit ride'), const Offset(0, 600));
-    await tester.pumpAndSettle();
-    expect(find.text('Edit ride'), findsNothing);
-  });
+      expect(
+        tester.widget<BottomSheet>(find.byType(BottomSheet)).showDragHandle,
+        isTrue,
+      );
+      await tester.drag(find.text('Edit ride'), const Offset(0, 600));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit ride'), findsNothing);
+    },
+  );
 
-  testWidgets('3-dot menu Delete confirms and calls the controller',
-      (tester) async {
+  testWidgets('3-dot menu Delete confirms and calls the controller', (
+    tester,
+  ) async {
     await pump(tester, [_entry(7, desc: 'Morning roll')]);
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
@@ -606,14 +689,18 @@ void main() {
     expect(controller.calls, contains('delete:7'));
   });
 
-  testWidgets('routed card mounts a RoutePreview and navigates to start',
-      (tester) async {
+  testWidgets('routed card mounts a RoutePreview and navigates to start', (
+    tester,
+  ) async {
     final launcher = FakeNavigationLauncher();
-    await pump(tester, [_routedEntry(5)],
-        navLauncher: launcher,
-        trackpoints: {
-          5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
-        });
+    await pump(
+      tester,
+      [_routedEntry(5)],
+      navLauncher: launcher,
+      trackpoints: {
+        5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
+      },
+    );
 
     final preview = tester.widget<RoutePreview>(find.byType(RoutePreview));
     expect(preview.rideId, 5);
@@ -623,7 +710,8 @@ void main() {
     // whole route (no top/bottom crop). Same constant the renderer uses.
     expect(
       find.byWidgetPredicate(
-          (w) => w is AspectRatio && w.aspectRatio == previewAspectRatio),
+        (w) => w is AspectRatio && w.aspectRatio == previewAspectRatio,
+      ),
       findsOneWidget,
     );
 
@@ -643,16 +731,19 @@ void main() {
   });
 
   testWidgets(
-      'tapping the rest of a card no longer opens the detail dialog — only '
-      'the map does', (tester) async {
-    await pump(tester, [_entry(1, desc: 'Morning roll')]);
-    await tester.tap(find.text('Morning roll'));
-    await tester.pumpAndSettle();
-    expect(find.text('Avg speed'), findsNothing);
-  });
+    'tapping the rest of a card no longer opens the detail dialog — only '
+    'the map does',
+    (tester) async {
+      await pump(tester, [_entry(1, desc: 'Morning roll')]);
+      await tester.tap(find.text('Morning roll'));
+      await tester.pumpAndSettle();
+      expect(find.text('Avg speed'), findsNothing);
+    },
+  );
 
-  testWidgets('in selection mode tapping the map toggles the selection',
-      (tester) async {
+  testWidgets('in selection mode tapping the map toggles the selection', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1), _entry(2)]);
     await tester.longPress(find.byType(HistoryRideCard).first);
     await tester.pump();
@@ -671,8 +762,9 @@ void main() {
     expect(controller.calls, contains('fav:3'));
   });
 
-  testWidgets('jump-to-ride highlights the target card and clears the target',
-      (tester) async {
+  testWidgets('jump-to-ride highlights the target card and clears the target', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1, desc: 'A'), _entry(2, desc: 'B')]);
     container.read(historyTargetRideProvider.notifier).state = 2;
     await tester.pump();
@@ -686,13 +778,16 @@ void main() {
     await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
   });
 
-  testWidgets('honours a jump target parked before the screen mounts',
-      (tester) async {
+  testWidgets('honours a jump target parked before the screen mounts', (
+    tester,
+  ) async {
     // Home sets the target, then the PageView lazily builds History — so the
     // target is already non-null on first mount and the change-only ref.listen
     // would miss it. The card must still highlight.
-    await pump(tester, [_entry(1, desc: 'A'), _entry(2, desc: 'B')],
-        presetTarget: 2);
+    await pump(tester, [
+      _entry(1, desc: 'A'),
+      _entry(2, desc: 'B'),
+    ], presetTarget: 2);
     await tester.pump();
     await tester.pump();
 
@@ -705,45 +800,55 @@ void main() {
   });
 
   testWidgets(
-      'jumps to a target far DOWN the list — beyond the built window, where '
-      'ensureVisible alone cannot reach (the "jump sometimes does nothing" bug)',
-      (tester) async {
-    // 25 cards ≈ 5750px of list in a 900px viewport: the last ride is far
-    // outside viewport + cacheExtent, so its card is not built at mount.
-    final items = [for (var i = 1; i <= 25; i++) _entry(i, desc: 'Ride $i')];
-    await pump(tester, items, presetTarget: 25);
-    await tester.pump(); // initState post-frame → estimate jump
-    await tester.pump(); // card built → ensureVisible fine-tune
-    await tester.pump(); // settle
+    'jumps to a target far DOWN the list — beyond the built window, where '
+    'ensureVisible alone cannot reach (the "jump sometimes does nothing" bug)',
+    (tester) async {
+      // 25 cards ≈ 5750px of list in a 900px viewport: the last ride is far
+      // outside viewport + cacheExtent, so its card is not built at mount.
+      final items = [for (var i = 1; i <= 25; i++) _entry(i, desc: 'Ride $i')];
+      await pump(tester, items, presetTarget: 25);
+      await tester.pump(); // initState post-frame → estimate jump
+      await tester.pump(); // card built → ensureVisible fine-tune
+      await tester.pump(); // settle
 
-    expect(container.read(historyTargetRideProvider), isNull); // consumed
-    // The list actually scrolled…
-    final scrollable =
-        tester.state<ScrollableState>(find.byType(Scrollable).first);
-    expect(scrollable.position.pixels, greaterThan(0));
-    // …and the target card is built + highlighted + on screen.
-    final target = tester
-        .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
-        .firstWhere((c) => c.entry.ride.rideId == 25);
-    expect(target.highlighted, isTrue);
-    expect(find.text('Ride 25'), findsOneWidget);
-    final rect = tester.getRect(find.text('Ride 25'));
-    expect(rect.top, greaterThanOrEqualTo(0));
-    expect(rect.bottom, lessThanOrEqualTo(900));
-    await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
-  });
+      expect(container.read(historyTargetRideProvider), isNull); // consumed
+      // The list actually scrolled…
+      final scrollable = tester.state<ScrollableState>(
+        find.byType(Scrollable).first,
+      );
+      expect(scrollable.position.pixels, greaterThan(0));
+      // …and the target card is built + highlighted + on screen.
+      final target = tester
+          .widgetList<HistoryRideCard>(find.byType(HistoryRideCard))
+          .firstWhere((c) => c.entry.ride.rideId == 25);
+      expect(target.highlighted, isTrue);
+      expect(find.text('Ride 25'), findsOneWidget);
+      final rect = tester.getRect(find.text('Ride 25'));
+      expect(rect.top, greaterThanOrEqualTo(0));
+      expect(rect.bottom, lessThanOrEqualTo(900));
+      await tester.pump(
+        const Duration(seconds: 2),
+      ); // drain the highlight timer
+    },
+  );
 
-  testWidgets('German cards use the decimal comma for the distance',
-      (tester) async {
+  testWidgets('German cards use the decimal comma for the distance', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1)], locale: const Locale('de'));
     expect(find.text('4,2 km'), findsOneWidget);
   });
 
-  testWidgets('3-dot menu Follow route opens the record question',
-      (tester) async {
-    await pump(tester, [_routedEntry(5)], trackpoints: {
-      5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
-    });
+  testWidgets('3-dot menu Follow route opens the record question', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      [_routedEntry(5)],
+      trackpoints: {
+        5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
+      },
+    );
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     final items = tester
@@ -755,8 +860,9 @@ void main() {
     expect(find.text('Record this ride?'), findsOneWidget);
   });
 
-  testWidgets('3-dot menu has no Follow route for a ride without a route',
-      (tester) async {
+  testWidgets('3-dot menu has no Follow route for a ride without a route', (
+    tester,
+  ) async {
     await pump(tester, [_entry(1, desc: 'Morning roll')]);
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
@@ -764,26 +870,36 @@ void main() {
   });
 
   testWidgets(
-      '3-dot menu shows Follow route for a route without length and explains',
-      (tester) async {
-    await pump(tester, [_routedEntry(5, distanceMetres: 0)], trackpoints: {
-      5: [_tp(5, 52.0, 13.0)],
-    });
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Follow route'));
-    await tester.pumpAndSettle();
-    expect(find.text("Route can't be followed"), findsOneWidget);
-  });
+    '3-dot menu shows Follow route for a route without length and explains',
+    (tester) async {
+      await pump(
+        tester,
+        [_routedEntry(5, distanceMetres: 0)],
+        trackpoints: {
+          5: [_tp(5, 52.0, 13.0)],
+        },
+      );
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Follow route'));
+      await tester.pumpAndSettle();
+      expect(find.text("Route can't be followed"), findsOneWidget);
+    },
+  );
 
-  testWidgets('detail dialog Follow route closes it and asks to record',
-      (tester) async {
-    LiveMap.debugMapBuilderOverride =
-        (_) => const SizedBox(key: ValueKey('stub-map'));
+  testWidgets('detail dialog Follow route closes it and asks to record', (
+    tester,
+  ) async {
+    LiveMap.debugMapBuilderOverride = (_) =>
+        const SizedBox(key: ValueKey('stub-map'));
     addTearDown(() => LiveMap.debugMapBuilderOverride = null);
-    await pump(tester, [_routedEntry(5)], trackpoints: {
-      5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
-    });
+    await pump(
+      tester,
+      [_routedEntry(5)],
+      trackpoints: {
+        5: [_tp(5, 52.0, 13.0), _tp(5, 52.01, 13.0)],
+      },
+    );
     await tester.tap(find.byKey(const ValueKey('ride_map_5')));
     await tester.pumpAndSettle();
     expect(find.byType(RideDetailDialog), findsOneWidget);

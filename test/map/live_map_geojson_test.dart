@@ -8,7 +8,10 @@ import 'package:retrail/map/preview_projection.dart';
 void main() {
   group('routeLineGeoJson', () {
     test('emits a LineString in lng,lat order', () {
-      const pts = <RoutePoint>[(lat: 49.44, lng: 11.08), (lat: 49.45, lng: 11.10)];
+      const pts = <RoutePoint>[
+        (lat: 49.44, lng: 11.08),
+        (lat: 49.45, lng: 11.10),
+      ];
       final f = jsonDecode(routeLineGeoJson(pts)) as Map<String, dynamic>;
       expect(f['type'], 'Feature');
       expect(f['geometry']['type'], 'LineString');
@@ -79,10 +82,14 @@ void main() {
       ]);
       final done = jsonDecode(g.done) as Map<String, dynamic>;
       expect((done['geometry']['coordinates'] as List).length, 1);
-      final none = jsonDecode(referenceGeoJson(track, <List<RoutePoint>>[
-        const [],
-        [track.points[0]],
-      ]).done) as Map<String, dynamic>;
+      final none =
+          jsonDecode(
+                referenceGeoJson(track, <List<RoutePoint>>[
+                  const [],
+                  [track.points[0]],
+                ]).done,
+              )
+              as Map<String, dynamic>;
       expect(none['type'], 'FeatureCollection');
       expect(none['features'], isEmpty);
     });
@@ -103,7 +110,9 @@ void main() {
 
     test('a flip swaps them: the reversed points move both markers', () {
       final m = referenceMarkerPoints(
-          RouteEndpointStyle.open, pts.reversed.toList());
+        RouteEndpointStyle.open,
+        pts.reversed.toList(),
+      );
       expect(m.start, pts.last);
       expect(m.end, pts.first);
     });
@@ -115,16 +124,23 @@ void main() {
     });
 
     test('startOnly: the start marker only', () {
-      final m = referenceMarkerPoints(
-          RouteEndpointStyle.startOnly, const [(lat: 48.0, lng: 11.0)]);
+      final m = referenceMarkerPoints(RouteEndpointStyle.startOnly, const [
+        (lat: 48.0, lng: 11.0),
+      ]);
       expect(m.start, (lat: 48.0, lng: 11.0));
       expect(m.end, isNull);
     });
   });
 
   group('referencePushTarget', () {
-    final a = RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)]);
-    final b = RouteTrack(const [(lat: 49.0, lng: 11.0), (lat: 49.001, lng: 11.0)]);
+    final a = RouteTrack(const [
+      (lat: 48.0, lng: 11.0),
+      (lat: 48.001, lng: 11.0),
+    ]);
+    final b = RouteTrack(const [
+      (lat: 49.0, lng: 11.0),
+      (lat: 49.001, lng: 11.0),
+    ]);
 
     test('no reference sources in this style load: never push', () {
       expect(referencePushTarget(drawn: null, current: null), isNull);
@@ -145,8 +161,14 @@ void main() {
   });
 
   group('referenceUpdateGeoJson', () {
-    final a = RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)]);
-    final b = RouteTrack(const [(lat: 49.0, lng: 11.0), (lat: 49.001, lng: 11.0)]);
+    final a = RouteTrack(const [
+      (lat: 48.0, lng: 11.0),
+      (lat: 48.001, lng: 11.0),
+    ]);
+    final b = RouteTrack(const [
+      (lat: 49.0, lng: 11.0),
+      (lat: 49.001, lng: 11.0),
+    ]);
     final done = [
       [a.points[0], a.points[1]],
     ];

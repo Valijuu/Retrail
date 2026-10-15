@@ -66,14 +66,17 @@ class WeeklyHeroCard extends StatelessWidget {
           Row(
             children: [
               _StatCell(
-                  label: l10n.statTempoKmh,
-                  value: 'Ø ${formatDecimal(stats.avgSpeedKmh, 1, locale: locale)}'),
+                label: l10n.statTempoKmh,
+                value:
+                    'Ø ${formatDecimal(stats.avgSpeedKmh, 1, locale: locale)}',
+              ),
               const SizedBox(width: 8),
               _StatCell(label: l10n.statRides, value: '${stats.rideCount}'),
               const SizedBox(width: 8),
               _StatCell(
-                  label: l10n.statDurationLabel,
-                  value: formatDuration(stats.totalDurationSeconds * 1000)),
+                label: l10n.statDurationLabel,
+                value: formatDuration(stats.totalDurationSeconds * 1000),
+              ),
             ],
           ),
         ],
@@ -123,21 +126,26 @@ class _DistanceColumn extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text(label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.labelSmall?.copyWith(
-                        color: ink.withValues(
-                            alpha: selected ? 0.85 : _dimmedAlpha))),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.labelSmall?.copyWith(
+                    color: ink.withValues(
+                      alpha: selected ? 0.85 : _dimmedAlpha,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('${formatDecimal(km, 1, locale: locale)} km',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.titleMedium?.copyWith(
-                        color: selected
-                            ? ink
-                            : ink.withValues(alpha: _dimmedAlpha),
-                        fontWeight: FontWeight.w500)),
+                Text(
+                  '${formatDecimal(km, 1, locale: locale)} km',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.titleMedium?.copyWith(
+                    color: selected ? ink : ink.withValues(alpha: _dimmedAlpha),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
@@ -159,25 +167,34 @@ class _StatCell extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(color: colors.surface, borderRadius: AppShapes.card),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: AppShapes.card,
+        ),
         child: Column(
           children: [
-            Text(label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: text.labelSmall?.copyWith(
-                    color: colors.onPrimaryContainer.withValues(alpha: 0.6))),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.labelSmall?.copyWith(
+                color: colors.onPrimaryContainer.withValues(alpha: 0.6),
+              ),
+            ),
             const SizedBox(height: 4),
             // Cross-fade when the period changes, so the switch is visible.
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
-              child: Text(value,
-                  key: ValueKey(value),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.titleMedium?.copyWith(
-                      color: colors.onPrimaryContainer,
-                      fontWeight: FontWeight.w500)),
+              child: Text(
+                value,
+                key: ValueKey(value),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: text.titleMedium?.copyWith(
+                  color: colors.onPrimaryContainer,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
         ),

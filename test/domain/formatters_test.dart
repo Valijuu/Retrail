@@ -75,9 +75,12 @@ void main() {
     test("formatDecimal: 0 decimals rounds — 12.6 → '13', no separator", () {
       expect(formatDecimal(12.6, 0, locale: 'de'), '13');
     });
-    test("formatDecimal: no thousands grouping — 1234.5 (de, 1) → '1234,5'", () {
-      expect(formatDecimal(1234.5, 1, locale: 'de'), '1234,5');
-    });
+    test(
+      "formatDecimal: no thousands grouping — 1234.5 (de, 1) → '1234,5'",
+      () {
+        expect(formatDecimal(1234.5, 1, locale: 'de'), '1234,5');
+      },
+    );
     test("formatDecimal: region-qualified locale — 'de_DE' → '18,8'", () {
       expect(formatDecimal(18.8, 1, locale: 'de_DE'), '18,8');
     });
@@ -90,18 +93,27 @@ void main() {
     test("formatSpeedKmh: German — 14.0 → '14,0 km/h'", () {
       expect(formatSpeedKmh(14.0, locale: 'de'), '14,0 km/h');
     });
-    test("formatSpeedKmh: German, null → '-- km/h' (placeholder unchanged)", () {
-      expect(formatSpeedKmh(null, locale: 'de'), '-- km/h');
-    });
+    test(
+      "formatSpeedKmh: German, null → '-- km/h' (placeholder unchanged)",
+      () {
+        expect(formatSpeedKmh(null, locale: 'de'), '-- km/h');
+      },
+    );
   });
 
   group('formatShortDistanceKm', () {
-    test("formatShortDistanceKm: under 10 km one decimal — 3500 m (de) → '3,5 km'", () {
-      expect(formatShortDistanceKm(3500, locale: 'de'), '3,5 km');
-    });
-    test("formatShortDistanceKm: 10 km and up no decimals — 12600 m → '13 km'", () {
-      expect(formatShortDistanceKm(12600), '13 km');
-    });
+    test(
+      "formatShortDistanceKm: under 10 km one decimal — 3500 m (de) → '3,5 km'",
+      () {
+        expect(formatShortDistanceKm(3500, locale: 'de'), '3,5 km');
+      },
+    );
+    test(
+      "formatShortDistanceKm: 10 km and up no decimals — 12600 m → '13 km'",
+      () {
+        expect(formatShortDistanceKm(12600), '13 km');
+      },
+    );
     test("formatShortDistanceKm: English — 3500 m → '3.5 km'", () {
       expect(formatShortDistanceKm(3500, locale: 'en'), '3.5 km');
     });
@@ -114,18 +126,30 @@ void main() {
     test("formatDistanceToRoute: 0 m → '0 m'", () {
       expect(formatDistanceToRoute(0), '0 m');
     });
-    test("formatDistanceToRoute: under 1 km rounds to whole metres — 249.6 m → '250 m'", () {
-      expect(formatDistanceToRoute(249.6), '250 m');
-    });
-    test("formatDistanceToRoute: just under 1 km stays in metres — 999.4 m → '999 m'", () {
-      expect(formatDistanceToRoute(999.4), '999 m');
-    });
-    test("formatDistanceToRoute: rounding up to 1 km uses km — 999.6 m → '1.00 km'", () {
-      expect(formatDistanceToRoute(999.6), '1.00 km');
-    });
-    test("formatDistanceToRoute: exactly half a metre under 1 km rounds up — 999.5 m → '1.00 km'", () {
-      expect(formatDistanceToRoute(999.5), '1.00 km');
-    });
+    test(
+      "formatDistanceToRoute: under 1 km rounds to whole metres — 249.6 m → '250 m'",
+      () {
+        expect(formatDistanceToRoute(249.6), '250 m');
+      },
+    );
+    test(
+      "formatDistanceToRoute: just under 1 km stays in metres — 999.4 m → '999 m'",
+      () {
+        expect(formatDistanceToRoute(999.4), '999 m');
+      },
+    );
+    test(
+      "formatDistanceToRoute: rounding up to 1 km uses km — 999.6 m → '1.00 km'",
+      () {
+        expect(formatDistanceToRoute(999.6), '1.00 km');
+      },
+    );
+    test(
+      "formatDistanceToRoute: exactly half a metre under 1 km rounds up — 999.5 m → '1.00 km'",
+      () {
+        expect(formatDistanceToRoute(999.5), '1.00 km');
+      },
+    );
     test("formatDistanceToRoute: 1 km and up uses km — 1000 m → '1.00 km'", () {
       expect(formatDistanceToRoute(1000), '1.00 km');
     });

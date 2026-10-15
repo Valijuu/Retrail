@@ -24,8 +24,10 @@ class SettingsScreen extends ConsumerWidget {
     final controller = ref.read(settingsControllerProvider);
 
     final activity =
-        ref.watch(lastActivityTypeProvider).asData?.value ?? ActivityType.defaultType;
-    final theme = ref.watch(themeModeProvider).asData?.value ?? ThemeMode.system;
+        ref.watch(lastActivityTypeProvider).asData?.value ??
+        ActivityType.defaultType;
+    final theme =
+        ref.watch(themeModeProvider).asData?.value ?? ThemeMode.system;
     final language =
         ref.watch(appLanguageProvider).asData?.value ?? AppLanguage.system;
 
@@ -38,14 +40,17 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                child: Text(l10n.navSettings,
-                    style: text.titleLarge?.copyWith(color: colors.onSurface)),
+                child: Text(
+                  l10n.navSettings,
+                  style: text.titleLarge?.copyWith(color: colors.onSurface),
+                ),
               ),
 
               // Default activity.
               _SectionHeader(
-                  title: l10n.settingsSectionActivity,
-                  subtitle: l10n.settingsActivitySubtitle),
+                title: l10n.settingsSectionActivity,
+                subtitle: l10n.settingsActivitySubtitle,
+              ),
               const SizedBox(height: 8),
               _ActivitySummaryRow(
                 activity: activity,
@@ -55,40 +60,48 @@ class SettingsScreen extends ConsumerWidget {
 
               // Language.
               _SectionHeader(
-                  title: l10n.settingsSectionLanguage,
-                  subtitle: l10n.settingsLanguageSubtitle),
+                title: l10n.settingsSectionLanguage,
+                subtitle: l10n.settingsLanguageSubtitle,
+              ),
               const SizedBox(height: 8),
               _OptionRow(
-                  label: l10n.settingsLanguageSystem,
-                  selected: language == AppLanguage.system,
-                  onTap: () => controller.setLanguage(AppLanguage.system)),
+                label: l10n.settingsLanguageSystem,
+                selected: language == AppLanguage.system,
+                onTap: () => controller.setLanguage(AppLanguage.system),
+              ),
               _OptionRow(
-                  label: l10n.settingsLanguageGerman,
-                  selected: language == AppLanguage.german,
-                  onTap: () => controller.setLanguage(AppLanguage.german)),
+                label: l10n.settingsLanguageGerman,
+                selected: language == AppLanguage.german,
+                onTap: () => controller.setLanguage(AppLanguage.german),
+              ),
               _OptionRow(
-                  label: l10n.settingsLanguageEnglish,
-                  selected: language == AppLanguage.english,
-                  onTap: () => controller.setLanguage(AppLanguage.english)),
+                label: l10n.settingsLanguageEnglish,
+                selected: language == AppLanguage.english,
+                onTap: () => controller.setLanguage(AppLanguage.english),
+              ),
               const SizedBox(height: 16),
 
               // Appearance / theme.
               _SectionHeader(
-                  title: l10n.settingsSectionTheme,
-                  subtitle: l10n.settingsThemeSubtitle),
+                title: l10n.settingsSectionTheme,
+                subtitle: l10n.settingsThemeSubtitle,
+              ),
               const SizedBox(height: 8),
               _OptionRow(
-                  label: l10n.settingsThemeSystem,
-                  selected: theme == ThemeMode.system,
-                  onTap: () => controller.setTheme(ThemeMode.system)),
+                label: l10n.settingsThemeSystem,
+                selected: theme == ThemeMode.system,
+                onTap: () => controller.setTheme(ThemeMode.system),
+              ),
               _OptionRow(
-                  label: l10n.settingsThemeLight,
-                  selected: theme == ThemeMode.light,
-                  onTap: () => controller.setTheme(ThemeMode.light)),
+                label: l10n.settingsThemeLight,
+                selected: theme == ThemeMode.light,
+                onTap: () => controller.setTheme(ThemeMode.light),
+              ),
               _OptionRow(
-                  label: l10n.settingsThemeDark,
-                  selected: theme == ThemeMode.dark,
-                  onTap: () => controller.setTheme(ThemeMode.dark)),
+                label: l10n.settingsThemeDark,
+                selected: theme == ThemeMode.dark,
+                onTap: () => controller.setTheme(ThemeMode.dark),
+              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -98,7 +111,10 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _pickActivity(
-      BuildContext context, WidgetRef ref, ActivityType current) async {
+    BuildContext context,
+    WidgetRef ref,
+    ActivityType current,
+  ) async {
     final selected = await showDialog<ActivityType>(
       context: context,
       builder: (_) => _ActivityPickerDialog(current: current),
@@ -123,14 +139,18 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 16, right: 16, top: 4),
-          child: Text(title,
-              style: text.labelSmall?.copyWith(color: colors.subtleText)),
+          child: Text(
+            title,
+            style: text.labelSmall?.copyWith(color: colors.subtleText),
+          ),
         ),
         const SizedBox(height: 2),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(subtitle,
-              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
+          child: Text(
+            subtitle,
+            style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+          ),
         ),
       ],
     );
@@ -165,12 +185,16 @@ class _ActivitySummaryRow extends StatelessWidget {
                   activity.glyph(size: 24, color: colors.primary),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(activity.label(l10n),
-                        style:
-                            text.bodyLarge?.copyWith(color: colors.onSurface)),
+                    child: Text(
+                      activity.label(l10n),
+                      style: text.bodyLarge?.copyWith(color: colors.onSurface),
+                    ),
                   ),
-                  Icon(Icons.keyboard_arrow_right,
-                      size: 24, color: colors.onSurfaceVariant),
+                  Icon(
+                    Icons.keyboard_arrow_right,
+                    size: 24,
+                    color: colors.onSurfaceVariant,
+                  ),
                 ],
               ),
             ),
@@ -182,8 +206,11 @@ class _ActivitySummaryRow extends StatelessWidget {
 }
 
 class _OptionRow extends StatelessWidget {
-  const _OptionRow(
-      {required this.label, required this.selected, required this.onTap});
+  const _OptionRow({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -211,12 +238,16 @@ class _OptionRow extends StatelessWidget {
                       selected
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
-                      color: selected ? colors.primary : colors.onSurfaceVariant,
+                      color: selected
+                          ? colors.primary
+                          : colors.onSurfaceVariant,
                       size: 22,
                     ),
                   ),
-                  Text(label,
-                      style: text.bodyLarge?.copyWith(color: colors.onSurface)),
+                  Text(
+                    label,
+                    style: text.bodyLarge?.copyWith(color: colors.onSurface),
+                  ),
                 ],
               ),
             ),
@@ -246,15 +277,19 @@ class _ActivityPickerDialogState extends State<_ActivityPickerDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        decoration:
-            BoxDecoration(color: colors.surface, borderRadius: AppShapes.dialog),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: AppShapes.dialog,
+        ),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.settingsActivityDialogTitle,
-                style: text.titleLarge?.copyWith(color: colors.onSurface)),
+            Text(
+              l10n.settingsActivityDialogTitle,
+              style: text.titleLarge?.copyWith(color: colors.onSurface),
+            ),
             const SizedBox(height: 16),
             GridView(
               shrinkWrap: true,

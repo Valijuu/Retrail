@@ -175,17 +175,17 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   /// own. Do NOT add another inset padding here: doubling it shoved the dialog
   /// half off-screen and made it untappable.
   Widget _modal(Widget dialog) => Positioned.fill(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ModalBarrier(dismissible: false, color: _barrierColor(context)),
-            // SafeArea: the overlay Stack spans the whole screen (unlike the
-            // chrome, which sits in its own SafeArea) — without it the dialog
-            // slid up under the status bar when the keyboard squeezed it.
-            SafeArea(child: dialog),
-          ],
-        ),
-      );
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        ModalBarrier(dismissible: false, color: _barrierColor(context)),
+        // SafeArea: the overlay Stack spans the whole screen (unlike the
+        // chrome, which sits in its own SafeArea) — without it the dialog
+        // slid up under the status bar when the keyboard squeezed it.
+        SafeArea(child: dialog),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -196,14 +196,16 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     });
 
     final state =
-        ref.watch(rideTrackingStateProvider).asData?.value ?? const RideTrackingState();
+        ref.watch(rideTrackingStateProvider).asData?.value ??
+        const RideTrackingState();
     final isOnline = ref.watch(isOnlineProvider).asData?.value ?? true;
     final l10n = AppLocalizations.of(context);
     // Spec 17: a reference only shows on a RECORDING follow; null = today.
     ref.watch(routeFollowProvider);
     final following = _isLeaving ? _followingAtExit : _liveFollowing();
-    final banner =
-        following == null ? null : followBanner(context, following.progress);
+    final banner = following == null
+        ? null
+        : followBanner(context, following.progress);
 
     // The Live/Paused badge reflects (or freezes) the tracking state: kept up
     // while the summary dialog is open and through the exit transition —
@@ -233,148 +235,164 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           : null,
     );
 
-    return DarkChromeStatusBar(child: PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _onBack();
-      },
-      child: Scaffold(
-        backgroundColor: rideChromeBg.surface,
-        // Don't squeeze the map + stats layout when the keyboard opens for the
-        // summary dialog's inputs (it overflowed the panel and resized the
-        // native map). The dialog lifts itself above the keyboard in [_modal].
-        resizeToAvoidBottomInset: false,
-        body: Stack(
-          children: [
-            SafeArea(
-              child: Column(
-                children: [
-                  RideAppBar(
-                    state: state,
-                    showLive: showLive,
-                    onBack: _onBack,
-                  ),
-                  // The 65/35 map+stats layout is fixed for the whole screen
-                  // session: the panel shows from the FIRST frame (zeros/--,
-                  // blending in with the screen's entry transition, before GPS
-                  // or the tracker have committed) and stays through the stop
-                  // dialog + exit transition. Gating it on isTracking made it
-                  // pop in late on entry and flicker away on save.
-                  // The banners and the follow remaining line live in the
-                  // map's share, so the stats panel keeps one height in every
-                  // state (they squeezed its rows on short screens, e.g. an
-                  // iPhone 8). The key keeps the native map element when a
-                  // banner comes or goes.
-                  Expanded(
-                    flex: 65,
-                    child: Column(children: [
-                      if (!isOnline)
-                        RideWarningBanner(label: l10n.mapOfflineBanner),
-                      // GPS switched off mid-ride: nothing records until it's
-                      // back on, so say so instead of looking live (issue #33).
-                      if (!state.locationServiceEnabled)
-                        RideWarningBanner(
-                          label: l10n.rideLocationOffBanner,
-                          onTap: _recording.openLocationSettings,
-                        ),
-                      ?banner,
-                      Expanded(key: const ValueKey('ride-map'), child: map),
-                      if (following != null)
-                        FollowRemainingLine(
-                            progress: following.displayProgress,
-                            totalM: following.track.lengthM,
-                            reversed: following.isReversed),
-                    ]),
-                  ),
-                  Expanded(flex: 35, child: panel),
-                ],
+    return DarkChromeStatusBar(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _onBack();
+        },
+        child: Scaffold(
+          backgroundColor: rideChromeBg.surface,
+          // Don't squeeze the map + stats layout when the keyboard opens for the
+          // summary dialog's inputs (it overflowed the panel and resized the
+          // native map). The dialog lifts itself above the keyboard in [_modal].
+          resizeToAvoidBottomInset: false,
+          body: Stack(
+            children: [
+              SafeArea(
+                child: Column(
+                  children: [
+                    RideAppBar(
+                      state: state,
+                      showLive: showLive,
+                      onBack: _onBack,
+                    ),
+                    // The 65/35 map+stats layout is fixed for the whole screen
+                    // session: the panel shows from the FIRST frame (zeros/--,
+                    // blending in with the screen's entry transition, before GPS
+                    // or the tracker have committed) and stays through the stop
+                    // dialog + exit transition. Gating it on isTracking made it
+                    // pop in late on entry and flicker away on save.
+                    // The banners and the follow remaining line live in the
+                    // map's share, so the stats panel keeps one height in every
+                    // state (they squeezed its rows on short screens, e.g. an
+                    // iPhone 8). The key keeps the native map element when a
+                    // banner comes or goes.
+                    Expanded(
+                      flex: 65,
+                      child: Column(
+                        children: [
+                          if (!isOnline)
+                            RideWarningBanner(label: l10n.mapOfflineBanner),
+                          // GPS switched off mid-ride: nothing records until it's
+                          // back on, so say so instead of looking live (issue #33).
+                          if (!state.locationServiceEnabled)
+                            RideWarningBanner(
+                              label: l10n.rideLocationOffBanner,
+                              onTap: _recording.openLocationSettings,
+                            ),
+                          ?banner,
+                          Expanded(key: const ValueKey('ride-map'), child: map),
+                          if (following != null)
+                            FollowRemainingLine(
+                              progress: following.displayProgress,
+                              totalM: following.track.lengthM,
+                              reversed: following.isReversed,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Expanded(flex: 35, child: panel),
+                  ],
+                ),
               ),
-            ),
-            if (_showConfirmStop)
-              _modal(ConfirmStopDialog(
-                onDismiss: () => setState(() => _showConfirmStop = false),
-                onConfirm: () {
-                  setState(() {
-                    _showConfirmStop = false;
-                    _showSummary = true;
-                  });
-                  _recording.stop();
-                },
-              )),
-            if (_showSummary)
-              _modal(PostRideSummaryDialog(
-                // _goHome() flips _isLeaving in the same frame the dialog
-                // closes, so the frozen chrome + scrim carry through the exit.
-                onSkip: () {
-                  setState(() => _showSummary = false);
-                  _goHome();
-                },
-                onSave: (title, comment, favorite) {
-                  setState(() => _showSummary = false);
-                  _controller.saveRide(
-                    title: title,
-                    comment: comment,
-                    favorite: favorite,
-                  );
-                  _goHome();
-                },
-                // Asks first: one stray tap used to erase the ride (#73).
-                onDiscard: () => setState(() => _showDiscardConfirm = true),
-              )),
-            // After the summary so its confirmation stacks on top of it; the
-            // summary stays mounted underneath and keeps the entered text.
-            if (_showDiscardConfirm)
-              _modal(DiscardRideConfirmDialog(
-                rideStopped: _showSummary,
-                onDismiss: () => setState(() => _showDiscardConfirm = false),
-                onConfirm: () {
-                  final fromSummary = _showSummary;
-                  setState(() {
-                    _showDiscardConfirm = false;
-                    _showSummary = false;
-                  });
-                  if (fromSummary) {
-                    _controller.discardRide();
-                  } else {
-                    // Stop+discard runs now (before navigation) so
-                    // isTrackingProvider is false before the home screen
-                    // becomes interactive. Deferring this to dispose() left a
-                    // window during GoRouter's exit animation where "Start
-                    // Tracking" could read isTracking=true and skip the timer.
-                    // discardActiveRide() is synchronous inside stop(), so the
-                    // state flip happens in this call frame.
-                    unawaited(_recording.stop(discard: true));
-                  }
-                  _goHome();
-                },
-              )),
-            // Keep the scrim up (dialog gone) while the exit transition plays,
-            // so the frozen ride screen fades out dimmed instead of flashing
-            // back to life for a few frames.
-            if (_isLeaving)
-              Positioned.fill(
-                child: ModalBarrier(
-                    dismissible: false, color: _barrierColor(context)),
-              ),
-            if (_gateBlock != null)
-              _modal(PermissionGateDialog(
-                action: _gateBlock!,
-                onOpenSettings: () {
-                  final block = _gateBlock!;
-                  setState(() => _gateBlock = null);
-                  block == LocationStartAction.openLocationSettings
-                      ? _recording.openLocationSettings()
-                      : _recording.openAppSettings();
-                  _goHome();
-                },
-                onDismiss: () {
-                  setState(() => _gateBlock = null);
-                  _goHome();
-                },
-              )),
-          ],
+              if (_showConfirmStop)
+                _modal(
+                  ConfirmStopDialog(
+                    onDismiss: () => setState(() => _showConfirmStop = false),
+                    onConfirm: () {
+                      setState(() {
+                        _showConfirmStop = false;
+                        _showSummary = true;
+                      });
+                      _recording.stop();
+                    },
+                  ),
+                ),
+              if (_showSummary)
+                _modal(
+                  PostRideSummaryDialog(
+                    // _goHome() flips _isLeaving in the same frame the dialog
+                    // closes, so the frozen chrome + scrim carry through the exit.
+                    onSkip: () {
+                      setState(() => _showSummary = false);
+                      _goHome();
+                    },
+                    onSave: (title, comment, favorite) {
+                      setState(() => _showSummary = false);
+                      _controller.saveRide(
+                        title: title,
+                        comment: comment,
+                        favorite: favorite,
+                      );
+                      _goHome();
+                    },
+                    // Asks first: one stray tap used to erase the ride (#73).
+                    onDiscard: () => setState(() => _showDiscardConfirm = true),
+                  ),
+                ),
+              // After the summary so its confirmation stacks on top of it; the
+              // summary stays mounted underneath and keeps the entered text.
+              if (_showDiscardConfirm)
+                _modal(
+                  DiscardRideConfirmDialog(
+                    rideStopped: _showSummary,
+                    onDismiss: () =>
+                        setState(() => _showDiscardConfirm = false),
+                    onConfirm: () {
+                      final fromSummary = _showSummary;
+                      setState(() {
+                        _showDiscardConfirm = false;
+                        _showSummary = false;
+                      });
+                      if (fromSummary) {
+                        _controller.discardRide();
+                      } else {
+                        // Stop+discard runs now (before navigation) so
+                        // isTrackingProvider is false before the home screen
+                        // becomes interactive. Deferring this to dispose() left a
+                        // window during GoRouter's exit animation where "Start
+                        // Tracking" could read isTracking=true and skip the timer.
+                        // discardActiveRide() is synchronous inside stop(), so the
+                        // state flip happens in this call frame.
+                        unawaited(_recording.stop(discard: true));
+                      }
+                      _goHome();
+                    },
+                  ),
+                ),
+              // Keep the scrim up (dialog gone) while the exit transition plays,
+              // so the frozen ride screen fades out dimmed instead of flashing
+              // back to life for a few frames.
+              if (_isLeaving)
+                Positioned.fill(
+                  child: ModalBarrier(
+                    dismissible: false,
+                    color: _barrierColor(context),
+                  ),
+                ),
+              if (_gateBlock != null)
+                _modal(
+                  PermissionGateDialog(
+                    action: _gateBlock!,
+                    onOpenSettings: () {
+                      final block = _gateBlock!;
+                      setState(() => _gateBlock = null);
+                      block == LocationStartAction.openLocationSettings
+                          ? _recording.openLocationSettings()
+                          : _recording.openAppSettings();
+                      _goHome();
+                    },
+                    onDismiss: () {
+                      setState(() => _gateBlock = null);
+                      _goHome();
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }

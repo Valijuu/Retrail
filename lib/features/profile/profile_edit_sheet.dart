@@ -26,7 +26,8 @@ class ProfileEditSheet extends ConsumerStatefulWidget {
 
 class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
   late final TextEditingController _name = TextEditingController(
-      text: ref.read(preferencesRepositoryProvider).userNameNow);
+    text: ref.read(preferencesRepositoryProvider).userNameNow,
+  );
 
   @override
   void dispose() {
@@ -53,8 +54,9 @@ class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
       // Keyboard inset outside the scroll view: the viewport ends above the
       // keyboard, so the name field scrolls into sight instead of behind it.
       child: Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -63,20 +65,28 @@ class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
               Padding(
                 // The sheet's drag handle already spaces the title from the top.
                 padding: const EdgeInsets.only(bottom: 20),
-                child: Text(l10n.profileEditTitle,
-                    style: text.titleLarge?.copyWith(color: colors.onSurface)),
+                child: Text(
+                  l10n.profileEditTitle,
+                  style: text.titleLarge?.copyWith(color: colors.onSurface),
+                ),
               ),
               // Name field.
               Container(
                 decoration: BoxDecoration(
-                    color: colors.surfaceContainer, borderRadius: AppShapes.card),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  color: colors.surfaceContainer,
+                  borderRadius: AppShapes.card,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.initNameLabel,
-                        style:
-                            text.labelSmall?.copyWith(color: colors.primary)),
+                    Text(
+                      l10n.initNameLabel,
+                      style: text.labelSmall?.copyWith(color: colors.primary),
+                    ),
                     const SizedBox(height: 4),
                     TextField(
                       controller: _name,
@@ -128,11 +138,12 @@ class _ProfileEditSheetState extends ConsumerState<ProfileEditSheet> {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill(
-      {required this.label,
-      required this.bg,
-      required this.fg,
-      required this.onTap});
+  const _Pill({
+    required this.label,
+    required this.bg,
+    required this.fg,
+    required this.onTap,
+  });
   final String label;
   final Color bg;
   final Color fg;
@@ -149,8 +160,11 @@ class _Pill extends StatelessWidget {
           foregroundColor: fg,
           shape: const RoundedRectangleBorder(borderRadius: AppShapes.pill),
         ),
-        child: Text(label,
-            maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w500)),
+        child: Text(
+          label,
+          maxLines: 1,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

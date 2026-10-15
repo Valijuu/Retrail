@@ -37,8 +37,12 @@ class FakeLocationSource implements LocationSource {
   }
 }
 
-LocationFix fix(double lat, double lng, {double accuracy = 5, int atNanos = 0}) =>
-    LocationFix(
+LocationFix fix(
+  double lat,
+  double lng, {
+  double accuracy = 5,
+  int atNanos = 0,
+}) => LocationFix(
   latitude: lat,
   longitude: lng,
   accuracy: accuracy,
@@ -218,15 +222,17 @@ void main() {
     expect(source.serviceCtrl.hasListener, isFalse);
   });
 
-  test('pauseFeedFor an earlier session leaves a newer session\'s feed running',
-      () async {
-    notifier().start(reference: _ref, recording: false);
-    final earlier = c.read(routeFollowProvider)!.track;
-    notifier().start(reference: _ref, recording: false);
-    await notifier().resumeFeed();
-    notifier().pauseFeedFor(earlier);
-    expect(source.fixCtrl.hasListener, isTrue);
-  });
+  test(
+    'pauseFeedFor an earlier session leaves a newer session\'s feed running',
+    () async {
+      notifier().start(reference: _ref, recording: false);
+      final earlier = c.read(routeFollowProvider)!.track;
+      notifier().start(reference: _ref, recording: false);
+      await notifier().resumeFeed();
+      notifier().pauseFeedFor(earlier);
+      expect(source.fixCtrl.hasListener, isTrue);
+    },
+  );
 
   test('pauseFeedFor the current session pauses its feed', () async {
     notifier().start(reference: _ref, recording: false);
@@ -295,21 +301,25 @@ void main() {
       }
     }
 
-    test('joining at the finish: reverse, noticed as a start at the finish',
-        () async {
-      await ride([at(299, 0)]);
-      final s = c.read(routeFollowProvider)!;
-      expect(s.direction, FollowDirection.reverse);
-      expect(s.reverseNotice, FollowReverseNotice.atFinish);
-    });
+    test(
+      'joining at the finish: reverse, noticed as a start at the finish',
+      () async {
+        await ride([at(299, 0)]);
+        final s = c.read(routeFollowProvider)!;
+        expect(s.direction, FollowDirection.reverse);
+        expect(s.reverseNotice, FollowReverseNotice.atFinish);
+      },
+    );
 
-    test('joined mid-route and ridden backwards: noticed as detected',
-        () async {
-      await ride([for (var n = 150.0; n >= 100; n -= 10) at(n, 0)]);
-      final s = c.read(routeFollowProvider)!;
-      expect(s.direction, FollowDirection.reverse);
-      expect(s.reverseNotice, FollowReverseNotice.detected);
-    });
+    test(
+      'joined mid-route and ridden backwards: noticed as detected',
+      () async {
+        await ride([for (var n = 150.0; n >= 100; n -= 10) at(n, 0)]);
+        final s = c.read(routeFollowProvider)!;
+        expect(s.direction, FollowDirection.reverse);
+        expect(s.reverseNotice, FollowReverseNotice.detected);
+      },
+    );
 
     test('joining at the start: no notice', () async {
       await ride([at(1, 0)]);
@@ -325,54 +335,68 @@ void main() {
     });
   });
 
-  test('recording: a recorder location while not tracking is ignored',
-      () async {
-    notifier().start(reference: _ref, recording: true);
-    tracker.add(
-      RideTrackingState(isTracking: false, location: fix(48.001, 11.0)),
-    );
-    await flush();
-    expect(c.read(routeFollowProvider)!.lastFix, isNull);
-  });
+  test(
+    'recording: a recorder location while not tracking is ignored',
+    () async {
+      notifier().start(reference: _ref, recording: true);
+      tracker.add(
+        RideTrackingState(isTracking: false, location: fix(48.001, 11.0)),
+      );
+      await flush();
+      expect(c.read(routeFollowProvider)!.lastFix, isNull);
+    },
+  );
 
-  test('follow-only: a last known fix older than 2 minutes is ignored',
-      () async {
-    source.last = fix(48.0005, 11.0);
-    nowNanos = _nanos(const Duration(minutes: 2, seconds: 1));
-    notifier().start(reference: _ref, recording: false);
-    await notifier().resumeFeed();
-    expect(c.read(routeFollowProvider)!.lastFix, isNull);
-  });
+  test(
+    'follow-only: a last known fix older than 2 minutes is ignored',
+    () async {
+      source.last = fix(48.0005, 11.0);
+      nowNanos = _nanos(const Duration(minutes: 2, seconds: 1));
+      notifier().start(reference: _ref, recording: false);
+      await notifier().resumeFeed();
+      expect(c.read(routeFollowProvider)!.lastFix, isNull);
+    },
+  );
 
-  test('follow-only: a last known fix within 2 minutes seeds the position',
-      () async {
-    source.last = fix(48.0005, 11.0, atNanos: _nanos(const Duration(minutes: 5)));
-    nowNanos = _nanos(const Duration(minutes: 6, seconds: 30));
-    notifier().start(reference: _ref, recording: false);
-    await notifier().resumeFeed();
-    expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
-  });
+  test(
+    'follow-only: a last known fix within 2 minutes seeds the position',
+    () async {
+      source.last = fix(
+        48.0005,
+        11.0,
+        atNanos: _nanos(const Duration(minutes: 5)),
+      );
+      nowNanos = _nanos(const Duration(minutes: 6, seconds: 30));
+      notifier().start(reference: _ref, recording: false);
+      await notifier().resumeFeed();
+      expect(c.read(routeFollowProvider)!.lastFix, isNotNull);
+    },
+  );
 
-  test('follow-only: a feed error shows location as off until the next fix',
-      () async {
-    notifier().start(reference: _ref, recording: false);
-    await notifier().resumeFeed();
-    source.fixCtrl.addError(StateError('gps lost'));
-    await flush();
-    expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
-    source.fixCtrl.add(fix(48.001, 11.0));
-    await flush();
-    expect(c.read(routeFollowProvider)!.locationServiceEnabled, isTrue);
-  });
+  test(
+    'follow-only: a feed error shows location as off until the next fix',
+    () async {
+      notifier().start(reference: _ref, recording: false);
+      await notifier().resumeFeed();
+      source.fixCtrl.addError(StateError('gps lost'));
+      await flush();
+      expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
+      source.fixCtrl.add(fix(48.001, 11.0));
+      await flush();
+      expect(c.read(routeFollowProvider)!.locationServiceEnabled, isTrue);
+    },
+  );
 
-  test('follow-only: a seed fix does not override location services off',
-      () async {
-    permissions.serviceEnabled = false;
-    source.last = fix(48.0005, 11.0);
-    notifier().start(reference: _ref, recording: false);
-    await notifier().resumeFeed();
-    expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
-  });
+  test(
+    'follow-only: a seed fix does not override location services off',
+    () async {
+      permissions.serviceEnabled = false;
+      source.last = fix(48.0005, 11.0);
+      notifier().start(reference: _ref, recording: false);
+      await notifier().resumeFeed();
+      expect(c.read(routeFollowProvider)!.locationServiceEnabled, isFalse);
+    },
+  );
 
   group('direction', () {
     RouteFollowState state() => c.read(routeFollowProvider)!;
@@ -490,17 +514,22 @@ void main() {
 
   group('displayProgress', () {
     const p = RouteProgress(
-        alongM: 300,
-        remainingM: 812,
-        offsetM: 2,
-        isOffRoute: false,
-        isFinished: true,
-        hasJoined: true);
+      alongM: 300,
+      remainingM: 812,
+      offsetM: 2,
+      isOffRoute: false,
+      isFinished: true,
+      hasJoined: true,
+    );
     RouteFollowState at(FollowDirection d) => RouteFollowState(
-        track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
-        recording: false,
-        progress: p,
-        direction: d);
+      track: RouteTrack(const [
+        (lat: 48.0, lng: 11.0),
+        (lat: 48.01, lng: 11.0),
+      ]),
+      recording: false,
+      progress: p,
+      direction: d,
+    );
 
     test('undecided: none, so the text shows the whole length', () {
       expect(at(FollowDirection.undecided).displayProgress, isNull);

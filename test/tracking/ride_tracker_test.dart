@@ -29,15 +29,14 @@ LocationFix fix(
   bool hasSpeed = false,
   double speed = 0,
   int nanos = 0,
-}) =>
-    LocationFix(
-      latitude: lat,
-      longitude: lng,
-      accuracy: accuracy,
-      hasSpeed: hasSpeed,
-      speed: speed,
-      elapsedRealtimeNanos: nanos,
-    );
+}) => LocationFix(
+  latitude: lat,
+  longitude: lng,
+  accuracy: accuracy,
+  hasSpeed: hasSpeed,
+  speed: speed,
+  elapsedRealtimeNanos: nanos,
+);
 
 void main() {
   late _MockRideRepo rideRepo;
@@ -46,30 +45,33 @@ void main() {
   setUp(() {
     rideRepo = _MockRideRepo();
     tpRepo = _MockTpRepo();
-    when(() => rideRepo.startRide(
+    when(
+      () => rideRepo.startRide(
         activityTypeId: any(named: 'activityTypeId'),
-        startedAtMs: any(named: 'startedAtMs'))).thenAnswer((_) async => 1);
+        startedAtMs: any(named: 'startedAtMs'),
+      ),
+    ).thenAnswer((_) async => 1);
     when(() => rideRepo.updateEndTime(any(), any())).thenAnswer((_) async {});
-    when(() => rideRepo.updateRideDetails(any(), any(), any()))
-        .thenAnswer((_) async {});
+    when(
+      () => rideRepo.updateRideDetails(any(), any(), any()),
+    ).thenAnswer((_) async {});
     when(() => rideRepo.updateFavorite(any(), any())).thenAnswer((_) async {});
     when(() => rideRepo.deleteById(any())).thenAnswer((_) async {});
-    when(() => tpRepo.addTrackpoint(
+    when(
+      () => tpRepo.addTrackpoint(
         rideId: any(named: 'rideId'),
         latitude: any(named: 'latitude'),
         longitude: any(named: 'longitude'),
         timestampMs: any(named: 'timestampMs'),
-        speedMs: any(named: 'speedMs'))).thenAnswer((_) async {});
+        speedMs: any(named: 'speedMs'),
+      ),
+    ).thenAnswer((_) async {});
   });
 
   /// Runs [body] inside virtual time with a freshly-built tracker (nowNanos = 0).
   void runTracker(void Function(FakeAsync fa, RideTracker t) body) {
     fakeAsync((fa) {
-      final t = RideTracker(
-        rideRepo,
-        tpRepo,
-        const _FixedCalc(100),
-      );
+      final t = RideTracker(rideRepo, tpRepo, const _FixedCalc(100));
       t.nowNanos = () => 0;
       body(fa, t);
       t.dispose();
@@ -116,9 +118,12 @@ void main() {
       runTracker((fa, t) {
         t.startTracking();
         fa.flushMicrotasks();
-        verify(() => rideRepo.startRide(
+        verify(
+          () => rideRepo.startRide(
             activityTypeId: any(named: 'activityTypeId'),
-            startedAtMs: any(named: 'startedAtMs'))).called(1);
+            startedAtMs: any(named: 'startedAtMs'),
+          ),
+        ).called(1);
         expect(t.state.isTracking, isTrue);
       });
     });
@@ -129,12 +134,15 @@ void main() {
         fa.flushMicrotasks();
         final location = fix(52, 13);
         t.onLocationReceived(location);
-        verify(() => tpRepo.addTrackpoint(
+        verify(
+          () => tpRepo.addTrackpoint(
             rideId: any(named: 'rideId'),
             latitude: any(named: 'latitude'),
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
-            speedMs: any(named: 'speedMs'))).called(1);
+            speedMs: any(named: 'speedMs'),
+          ),
+        ).called(1);
         expect(t.state.location, location);
       });
     });
@@ -142,12 +150,15 @@ void main() {
     test('onLocationReceived while not tracking saves nothing', () {
       runTracker((fa, t) {
         t.onLocationReceived(fix(52, 13));
-        verifyNever(() => tpRepo.addTrackpoint(
+        verifyNever(
+          () => tpRepo.addTrackpoint(
             rideId: any(named: 'rideId'),
             latitude: any(named: 'latitude'),
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
-            speedMs: any(named: 'speedMs')));
+            speedMs: any(named: 'speedMs'),
+          ),
+        );
       });
     });
 
@@ -168,12 +179,15 @@ void main() {
         fa.flushMicrotasks();
         t.onLocationReceived(fix(52, 13, accuracy: 80));
         expect(t.state.trackPoints, isEmpty);
-        verifyNever(() => tpRepo.addTrackpoint(
+        verifyNever(
+          () => tpRepo.addTrackpoint(
             rideId: any(named: 'rideId'),
             latitude: any(named: 'latitude'),
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
-            speedMs: any(named: 'speedMs')));
+            speedMs: any(named: 'speedMs'),
+          ),
+        );
       });
     });
 
@@ -186,12 +200,18 @@ void main() {
         t.nowNanos = () => 10000000000; // 10 s → a nanos:0 fix is "10 s old"
         final stale = fix(52, 13);
         t.onLocationReceived(stale);
-        expect(t.state.location, isNull,
-            reason: 'recording path drops the stale fix');
+        expect(
+          t.state.location,
+          isNull,
+          reason: 'recording path drops the stale fix',
+        );
         t.seedLocation(stale);
         expect(t.state.location, stale);
-        expect(t.state.trackPoints, isEmpty,
-            reason: 'a seed is for display only — never recorded');
+        expect(
+          t.state.trackPoints,
+          isEmpty,
+          reason: 'a seed is for display only — never recorded',
+        );
       });
     });
 
@@ -224,40 +244,46 @@ void main() {
         t.changes.listen(emitted.add);
         t.setPendingActivityType(ActivityType.mountainboard.id);
         fa.flushMicrotasks();
-        expect(emitted.map((s) => s.activityType),
-            [ActivityType.mountainboard]);
+        expect(emitted.map((s) => s.activityType), [
+          ActivityType.mountainboard,
+        ]);
       });
     });
   });
 
   // ─── trackPoints accumulation ────────────────────────────────────────────
   group('discardActiveRide', () {
-    test('one-shot: deletes the row, never writes an endTime, fully resets',
-        () {
-      runTracker((fa, t) {
-        t.startTracking();
-        fa.flushMicrotasks();
-        fa.elapse(const Duration(seconds: 3));
-        expect(t.state.elapsedSeconds, 3);
+    test(
+      'one-shot: deletes the row, never writes an endTime, fully resets',
+      () {
+        runTracker((fa, t) {
+          t.startTracking();
+          fa.flushMicrotasks();
+          fa.elapse(const Duration(seconds: 3));
+          expect(t.state.elapsedSeconds, 3);
 
-        t.discardActiveRide();
-        expect(t.state.isTracking, isFalse); // synchronous
-        expect(t.lastCompletedRideId, isNull);
-        expect(t.state.elapsedSeconds, 0);
-        expect(t.state.distanceMetres, 0);
-        expect(t.state.trackPoints, isEmpty);
-        fa.flushMicrotasks();
-        verify(() => rideRepo.deleteById(1)).called(1);
-        verifyNever(() => rideRepo.updateEndTime(any(), any()));
-        fa.elapse(const Duration(seconds: 5));
-        expect(t.state.elapsedSeconds, 0); // timer cancelled, not leaked
-      });
-    });
+          t.discardActiveRide();
+          expect(t.state.isTracking, isFalse); // synchronous
+          expect(t.lastCompletedRideId, isNull);
+          expect(t.state.elapsedSeconds, 0);
+          expect(t.state.distanceMetres, 0);
+          expect(t.state.trackPoints, isEmpty);
+          fa.flushMicrotasks();
+          verify(() => rideRepo.deleteById(1)).called(1);
+          verifyNever(() => rideRepo.updateEndTime(any(), any()));
+          fa.elapse(const Duration(seconds: 5));
+          expect(t.state.elapsedSeconds, 0); // timer cancelled, not leaked
+        });
+      },
+    );
 
     test('latches when the begin-insert is still in flight', () {
-      when(() => rideRepo.startRide(
-            activityTypeId: any(named: 'activityTypeId'),
-            startedAtMs: any(named: 'startedAtMs'))).thenAnswer((_) async {
+      when(
+        () => rideRepo.startRide(
+          activityTypeId: any(named: 'activityTypeId'),
+          startedAtMs: any(named: 'startedAtMs'),
+        ),
+      ).thenAnswer((_) async {
         await Future<void>.delayed(const Duration(milliseconds: 100));
         return 7;
       });
@@ -279,9 +305,12 @@ void main() {
   group('stop/discard racing the begin insert', () {
     test('stop while the insert is in flight flips state immediately and '
         'finalizes the ride once inserted (no leaked timer)', () {
-      when(() => rideRepo.startRide(
-            activityTypeId: any(named: 'activityTypeId'),
-            startedAtMs: any(named: 'startedAtMs'))).thenAnswer((_) async {
+      when(
+        () => rideRepo.startRide(
+          activityTypeId: any(named: 'activityTypeId'),
+          startedAtMs: any(named: 'startedAtMs'),
+        ),
+      ).thenAnswer((_) async {
         await Future<void>.delayed(const Duration(milliseconds: 100));
         return 7;
       });
@@ -298,31 +327,38 @@ void main() {
       });
     });
 
-    test('discard while the insert is in flight deletes the row when it lands',
-        () {
-      when(() => rideRepo.startRide(
+    test(
+      'discard while the insert is in flight deletes the row when it lands',
+      () {
+        when(
+          () => rideRepo.startRide(
             activityTypeId: any(named: 'activityTypeId'),
-            startedAtMs: any(named: 'startedAtMs'))).thenAnswer((_) async {
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        return 7;
-      });
-      runTracker((fa, t) {
-        t.startTracking();
-        t.stopTracking();
-        t.discardRide(); // completed ride id not known yet — must latch
-        fa.elapse(const Duration(milliseconds: 200));
-        verify(() => rideRepo.deleteById(7)).called(1);
-        verifyNever(() => rideRepo.updateEndTime(any(), any()));
-        expect(t.lastCompletedRideId, isNull);
-      });
-    });
+            startedAtMs: any(named: 'startedAtMs'),
+          ),
+        ).thenAnswer((_) async {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          return 7;
+        });
+        runTracker((fa, t) {
+          t.startTracking();
+          t.stopTracking();
+          t.discardRide(); // completed ride id not known yet — must latch
+          fa.elapse(const Duration(milliseconds: 200));
+          verify(() => rideRepo.deleteById(7)).called(1);
+          verifyNever(() => rideRepo.updateEndTime(any(), any()));
+          expect(t.lastCompletedRideId, isNull);
+        });
+      },
+    );
 
-    test('discarding the previous ride does not clobber a NEW active ride',
-        () {
+    test('discarding the previous ride does not clobber a NEW active ride', () {
       var nextId = 0;
-      when(() => rideRepo.startRide(
-            activityTypeId: any(named: 'activityTypeId'),
-            startedAtMs: any(named: 'startedAtMs'))).thenAnswer((_) async => ++nextId);
+      when(
+        () => rideRepo.startRide(
+          activityTypeId: any(named: 'activityTypeId'),
+          startedAtMs: any(named: 'startedAtMs'),
+        ),
+      ).thenAnswer((_) async => ++nextId);
       runTracker((fa, t) {
         t.startTracking();
         fa.flushMicrotasks();
@@ -447,13 +483,13 @@ void main() {
       });
     });
 
-    test(
-        'iPhone standing still indoors: no provider speed (-1) and vague '
+    test('iPhone standing still indoors: no provider speed (-1) and vague '
         'fixes jumping 100 m → no absurd speed (was ~360+ km/h)', () {
       runTracker((fa, t) {
         t.onLocationReceived(fix(52.0, 13.0, accuracy: 65, speed: -1));
         t.onLocationReceived(
-            fix(52.1, 13.1, accuracy: 65, speed: -1, nanos: 1000000000));
+          fix(52.1, 13.1, accuracy: 65, speed: -1, nanos: 1000000000),
+        );
         expect(t.state.speedKmh, isNull);
       });
     });
@@ -562,12 +598,15 @@ void main() {
         fa.flushMicrotasks();
         t.pause();
         t.onLocationReceived(fix(52, 13));
-        verifyNever(() => tpRepo.addTrackpoint(
+        verifyNever(
+          () => tpRepo.addTrackpoint(
             rideId: any(named: 'rideId'),
             latitude: any(named: 'latitude'),
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
-            speedMs: any(named: 'speedMs')));
+            speedMs: any(named: 'speedMs'),
+          ),
+        );
       });
     });
 
@@ -643,27 +682,32 @@ void main() {
         t.onLocationReceived(fix(52, 13, nanos: 0)); // age 10 s > 5 s
         expect(t.state.location, isNull);
         expect(t.state.trackPoints, isEmpty);
-        verifyNever(() => tpRepo.addTrackpoint(
+        verifyNever(
+          () => tpRepo.addTrackpoint(
             rideId: any(named: 'rideId'),
             latitude: any(named: 'latitude'),
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
-            speedMs: any(named: 'speedMs')));
+            speedMs: any(named: 'speedMs'),
+          ),
+        );
       });
     });
 
-    test('stale first fix: route starts from the fresh fix, distance not inflated',
-        () {
-      runTracker((fa, t) {
-        t.startTracking();
-        fa.flushMicrotasks();
-        t.nowNanos = () => 10000000000;
-        t.onLocationReceived(fix(40, 10, nanos: 0)); // stale → rejected
-        t.onLocationReceived(fix(52, 13, nanos: 10000000000)); // fresh
-        expect(t.state.trackPoints, hasLength(1));
-        expect(t.state.distanceMetres, 0);
-      });
-    });
+    test(
+      'stale first fix: route starts from the fresh fix, distance not inflated',
+      () {
+        runTracker((fa, t) {
+          t.startTracking();
+          fa.flushMicrotasks();
+          t.nowNanos = () => 10000000000;
+          t.onLocationReceived(fix(40, 10, nanos: 0)); // stale → rejected
+          t.onLocationReceived(fix(52, 13, nanos: 10000000000)); // fresh
+          expect(t.state.trackPoints, hasLength(1));
+          expect(t.state.distanceMetres, 0);
+        });
+      },
+    );
 
     test('fresh fix is recorded', () {
       runTracker((fa, t) {
@@ -679,8 +723,12 @@ void main() {
         t.startTracking();
         fa.flushMicrotasks();
         t.onLocationReceived(fix(52.0, 13.0, nanos: 0)); // point 1
-        t.onLocationReceived(fix(52.1, 13.1, nanos: 1000000000)); // 100 m/1 s = 100 m/s → drop
-        t.onLocationReceived(fix(52.2, 13.2, nanos: 3000000000)); // 100 m/3 s ≈ 33 m/s → keep
+        t.onLocationReceived(
+          fix(52.1, 13.1, nanos: 1000000000),
+        ); // 100 m/1 s = 100 m/s → drop
+        t.onLocationReceived(
+          fix(52.2, 13.2, nanos: 3000000000),
+        ); // 100 m/3 s ≈ 33 m/s → keep
         expect(t.state.trackPoints, hasLength(2));
       });
     });
@@ -691,29 +739,37 @@ void main() {
         fa.flushMicrotasks();
         t.onLocationReceived(fix(52, 13, nanos: 0)); // first point recorded
         // A later stationary fix is dropped by the stationary guard.
-        t.onLocationReceived(fix(52.001, 13.001,
-            hasSpeed: true, speed: 0.5, nanos: 2000000000)); // < 0.8
+        t.onLocationReceived(
+          fix(52.001, 13.001, hasSpeed: true, speed: 0.5, nanos: 2000000000),
+        ); // < 0.8
         expect(t.state.trackPoints, hasLength(1));
       });
     });
 
-    test('first fix is recorded even standing still (no-move ride has a point)',
-        () {
-      // The start location must always be captured so a ride begun (and ended)
-      // at rest still has a point — a dot in the preview, not "No route".
-      runTracker((fa, t) {
-        t.startTracking();
-        fa.flushMicrotasks();
-        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 0.0)); // at rest
-        expect(t.state.trackPoints, hasLength(1));
-        verify(() => tpRepo.addTrackpoint(
-            rideId: any(named: 'rideId'),
-            latitude: any(named: 'latitude'),
-            longitude: any(named: 'longitude'),
-            timestampMs: any(named: 'timestampMs'),
-            speedMs: any(named: 'speedMs'))).called(1);
-      });
-    });
+    test(
+      'first fix is recorded even standing still (no-move ride has a point)',
+      () {
+        // The start location must always be captured so a ride begun (and ended)
+        // at rest still has a point — a dot in the preview, not "No route".
+        runTracker((fa, t) {
+          t.startTracking();
+          fa.flushMicrotasks();
+          t.onLocationReceived(
+            fix(52, 13, hasSpeed: true, speed: 0.0),
+          ); // at rest
+          expect(t.state.trackPoints, hasLength(1));
+          verify(
+            () => tpRepo.addTrackpoint(
+              rideId: any(named: 'rideId'),
+              latitude: any(named: 'latitude'),
+              longitude: any(named: 'longitude'),
+              timestampMs: any(named: 'timestampMs'),
+              speedMs: any(named: 'speedMs'),
+            ),
+          ).called(1);
+        });
+      },
+    );
 
     test('real provider speed is recorded', () {
       runTracker((fa, t) {
@@ -733,8 +789,15 @@ void main() {
         void at(int s, {bool rolling = false}) {
           t.nowNanos = () => s * second;
           t.nowMs = () => 5000000 + s * 1000;
-          t.onLocationReceived(fix(52, 13,
-              hasSpeed: rolling, speed: rolling ? 4 : 0, nanos: s * second));
+          t.onLocationReceived(
+            fix(
+              52,
+              13,
+              hasSpeed: rolling,
+              speed: rolling ? 4 : 0,
+              nanos: s * second,
+            ),
+          );
         }
 
         t.startTracking();
@@ -745,12 +808,15 @@ void main() {
         at(905, rolling: true); // a second rolling fix confirms
         expect(t.state.trackPoints, hasLength(3));
         expect(t.state.distanceMetres, 200);
-        final stamps = verify(() => tpRepo.addTrackpoint(
+        final stamps = verify(
+          () => tpRepo.addTrackpoint(
             rideId: any(named: 'rideId'),
             latitude: any(named: 'latitude'),
             longitude: any(named: 'longitude'),
             timestampMs: captureAny(named: 'timestampMs'),
-            speedMs: any(named: 'speedMs'))).captured;
+            speedMs: any(named: 'speedMs'),
+          ),
+        ).captured;
         expect(stamps, [5000000, 5900000, 5905000]);
       });
     });
@@ -760,8 +826,15 @@ void main() {
         const second = 1000000000;
         void at(int s, {bool rolling = false}) {
           t.nowNanos = () => s * second;
-          t.onLocationReceived(fix(52, 13,
-              hasSpeed: rolling, speed: rolling ? 4 : 0, nanos: s * second));
+          t.onLocationReceived(
+            fix(
+              52,
+              13,
+              hasSpeed: rolling,
+              speed: rolling ? 4 : 0,
+              nanos: s * second,
+            ),
+          );
         }
 
         t.startTracking();
@@ -790,8 +863,12 @@ void main() {
         t.setPendingActivityType('SKATEBOARD');
         t.startTracking();
         fa.flushMicrotasks();
-        verify(() => rideRepo.startRide(
-            activityTypeId: 'SKATEBOARD', startedAtMs: 777000)).called(1);
+        verify(
+          () => rideRepo.startRide(
+            activityTypeId: 'SKATEBOARD',
+            startedAtMs: 777000,
+          ),
+        ).called(1);
       });
     });
 
@@ -801,13 +878,15 @@ void main() {
         t.startTracking();
         fa.flushMicrotasks();
         t.onLocationReceived(fix(52.5, 13.4, hasSpeed: true, speed: 4.2));
-        verify(() => tpRepo.addTrackpoint(
-              rideId: 1,
-              latitude: 52.5,
-              longitude: 13.4,
-              timestampMs: 999000,
-              speedMs: 4.2,
-            )).called(1);
+        verify(
+          () => tpRepo.addTrackpoint(
+            rideId: 1,
+            latitude: 52.5,
+            longitude: 13.4,
+            timestampMs: 999000,
+            speedMs: 4.2,
+          ),
+        ).called(1);
       });
     });
 
@@ -816,31 +895,35 @@ void main() {
         t.startTracking();
         fa.flushMicrotasks();
         t.onLocationReceived(fix(52.5, 13.4)); // hasSpeed: false
-        verify(() => tpRepo.addTrackpoint(
-              rideId: any(named: 'rideId'),
-              latitude: any(named: 'latitude'),
-              longitude: any(named: 'longitude'),
-              timestampMs: any(named: 'timestampMs'),
-              speedMs: null,
-            )).called(1);
+        verify(
+          () => tpRepo.addTrackpoint(
+            rideId: any(named: 'rideId'),
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            timestampMs: any(named: 'timestampMs'),
+            speedMs: null,
+          ),
+        ).called(1);
       });
     });
   });
 
-  test('dispose during an in-flight begin does not emit on a closed stream',
-      () {
-    // App shutdown / provider-container teardown right after the ride starts:
-    // startTracking() leaves the ride-insert in flight, and its continuation
-    // used to call _emit() on the already-closed controller ("Bad state:
-    // Cannot add new events after calling close").
-    fakeAsync((fa) {
-      final t = RideTracker(rideRepo, tpRepo, const _FixedCalc(100));
-      t.nowNanos = () => 0;
-      t.startTracking(); // insert in flight
-      t.dispose(); // container torn down before it lands
-      expect(() => fa.flushMicrotasks(), returnsNormally);
-    });
-  });
+  test(
+    'dispose during an in-flight begin does not emit on a closed stream',
+    () {
+      // App shutdown / provider-container teardown right after the ride starts:
+      // startTracking() leaves the ride-insert in flight, and its continuation
+      // used to call _emit() on the already-closed controller ("Bad state:
+      // Cannot add new events after calling close").
+      fakeAsync((fa) {
+        final t = RideTracker(rideRepo, tpRepo, const _FixedCalc(100));
+        t.nowNanos = () => 0;
+        t.startTracking(); // insert in flight
+        t.dispose(); // container torn down before it lands
+        expect(() => fa.flushMicrotasks(), returnsNormally);
+      });
+    },
+  );
 
   // ─── Max speed (issue #1) ────────────────────────────────────────────────
   //
@@ -853,7 +936,9 @@ void main() {
       runTracker((fa, t) {
         t.startTracking();
         fa.flushMicrotasks();
-        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 5.0)); // 18 km/h
+        t.onLocationReceived(
+          fix(52, 13, hasSpeed: true, speed: 5.0),
+        ); // 18 km/h
         expect(t.state.maxSpeedKmh, closeTo(18.0, 0.001));
       });
     });
@@ -862,8 +947,12 @@ void main() {
       runTracker((fa, t) {
         t.startTracking();
         fa.flushMicrotasks();
-        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 10.0)); // 36 km/h
-        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 2.0)); // 7.2 km/h
+        t.onLocationReceived(
+          fix(52, 13, hasSpeed: true, speed: 10.0),
+        ); // 36 km/h
+        t.onLocationReceived(
+          fix(52, 13, hasSpeed: true, speed: 2.0),
+        ); // 7.2 km/h
         expect(t.state.maxSpeedKmh, closeTo(36.0, 0.001));
       });
     });
@@ -886,9 +975,13 @@ void main() {
       runTracker((fa, t) {
         t.startTracking();
         fa.flushMicrotasks();
-        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 5.0)); // 18 km/h
+        t.onLocationReceived(
+          fix(52, 13, hasSpeed: true, speed: 5.0),
+        ); // 18 km/h
         t.pause();
-        t.onLocationReceived(fix(52, 13, hasSpeed: true, speed: 20.0)); // 72 km/h
+        t.onLocationReceived(
+          fix(52, 13, hasSpeed: true, speed: 20.0),
+        ); // 72 km/h
         expect(t.state.maxSpeedKmh, closeTo(18.0, 0.001));
       });
     });

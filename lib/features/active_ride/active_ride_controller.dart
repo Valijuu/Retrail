@@ -8,9 +8,11 @@ import '../../tracking/ride_tracker.dart';
 /// stays declarative and the orchestration can be unit-tested without pumping
 /// the screen. Adds no new tracker state; delegates intents 1:1.
 class ActiveRideController {
-  ActiveRideController(this._tracker, this._cache,
-      {Brightness Function()? currentBrightness})
-      : _currentBrightness = currentBrightness ?? (() => Brightness.light);
+  ActiveRideController(
+    this._tracker,
+    this._cache, {
+    Brightness Function()? currentBrightness,
+  }) : _currentBrightness = currentBrightness ?? (() => Brightness.light);
 
   final RideTracker _tracker;
   final RoutePreviewCache _cache;
@@ -51,10 +53,13 @@ class ActiveRideController {
       await _cache.ensurePreview(rideId, points, brightness: brightness);
       // The other theme's variant right behind it, so switching light/dark
       // later finds this ride's preview ready instead of rendering it then.
-      await _cache.ensurePreview(rideId, points,
-          brightness: brightness == Brightness.light
-              ? Brightness.dark
-              : Brightness.light);
+      await _cache.ensurePreview(
+        rideId,
+        points,
+        brightness: brightness == Brightness.light
+            ? Brightness.dark
+            : Brightness.light,
+      );
     }
   }
 }

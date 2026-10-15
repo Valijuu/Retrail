@@ -7,19 +7,18 @@ Position _pos({
   double speed = 0,
   double speedAccuracy = 0,
   double accuracy = 5,
-}) =>
-    Position(
-      longitude: 13.0,
-      latitude: 52.0,
-      timestamp: timestamp,
-      accuracy: accuracy,
-      altitude: 0,
-      altitudeAccuracy: 0,
-      heading: 0,
-      headingAccuracy: 0,
-      speed: speed,
-      speedAccuracy: speedAccuracy,
-    );
+}) => Position(
+  longitude: 13.0,
+  latitude: 52.0,
+  timestamp: timestamp,
+  accuracy: accuracy,
+  altitude: 0,
+  altitudeAccuracy: 0,
+  heading: 0,
+  headingAccuracy: 0,
+  speed: speed,
+  speedAccuracy: speedAccuracy,
+);
 
 void main() {
   group('fixFromPosition', () {
@@ -32,7 +31,9 @@ void main() {
     });
 
     test('passes through lat/lng/accuracy', () {
-      final fix = fixFromPosition(_pos(timestamp: DateTime(2024), accuracy: 12));
+      final fix = fixFromPosition(
+        _pos(timestamp: DateTime(2024), accuracy: 12),
+      );
       expect(fix.latitude, 52.0);
       expect(fix.longitude, 13.0);
       expect(fix.accuracy, 12);
@@ -47,19 +48,21 @@ void main() {
       expect(valid.speed, 5);
     });
 
-    test('hasSpeed false when speed is invalid (iOS -1 / Android no-accuracy)',
-        () {
-      final iosInvalid = fixFromPosition(
-        _pos(timestamp: DateTime(2024), speed: -1, speedAccuracy: -1),
-      );
-      expect(iosInvalid.hasSpeed, isFalse);
+    test(
+      'hasSpeed false when speed is invalid (iOS -1 / Android no-accuracy)',
+      () {
+        final iosInvalid = fixFromPosition(
+          _pos(timestamp: DateTime(2024), speed: -1, speedAccuracy: -1),
+        );
+        expect(iosInvalid.hasSpeed, isFalse);
 
-      // Android "no speed": speed 0 with zero accuracy must NOT count as a real
-      // 0 km/h reading, or the stationary guard would drop valid start fixes.
-      final androidNoSpeed = fixFromPosition(
-        _pos(timestamp: DateTime(2024), speed: 0, speedAccuracy: 0),
-      );
-      expect(androidNoSpeed.hasSpeed, isFalse);
-    });
+        // Android "no speed": speed 0 with zero accuracy must NOT count as a real
+        // 0 km/h reading, or the stationary guard would drop valid start fixes.
+        final androidNoSpeed = fixFromPosition(
+          _pos(timestamp: DateTime(2024), speed: 0, speedAccuracy: 0),
+        );
+        expect(androidNoSpeed.hasSpeed, isFalse);
+      },
+    );
   });
 }

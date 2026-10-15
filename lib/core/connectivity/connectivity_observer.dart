@@ -25,9 +25,9 @@ class ConnectivityObserver {
     this.pollInterval = const Duration(seconds: 10),
     this.probeUrl = 'https://clients3.google.com/generate_204',
     this.probeTimeout = const Duration(milliseconds: 2500),
-  })  : _client = httpClient ?? http.Client(),
-        _hasNetwork = hasNetwork ?? _defaultHasNetwork,
-        _onChange = onChange ?? _defaultOnChange();
+  }) : _client = httpClient ?? http.Client(),
+       _hasNetwork = hasNetwork ?? _defaultHasNetwork,
+       _onChange = onChange ?? _defaultOnChange();
 
   final http.Client _client;
   final HasNetwork _hasNetwork;
@@ -41,8 +41,9 @@ class ConnectivityObserver {
   Future<bool> checkNow() async {
     if (!await _hasNetwork()) return false;
     try {
-      final response =
-          await _client.get(Uri.parse(probeUrl)).timeout(probeTimeout);
+      final response = await _client
+          .get(Uri.parse(probeUrl))
+          .timeout(probeTimeout);
       return response.statusCode >= 200 && response.statusCode < 400;
     } catch (_) {
       return false;

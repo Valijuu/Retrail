@@ -40,6 +40,7 @@ class HistoryRideCard extends ConsumerStatefulWidget {
   final bool selectionMode;
   final bool selected;
   final bool highlighted;
+
   /// Card tap — only acts in selection mode (toggles the selection).
   final VoidCallback onTap;
 
@@ -94,9 +95,13 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
     // Any route is offered; the launcher explains one that can't be followed.
     final canFollow = hasRoute;
     final locale = Localizations.localeOf(context).toString();
-    final distance = formatShortDistanceKm(stats.distanceMetres, locale: locale);
+    final distance = formatShortDistanceKm(
+      stats.distanceMetres,
+      locale: locale,
+    );
     final title = rideDisplayTitle(ride, locale: locale);
-    final meta = '${formatRideTime(ride.date, locale: locale)} · '
+    final meta =
+        '${formatRideTime(ride.date, locale: locale)} · '
         '${formatDuration(stats.durationMs)} · '
         'Ø ${stats.avgSpeedKmh.round()} km/h';
     final activity = ActivityType.fromId(ride.typ);
@@ -133,11 +138,14 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                   Row(
                     children: [
                       Expanded(
-                        child: Text(title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: text.bodyMedium
-                                ?.copyWith(color: colors.onSurface)),
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.bodyMedium?.copyWith(
+                            color: colors.onSurface,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       ScaleTransition(
@@ -157,27 +165,37 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(distance,
-                          style: text.bodyMedium?.copyWith(
-                              color: colors.primary,
-                              fontWeight: FontWeight.w500)),
+                      Text(
+                        distance,
+                        style: text.bodyMedium?.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       if (!widget.selectionMode) ...[
                         const SizedBox(width: 4),
                         _OverflowMenu(
                           onEdit: widget.onEdit,
                           onDelete: widget.onDelete,
-                          onFollowRoute: canFollow ? widget.onFollowRoute : null,
+                          onFollowRoute: canFollow
+                              ? widget.onFollowRoute
+                              : null,
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(meta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.labelSmall
-                          ?.copyWith(color: colors.onSurfaceVariant)),
-                  if (activity != null || stats.avgSpeedKmh > 10 || !hasRoute) ...[
+                  Text(
+                    meta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.labelSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                  if (activity != null ||
+                      stats.avgSpeedKmh > 10 ||
+                      !hasRoute) ...[
                     const SizedBox(height: 5),
                     Wrap(
                       spacing: 5,
@@ -187,7 +205,9 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                           _Chip(
                             label: activity.label(l10n),
                             leading: activity.glyph(
-                                size: 13, color: colors.chipSecondaryText),
+                              size: 13,
+                              color: colors.chipSecondaryText,
+                            ),
                             bg: colors.chipSecondary,
                             fg: colors.chipSecondaryText,
                           ),
@@ -237,8 +257,10 @@ class _Thumbnail extends ConsumerWidget {
   /// not-yet-cached preview render, or a navigate-to-start tap) — the list
   /// itself no longer joins them (issue #21).
   Future<List<RoutePoint>> _loadPoints(WidgetRef ref) async {
-    final tps =
-        await ref.read(trackpointRepositoryProvider).getForRide(rideId).first;
+    final tps = await ref
+        .read(trackpointRepositoryProvider)
+        .getForRide(rideId)
+        .first;
     return [for (final tp in tps) (lat: tp.latitude, lng: tp.longitude)];
   }
 
@@ -257,92 +279,101 @@ class _Thumbnail extends ConsumerWidget {
         topRight: AppShapes.heroCard.topRight,
       ),
       child: AspectRatio(
-      // Pin the slot to the render aspect so BoxFit.cover shows the whole route
-      // (render aspect == display aspect → no crop). Single source of truth.
-      aspectRatio: previewAspectRatio,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              key: ValueKey('ride_map_$rideId'),
-              behavior: HitTestBehavior.opaque,
-              onTap: onTap,
-              child: ColoredBox(
-                color: hasRoute ? colors.mapTerrain : colors.mapTerrainGrid,
-                child: hasRoute
-                    ? RoutePreview(
-                        rideId: rideId,
-                        hasRoute: true,
-                        pointsLoader: () => _loadPoints(ref),
-                        cache: ref.watch(routePreviewCacheProvider),
-                        cacheWidth: previewImageCacheWidth,
-                      )
-                    : Center(
-                        child: Text(l10n.chipNoRoute,
-                            style: text.bodyMedium
-                                ?.copyWith(color: colors.onSurfaceVariant)),
-                      ),
-              ),
-            ),
-          ),
-          if (selectionMode)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected
-                      ? colors.primary
-                      : colors.surface.withValues(alpha: 0.85),
-                  border: selected
-                      ? null
-                      : Border.all(color: colors.onSurfaceVariant, width: 1.5),
+        // Pin the slot to the render aspect so BoxFit.cover shows the whole route
+        // (render aspect == display aspect → no crop). Single source of truth.
+        aspectRatio: previewAspectRatio,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                key: ValueKey('ride_map_$rideId'),
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                child: ColoredBox(
+                  color: hasRoute ? colors.mapTerrain : colors.mapTerrainGrid,
+                  child: hasRoute
+                      ? RoutePreview(
+                          rideId: rideId,
+                          hasRoute: true,
+                          pointsLoader: () => _loadPoints(ref),
+                          cache: ref.watch(routePreviewCacheProvider),
+                          cacheWidth: previewImageCacheWidth,
+                        )
+                      : Center(
+                          child: Text(
+                            l10n.chipNoRoute,
+                            style: text.bodyMedium?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
                 ),
-                child: selected
-                    ? Icon(Icons.check,
-                        size: 16,
-                        color: colors.onPrimary,
-                        semanticLabel: l10n.a11ySelected)
-                    : null,
               ),
             ),
-          // Plain text: the whole thumbnail is the card's tap target. Bottom
-          // left, clear of the navigate button.
-          if (hasRoute)
-            const Positioned(
-              left: kMapAttributionInset,
-              bottom: kMapAttributionInset,
-              child: IgnorePointer(child: MapAttribution()),
-            ),
-          if (hasRoute && !selectionMode)
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: Material(
-                color: colors.surface.withValues(alpha: 0.92),
-                shape: const CircleBorder(),
-                child: IconButton(
-                  iconSize: 20,
-                  onPressed: () async {
-                    final points = await _loadPoints(ref);
-                    if (points.isEmpty || !context.mounted) return;
-                    await navigateTo(
+            if (selectionMode)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected
+                        ? colors.primary
+                        : colors.surface.withValues(alpha: 0.85),
+                    border: selected
+                        ? null
+                        : Border.all(
+                            color: colors.onSurfaceVariant,
+                            width: 1.5,
+                          ),
+                  ),
+                  child: selected
+                      ? Icon(
+                          Icons.check,
+                          size: 16,
+                          color: colors.onPrimary,
+                          semanticLabel: l10n.a11ySelected,
+                        )
+                      : null,
+                ),
+              ),
+            // Plain text: the whole thumbnail is the card's tap target. Bottom
+            // left, clear of the navigate button.
+            if (hasRoute)
+              const Positioned(
+                left: kMapAttributionInset,
+                bottom: kMapAttributionInset,
+                child: IgnorePointer(child: MapAttribution()),
+              ),
+            if (hasRoute && !selectionMode)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: Material(
+                  color: colors.surface.withValues(alpha: 0.92),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    iconSize: 20,
+                    onPressed: () async {
+                      final points = await _loadPoints(ref);
+                      if (points.isEmpty || !context.mounted) return;
+                      await navigateTo(
                         context,
                         ref.read(navigationLauncherProvider),
                         points.first.lat,
                         points.first.lng,
-                        title);
-                  },
-                  icon: Icon(Icons.directions, color: colors.primary),
-                  tooltip: l10n.a11yNavigateToStartPoint,
+                        title,
+                      );
+                    },
+                    icon: Icon(Icons.directions, color: colors.primary),
+                    tooltip: l10n.a11yNavigateToStartPoint,
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -351,8 +382,11 @@ class _Thumbnail extends ConsumerWidget {
 enum _MenuAction { follow, edit, delete }
 
 class _OverflowMenu extends StatelessWidget {
-  const _OverflowMenu(
-      {required this.onEdit, required this.onDelete, this.onFollowRoute});
+  const _OverflowMenu({
+    required this.onEdit,
+    required this.onDelete,
+    this.onFollowRoute,
+  });
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback? onFollowRoute;
@@ -397,8 +431,10 @@ class _OverflowMenu extends StatelessWidget {
             children: [
               Icon(Icons.delete, color: colors.deleteActionText, size: 20),
               const SizedBox(width: 12),
-              Text(l10n.actionDelete,
-                  style: TextStyle(color: colors.deleteActionText)),
+              Text(
+                l10n.actionDelete,
+                style: TextStyle(color: colors.deleteActionText),
+              ),
             ],
           ),
         ),
@@ -408,8 +444,12 @@ class _OverflowMenu extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip(
-      {required this.label, required this.bg, required this.fg, this.leading});
+  const _Chip({
+    required this.label,
+    required this.bg,
+    required this.fg,
+    this.leading,
+  });
   final String label;
   final Color bg;
   final Color fg;
@@ -418,24 +458,19 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-          color: bg, borderRadius: AppShapes.pill),
+      decoration: BoxDecoration(color: bg, borderRadius: AppShapes.pill),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: 4),
-          ],
-          Text(label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.visible,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: fg)),
+          if (leading != null) ...[leading!, const SizedBox(width: 4)],
+          Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg),
+          ),
         ],
       ),
     );

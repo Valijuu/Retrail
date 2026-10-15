@@ -21,14 +21,16 @@ Future<void> _pumpApp(WidgetTester tester, Locale locale) async {
   final prefs = PreferencesRepository(await SharedPreferences.getInstance());
   final db = AppDatabase.memory();
   addTearDown(db.close);
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    preferencesRepositoryProvider.overrideWithValue(prefs),
-    isOnlineProvider.overrideWith((ref) => Stream.value(true)),
-    localeProvider.overrideWithValue(locale),
-    ...activeRideTestOverrides(db),
-    ...homeStreamStubs(),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      preferencesRepositoryProvider.overrideWithValue(prefs),
+      isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+      localeProvider.overrideWithValue(locale),
+      ...activeRideTestOverrides(db),
+      ...homeStreamStubs(),
+    ],
+  );
   addTearDown(container.dispose);
 
   await tester.pumpWidget(

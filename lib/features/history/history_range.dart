@@ -23,7 +23,10 @@ import 'history_filter.dart';
   final hasMonthRange = f.monthFrom != null || f.monthTo != null;
   if (hasMonthRange) {
     return monthRangeBounds(
-        year: f.year!, monthFrom: f.monthFrom, monthTo: f.monthTo);
+      year: f.year!,
+      monthFrom: f.monthFrom,
+      monthTo: f.monthTo,
+    );
   }
   return yearBounds(year: f.year);
 }

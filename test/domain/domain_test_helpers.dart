@@ -17,23 +17,22 @@ Ride buildRide({
   double? avgSpeedKmh,
   double? maxSpeedKmh,
   bool hasRoute = false,
-}) =>
-    Ride(
-      rideId: rideId,
-      description: description,
-      typ: typ,
-      startTime: startTime,
-      endTime: endTime,
-      date: date,
-      comment: comment,
-      isFavorite: isFavorite,
-      favoritedAt: favoritedAt,
-      distanceMetres: distanceMetres,
-      durationMs: durationMs,
-      avgSpeedKmh: avgSpeedKmh,
-      maxSpeedKmh: maxSpeedKmh,
-      hasRoute: hasRoute,
-    );
+}) => Ride(
+  rideId: rideId,
+  description: description,
+  typ: typ,
+  startTime: startTime,
+  endTime: endTime,
+  date: date,
+  comment: comment,
+  isFavorite: isFavorite,
+  favoritedAt: favoritedAt,
+  distanceMetres: distanceMetres,
+  durationMs: durationMs,
+  avgSpeedKmh: avgSpeedKmh,
+  maxSpeedKmh: maxSpeedKmh,
+  hasRoute: hasRoute,
+);
 
 int _tpId = 0;
 
@@ -43,15 +42,14 @@ Trackpoint buildTp({
   double longitude = 0,
   int timestamp = 0,
   double? speed,
-}) =>
-    Trackpoint(
-      trackpointId: ++_tpId,
-      rideId: rideId,
-      latitude: latitude,
-      longitude: longitude,
-      timestamp: timestamp,
-      speed: speed,
-    );
+}) => Trackpoint(
+  trackpointId: ++_tpId,
+  rideId: rideId,
+  latitude: latitude,
+  longitude: longitude,
+  timestamp: timestamp,
+  speed: speed,
+);
 
 RideWithTrackpoints rwt(Ride ride, List<Trackpoint> trackpoints) =>
     RideWithTrackpoints(ride: ride, trackpoints: trackpoints);

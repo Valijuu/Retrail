@@ -6,8 +6,9 @@ import 'profile_photo_manager.dart';
 import 'profile_photo_picker.dart';
 
 /// Real photo picker; override with a fake in tests.
-final profilePhotoPickerProvider =
-    Provider<ProfilePhotoPicker>((ref) => ImageCropperPhotoPicker());
+final profilePhotoPickerProvider = Provider<ProfilePhotoPicker>(
+  (ref) => ImageCropperPhotoPicker(),
+);
 
 final profilePhotoManagerProvider = Provider<ProfilePhotoManager>(
   (ref) => ProfilePhotoManager(

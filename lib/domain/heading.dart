@@ -24,7 +24,8 @@ double bearingDegrees(LatLng from, LatLng to) {
   final toLat = to.lat * _radiansPerDegree;
   final deltaLng = (to.lng - from.lng) * _radiansPerDegree;
   final east = math.sin(deltaLng) * math.cos(toLat);
-  final north = math.cos(fromLat) * math.sin(toLat) -
+  final north =
+      math.cos(fromLat) * math.sin(toLat) -
       math.sin(fromLat) * math.cos(toLat) * math.cos(deltaLng);
   final signedDegrees = math.atan2(east, north) * _degreesPerRadian;
   return (signedDegrees + _fullCircleDegrees) % _fullCircleDegrees;
@@ -47,10 +48,17 @@ const int _minPointsForTail = 2;
 /// `null` means "keep the previous heading": standing still or GPS jitter
 /// must not rotate the map. Only once the rider has really moved does the
 /// caller take a new heading and move its anchor to [current].
-double? travelBearing(LatLng anchor, LatLng current,
-    {double minMetres = _minHeadingTravelMetres}) {
-  final movedMetres = const HaversineDistanceCalculator()
-      .distanceBetween(anchor.lat, anchor.lng, current.lat, current.lng);
+double? travelBearing(
+  LatLng anchor,
+  LatLng current, {
+  double minMetres = _minHeadingTravelMetres,
+}) {
+  final movedMetres = const HaversineDistanceCalculator().distanceBetween(
+    anchor.lat,
+    anchor.lng,
+    current.lat,
+    current.lng,
+  );
   if (movedMetres < minMetres) return null;
   return bearingDegrees(anchor, current);
 }
@@ -106,9 +114,12 @@ typedef HeadingState = ({LatLng? anchor, double? bearing});
 /// current bearing by less than [minTurnDegrees] (shortest angle) is ignored
 /// — the anchor still moves on, but the map keeps its heading — so per-fix
 /// noise doesn't make the map swing.
-HeadingState nextHeading(HeadingState state, LatLng point,
-    {double minMetres = _defaultHeadingBaselineMetres,
-    double minTurnDegrees = _defaultMinTurnDegrees}) {
+HeadingState nextHeading(
+  HeadingState state,
+  LatLng point, {
+  double minMetres = _defaultHeadingBaselineMetres,
+  double minTurnDegrees = _defaultMinTurnDegrees,
+}) {
   final anchor = state.anchor;
   if (anchor == null) return (anchor: point, bearing: state.bearing);
   final travel = travelBearing(anchor, point, minMetres: minMetres);

@@ -11,15 +11,19 @@ void main() {
   Future<int> insertRide() =>
       db.rideDao.insert(RidesCompanion.insert(startTime: const Value(1000)));
 
-  TrackpointsCompanion tp(int rideId, double lat, double lng,
-          {int ts = 0, double? speed}) =>
-      TrackpointsCompanion.insert(
-        rideId: rideId,
-        latitude: lat,
-        longitude: lng,
-        timestamp: ts,
-        speed: Value(speed),
-      );
+  TrackpointsCompanion tp(
+    int rideId,
+    double lat,
+    double lng, {
+    int ts = 0,
+    double? speed,
+  }) => TrackpointsCompanion.insert(
+    rideId: rideId,
+    latitude: lat,
+    longitude: lng,
+    timestamp: ts,
+    speed: Value(speed),
+  );
 
   test('insert + getByRideId round-trips', () async {
     final rideId = await insertRide();

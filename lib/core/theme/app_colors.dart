@@ -182,30 +182,54 @@ class AppColors extends ThemeExtension<AppColors> {
     return AppColors(
       primary: Color.lerp(primary, other.primary, t)!,
       onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,
-      primaryContainer: Color.lerp(primaryContainer, other.primaryContainer, t)!,
-      onPrimaryContainer:
-          Color.lerp(onPrimaryContainer, other.onPrimaryContainer, t)!,
+      primaryContainer: Color.lerp(
+        primaryContainer,
+        other.primaryContainer,
+        t,
+      )!,
+      onPrimaryContainer: Color.lerp(
+        onPrimaryContainer,
+        other.onPrimaryContainer,
+        t,
+      )!,
       surface: Color.lerp(surface, other.surface, t)!,
       onSurface: Color.lerp(onSurface, other.onSurface, t)!,
-      surfaceContainer: Color.lerp(surfaceContainer, other.surfaceContainer, t)!,
-      onSurfaceVariant:
-          Color.lerp(onSurfaceVariant, other.onSurfaceVariant, t)!,
+      surfaceContainer: Color.lerp(
+        surfaceContainer,
+        other.surfaceContainer,
+        t,
+      )!,
+      onSurfaceVariant: Color.lerp(
+        onSurfaceVariant,
+        other.onSurfaceVariant,
+        t,
+      )!,
       subtleText: Color.lerp(subtleText, other.subtleText, t)!,
       hintText: Color.lerp(hintText, other.hintText, t)!,
       chipSecondary: Color.lerp(chipSecondary, other.chipSecondary, t)!,
-      chipSecondaryText:
-          Color.lerp(chipSecondaryText, other.chipSecondaryText, t)!,
+      chipSecondaryText: Color.lerp(
+        chipSecondaryText,
+        other.chipSecondaryText,
+        t,
+      )!,
       editActionBg: Color.lerp(editActionBg, other.editActionBg, t)!,
       editActionText: Color.lerp(editActionText, other.editActionText, t)!,
       deleteActionBg: Color.lerp(deleteActionBg, other.deleteActionBg, t)!,
-      deleteActionText:
-          Color.lerp(deleteActionText, other.deleteActionText, t)!,
+      deleteActionText: Color.lerp(
+        deleteActionText,
+        other.deleteActionText,
+        t,
+      )!,
       liveIndicator: Color.lerp(liveIndicator, other.liveIndicator, t)!,
       mapTerrain: Color.lerp(mapTerrain, other.mapTerrain, t)!,
       mapTerrainGrid: Color.lerp(mapTerrainGrid, other.mapTerrainGrid, t)!,
       routeLineBlue: Color.lerp(routeLineBlue, other.routeLineBlue, t)!,
       routeLineHalo: Color.lerp(routeLineHalo, other.routeLineHalo, t)!,
-      markerStartGreen: Color.lerp(markerStartGreen, other.markerStartGreen, t)!,
+      markerStartGreen: Color.lerp(
+        markerStartGreen,
+        other.markerStartGreen,
+        t,
+      )!,
       scrim: Color.lerp(scrim, other.scrim, t)!,
       onMap: Color.lerp(onMap, other.onMap, t)!,
     );

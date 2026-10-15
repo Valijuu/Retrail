@@ -13,38 +13,37 @@ enum AppLanguage { system, english, german }
 
 /// Maps a stored language tag to [AppLanguage] (`en`→english, `de`→german).
 AppLanguage appLanguageFromTag(String tag) => switch (tag) {
-      'en' => AppLanguage.english,
-      'de' => AppLanguage.german,
-      _ => AppLanguage.system,
-    };
+  'en' => AppLanguage.english,
+  'de' => AppLanguage.german,
+  _ => AppLanguage.system,
+};
 
 /// The stored tag for a language (system → 'system').
 String tagFor(AppLanguage language) => switch (language) {
-      AppLanguage.english => 'en',
-      AppLanguage.german => 'de',
-      AppLanguage.system => 'system',
-    };
+  AppLanguage.english => 'en',
+  AppLanguage.german => 'de',
+  AppLanguage.system => 'system',
+};
 
 /// The [Locale] override for a language; null = follow the system locale.
 Locale? localeFor(AppLanguage language) => switch (language) {
-      AppLanguage.english => const Locale('en'),
-      AppLanguage.german => const Locale('de'),
-      AppLanguage.system => null,
-    };
+  AppLanguage.english => const Locale('en'),
+  AppLanguage.german => const Locale('de'),
+  AppLanguage.system => null,
+};
 
 /// The user's selected interface language.
 final appLanguageProvider = StreamProvider<AppLanguage>(
-  (ref) => ref
-      .watch(preferencesRepositoryProvider)
-      .language
-      .map(appLanguageFromTag),
+  (ref) =>
+      ref.watch(preferencesRepositoryProvider).language.map(appLanguageFromTag),
 );
 
 /// The active [Locale] override for `MaterialApp` (null = system). Unknown
 /// (loading) is treated as system.
 final localeProvider = Provider<Locale?>(
   (ref) => localeFor(
-      ref.watch(appLanguageProvider).asData?.value ?? AppLanguage.system),
+    ref.watch(appLanguageProvider).asData?.value ?? AppLanguage.system,
+  ),
 );
 
 /// The concrete effective [Locale] — the user's explicit override, or the
@@ -68,7 +67,8 @@ final effectiveLocaleProvider = Provider<Locale>(
 /// The concrete locale tag for `intl`'s `DateFormat` (ride titles, history
 /// date labels).
 final dateFormatLocaleProvider = Provider<String>(
-    (ref) => ref.watch(effectiveLocaleProvider).toString());
+  (ref) => ref.watch(effectiveLocaleProvider).toString(),
+);
 
 /// Thin testable seam over the preference writers (mirrors `SettingsViewModel`).
 /// DataStore stays the single source of truth — the screen reads the live
@@ -79,10 +79,10 @@ class SettingsController {
   final PreferencesRepository _prefs;
 
   Future<void> setTheme(ThemeMode mode) => _prefs.setThemeMode(switch (mode) {
-        ThemeMode.light => 'light',
-        ThemeMode.dark => 'dark',
-        ThemeMode.system => 'system',
-      });
+    ThemeMode.light => 'light',
+    ThemeMode.dark => 'dark',
+    ThemeMode.system => 'system',
+  });
 
   Future<void> setLanguage(AppLanguage language) =>
       _prefs.setLanguage(tagFor(language));

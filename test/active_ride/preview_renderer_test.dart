@@ -74,14 +74,16 @@ void main() {
     expect(seen, Brightness.dark); // dark mode → dark snapshot
   });
 
-  test('propagates the renderer\'s completeness (stale sketch stays stale)',
-      () async {
-    final render = buildPreviewRenderer(
-      isOnline: () => false,
-      online: (p, b) async => _empty(),
-      offline: (p, b) async => _empty(complete: false),
-    );
-    final result = await render(points, Brightness.light);
-    expect(result.complete, isFalse);
-  });
+  test(
+    'propagates the renderer\'s completeness (stale sketch stays stale)',
+    () async {
+      final render = buildPreviewRenderer(
+        isOnline: () => false,
+        online: (p, b) async => _empty(),
+        offline: (p, b) async => _empty(complete: false),
+      );
+      final result = await render(points, Brightness.light);
+      expect(result.complete, isFalse);
+    },
+  );
 }

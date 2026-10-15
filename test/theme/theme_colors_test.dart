@@ -39,8 +39,7 @@ void main() {
       expect(theme.scaffoldBackgroundColor, AppColors.light.surface);
     });
 
-    test('snack bars float as rounded cards in the warm brand container',
-        () {
+    test('snack bars float as rounded cards in the warm brand container', () {
       for (final (b, t) in [
         (Brightness.light, AppColors.light),
         (Brightness.dark, AppColors.dark),
@@ -51,17 +50,23 @@ void main() {
         expect(sb.contentTextStyle?.color, t.onPrimaryContainer);
         expect(sb.actionTextColor, t.primary);
         expect(sb.closeIconColor, t.onPrimaryContainer);
-        expect((sb.shape! as RoundedRectangleBorder).borderRadius,
-            AppShapes.card);
+        expect(
+          (sb.shape! as RoundedRectangleBorder).borderRadius,
+          AppShapes.card,
+        );
       }
     });
 
-    test('dynamic color is off — primary is the brand color, not seed-derived',
-        () {
-      // Brand primary is preserved exactly (not tonally adjusted by fromSeed).
-      expect(buildTheme(Brightness.light).colorScheme.primary,
-          const Color(0xFFB45309));
-    });
+    test(
+      'dynamic color is off — primary is the brand color, not seed-derived',
+      () {
+        // Brand primary is preserved exactly (not tonally adjusted by fromSeed).
+        expect(
+          buildTheme(Brightness.light).colorScheme.primary,
+          const Color(0xFFB45309),
+        );
+      },
+    );
   });
 
   group('overlay tokens (identical in both themes)', () {
@@ -70,11 +75,13 @@ void main() {
       expect(AppColors.dark.scrim, AppColors.light.scrim);
     });
 
-    test('onMap is white — marker rings, badge glyph, buttons over the map',
-        () {
-      expect(AppColors.light.onMap, const Color(0xFFFFFFFF));
-      expect(AppColors.dark.onMap, AppColors.light.onMap);
-    });
+    test(
+      'onMap is white — marker rings, badge glyph, buttons over the map',
+      () {
+        expect(AppColors.light.onMap, const Color(0xFFFFFFFF));
+        expect(AppColors.dark.onMap, AppColors.light.onMap);
+      },
+    );
 
     test('copyWith and lerp carry the overlay tokens', () {
       const red = Color(0xFFFF0000);

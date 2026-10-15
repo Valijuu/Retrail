@@ -71,8 +71,12 @@ void main() {
       ];
       const width = 360.0, height = 640.0, padding = 24.0, epsilon = 1e-6;
       final camera = fitRouteCamera(points, width: width, height: height)!;
-      final offsets =
-          cameraOffsets(points, camera, width: width, height: height);
+      final offsets = cameraOffsets(
+        points,
+        camera,
+        width: width,
+        height: height,
+      );
       for (var i = 0; i < points.length; i++) {
         expect(
           offsets[i].x,
@@ -111,38 +115,54 @@ void main() {
     test('an empty route projects to no offsets — []', () {
       expect(cameraOffsets(const [], camera, width: 400, height: 300), isEmpty);
     });
-    test('the camera centre lands on the box centre — (200, 150) in 400 × 300',
-        () {
-      final offsets = cameraOffsets(const [(lat: 49.4, lng: 11.0)], camera,
-          width: 400, height: 300);
-      expect(offsets, hasLength(1));
-      expect(offsets.single.x, closeTo(200, 1e-6));
-      expect(offsets.single.y, closeTo(150, 1e-6));
-    });
     test(
-        'east is right by the 512-px world: 0.1° east at z10 → '
+      'the camera centre lands on the box centre — (200, 150) in 400 × 300',
+      () {
+        final offsets = cameraOffsets(
+          const [(lat: 49.4, lng: 11.0)],
+          camera,
+          width: 400,
+          height: 300,
+        );
+        expect(offsets, hasLength(1));
+        expect(offsets.single.x, closeTo(200, 1e-6));
+        expect(offsets.single.y, closeTo(150, 1e-6));
+      },
+    );
+    test('east is right by the 512-px world: 0.1° east at z10 → '
         'x = 200 + 512·2¹⁰·0.1/360 ≈ 345.64', () {
-      final offsets = cameraOffsets(const [(lat: 49.4, lng: 11.1)], camera,
-          width: 400, height: 300);
+      final offsets = cameraOffsets(
+        const [(lat: 49.4, lng: 11.1)],
+        camera,
+        width: 400,
+        height: 300,
+      );
       expect(offsets.single.x, closeTo(345.64, 0.01));
       expect(offsets.single.y, closeTo(150, 1e-6));
     });
-    test(
-        'north is up, in Web-Mercator: 0.1° north of 49.4° at z10 → '
+    test('north is up, in Web-Mercator: 0.1° north of 49.4° at z10 → '
         'y = 150 − 512·2¹⁰·(latYFrac(49.4) − latYFrac(49.5))', () {
-      final offsets = cameraOffsets(const [(lat: 49.5, lng: 11.0)], camera,
-          width: 400, height: 300);
-      final expectedY =
-          150 - 512 * 1024 * (latYFrac(49.4) - latYFrac(49.5));
+      final offsets = cameraOffsets(
+        const [(lat: 49.5, lng: 11.0)],
+        camera,
+        width: 400,
+        height: 300,
+      );
+      final expectedY = 150 - 512 * 1024 * (latYFrac(49.4) - latYFrac(49.5));
       expect(offsets.single.x, closeTo(200, 1e-6));
       expect(offsets.single.y, closeTo(expectedY, 1e-6));
     });
     test('keeps every point, in route order', () {
-      final offsets = cameraOffsets(const [
-        (lat: 49.4, lng: 11.1),
-        (lat: 49.4, lng: 11.0),
-        (lat: 49.4, lng: 10.9),
-      ], camera, width: 400, height: 300);
+      final offsets = cameraOffsets(
+        const [
+          (lat: 49.4, lng: 11.1),
+          (lat: 49.4, lng: 11.0),
+          (lat: 49.4, lng: 10.9),
+        ],
+        camera,
+        width: 400,
+        height: 300,
+      );
       expect(offsets, hasLength(3));
       expect(offsets[0].x, greaterThan(offsets[1].x));
       expect(offsets[1].x, greaterThan(offsets[2].x));

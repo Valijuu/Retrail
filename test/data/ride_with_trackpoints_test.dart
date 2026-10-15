@@ -12,9 +12,13 @@ void main() {
       db.rideDao.insert(RidesCompanion.insert(description: Value(title)));
 
   Future<void> addPoint(int rideId, double lat) => db.trackpointDao.insert(
-        TrackpointsCompanion.insert(
-            rideId: rideId, latitude: lat, longitude: 0, timestamp: 0),
-      );
+    TrackpointsCompanion.insert(
+      rideId: rideId,
+      latitude: lat,
+      longitude: 0,
+      timestamp: 0,
+    ),
+  );
 
   test('assembly zips each ride to its own trackpoints', () async {
     final a = await insertRide('A');

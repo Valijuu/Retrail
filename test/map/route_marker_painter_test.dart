@@ -14,7 +14,11 @@ Future<ByteData> _render(RouteEndpointStyle style) async {
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder);
   paintRouteDecorations(
-      canvas, const [(x: 20, y: 20), (x: 120, y: 20)], style, _colors);
+    canvas,
+    const [(x: 20, y: 20), (x: 120, y: 20)],
+    style,
+    _colors,
+  );
   final image = await recorder.endRecording().toImage(140, 40);
   final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
   image.dispose();
@@ -23,8 +27,12 @@ Future<ByteData> _render(RouteEndpointStyle style) async {
 
 ui.Color _pixel(ByteData rgba, int x, int y) {
   final i = (y * 140 + x) * 4;
-  return ui.Color.fromARGB(rgba.getUint8(i + 3), rgba.getUint8(i),
-      rgba.getUint8(i + 1), rgba.getUint8(i + 2));
+  return ui.Color.fromARGB(
+    rgba.getUint8(i + 3),
+    rgba.getUint8(i),
+    rgba.getUint8(i + 1),
+    rgba.getUint8(i + 2),
+  );
 }
 
 bool _close(ui.Color a, ui.Color b) =>
@@ -59,34 +67,39 @@ void main() {
     expect(_pixel(rgba, 120, 20).a, 0);
   });
 
-  test('draws a blue, white-rimmed arrowhead one spacing along the line',
-      () async {
-    final rgba = await _render(RouteEndpointStyle.none);
-    final x = 20 + routeArrowSpacing.toInt();
-    expect(_close(_pixel(rgba, x, 20), _colors.routeLineBlue), isTrue);
-    final around = [
-      for (var dx = -5; dx <= 5; dx++)
-        for (var dy = -5; dy <= 5; dy++) _pixel(rgba, x + dx, 20 + dy),
-    ];
-    // The 1.6px rim is anti-aliased at 1× — look for a near-white, opaque
-    // pixel rather than an exact match.
-    expect(
+  test(
+    'draws a blue, white-rimmed arrowhead one spacing along the line',
+    () async {
+      final rgba = await _render(RouteEndpointStyle.none);
+      final x = 20 + routeArrowSpacing.toInt();
+      expect(_close(_pixel(rgba, x, 20), _colors.routeLineBlue), isTrue);
+      final around = [
+        for (var dx = -5; dx <= 5; dx++)
+          for (var dy = -5; dy <= 5; dy++) _pixel(rgba, x + dx, 20 + dy),
+      ];
+      // The 1.6px rim is anti-aliased at 1× — look for a near-white, opaque
+      // pixel rather than an exact match.
+      expect(
         around.any((c) => c.a > 0.9 && c.r > 0.8 && c.g > 0.8 && c.b > 0.8),
-        isTrue);
-    // …and nothing where no arrow belongs (inside the start margin).
-    expect(_pixel(rgba, 30, 20).a, 0);
-  });
+        isTrue,
+      );
+      // …and nothing where no arrow belongs (inside the start margin).
+      expect(_pixel(rgba, 30, 20).a, 0);
+    },
+  );
 
-  test('marker and arrow PNGs rasterise at the requested pixel ratio',
-      () async {
-    for (final kind in RouteMarkerImage.values) {
-      final png = await routeMarkerImagePng(kind, _colors, 3);
-      final codec = await ui.instantiateImageCodec(png);
-      final frame = await codec.getNextFrame();
-      expect(frame.image.width, greaterThanOrEqualTo(45), reason: '$kind');
-      expect(frame.image.width, frame.image.height);
-    }
-    final arrow = await routeArrowImagePng(_colors, 3);
-    expect(arrow, isNotEmpty);
-  });
+  test(
+    'marker and arrow PNGs rasterise at the requested pixel ratio',
+    () async {
+      for (final kind in RouteMarkerImage.values) {
+        final png = await routeMarkerImagePng(kind, _colors, 3);
+        final codec = await ui.instantiateImageCodec(png);
+        final frame = await codec.getNextFrame();
+        expect(frame.image.width, greaterThanOrEqualTo(45), reason: '$kind');
+        expect(frame.image.width, frame.image.height);
+      }
+      final arrow = await routeArrowImagePng(_colors, 3);
+      expect(arrow, isNotEmpty);
+    },
+  );
 }

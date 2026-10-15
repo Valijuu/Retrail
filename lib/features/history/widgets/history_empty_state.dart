@@ -19,10 +19,9 @@ class HistoryEmptyState extends ConsumerWidget {
     final message = Text(
       narrowed ? l10n.historyNoMatches : l10n.historyEmpty,
       textAlign: TextAlign.center,
-      style: Theme.of(context)
-          .textTheme
-          .bodyMedium
-          ?.copyWith(color: colors.onSurfaceVariant),
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
     );
     if (!narrowed) return Center(child: message);
     return Center(
@@ -33,8 +32,10 @@ class HistoryEmptyState extends ConsumerWidget {
           const SizedBox(height: 8),
           TextButton(
             onPressed: ref.read(historyFilterProvider.notifier).reset,
-            child: Text(l10n.historyResetFilters,
-                style: TextStyle(color: colors.primary)),
+            child: Text(
+              l10n.historyResetFilters,
+              style: TextStyle(color: colors.primary),
+            ),
           ),
         ],
       ),

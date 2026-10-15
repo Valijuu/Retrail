@@ -12,9 +12,9 @@ void main() {
   Future<(ProviderContainer, PreferencesRepository)> setup() async {
     SharedPreferences.setMockInitialValues({});
     final prefs = PreferencesRepository(await SharedPreferences.getInstance());
-    final container = ProviderContainer(overrides: [
-      preferencesRepositoryProvider.overrideWithValue(prefs),
-    ]);
+    final container = ProviderContainer(
+      overrides: [preferencesRepositoryProvider.overrideWithValue(prefs)],
+    );
     addTearDown(container.dispose);
     return (container, prefs);
   }
@@ -40,13 +40,15 @@ void main() {
     expect(await prefs.userName.first, 'Vali');
   });
 
-  test('finishOnboardingWithActivity saves the type and marks onboarding done',
-      () async {
-    final (container, prefs) = await setup();
-    await container
-        .read(onboardingControllerProvider)
-        .finishOnboardingWithActivity(ActivityType.scooter);
-    expect(await prefs.lastActivityType.first, 'SCOOTER');
-    expect(await prefs.onboardingDone.first, true);
-  });
+  test(
+    'finishOnboardingWithActivity saves the type and marks onboarding done',
+    () async {
+      final (container, prefs) = await setup();
+      await container
+          .read(onboardingControllerProvider)
+          .finishOnboardingWithActivity(ActivityType.scooter);
+      expect(await prefs.lastActivityType.first, 'SCOOTER');
+      expect(await prefs.onboardingDone.first, true);
+    },
+  );
 }

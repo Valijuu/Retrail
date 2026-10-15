@@ -10,16 +10,20 @@ import '../../active_ride/widgets/ride_chrome.dart';
 /// is ridden backwards, Spec 18) or "Finish reached". A null [progress]
 /// (before the first fix, or while the direction is undecided) shows the
 /// whole route's length [totalM].
-String followProgressLabel(BuildContext context,
-    {required RouteProgress? progress,
-    required double totalM,
-    bool reversed = false}) {
+String followProgressLabel(
+  BuildContext context, {
+  required RouteProgress? progress,
+  required double totalM,
+  bool reversed = false,
+}) {
   final l10n = AppLocalizations.of(context);
   final locale = Localizations.localeOf(context).toString();
   final p = progress;
   if (p != null && p.isFinished) return l10n.followFinished;
-  final distance =
-      formatDistanceKm(p == null ? totalM : p.remainingM, locale: locale);
+  final distance = formatDistanceKm(
+    p == null ? totalM : p.remainingM,
+    locale: locale,
+  );
   return reversed
       ? l10n.followRemainingReversed(distance)
       : l10n.followRemaining(distance);
@@ -28,11 +32,12 @@ String followProgressLabel(BuildContext context,
 /// "X km to go" strip under the ride map while following (Spec 17).
 /// Before the first fix it shows the whole route's length.
 class FollowRemainingLine extends StatelessWidget {
-  const FollowRemainingLine(
-      {super.key,
-      required this.progress,
-      required this.totalM,
-      this.reversed = false});
+  const FollowRemainingLine({
+    super.key,
+    required this.progress,
+    required this.totalM,
+    this.reversed = false,
+  });
 
   final RouteProgress? progress;
 
@@ -50,13 +55,17 @@ class FollowRemainingLine extends StatelessWidget {
       color: colors.surfaceContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Text(
-          followProgressLabel(context,
-              progress: progress, totalM: totalM, reversed: reversed),
-          textAlign: TextAlign.center,
-          style: Theme.of(context)
-              .textTheme
-              .labelLarge
-              ?.copyWith(color: colors.onSurface)),
+        followProgressLabel(
+          context,
+          progress: progress,
+          totalM: totalM,
+          reversed: reversed,
+        ),
+        textAlign: TextAlign.center,
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(color: colors.onSurface),
+      ),
     );
   }
 }
@@ -71,6 +80,7 @@ Widget? followBanner(BuildContext context, RouteProgress? progress) {
     label: progress.hasJoined
         ? l10n.followOffRouteBanner
         : l10n.followDistanceToRoute(
-            formatDistanceToRoute(progress.offsetM, locale: locale)),
+            formatDistanceToRoute(progress.offsetM, locale: locale),
+          ),
   );
 }

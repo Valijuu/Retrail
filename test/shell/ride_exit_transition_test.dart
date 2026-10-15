@@ -86,12 +86,12 @@ class _GrantedPerms implements LocationPermissionService {
 
 class _FakeRecording extends RideRecordingController {
   _FakeRecording(RideTracker tracker)
-      : super(
-          tracker: tracker,
-          source: _NoopSource(),
-          permissions: _GrantedPerms(),
-          service: _NoopService(),
-        );
+    : super(
+        tracker: tracker,
+        source: _NoopSource(),
+        permissions: _GrantedPerms(),
+        service: _NoopService(),
+      );
 
   @override
   Future<LocationStartAction> prepare() async => LocationStartAction.proceed;
@@ -152,25 +152,31 @@ void main() {
     final controller = _FakeActiveRideController(
       tracker,
       RoutePreviewCache(
-          baseDir: Directory.systemTemp,
-          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
+        baseDir: Directory.systemTemp,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      ),
     );
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(db),
-        preferencesRepositoryProvider.overrideWithValue(prefs),
-        isOnlineProvider.overrideWith((ref) => Stream.value(true)),
-        currentProfilePhotoProvider.overrideWith((ref) => Stream.value(null)),
-        recentProfilePhotosProvider.overrideWith((ref) => Stream.value(const [])),
-        rideTrackingStateProvider.overrideWith(
-            (ref) => Stream.value(const RideTrackingState(isTracking: true))),
-        activeRideControllerProvider.overrideWithValue(controller),
-        rideRecordingControllerProvider.overrideWithValue(recording),
-        ...homeStreamStubs(),
-      ],
-      child: const RetrailApp(),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          preferencesRepositoryProvider.overrideWithValue(prefs),
+          isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+          currentProfilePhotoProvider.overrideWith((ref) => Stream.value(null)),
+          recentProfilePhotosProvider.overrideWith(
+            (ref) => Stream.value(const []),
+          ),
+          rideTrackingStateProvider.overrideWith(
+            (ref) => Stream.value(const RideTrackingState(isTracking: true)),
+          ),
+          activeRideControllerProvider.overrideWithValue(controller),
+          rideRecordingControllerProvider.overrideWithValue(recording),
+          ...homeStreamStubs(),
+        ],
+        child: const RetrailApp(),
+      ),
+    );
     await tester.pump(); // splash → redirect settles on Home
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -203,19 +209,27 @@ void main() {
     for (var i = 0; i < totalSteps; i++) {
       await tester.pump(frame);
 
-      expect(find.byType(CountdownScreen), findsNothing,
-          reason: 'countdown screen re-mounted at step $i (${i * 8}ms)');
+      expect(
+        find.byType(CountdownScreen),
+        findsNothing,
+        reason: 'countdown screen re-mounted at step $i (${i * 8}ms)',
+      );
 
       final rideChromeVisible = find.text('Stop ride').evaluate().isNotEmpty;
       final scrimVisible = find
           .byWidgetPredicate(
-              (w) => w is ModalBarrier && w.color == Colors.black54)
+            (w) => w is ModalBarrier && w.color == Colors.black54,
+          )
           .evaluate()
           .isNotEmpty;
       if (rideChromeVisible) {
-        expect(scrimVisible, isTrue,
-            reason: 'ride chrome visible WITHOUT its scrim at step $i '
-                '(${i * 8}ms) — this is the flicker window');
+        expect(
+          scrimVisible,
+          isTrue,
+          reason:
+              'ride chrome visible WITHOUT its scrim at step $i '
+              '(${i * 8}ms) — this is the flicker window',
+        );
       }
     }
     await tester.pumpAndSettle();
@@ -223,35 +237,39 @@ void main() {
   }
 
   testWidgets(
-      'Save: no un-scrimmed ride-screen frame and no countdown re-entry '
-      'while popping back to Home', (tester) async {
-    await pumpToActiveRide(tester);
+    'Save: no un-scrimmed ride-screen frame and no countdown re-entry '
+    'while popping back to Home',
+    (tester) async {
+      await pumpToActiveRide(tester);
 
-    await tester.tap(find.text('Stop ride'));
-    await tester.pump();
-    await tester.tap(find.text('Stop'));
-    await tester.pump();
-    expect(find.text('How was your ride?'), findsOneWidget);
+      await tester.tap(find.text('Stop ride'));
+      await tester.pump();
+      await tester.tap(find.text('Stop'));
+      await tester.pump();
+      expect(find.text('How was your ride?'), findsOneWidget);
 
-    await tester.tap(find.text('Save'));
-    await assertCleanExitToHome(tester);
-  });
+      await tester.tap(find.text('Save'));
+      await assertCleanExitToHome(tester);
+    },
+  );
 
   testWidgets(
-      'Discard: no un-scrimmed ride-screen frame and no countdown re-entry '
-      'while popping back to Home', (tester) async {
-    await pumpToActiveRide(tester);
+    'Discard: no un-scrimmed ride-screen frame and no countdown re-entry '
+    'while popping back to Home',
+    (tester) async {
+      await pumpToActiveRide(tester);
 
-    await tester.tap(find.text('Stop ride'));
-    await tester.pump();
-    await tester.tap(find.text('Stop'));
-    await tester.pump();
-    expect(find.text('How was your ride?'), findsOneWidget);
+      await tester.tap(find.text('Stop ride'));
+      await tester.pump();
+      await tester.tap(find.text('Stop'));
+      await tester.pump();
+      expect(find.text('How was your ride?'), findsOneWidget);
 
-    // Discard asks first (#73); the exit starts on the confirmation.
-    await tester.tap(find.text('Discard ride'));
-    await tester.pump();
-    await tester.tap(find.text('Discard'));
-    await assertCleanExitToHome(tester);
-  });
+      // Discard asks first (#73); the exit starts on the confirmation.
+      await tester.tap(find.text('Discard ride'));
+      await tester.pump();
+      await tester.tap(find.text('Discard'));
+      await assertCleanExitToHome(tester);
+    },
+  );
 }

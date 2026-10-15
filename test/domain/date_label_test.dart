@@ -8,12 +8,12 @@ void main() {
   final nowMs = DateTime(2026, 6, 17, 10, 0).millisecondsSinceEpoch;
 
   String label(String key) => formatDateLabel(
-        key,
-        todayLabel: 'Today',
-        yesterdayLabel: 'Yesterday',
-        locale: 'en',
-        nowMs: nowMs,
-      );
+    key,
+    todayLabel: 'Today',
+    yesterdayLabel: 'Yesterday',
+    locale: 'en',
+    nowMs: nowMs,
+  );
 
   test('today and yesterday use the supplied labels', () {
     expect(label('2026-06-17'), 'Today');
@@ -26,8 +26,12 @@ void main() {
 
   test('an unparseable key is returned unchanged', () {
     expect(
-      formatDateLabel('not-a-date',
-          todayLabel: 'T', yesterdayLabel: 'Y', nowMs: nowMs),
+      formatDateLabel(
+        'not-a-date',
+        todayLabel: 'T',
+        yesterdayLabel: 'Y',
+        nowMs: nowMs,
+      ),
       'not-a-date',
     );
   });

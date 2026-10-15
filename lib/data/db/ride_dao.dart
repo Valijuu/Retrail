@@ -26,7 +26,9 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
   }
 
   Stream<List<RideWithTrackpoints>> getRidesWithTrackpointsBetween(
-      int weekStartMs, int weekEndMs) {
+    int weekStartMs,
+    int weekEndMs,
+  ) {
     final query = _joinedRides()
       ..where(rides.startTime.isBetweenValues(weekStartMs, weekEndMs));
     return query.watch().map(_group);
@@ -64,7 +66,10 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
     for (final row in rows) {
       final ride = row.readTable(rides);
       final tp = row.readTableOrNull(trackpoints);
-      final entry = ordered.putIfAbsent(ride.rideId, () => (ride, <Trackpoint>[]));
+      final entry = ordered.putIfAbsent(
+        ride.rideId,
+        () => (ride, <Trackpoint>[]),
+      );
       if (tp != null) entry.$2.add(tp);
     }
     return ordered.values
@@ -80,8 +85,9 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
       (select(rides)..where((r) => r.endTime.isNull())).get();
 
   Future<void> updateEndTime(int rideId, int endTime) =>
-      (update(rides)..where((r) => r.rideId.equals(rideId)))
-          .write(RidesCompanion(endTime: Value(endTime)));
+      (update(rides)..where((r) => r.rideId.equals(rideId))).write(
+        RidesCompanion(endTime: Value(endTime)),
+      );
 
   /// Writes the denormalized [RideStats] fields + [hasRoute] (see tables.dart)
   /// computed once at ride finalization, so History never recomputes them
@@ -93,30 +99,40 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
     required double avgSpeedKmh,
     required double maxSpeedKmh,
     required bool hasRoute,
-  }) =>
-      (update(rides)..where((r) => r.rideId.equals(rideId))).write(RidesCompanion(
-        distanceMetres: Value(distanceMetres),
-        durationMs: Value(durationMs),
-        avgSpeedKmh: Value(avgSpeedKmh),
-        maxSpeedKmh: Value(maxSpeedKmh),
-        hasRoute: Value(hasRoute),
-      ));
+  }) => (update(rides)..where((r) => r.rideId.equals(rideId))).write(
+    RidesCompanion(
+      distanceMetres: Value(distanceMetres),
+      durationMs: Value(durationMs),
+      avgSpeedKmh: Value(avgSpeedKmh),
+      maxSpeedKmh: Value(maxSpeedKmh),
+      hasRoute: Value(hasRoute),
+    ),
+  );
 
   /// One ride row, or null when it is gone (the "Ride saved" hint, #75).
   Future<Ride?> findById(int rideId) =>
       (select(rides)..where((r) => r.rideId.equals(rideId))).getSingleOrNull();
 
-  Future<void> updateRideDetails(int rideId, String? description, String? comment) =>
-      (update(rides)..where((r) => r.rideId.equals(rideId))).write(
-          RidesCompanion(description: Value(description), comment: Value(comment)));
+  Future<void> updateRideDetails(
+    int rideId,
+    String? description,
+    String? comment,
+  ) => (update(rides)..where((r) => r.rideId.equals(rideId))).write(
+    RidesCompanion(description: Value(description), comment: Value(comment)),
+  );
 
   Future<void> updateRideType(int rideId, String? typ) =>
-      (update(rides)..where((r) => r.rideId.equals(rideId)))
-          .write(RidesCompanion(typ: Value(typ)));
+      (update(rides)..where((r) => r.rideId.equals(rideId))).write(
+        RidesCompanion(typ: Value(typ)),
+      );
 
   Future<void> updateFavorite(int rideId, bool isFavorite, int? favoritedAt) =>
-      (update(rides)..where((r) => r.rideId.equals(rideId))).write(RidesCompanion(
-          isFavorite: Value(isFavorite), favoritedAt: Value(favoritedAt)));
+      (update(rides)..where((r) => r.rideId.equals(rideId))).write(
+        RidesCompanion(
+          isFavorite: Value(isFavorite),
+          favoritedAt: Value(favoritedAt),
+        ),
+      );
 
   Future<void> deleteById(int rideId) =>
       (delete(rides)..where((r) => r.rideId.equals(rideId))).go();

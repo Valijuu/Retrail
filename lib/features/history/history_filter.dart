@@ -52,16 +52,15 @@ class HistoryFilter {
     bool clearMonthFrom = false,
     int? monthTo,
     bool clearMonthTo = false,
-  }) =>
-      HistoryFilter(
-        sort: sort ?? this.sort,
-        query: query ?? this.query,
-        favoritesOnly: favoritesOnly ?? this.favoritesOnly,
-        activities: activities ?? this.activities,
-        year: clearYear ? null : (year ?? this.year),
-        monthFrom: clearMonthFrom ? null : (monthFrom ?? this.monthFrom),
-        monthTo: clearMonthTo ? null : (monthTo ?? this.monthTo),
-      );
+  }) => HistoryFilter(
+    sort: sort ?? this.sort,
+    query: query ?? this.query,
+    favoritesOnly: favoritesOnly ?? this.favoritesOnly,
+    activities: activities ?? this.activities,
+    year: clearYear ? null : (year ?? this.year),
+    monthFrom: clearMonthFrom ? null : (monthFrom ?? this.monthFrom),
+    monthTo: clearMonthTo ? null : (monthTo ?? this.monthTo),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -76,7 +75,14 @@ class HistoryFilter {
 
   @override
   int get hashCode => Object.hash(
-      sort, query, favoritesOnly, _setEq.hash(activities), year, monthFrom, monthTo);
+    sort,
+    query,
+    favoritesOnly,
+    _setEq.hash(activities),
+    year,
+    monthFrom,
+    monthTo,
+  );
 }
 
 /// Count of active, non-default filter sections for the filter-icon badge. The

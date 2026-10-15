@@ -52,62 +52,71 @@ void main() {
       db = AppDatabase.memory();
       SharedPreferences.setMockInitialValues({});
       prefs = PreferencesRepository(await SharedPreferences.getInstance());
-      controller =
-          RideSavedNoticeController(prefs, RideRepository(RideDao(db)));
+      controller = RideSavedNoticeController(
+        prefs,
+        RideRepository(RideDao(db)),
+      );
     });
     tearDown(() => db.close());
 
     test('returns the parked ride once and clears it', () async {
-      final id = await RideRepository(RideDao(db))
-          .startRide(startedAtMs: 1000);
+      final id = await RideRepository(RideDao(db)).startRide(startedAtMs: 1000);
       await prefs.setPendingRideDetails(id);
       expect((await controller.take())!.rideId, id);
       expect(prefs.pendingRideDetailsNow, isNull);
       expect(await controller.take(), isNull);
     });
 
-    test('a parked ride that no longer exists yields null and is cleared',
-        () async {
-      await prefs.setPendingRideDetails(99);
-      expect(await controller.take(), isNull);
-      expect(prefs.pendingRideDetailsNow, isNull);
-    });
+    test(
+      'a parked ride that no longer exists yields null and is cleared',
+      () async {
+        await prefs.setPendingRideDetails(99);
+        expect(await controller.take(), isNull);
+        expect(prefs.pendingRideDetailsNow, isNull);
+      },
+    );
   });
 
   group('RideSavedNotice', () {
     Future<_FakeNoticeController> pump(WidgetTester tester, Ride? ride) async {
       final fake = _FakeNoticeController(ride);
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          rideSavedNoticeControllerProvider.overrideWithValue(fake),
-          pendingRideDetailsProvider.overrideWith((ref) => Stream.value(null)),
-        ],
-        child: MaterialApp(
-          theme: buildTheme(Brightness.light),
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            rideSavedNoticeControllerProvider.overrideWithValue(fake),
+            pendingRideDetailsProvider.overrideWith(
+              (ref) => Stream.value(null),
+            ),
           ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: const Scaffold(body: RideSavedNotice(child: SizedBox())),
+          child: MaterialApp(
+            theme: buildTheme(Brightness.light),
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Scaffold(body: RideSavedNotice(child: SizedBox())),
+          ),
         ),
-      ));
+      );
       await tester.pump();
       await tester.pump();
       return fake;
     }
 
-    testWidgets('shows "Ride saved" once with an Add details action',
-        (tester) async {
+    testWidgets('shows "Ride saved" once with an Add details action', (
+      tester,
+    ) async {
       await pump(tester, _ride);
       expect(find.text('Ride saved'), findsOneWidget);
       expect(find.text('Add details'), findsOneWidget);
     });
 
-    testWidgets('Add details opens the edit sheet for that ride',
-        (tester) async {
+    testWidgets('Add details opens the edit sheet for that ride', (
+      tester,
+    ) async {
       await pump(tester, _ride);
       await tester.pumpAndSettle(); // let the snack bar slide in first
       await tester.tap(find.text('Add details'));
@@ -141,8 +150,7 @@ void main() {
     });
 
     testWidgets('waits while the app is in the background', (tester) async {
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       final fake = await pump(tester, _ride);
@@ -150,8 +158,7 @@ void main() {
       expect(fake.takes, 0);
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       await tester.pump();

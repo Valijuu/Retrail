@@ -10,11 +10,13 @@ void main() {
   tearDown(() => db.close());
 
   Future<int> insertRide({String? title, int? date, int? start}) =>
-      db.rideDao.insert(RidesCompanion.insert(
-        description: Value(title),
-        date: Value(date),
-        startTime: Value(start),
-      ));
+      db.rideDao.insert(
+        RidesCompanion.insert(
+          description: Value(title),
+          date: Value(date),
+          startTime: Value(start),
+        ),
+      );
 
   group('getRidesInRange', () {
     test('no filter returns all rides', () async {
@@ -40,23 +42,27 @@ void main() {
       expect(res.map((r) => r.description), ['before', 'at']);
     });
 
-    test('both set: boundaries are inclusive, one ms past endMs is excluded',
-        () async {
-      await insertRide(title: 'before', date: 99);
-      await insertRide(title: 'atStart', date: 100);
-      await insertRide(title: 'inside', date: 150);
-      await insertRide(title: 'atEnd', date: 200);
-      await insertRide(title: 'pastEnd', date: 201);
-      final res =
-          await db.rideDao.getRidesInRange(startMs: 100, endMs: 200).first;
-      expect(res.map((r) => r.description), ['atStart', 'inside', 'atEnd']);
-    });
+    test(
+      'both set: boundaries are inclusive, one ms past endMs is excluded',
+      () async {
+        await insertRide(title: 'before', date: 99);
+        await insertRide(title: 'atStart', date: 100);
+        await insertRide(title: 'inside', date: 150);
+        await insertRide(title: 'atEnd', date: 200);
+        await insertRide(title: 'pastEnd', date: 201);
+        final res = await db.rideDao
+            .getRidesInRange(startMs: 100, endMs: 200)
+            .first;
+        expect(res.map((r) => r.description), ['atStart', 'inside', 'atEnd']);
+      },
+    );
 
     test('a ride with date == null falls back to startTime', () async {
       await insertRide(title: 'dateless', date: null, start: 150);
       await insertRide(title: 'tooEarly', date: null, start: 50);
-      final res =
-          await db.rideDao.getRidesInRange(startMs: 100, endMs: 200).first;
+      final res = await db.rideDao
+          .getRidesInRange(startMs: 100, endMs: 200)
+          .first;
       expect(res.map((r) => r.description), ['dateless']);
     });
 
@@ -68,22 +74,26 @@ void main() {
       // it — if the query ever preferred startTime, this ride would be
       // wrongly included.
       await insertRide(title: 'startTimeInRangeOnly', date: 9000, start: 150);
-      final res =
-          await db.rideDao.getRidesInRange(startMs: 100, endMs: 200).first;
+      final res = await db.rideDao
+          .getRidesInRange(startMs: 100, endMs: 200)
+          .first;
       expect(res.map((r) => r.description), ['dateInRange']);
     });
   });
 
   group('deleteByIds', () {
     Future<int> insertRideWithTrackpoint() async {
-      final rideId = await db.rideDao
-          .insert(RidesCompanion.insert(startTime: const Value(1000)));
-      await db.trackpointDao.insert(TrackpointsCompanion.insert(
-        rideId: rideId,
-        latitude: 1,
-        longitude: 1,
-        timestamp: 0,
-      ));
+      final rideId = await db.rideDao.insert(
+        RidesCompanion.insert(startTime: const Value(1000)),
+      );
+      await db.trackpointDao.insert(
+        TrackpointsCompanion.insert(
+          rideId: rideId,
+          latitude: 1,
+          longitude: 1,
+          timestamp: 0,
+        ),
+      );
       return rideId;
     }
 

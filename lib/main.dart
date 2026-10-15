@@ -23,8 +23,7 @@ Future<void> main() async {
 
   // Portrait-only on every platform (backs up the Android manifest's
   // screenOrientation="portrait" and the iOS Info.plist orientation list).
-  await SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Match the removed 256 MB raster tile cache so revisited basemap tiles
   // render offline mid-ride (Android and iOS). Never block app start on cache
@@ -47,8 +46,9 @@ Future<void> main() async {
 
   final container = ProviderContainer(
     overrides: [
-      preferencesRepositoryProvider
-          .overrideWithValue(PreferencesRepository(prefs)),
+      preferencesRepositoryProvider.overrideWithValue(
+        PreferencesRepository(prefs),
+      ),
       previewCacheDirProvider.overrideWithValue(docsDir),
     ],
   );
@@ -70,13 +70,15 @@ Future<void> main() async {
   // Relay recording-notification interactions (which arrive on the main isolate
   // via sendDataToMain) to the recording controller / deep-link.
   FlutterForegroundTask.addTaskDataCallback(
-      (data) => rideControlRelay(container, data is String ? data : ''));
+    (data) => rideControlRelay(container, data is String ? data : ''),
+  );
   // Same relay for the iOS Live Activity's buttons and tap (Spec 6).
   listenForLiveActivityActions(
-      liveActivityChannel, (id) => rideControlRelay(container, id));
+    liveActivityChannel,
+    (id) => rideControlRelay(container, id),
+  );
 
-  runApp(UncontrolledProviderScope(
-    container: container,
-    child: const RetrailApp(),
-  ));
+  runApp(
+    UncontrolledProviderScope(container: container, child: const RetrailApp()),
+  );
 }

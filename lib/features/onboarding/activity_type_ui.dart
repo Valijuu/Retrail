@@ -15,26 +15,26 @@ extension ActivityTypeUi on ActivityType {
   /// [IconTheme] colour, mirroring how a Material `Icon` adapts to light/dark.
   /// Single-colour SVG, so a srcIn tint recolours the whole glyph.
   Widget glyph({double size = 24, Color? color}) => Builder(
-        builder: (context) {
-          final tint = color ?? IconTheme.of(context).color;
-          return SvgPicture.asset(
-            iconAsset,
-            width: size,
-            height: size,
-            colorFilter: tint == null
-                ? null
-                : ColorFilter.mode(tint, BlendMode.srcIn),
-          );
-        },
+    builder: (context) {
+      final tint = color ?? IconTheme.of(context).color;
+      return SvgPicture.asset(
+        iconAsset,
+        width: size,
+        height: size,
+        colorFilter: tint == null
+            ? null
+            : ColorFilter.mode(tint, BlendMode.srcIn),
       );
+    },
+  );
 
   String label(AppLocalizations l10n) => switch (this) {
-        ActivityType.longboard => l10n.activityLongboard,
-        ActivityType.skateboard => l10n.activitySkateboard,
-        ActivityType.rollerblades => l10n.activityRollerblades,
-        ActivityType.rollerskates => l10n.activityRollerskates,
-        ActivityType.mountainboard => l10n.activityMountainboard,
-        ActivityType.scooter => l10n.activityScooter,
-        ActivityType.other => l10n.activityOther,
-      };
+    ActivityType.longboard => l10n.activityLongboard,
+    ActivityType.skateboard => l10n.activitySkateboard,
+    ActivityType.rollerblades => l10n.activityRollerblades,
+    ActivityType.rollerskates => l10n.activityRollerskates,
+    ActivityType.mountainboard => l10n.activityMountainboard,
+    ActivityType.scooter => l10n.activityScooter,
+    ActivityType.other => l10n.activityOther,
+  };
 }

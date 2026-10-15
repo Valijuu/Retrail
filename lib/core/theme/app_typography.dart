@@ -18,7 +18,8 @@ TextTheme appTextTheme(Brightness brightness) {
   // spacing — which must be merged with the brightness color theme to get the
   // fully-resolved styles Flutter renders.
   final typography = Typography.material2021(platform: TargetPlatform.android);
-  final colorTheme =
-      brightness == Brightness.dark ? typography.white : typography.black;
+  final colorTheme = brightness == Brightness.dark
+      ? typography.white
+      : typography.black;
   return typography.englishLike.merge(colorTheme);
 }

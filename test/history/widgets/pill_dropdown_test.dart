@@ -10,21 +10,24 @@ void main() {
     List<int> items = const [1, 2, 3],
     ValueChanged<int>? onChanged,
   }) async {
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(Brightness.light),
-      home: Scaffold(
-        body: PillDropdown<int>(
-          value: value,
-          items: items,
-          itemLabel: (i) => 'Item $i',
-          onChanged: onChanged ?? (_) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: Scaffold(
+          body: PillDropdown<int>(
+            value: value,
+            items: items,
+            itemLabel: (i) => 'Item $i',
+            onChanged: onChanged ?? (_) {},
+          ),
         ),
       ),
-    ));
+    );
   }
 
-  testWidgets('shows the selected value\'s label in the closed state',
-      (tester) async {
+  testWidgets('shows the selected value\'s label in the closed state', (
+    tester,
+  ) async {
     await pump(tester, value: 2);
     expect(find.text('Item 2'), findsOneWidget);
   });
@@ -39,21 +42,23 @@ void main() {
     expect(find.text('Item 3'), findsOneWidget);
   });
 
-  testWidgets(
-      'the selected item is wrapped in a secondaryContainer highlight '
+  testWidgets('the selected item is wrapped in a secondaryContainer highlight '
       '(matches the FilterChip selected-state color used elsewhere in the '
       'filter sheet)', (tester) async {
     await pump(tester, value: 2);
     await tester.tap(find.byType(PillDropdown<int>));
     await tester.pumpAndSettle();
 
-    final secondaryContainer =
-        buildTheme(Brightness.light).colorScheme.secondaryContainer;
+    final secondaryContainer = buildTheme(
+      Brightness.light,
+    ).colorScheme.secondaryContainer;
     final highlighted = find.ancestor(
       of: find.text('Item 2').last,
-      matching: find.byWidgetPredicate((w) =>
-          w is Container &&
-          (w.decoration as BoxDecoration?)?.color == secondaryContainer),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is Container &&
+            (w.decoration as BoxDecoration?)?.color == secondaryContainer,
+      ),
     );
     expect(highlighted, findsOneWidget);
   });
@@ -63,13 +68,16 @@ void main() {
     await tester.tap(find.byType(PillDropdown<int>));
     await tester.pumpAndSettle();
 
-    final secondaryContainer =
-        buildTheme(Brightness.light).colorScheme.secondaryContainer;
+    final secondaryContainer = buildTheme(
+      Brightness.light,
+    ).colorScheme.secondaryContainer;
     final highlighted = find.ancestor(
       of: find.text('Item 3').last,
-      matching: find.byWidgetPredicate((w) =>
-          w is Container &&
-          (w.decoration as BoxDecoration?)?.color == secondaryContainer),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is Container &&
+            (w.decoration as BoxDecoration?)?.color == secondaryContainer,
+      ),
     );
     expect(highlighted, findsNothing);
   });
@@ -101,47 +109,55 @@ void main() {
   });
 
   testWidgets(
-      'menu opens below the anchor when the selected value is first in items',
-      (tester) async {
-    await pump(tester, value: 1, items: const [1, 2, 3, 4, 5]);
-    final anchorBottomY =
-        tester.getBottomLeft(find.byType(PillDropdown<int>)).dy;
+    'menu opens below the anchor when the selected value is first in items',
+    (tester) async {
+      await pump(tester, value: 1, items: const [1, 2, 3, 4, 5]);
+      final anchorBottomY = tester
+          .getBottomLeft(find.byType(PillDropdown<int>))
+          .dy;
 
-    await tester.tap(find.byType(PillDropdown<int>));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(PillDropdown<int>));
+      await tester.pumpAndSettle();
 
-    final firstItemTopY = tester.getTopLeft(find.text('Item 1').last).dy;
-    expect(firstItemTopY, greaterThanOrEqualTo(anchorBottomY - 1));
-  });
+      final firstItemTopY = tester.getTopLeft(find.text('Item 1').last).dy;
+      expect(firstItemTopY, greaterThanOrEqualTo(anchorBottomY - 1));
+    },
+  );
 
   testWidgets(
-      'menu opens below the anchor when the selected value is last in items '
-      '(regression: DropdownButton used to open this case upward instead, '
-      'aligning the menu on the selected item)', (tester) async {
-    await pump(tester, value: 5, items: const [1, 2, 3, 4, 5]);
-    final anchorBottomY =
-        tester.getBottomLeft(find.byType(PillDropdown<int>)).dy;
+    'menu opens below the anchor when the selected value is last in items '
+    '(regression: DropdownButton used to open this case upward instead, '
+    'aligning the menu on the selected item)',
+    (tester) async {
+      await pump(tester, value: 5, items: const [1, 2, 3, 4, 5]);
+      final anchorBottomY = tester
+          .getBottomLeft(find.byType(PillDropdown<int>))
+          .dy;
 
-    await tester.tap(find.byType(PillDropdown<int>));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(PillDropdown<int>));
+      await tester.pumpAndSettle();
 
-    final firstItemTopY = tester.getTopLeft(find.text('Item 1').last).dy;
-    expect(firstItemTopY, greaterThanOrEqualTo(anchorBottomY - 1));
-  });
+      final firstItemTopY = tester.getTopLeft(find.text('Item 1').last).dy;
+      expect(firstItemTopY, greaterThanOrEqualTo(anchorBottomY - 1));
+    },
+  );
 
-  testWidgets('works with a nullable T (e.g. int?) for a "clear" item',
-      (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(Brightness.light),
-      home: Scaffold(
-        body: PillDropdown<int?>(
-          value: null,
-          items: const [null, 2023, 2024],
-          itemLabel: (y) => y == null ? 'All years' : '$y',
-          onChanged: (_) {},
+  testWidgets('works with a nullable T (e.g. int?) for a "clear" item', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: Scaffold(
+          body: PillDropdown<int?>(
+            value: null,
+            items: const [null, 2023, 2024],
+            itemLabel: (y) => y == null ? 'All years' : '$y',
+            onChanged: (_) {},
+          ),
         ),
       ),
-    ));
+    );
 
     expect(find.text('All years'), findsOneWidget);
   });

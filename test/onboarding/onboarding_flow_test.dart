@@ -11,8 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_test_helpers.dart';
 
 void main() {
-  testWidgets('walks name → photo → activity → main and persists choices',
-      (tester) async {
+  testWidgets('walks name → photo → activity → main and persists choices', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -22,17 +23,22 @@ void main() {
     final prefs = PreferencesRepository(await SharedPreferences.getInstance());
     final db = AppDatabase.memory();
     addTearDown(db.close);
-    final container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      preferencesRepositoryProvider.overrideWithValue(prefs),
-      // Home keeps connectivity subscribed — stub it (no real probe/poll timer).
-      isOnlineProvider.overrideWith((ref) => Stream.value(true)),
-      ...homeStreamStubs(),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        preferencesRepositoryProvider.overrideWithValue(prefs),
+        // Home keeps connectivity subscribed — stub it (no real probe/poll timer).
+        isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+        ...homeStreamStubs(),
+      ],
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
-      UncontrolledProviderScope(container: container, child: const RetrailApp()),
+      UncontrolledProviderScope(
+        container: container,
+        child: const RetrailApp(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -67,47 +73,56 @@ void main() {
   });
 
   testWidgets(
-      'system back steps back through onboarding instead of closing the app '
-      '(issue #32)', (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'system back steps back through onboarding instead of closing the app '
+    '(issue #32)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    SharedPreferences.setMockInitialValues({});
-    final prefs = PreferencesRepository(await SharedPreferences.getInstance());
-    final db = AppDatabase.memory();
-    addTearDown(db.close);
-    final container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      preferencesRepositoryProvider.overrideWithValue(prefs),
-      // Home keeps connectivity subscribed — stub it (no real probe/poll timer).
-      isOnlineProvider.overrideWith((ref) => Stream.value(true)),
-      ...homeStreamStubs(),
-    ]);
-    addTearDown(container.dispose);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = PreferencesRepository(
+        await SharedPreferences.getInstance(),
+      );
+      final db = AppDatabase.memory();
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          preferencesRepositoryProvider.overrideWithValue(prefs),
+          // Home keeps connectivity subscribed — stub it (no real probe/poll timer).
+          isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+          ...homeStreamStubs(),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(container: container, child: const RetrailApp()),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const RetrailApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'Vali');
-    await tester.tap(find.text("Let's go"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-    expect(find.text('How do you roll?'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'Vali');
+      await tester.tap(find.text("Let's go"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('How do you roll?'), findsOneWidget);
 
-    // Back from the activity step → photo step.
-    expect(await tester.binding.handlePopRoute(), isTrue);
-    await tester.pumpAndSettle();
-    expect(find.text('Looking good, Vali!'), findsOneWidget);
+      // Back from the activity step → photo step.
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.text('Looking good, Vali!'), findsOneWidget);
 
-    // Back from the photo step → name step (name still filled in).
-    expect(await tester.binding.handlePopRoute(), isTrue);
-    await tester.pumpAndSettle();
-    expect(find.text('Welcome to Retrail'), findsOneWidget);
-    expect(find.text('Vali'), findsOneWidget);
-  });
+      // Back from the photo step → name step (name still filled in).
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.text('Welcome to Retrail'), findsOneWidget);
+      expect(find.text('Vali'), findsOneWidget);
+    },
+  );
 }

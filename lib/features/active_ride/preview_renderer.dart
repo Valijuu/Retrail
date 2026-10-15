@@ -11,9 +11,9 @@ import '../../map/route_preview_cache.dart';
 PreviewRenderer buildPreviewRenderer({
   required bool Function() isOnline,
   required Future<PreviewResult> Function(List<RoutePoint> points, Brightness b)
-      online,
+  online,
   required Future<PreviewResult> Function(List<RoutePoint> points, Brightness b)
-      offline,
+  offline,
 }) =>
     (points, brightness) =>
         isOnline() ? online(points, brightness) : offline(points, brightness);

@@ -38,7 +38,9 @@ Future<PreviewResult> renderPreviewPng({
 }) async {
   final framing = computeFraming(points, widthDp, heightDp);
   final grid = tilesFor(framing);
-  final colors = brightness == ui.Brightness.dark ? AppColors.dark : AppColors.light;
+  final colors = brightness == ui.Brightness.dark
+      ? AppColors.dark
+      : AppColors.light;
 
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder);
@@ -52,9 +54,9 @@ Future<PreviewResult> renderPreviewPng({
 
   // Fetch the whole grid concurrently — sequential per-tile awaits made the
   // render as slow as the sum of every tile's network round-trip.
-  final images = await Future.wait(
-    [for (final t in grid) tiles.tile(t.z, t.x, t.y, brightness)],
-  );
+  final images = await Future.wait([
+    for (final t in grid) tiles.tile(t.z, t.x, t.y, brightness),
+  ]);
   // Any failed tile leaves a terrain-colored hole — usable right now, but the
   // result must not be cached as final (see [PreviewResult.complete]).
   var missingTile = false;
@@ -66,17 +68,26 @@ Future<PreviewResult> renderPreviewPng({
     }
     final t = grid[i];
     final src = ui.Rect.fromLTWH(
-        0, 0, image.width.toDouble(), image.height.toDouble());
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
     // Snapped to whole device pixels: a tile drawn at its native density
     // then lands 1:1 instead of being resampled between pixels, which blurred
     // labels and thin roads. The shift is under half a device pixel.
     final dst = ui.Rect.fromLTWH(
-        snapToDevicePixel(t.offsetXDp, pixelRatio),
-        snapToDevicePixel(t.offsetYDp, pixelRatio),
-        tileSize.toDouble(),
-        tileSize.toDouble());
+      snapToDevicePixel(t.offsetXDp, pixelRatio),
+      snapToDevicePixel(t.offsetYDp, pixelRatio),
+      tileSize.toDouble(),
+      tileSize.toDouble(),
+    );
     canvas.drawImageRect(
-        image, src, dst, ui.Paint()..filterQuality = ui.FilterQuality.medium);
+      image,
+      src,
+      dst,
+      ui.Paint()..filterQuality = ui.FilterQuality.medium,
+    );
     image.dispose();
   }
 
@@ -88,7 +99,9 @@ Future<PreviewResult> renderPreviewPng({
 
   final picture = recorder.endRecording();
   final image = await picture.toImage(
-      (widthDp * pixelRatio).round(), (heightDp * pixelRatio).round());
+    (widthDp * pixelRatio).round(),
+    (heightDp * pixelRatio).round(),
+  );
   final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
   picture.dispose();
   image.dispose();
@@ -97,7 +110,10 @@ Future<PreviewResult> renderPreviewPng({
 
 /// Halo + blue route line through [offsets] (nothing for fewer than two).
 void _paintRoute(
-    ui.Canvas canvas, List<PreviewOffset> offsets, AppColors colors) {
+  ui.Canvas canvas,
+  List<PreviewOffset> offsets,
+  AppColors colors,
+) {
   if (offsets.length < 2) return;
   final path = ui.Path()..moveTo(offsets.first.x, offsets.first.y);
   for (final o in offsets.skip(1)) {
@@ -126,7 +142,9 @@ Future<PreviewResult> renderSketchPng({
   required double pixelRatio,
   required ui.Brightness brightness,
 }) async {
-  final colors = brightness == ui.Brightness.dark ? AppColors.dark : AppColors.light;
+  final colors = brightness == ui.Brightness.dark
+      ? AppColors.dark
+      : AppColors.light;
   final w = widthDp.toDouble();
   final h = heightDp.toDouble();
 
@@ -134,7 +152,9 @@ Future<PreviewResult> renderSketchPng({
   final canvas = ui.Canvas(recorder);
   canvas.scale(pixelRatio);
   canvas.drawRect(
-      ui.Rect.fromLTWH(0, 0, w, h), ui.Paint()..color = colors.mapTerrain);
+    ui.Rect.fromLTWH(0, 0, w, h),
+    ui.Paint()..color = colors.mapTerrain,
+  );
 
   final offsets = sketchOffsets(points, w, h, inset: routeMarkerInset);
   _paintRoute(canvas, offsets, colors);
@@ -142,7 +162,9 @@ Future<PreviewResult> renderSketchPng({
 
   final picture = recorder.endRecording();
   final image = await picture.toImage(
-      (widthDp * pixelRatio).round(), (heightDp * pixelRatio).round());
+    (widthDp * pixelRatio).round(),
+    (heightDp * pixelRatio).round(),
+  );
   final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
   picture.dispose();
   image.dispose();

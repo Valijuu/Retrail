@@ -70,7 +70,9 @@ void paintRouteDecorations(
   final start = ui.Offset(offsets.first.x, offsets.first.y);
   final end = ui.Offset(offsets.last.x, offsets.last.y);
   void marker(
-      ui.Offset at, void Function(ui.Canvas, ui.Offset, AppColors) paint) {
+    ui.Offset at,
+    void Function(ui.Canvas, ui.Offset, AppColors) paint,
+  ) {
     canvas
       ..save()
       ..translate(at.dx, at.dy)
@@ -120,12 +122,13 @@ void _paintArrowhead(ui.Canvas canvas, AppColors colors) {
     ..lineTo(-_arrowLength / 2, _arrowHalfWidth)
     ..close();
   canvas.drawPath(
-      head,
-      ui.Paint()
-        ..color = colors.routeLineHalo
-        ..style = ui.PaintingStyle.stroke
-        ..strokeWidth = _arrowRim
-        ..strokeJoin = ui.StrokeJoin.round);
+    head,
+    ui.Paint()
+      ..color = colors.routeLineHalo
+      ..style = ui.PaintingStyle.stroke
+      ..strokeWidth = _arrowRim
+      ..strokeJoin = ui.StrokeJoin.round,
+  );
   canvas.drawPath(head, ui.Paint()..color = colors.routeLineBlue);
 }
 
@@ -213,14 +216,10 @@ Future<Uint8List> routeMarkerImagePng(
 /// A single arrowhead pointing along +x (east) as a PNG, for MapLibre's
 /// line-placed arrow symbols (the map rotates it along the line).
 Future<Uint8List> routeArrowImagePng(AppColors colors, double pixelRatio) =>
-    _rasterise(
-      2 * _arrowHalfWidth + _arrowRim,
-      pixelRatio,
-      (canvas, c) {
-        canvas.translate(c.dx, c.dy);
-        _paintArrowhead(canvas, colors);
-      },
-    );
+    _rasterise(2 * _arrowHalfWidth + _arrowRim, pixelRatio, (canvas, c) {
+      canvas.translate(c.dx, c.dy);
+      _paintArrowhead(canvas, colors);
+    });
 
 Future<Uint8List> _rasterise(
   double sizeDp,

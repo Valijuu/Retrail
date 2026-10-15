@@ -163,8 +163,7 @@ void main() {
         final begun = _content(elapsedSeconds: 0, nowEpochMs: 5000);
         expect(shouldPush(armed, begun), isTrue);
       });
-      test('one second of tick jitter (10 s @0 → 10 s @1000 ms) → false',
-          () {
+      test('one second of tick jitter (10 s @0 → 10 s @1000 ms) → false', () {
         final last = _content(elapsedSeconds: 10, nowEpochMs: 0);
         final next = _content(elapsedSeconds: 10, nowEpochMs: 1000);
         expect(shouldPush(last, next), isFalse);
@@ -174,18 +173,23 @@ void main() {
         final next = _content(elapsedSeconds: 10, nowEpochMs: 2000);
         expect(shouldPush(last, next), isTrue);
       });
-      test('widget behind the real time (10 s @0 → 13 s @1000 ms) → true',
-          () {
+      test('widget behind the real time (10 s @0 → 13 s @1000 ms) → true', () {
         final last = _content(elapsedSeconds: 10, nowEpochMs: 0);
         final next = _content(elapsedSeconds: 13, nowEpochMs: 1000);
         expect(shouldPush(last, next), isTrue);
       });
       test('paused on both sides, time passes (10 s @0 → 10 s @60000 ms) — '
           'the widget does not count while paused → false', () {
-        final last =
-            _content(isPaused: true, elapsedSeconds: 10, nowEpochMs: 0);
-        final next =
-            _content(isPaused: true, elapsedSeconds: 10, nowEpochMs: 60000);
+        final last = _content(
+          isPaused: true,
+          elapsedSeconds: 10,
+          nowEpochMs: 0,
+        );
+        final next = _content(
+          isPaused: true,
+          elapsedSeconds: 10,
+          nowEpochMs: 60000,
+        );
         expect(shouldPush(last, next), isFalse);
       });
     });

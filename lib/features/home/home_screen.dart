@@ -57,20 +57,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final greetings = skaterGreetings(l10n);
-    final template = greetings[widget.greetingIndex.clamp(0, greetings.length - 1)];
+    final template =
+        greetings[widget.greetingIndex.clamp(0, greetings.length - 1)];
     final userName =
         ref.watch(userNameProvider).asData?.value ?? l10n.homeDefaultName;
     final photo = ref.watch(currentProfilePhotoProvider).asData?.value;
     final weekly =
-        ref.watch(weeklyStatsProvider).asData?.value ?? const WeeklyStats.zero();
+        ref.watch(weeklyStatsProvider).asData?.value ??
+        const WeeklyStats.zero();
     final daily =
         ref.watch(dailyStatsProvider).asData?.value ?? const WeeklyStats.zero();
     final yearly =
-        ref.watch(yearlyStatsProvider).asData?.value ?? const WeeklyStats.zero();
+        ref.watch(yearlyStatsProvider).asData?.value ??
+        const WeeklyStats.zero();
     final statsPeriod =
         ref.watch(homeStatsPeriodProvider).asData?.value ?? StatsPeriod.week;
     final recent = ref.watch(recentRidesProvider).asData?.value ?? const [];
-    final favorites = ref.watch(favoriteRidesProvider).asData?.value ?? const [];
+    final favorites =
+        ref.watch(favoriteRidesProvider).asData?.value ?? const [];
     // Keep connectivity subscribed while Home is up, so the Start tap reads a
     // real value: an unwatched provider is paused, and the bare read in
     // [_start] then always saw "loading → online" and never offered the
@@ -100,17 +104,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       weekly: weekly,
                       yearly: yearly,
                       selected: statsPeriod,
-                      onSelect: ref.read(homeControllerProvider).selectStatsPeriod,
+                      onSelect: ref
+                          .read(homeControllerProvider)
+                          .selectStatsPeriod,
                     ),
                     const SizedBox(height: 16),
                     _SectionLabel(l10n.sectionRecentRides),
                     const SizedBox(height: 8),
-                    _rideList(recent, l10n.homeEmptyNoRides, showFavorite: false),
+                    _rideList(
+                      recent,
+                      l10n.homeEmptyNoRides,
+                      showFavorite: false,
+                    ),
                     const SizedBox(height: 16),
                     _SectionLabel(l10n.sectionRecentFavorites),
                     const SizedBox(height: 8),
-                    _rideList(favorites, l10n.homeEmptyNoFavorites,
-                        showFavorite: true),
+                    _rideList(
+                      favorites,
+                      l10n.homeEmptyNoFavorites,
+                      showFavorite: true,
+                    ),
                   ],
                 ),
               ),
@@ -131,8 +144,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _rideList(List<RecentRideUi> rides, String emptyText,
-      {required bool showFavorite}) {
+  Widget _rideList(
+    List<RecentRideUi> rides,
+    String emptyText, {
+    required bool showFavorite,
+  }) {
     if (rides.isEmpty) return _EmptyPlaceholderCard(emptyText);
     return Column(
       children: [
@@ -143,11 +159,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             showFavorite: showFavorite,
             onTap: () => widget.onOpenRide?.call(rides[i].rideId),
             onNavigate: () => navigateTo(
-                context,
-                ref.read(navigationLauncherProvider),
-                rides[i].startLat!,
-                rides[i].startLng!,
-                rides[i].title),
+              context,
+              ref.read(navigationLauncherProvider),
+              rides[i].startLat!,
+              rides[i].startLng!,
+              rides[i].title,
+            ),
           ),
         ],
       ],
@@ -161,11 +178,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return Text(text,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: colors.subtleText));
+    return Text(
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.labelSmall?.copyWith(color: colors.subtleText),
+    );
   }
 }
 
@@ -181,10 +199,16 @@ class _EmptyPlaceholderCard extends StatelessWidget {
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       decoration: BoxDecoration(
-          color: colors.surfaceContainer, borderRadius: AppShapes.card),
-      child: Text(text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colors.onSurfaceVariant, fontStyle: FontStyle.italic)),
+        color: colors.surfaceContainer,
+        borderRadius: AppShapes.card,
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: colors.onSurfaceVariant,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
     );
   }
 }

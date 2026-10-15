@@ -16,7 +16,15 @@ const _lightPaint = <String, Map<String, Object>>{
   'background': {'background-color': '#EDEDED'},
   'landuse_residential': {
     'fill-color': '#BFBAAB',
-    'fill-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.6, 16, 0.1],
+    'fill-opacity': [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      4,
+      0.6,
+      16,
+      0.1,
+    ],
   },
   'building': {'fill-color': '#CBC6BE', 'fill-outline-color': '#BFBAB0'},
   'landcover_wood': {'fill-color': '#BFCA9B'},
@@ -52,7 +60,6 @@ const _lightStreetName = <String, Object>{
   'text-halo-color': '#FFFFFF',
   'text-halo-width': 1,
 };
-
 
 /// Retrail Dark: OpenFreeMap Dark in MapTiler basic-v2-dark's colours, the dark
 /// map Retrail used before Spec 19: neutral dark grey ground, buildings a
@@ -99,6 +106,7 @@ const _darkPaint = <String, Map<String, Object>>{
     'text-halo-color': 'rgba(0,0,0,0.75)',
   },
 };
+
 /// basic-v2-dark's street-name colour; its hard black 1 px halo looked jagged
 /// on the device, so the halo is a softer near-ground grey, wider and blurred.
 const _darkStreetName = <String, Object>{
@@ -116,7 +124,8 @@ const _darkPlaceLabel = <String, Object>{
 };
 
 Future<Map<String, dynamic>> _fetch(String name) async {
-  final client = HttpClient()..userAgent = 'Retrail (io.github.valijuu.retrail)';
+  final client = HttpClient()
+    ..userAgent = 'Retrail (io.github.valijuu.retrail)';
   final res = await (await client.getUrl(Uri.parse('$_base/$name'))).close();
   if (res.statusCode != 200) throw StateError('$name: HTTP ${res.statusCode}');
   final body = await res.transform(utf8.decoder).join();
@@ -138,7 +147,9 @@ void _write(String name, Map<String, dynamic> style, String origin) {
 /// Applies [paint] to [layers] by id and fails loudly when an id no longer
 /// exists upstream (a renamed layer would otherwise drop a colour silently).
 void _recolour(
-    List<Map<String, dynamic>> layers, Map<String, Map<String, Object>> paint) {
+  List<Map<String, dynamic>> layers,
+  Map<String, Map<String, Object>> paint,
+) {
   final ids = {for (final l in layers) l['id']};
   final missing = paint.keys.where((id) => !ids.contains(id));
   if (missing.isNotEmpty) throw StateError('layers gone upstream: $missing');
@@ -173,7 +184,11 @@ Future<void> main() async {
     'type': 'fill',
     'source': 'openmaptiles',
     'source-layer': 'landcover',
-    'filter': ['==', ['get', 'class'], 'grass'],
+    'filter': [
+      '==',
+      ['get', 'class'],
+      'grass',
+    ],
     'paint': {'fill-color': _darkGreen},
   });
   // Dark has no 3D buildings: add them as in Retrail Light (topo-v2's subtle

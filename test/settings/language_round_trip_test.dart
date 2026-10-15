@@ -14,8 +14,9 @@ import '../home/home_test_helpers.dart';
 /// override — so the wiring `setLanguage → prefs.language → appLanguageProvider
 /// → localeProvider → MaterialApp.locale` is actually proven, not stubbed.
 void main() {
-  testWidgets('selecting Deutsch in Settings re-localizes the whole app',
-      (tester) async {
+  testWidgets('selecting Deutsch in Settings re-localizes the whole app', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -26,17 +27,22 @@ void main() {
     final db = AppDatabase.memory();
     addTearDown(db.close);
 
-    final container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      preferencesRepositoryProvider.overrideWithValue(prefs),
-      isOnlineProvider.overrideWith((ref) => Stream.value(true)),
-      ...activeRideTestOverrides(db),
-      ...homeStreamStubs(),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        preferencesRepositoryProvider.overrideWithValue(prefs),
+        isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+        ...activeRideTestOverrides(db),
+        ...homeStreamStubs(),
+      ],
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
-      UncontrolledProviderScope(container: container, child: const RetrailApp()),
+      UncontrolledProviderScope(
+        container: container,
+        child: const RetrailApp(),
+      ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

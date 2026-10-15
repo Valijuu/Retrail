@@ -7,67 +7,82 @@ import 'package:retrail/features/home/ride_row_card.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 
 Widget _wrap(Widget child, {Locale? locale}) => MaterialApp(
-      locale: locale,
-      theme: buildTheme(Brightness.light),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: child),
-    );
+  locale: locale,
+  theme: buildTheme(Brightness.light),
+  localizationsDelegates: const [
+    AppLocalizations.delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
 
 void main() {
-  testWidgets('directions button invokes onNavigate for a routed ride',
-      (tester) async {
+  testWidgets('directions button invokes onNavigate for a routed ride', (
+    tester,
+  ) async {
     var navigated = false;
-    await tester.pumpWidget(_wrap(RideRowCard(
-      ride: const RecentRideUi(
-        rideId: 1,
-        title: 'Ride',
-        dateTime: 'today',
-        distanceKm: 1.2,
-        hasRoute: true,
-        startLat: 1,
-        startLng: 2,
+    await tester.pumpWidget(
+      _wrap(
+        RideRowCard(
+          ride: const RecentRideUi(
+            rideId: 1,
+            title: 'Ride',
+            dateTime: 'today',
+            distanceKm: 1.2,
+            hasRoute: true,
+            startLat: 1,
+            startLng: 2,
+          ),
+          onTap: () {},
+          onNavigate: () => navigated = true,
+        ),
       ),
-      onTap: () {},
-      onNavigate: () => navigated = true,
-    )));
+    );
 
     expect(find.text('1.2 km'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.directions));
     expect(navigated, isTrue);
   });
 
-  testWidgets('no directions button when the ride has no route', (tester) async {
-    await tester.pumpWidget(_wrap(RideRowCard(
-      ride: const RecentRideUi(
-        rideId: 1,
-        title: 'Ride',
-        dateTime: 'today',
-        distanceKm: 0,
-        hasRoute: false,
+  testWidgets('no directions button when the ride has no route', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        RideRowCard(
+          ride: const RecentRideUi(
+            rideId: 1,
+            title: 'Ride',
+            dateTime: 'today',
+            distanceKm: 0,
+            hasRoute: false,
+          ),
+          onTap: () {},
+        ),
       ),
-      onTap: () {},
-    )));
+    );
     expect(find.byIcon(Icons.directions), findsNothing);
   });
 
   testWidgets('German uses the decimal comma for the distance', (tester) async {
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(
+      _wrap(
         RideRowCard(
           ride: const RecentRideUi(
-              rideId: 1,
-              title: 'Ride',
-              dateTime: 'today',
-              distanceKm: 1.2,
-              hasRoute: false),
+            rideId: 1,
+            title: 'Ride',
+            dateTime: 'today',
+            distanceKm: 1.2,
+            hasRoute: false,
+          ),
           onTap: () {},
         ),
-        locale: const Locale('de')));
+        locale: const Locale('de'),
+      ),
+    );
     expect(find.text('1,2 km'), findsOneWidget);
   });
 }

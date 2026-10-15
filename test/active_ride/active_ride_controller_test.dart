@@ -18,13 +18,13 @@ import 'package:retrail/tracking/ride_tracker.dart';
 import '../support/ride_lookup.dart';
 
 LocationFix _fix(double lat, double lng, int ageNanos) => LocationFix(
-      latitude: lat,
-      longitude: lng,
-      accuracy: 5,
-      hasSpeed: true,
-      speed: 5, // m/s, above the stationary guard
-      elapsedRealtimeNanos: ageNanos,
-    );
+  latitude: lat,
+  longitude: lng,
+  accuracy: 5,
+  hasSpeed: true,
+  speed: 5, // m/s, above the stationary guard
+  elapsedRealtimeNanos: ageNanos,
+);
 
 void main() {
   late AppDatabase db;
@@ -81,8 +81,9 @@ void main() {
     expect(captured, isNotNull);
     expect(captured!.length, 2);
     expect(
-        await cache.fileFor(rideId, brightness: Brightness.light).exists(),
-        isTrue);
+      await cache.fileFor(rideId, brightness: Brightness.light).exists(),
+      isTrue,
+    );
 
     // Details persisted to the DB.
     await pumpEventQueue();
@@ -92,33 +93,39 @@ void main() {
     expect(ride.isFavorite, isTrue);
   });
 
-  test('saveRide in dark mode pre-generates the dark preview variant',
-      () async {
-    await recordShortRide();
-    final tmp = await Directory.systemTemp.createTemp('preview_test');
-    addTearDown(() => tmp.delete(recursive: true));
-
-    final renderedWith = <Brightness>[];
-    final cache = RoutePreviewCache(
-      baseDir: tmp,
-      render: (points, b) async {
-        renderedWith.add(b);
-        return PreviewResult(Uint8List.fromList([1]), complete: true);
-      },
-    );
-    final controller = ActiveRideController(tracker, cache,
-        currentBrightness: () => Brightness.dark);
-    final rideId = tracker.lastCompletedRideId!;
-
-    await controller.saveRide();
-
-    expect(renderedWith.first, Brightness.dark); // the active theme first
-    expect(await cache.fileFor(rideId, brightness: Brightness.dark).exists(),
-        isTrue);
-  });
-
   test(
-      'saveRide renders the other theme\'s variant too, after the active one '
+    'saveRide in dark mode pre-generates the dark preview variant',
+    () async {
+      await recordShortRide();
+      final tmp = await Directory.systemTemp.createTemp('preview_test');
+      addTearDown(() => tmp.delete(recursive: true));
+
+      final renderedWith = <Brightness>[];
+      final cache = RoutePreviewCache(
+        baseDir: tmp,
+        render: (points, b) async {
+          renderedWith.add(b);
+          return PreviewResult(Uint8List.fromList([1]), complete: true);
+        },
+      );
+      final controller = ActiveRideController(
+        tracker,
+        cache,
+        currentBrightness: () => Brightness.dark,
+      );
+      final rideId = tracker.lastCompletedRideId!;
+
+      await controller.saveRide();
+
+      expect(renderedWith.first, Brightness.dark); // the active theme first
+      expect(
+        await cache.fileFor(rideId, brightness: Brightness.dark).exists(),
+        isTrue,
+      );
+    },
+  );
+
+  test('saveRide renders the other theme\'s variant too, after the active one '
       '— a later light/dark switch needs no re-render', () async {
     await recordShortRide();
     final tmp = await Directory.systemTemp.createTemp('preview_test');
@@ -138,32 +145,37 @@ void main() {
     await controller.saveRide();
 
     expect(renderedWith, [Brightness.light, Brightness.dark]);
-    expect(await cache.fileFor(rideId, brightness: Brightness.dark).exists(),
-        isTrue);
-  });
-
-  test('saveRide skips preview generation when the ride has no route', () async {
-    tracker.startTracking();
-    await pumpEventQueue();
-    tracker.stopTracking(); // no fixes → empty route
-    await pumpEventQueue();
-
-    final tmp = await Directory.systemTemp.createTemp('preview_test');
-    addTearDown(() => tmp.delete(recursive: true));
-
-    var rendered = false;
-    final cache = RoutePreviewCache(
-      baseDir: tmp,
-      render: (points, _) async {
-        rendered = true;
-        return PreviewResult(Uint8List(0), complete: true);
-      },
+    expect(
+      await cache.fileFor(rideId, brightness: Brightness.dark).exists(),
+      isTrue,
     );
-    final controller = ActiveRideController(tracker, cache);
-
-    await controller.saveRide(title: 'Empty');
-    expect(rendered, isFalse);
   });
+
+  test(
+    'saveRide skips preview generation when the ride has no route',
+    () async {
+      tracker.startTracking();
+      await pumpEventQueue();
+      tracker.stopTracking(); // no fixes → empty route
+      await pumpEventQueue();
+
+      final tmp = await Directory.systemTemp.createTemp('preview_test');
+      addTearDown(() => tmp.delete(recursive: true));
+
+      var rendered = false;
+      final cache = RoutePreviewCache(
+        baseDir: tmp,
+        render: (points, _) async {
+          rendered = true;
+          return PreviewResult(Uint8List(0), complete: true);
+        },
+      );
+      final controller = ActiveRideController(tracker, cache);
+
+      await controller.saveRide(title: 'Empty');
+      expect(rendered, isFalse);
+    },
+  );
 
   test('discardRide deletes the stopped ride', () async {
     await recordShortRide();
@@ -176,8 +188,9 @@ void main() {
     final controller = ActiveRideController(
       tracker,
       RoutePreviewCache(
-          baseDir: tmp,
-          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
+        baseDir: tmp,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      ),
     );
 
     controller.discardRide();

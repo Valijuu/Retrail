@@ -28,6 +28,10 @@ void main() {
 
     await prefs.setRecentProfilePhotos(['/1.jpg', '/2.jpg', '/3.jpg']);
     expect(prefs.recentProfilePhotosNow, ['/1.jpg', '/2.jpg', '/3.jpg']);
-    expect(await prefs.recentProfilePhotos.first, ['/1.jpg', '/2.jpg', '/3.jpg']);
+    expect(await prefs.recentProfilePhotos.first, [
+      '/1.jpg',
+      '/2.jpg',
+      '/3.jpg',
+    ]);
   });
 }

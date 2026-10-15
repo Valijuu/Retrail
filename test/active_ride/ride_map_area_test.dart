@@ -12,33 +12,39 @@ import '../support/live_map_stub.dart';
 void main() {
   useStubLiveMap();
 
-  Future<void> pumpArea(WidgetTester tester,
-      {VoidCallback? onReverse, bool masked = false, bool isFollowing = true})
-      async {
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(Brightness.light),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: RideMapArea(
-          state: const RideTrackingState(),
-          isFollowing: isFollowing,
-          masked: masked,
-          onGesture: () {},
-          onRecenter: () {},
-          onReverse: onReverse,
+  Future<void> pumpArea(
+    WidgetTester tester, {
+    VoidCallback? onReverse,
+    bool masked = false,
+    bool isFollowing = true,
+  }) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: RideMapArea(
+            state: const RideTrackingState(),
+            isFollowing: isFollowing,
+            masked: masked,
+            onGesture: () {},
+            onRecenter: () {},
+            onReverse: onReverse,
+          ),
         ),
       ),
-    ));
+    );
   }
 
-  testWidgets('onReverse set: the reverse button shows and calls it',
-      (tester) async {
+  testWidgets('onReverse set: the reverse button shows and calls it', (
+    tester,
+  ) async {
     var taps = 0;
     await pumpArea(tester, onReverse: () => taps++);
     final button = find.byTooltip('Reverse direction');
@@ -53,8 +59,11 @@ void main() {
     final credit = tester.widget<MapAttribution>(find.byType(MapAttribution));
     expect(credit.onOpen, isNotNull);
     await tester.pump(const Duration(seconds: 6));
-    expect(find.text('© OpenStreetMap'), findsOneWidget,
-        reason: 'the credit always stays written out (decision 2026-10-06)');
+    expect(
+      find.text('© OpenStreetMap'),
+      findsOneWidget,
+      reason: 'the credit always stays written out (decision 2026-10-06)',
+    );
     expect(find.byIcon(Icons.info_outline), findsNothing);
   });
 
@@ -73,15 +82,17 @@ void main() {
     expect(find.byIcon(Icons.swap_vert), findsNothing);
   });
 
-  testWidgets('not following + onReverse: recenter and reverse show together',
-      (tester) async {
+  testWidgets('not following + onReverse: recenter and reverse show together', (
+    tester,
+  ) async {
     await pumpArea(tester, onReverse: () {}, isFollowing: false);
     expect(tester.takeException(), isNull);
     expect(find.byTooltip('Re-center'), findsOneWidget);
     expect(find.byTooltip('Reverse direction'), findsOneWidget);
     // Two FABs with the default hero tag only clash in a route transition.
-    tester.state<NavigatorState>(find.byType(Navigator)).push(
-        MaterialPageRoute<void>(builder: (_) => const SizedBox()));
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .push(MaterialPageRoute<void>(builder: (_) => const SizedBox()));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });

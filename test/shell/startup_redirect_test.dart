@@ -20,9 +20,10 @@ void main() {
   test('not done but already in the init flow → stay', () {
     expect(
       resolveRedirect(
-          onboardingDone: false,
-          pendingRide: false,
-          location: AppRoutes.profilePicture),
+        onboardingDone: false,
+        pendingRide: false,
+        location: AppRoutes.profilePicture,
+      ),
       isNull,
     );
   });
@@ -30,7 +31,10 @@ void main() {
   test('done but sitting on splash → main', () {
     expect(
       resolveRedirect(
-          onboardingDone: true, pendingRide: false, location: AppRoutes.splash),
+        onboardingDone: true,
+        pendingRide: false,
+        location: AppRoutes.splash,
+      ),
       AppRoutes.main,
     );
   });
@@ -52,7 +56,10 @@ void main() {
   test('pending ride but already on ride → stay (no loop)', () {
     expect(
       resolveRedirect(
-          onboardingDone: true, pendingRide: true, location: AppRoutes.ride),
+        onboardingDone: true,
+        pendingRide: true,
+        location: AppRoutes.ride,
+      ),
       isNull,
     );
   });

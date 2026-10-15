@@ -89,15 +89,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   void _exitSelection() => setState(() {
-        _selectedIds = {};
-        _selectionModeActive = false;
-      });
+    _selectedIds = {};
+    _selectionModeActive = false;
+  });
 
   void _toggleSelected(int rideId) => setState(() {
-        _selectionModeActive = true;
-        _selectedIds = {..._selectedIds};
-        if (!_selectedIds.remove(rideId)) _selectedIds.add(rideId);
-      });
+    _selectionModeActive = true;
+    _selectedIds = {..._selectedIds};
+    if (!_selectedIds.remove(rideId)) _selectedIds.add(rideId);
+  });
 
   /// Selects every currently visible (i.e. already filtered) ride, or — if
   /// all of them are already selected — deselects everything (toggle).
@@ -108,8 +108,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         if (item is RideEntryItem) item.ride.rideId,
     };
     setState(() {
-      _selectedIds =
-          _selectedIds.containsAll(visibleIds) ? {} : visibleIds;
+      _selectedIds = _selectedIds.containsAll(visibleIds) ? {} : visibleIds;
     });
   }
 
@@ -119,8 +118,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final target = ref.read(historyTargetRideProvider);
     if (target == null) return;
     final items = ref.read(historyItemsProvider).asData?.value ?? [];
-    final found =
-        items.any((i) => i is RideEntryItem && i.ride.rideId == target);
+    final found = items.any(
+      (i) => i is RideEntryItem && i.ride.rideId == target,
+    );
     if (!found) {
       ref.read(historyFilterProvider.notifier).reset();
       return; // re-runs on the next items emission
@@ -128,8 +128,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     ref.read(historyTargetRideProvider.notifier).state = null;
     _targetKey = GlobalKey();
     setState(() => _highlightRideId = target);
-    SchedulerBinding.instance
-        .addPostFrameCallback((_) => _revealTarget(items, target));
+    SchedulerBinding.instance.addPostFrameCallback(
+      (_) => _revealTarget(items, target),
+    );
     _highlightTimer?.cancel();
     _highlightTimer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) setState(() => _highlightRideId = null);
@@ -149,11 +150,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       return;
     }
     if (attempt >= 3 || !_scrollController.hasClients) return;
-    final estimate = estimatedOffsetOf(items, target)
-        .clamp(0.0, _scrollController.position.maxScrollExtent);
+    final estimate = estimatedOffsetOf(
+      items,
+      target,
+    ).clamp(0.0, _scrollController.position.maxScrollExtent);
     _scrollController.jumpTo(estimate);
     SchedulerBinding.instance.addPostFrameCallback(
-        (_) => _revealTarget(items, target, attempt: attempt + 1));
+      (_) => _revealTarget(items, target, attempt: attempt + 1),
+    );
   }
 
   /// Pre-warms ride previews as soon as the list data arrives, instead of when
@@ -179,34 +183,50 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       if (item is! RideEntryItem || !item.ride.hasRoute) continue;
       final rideId = item.ride.rideId;
       final precache = decodesLeft-- > 0;
-      unawaited(trackpoints.getForRide(rideId).first.then((tps) async {
-        if (tps.isEmpty) return;
-        final points = <RoutePoint>[
-          for (final tp in tps) (lat: tp.latitude, lng: tp.longitude),
-        ];
-        final file =
-            await cache.ensurePreview(rideId, points, brightness: brightness);
-        // Then the other theme's variant, behind the active one, so a
-        // light/dark switch finds its previews already rendered instead of
-        // re-rendering every card (tiles + PNG) on the spot.
-        unawaited(cache
-            .ensurePreview(rideId, points, brightness: _other(brightness))
-            .then((_) {}, onError: (Object _) {}));
-        if (!mounted || !precache) return;
-        // Same provider shape as the card's Image.file(cacheWidth: ...) so the
-        // decoded frame is an exact ImageCache hit when the card builds.
-        precacheImage(
-            ResizeImage(FileImage(file), width: previewImageCacheWidth),
-            context);
-      }).catchError((Object _) {}));
+      unawaited(
+        trackpoints
+            .getForRide(rideId)
+            .first
+            .then((tps) async {
+              if (tps.isEmpty) return;
+              final points = <RoutePoint>[
+                for (final tp in tps) (lat: tp.latitude, lng: tp.longitude),
+              ];
+              final file = await cache.ensurePreview(
+                rideId,
+                points,
+                brightness: brightness,
+              );
+              // Then the other theme's variant, behind the active one, so a
+              // light/dark switch finds its previews already rendered instead of
+              // re-rendering every card (tiles + PNG) on the spot.
+              unawaited(
+                cache
+                    .ensurePreview(
+                      rideId,
+                      points,
+                      brightness: _other(brightness),
+                    )
+                    .then((_) {}, onError: (Object _) {}),
+              );
+              if (!mounted || !precache) return;
+              // Same provider shape as the card's Image.file(cacheWidth: ...) so the
+              // decoded frame is an exact ImageCache hit when the card builds.
+              precacheImage(
+                ResizeImage(FileImage(file), width: previewImageCacheWidth),
+                context,
+              );
+            })
+            .catchError((Object _) {}),
+      );
     }
   }
 
   Future<void> _openFilters() => showAppScrollableSheet<void>(
-        context: context,
-        builder: (_, scrollController) =>
-            HistoryFilterSheet(scrollController: scrollController),
-      );
+    context: context,
+    builder: (_, scrollController) =>
+        HistoryFilterSheet(scrollController: scrollController),
+  );
 
   Future<void> _confirmDelete({int? single, bool batch = false}) async {
     final ids = batch ? _selectedIds.toList() : [single!];
@@ -241,8 +261,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       context: context,
       // Faster than the Material default (150ms): the dialog opens from a
       // direct tap on the preview, so it should feel instant.
-      animationStyle:
-          const AnimationStyle(duration: Duration(milliseconds: 90)),
+      animationStyle: const AnimationStyle(
+        duration: Duration(milliseconds: 90),
+      ),
       builder: (_) => RideDetailDialog(
         rwt: RideWithTrackpoints(ride: entry.ride, trackpoints: tps),
         stats: entry.stats,
@@ -257,7 +278,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   /// Loads [ride]'s route and starts "Follow route" for it (Spec 17).
   Future<void> _followRoute(Ride ride, [List<Trackpoint>? trackpoints]) async {
-    final tps = trackpoints ??
+    final tps =
+        trackpoints ??
         await ref
             .read(trackpointRepositoryProvider)
             .getForRide(ride.rideId)
@@ -344,7 +366,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       // built at the viewport edge (visible as a hitch).
                       scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       itemCount: items.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 6),
                       itemBuilder: (context, i) => _buildItem(items[i]),
@@ -362,27 +386,31 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       case DateHeaderItem(:final dayKey):
         final l10n = AppLocalizations.of(context);
         final colors = context.colors;
-        final label = formatDateLabel(dayKey,
-            todayLabel: l10n.dateToday,
-            yesterdayLabel: l10n.dateYesterday,
-            locale: Localizations.localeOf(context).toString());
+        final label = formatDateLabel(
+          dayKey,
+          todayLabel: l10n.dateToday,
+          yesterdayLabel: l10n.dateYesterday,
+          locale: Localizations.localeOf(context).toString(),
+        );
         // A section title, not a dimmed label: in labelSmall/onSurfaceVariant
         // it matched the cards' own metadata line and got lost between them.
         return Padding(
           padding: const EdgeInsets.only(left: 4, top: 12, bottom: 4),
           child: Row(
             children: [
-              Text(label,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(color: colors.onSurface)),
+              Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(color: colors.onSurface),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: colors.onSurfaceVariant.withValues(alpha: 0.3)),
+                  height: 1,
+                  thickness: 1,
+                  color: colors.onSurfaceVariant.withValues(alpha: 0.3),
+                ),
               ),
             ],
           ),
@@ -439,8 +467,10 @@ class _FilterBar extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(l10n.historyTitle,
-                    style: text.titleLarge?.copyWith(color: colors.onSurface)),
+                child: Text(
+                  l10n.historyTitle,
+                  style: text.titleLarge?.copyWith(color: colors.onSurface),
+                ),
               ),
               IconButton(
                 onPressed: onToggleSearch,
@@ -515,11 +545,12 @@ class _SelectionBar extends StatelessWidget {
             tooltip: l10n.a11yExitSelection,
           ),
           Expanded(
-            child: Text(l10n.selectionCount(count),
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(color: colors.onSurface)),
+            child: Text(
+              l10n.selectionCount(count),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: colors.onSurface),
+            ),
           ),
           IconButton(
             onPressed: onSelectAll,
@@ -529,10 +560,12 @@ class _SelectionBar extends StatelessWidget {
           IconButton(
             // Nothing to delete with an empty selection (issue #30).
             onPressed: count > 0 ? onDelete : null,
-            icon: Icon(Icons.delete,
-                color: count > 0
-                    ? colors.primary
-                    : colors.onSurfaceVariant.withValues(alpha: 0.38)),
+            icon: Icon(
+              Icons.delete,
+              color: count > 0
+                  ? colors.primary
+                  : colors.onSurfaceVariant.withValues(alpha: 0.38),
+            ),
             tooltip: l10n.actionDelete,
           ),
         ],

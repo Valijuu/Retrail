@@ -67,8 +67,12 @@ List<HistoryItem> buildHistoryItems(
         return title.toLowerCase().contains(q) ||
             (ride.comment?.toLowerCase().contains(q) ?? false);
       })
-      .map((ride) => RideEntryItem(
-          ride, storedRideStats(ride) ?? statsWithoutTrackpoints(ride)))
+      .map(
+        (ride) => RideEntryItem(
+          ride,
+          storedRideStats(ride) ?? statsWithoutTrackpoints(ride),
+        ),
+      )
       .toList();
 
   switch (f.sort) {
@@ -76,10 +80,13 @@ List<HistoryItem> buildHistoryItems(
       return _groupByDate(entries);
     case SortOrder.distance:
       entries.sort(
-          (a, b) => b.stats.distanceMetres.compareTo(a.stats.distanceMetres));
+        (a, b) => b.stats.distanceMetres.compareTo(a.stats.distanceMetres),
+      );
       return entries;
     case SortOrder.speed:
-      entries.sort((a, b) => b.stats.maxSpeedKmh.compareTo(a.stats.maxSpeedKmh));
+      entries.sort(
+        (a, b) => b.stats.maxSpeedKmh.compareTo(a.stats.maxSpeedKmh),
+      );
       return entries;
     case SortOrder.duration:
       entries.sort((a, b) => a.stats.durationMs.compareTo(b.stats.durationMs));

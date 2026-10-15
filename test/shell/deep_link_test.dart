@@ -20,14 +20,17 @@ Future<ProviderContainer> _pumpApp(WidgetTester tester, AppDatabase db) async {
 
   SharedPreferences.setMockInitialValues({'onboarding_done': true});
   final prefs = await SharedPreferences.getInstance();
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWithValue(db),
-    preferencesRepositoryProvider
-        .overrideWithValue(PreferencesRepository(prefs)),
-    isOnlineProvider.overrideWith((ref) => Stream.value(true)),
-    ...activeRideTestOverrides(db),
-    ...homeStreamStubs(),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWithValue(db),
+      preferencesRepositoryProvider.overrideWithValue(
+        PreferencesRepository(prefs),
+      ),
+      isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+      ...activeRideTestOverrides(db),
+      ...homeStreamStubs(),
+    ],
+  );
   addTearDown(container.dispose);
 
   await tester.pumpWidget(
@@ -42,8 +45,9 @@ Future<ProviderContainer> _pumpApp(WidgetTester tester, AppDatabase db) async {
 void main() {
   useStubLiveMap();
 
-  testWidgets('a pending ride deep-link routes to /ride and clears the flag',
-      (tester) async {
+  testWidgets('a pending ride deep-link routes to /ride and clears the flag', (
+    tester,
+  ) async {
     final db = AppDatabase.memory();
     addTearDown(db.close);
     final container = await _pumpApp(tester, db);
@@ -59,8 +63,7 @@ void main() {
     expect(container.read(pendingRideDeepLinkProvider), isFalse);
   });
 
-  testWidgets(
-      'leaving the ride clears a deep-link latch set while already on it '
+  testWidgets('leaving the ride clears a deep-link latch set while already on it '
       '(no bounce-back)', (tester) async {
     final db = AppDatabase.memory();
     addTearDown(db.close);

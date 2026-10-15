@@ -12,7 +12,7 @@ typedef FileDeleter = Future<void> Function(String path);
 /// and Settings.
 class ProfilePhotoManager {
   ProfilePhotoManager(this._prefs, this._picker, {FileDeleter? deleteFile})
-      : _deleteFile = deleteFile ?? _defaultDelete;
+    : _deleteFile = deleteFile ?? _defaultDelete;
 
   final PreferencesRepository _prefs;
   final ProfilePhotoPicker _picker;

@@ -18,11 +18,12 @@ const rideChromeAccent = AppColors.light; // hint / surface / liveIndicator
 
 /// The active ride's app bar: back, activity glyph, title, Live/Paused badge.
 class RideAppBar extends StatelessWidget {
-  const RideAppBar(
-      {super.key,
-      required this.state,
-      required this.showLive,
-      required this.onBack});
+  const RideAppBar({
+    super.key,
+    required this.state,
+    required this.showLive,
+    required this.onBack,
+  });
 
   final RideTrackingState state;
 
@@ -53,9 +54,12 @@ class RideAppBar extends StatelessWidget {
             child: activity.glyph(size: 20, color: rideChromeAccent.hintText),
           ),
           Expanded(
-            child: Text(l10n.mapActiveRideTitle,
-                style:
-                    text.titleMedium?.copyWith(color: rideChromeAccent.surface)),
+            child: Text(
+              l10n.mapActiveRideTitle,
+              style: text.titleMedium?.copyWith(
+                color: rideChromeAccent.surface,
+              ),
+            ),
           ),
           if (showLive)
             Padding(
@@ -77,8 +81,9 @@ class LiveBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final color =
-        isPaused ? rideChromeAccent.hintText : rideChromeAccent.liveIndicator;
+    final color = isPaused
+        ? rideChromeAccent.hintText
+        : rideChromeAccent.liveIndicator;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -88,11 +93,10 @@ class LiveBadge extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(isPaused ? l10n.mapPausedBadge : l10n.mapLiveBadge,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: color)),
+        Text(
+          isPaused ? l10n.mapPausedBadge : l10n.mapLiveBadge,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
+        ),
       ],
     );
   }
@@ -121,12 +125,13 @@ class RideWarningBanner extends StatelessWidget {
         color: colors.editActionText,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         alignment: Alignment.center,
-        child: Text(label,
-            textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: colors.editActionBg)),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: colors.editActionBg),
+        ),
       ),
     );
   }
@@ -176,8 +181,9 @@ class RideMapArea extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final loc = state.location;
-    final current =
-        loc != null ? (lat: loc.latitude, lng: loc.longitude) : null;
+    final current = loc != null
+        ? (lat: loc.latitude, lng: loc.longitude)
+        : null;
     return Stack(
       children: [
         Positioned.fill(

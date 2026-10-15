@@ -14,8 +14,9 @@ class NameInputNotifier extends Notifier<String> {
   }
 }
 
-final nameInputProvider =
-    NotifierProvider<NameInputNotifier, String>(NameInputNotifier.new);
+final nameInputProvider = NotifierProvider<NameInputNotifier, String>(
+  NameInputNotifier.new,
+);
 
 /// Onboarding actions, ported from `InitViewModel`.
 class OnboardingController {
@@ -40,5 +41,6 @@ class OnboardingController {
   }
 }
 
-final onboardingControllerProvider =
-    Provider<OnboardingController>(OnboardingController.new);
+final onboardingControllerProvider = Provider<OnboardingController>(
+  OnboardingController.new,
+);

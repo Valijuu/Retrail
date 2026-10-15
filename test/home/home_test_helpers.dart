@@ -78,12 +78,12 @@ class _NoopService implements RideForegroundService {
 /// Start-tracking permission gate (the prompt now fires at the button press).
 class FakeRecordingController extends RideRecordingController {
   FakeRecordingController(RideTracker tracker)
-      : super(
-          tracker: tracker,
-          source: _NoopSource(),
-          permissions: _NoopPerms(),
-          service: _NoopService(),
-        );
+    : super(
+        tracker: tracker,
+        source: _NoopSource(),
+        permissions: _NoopPerms(),
+        service: _NoopService(),
+      );
 
   final calls = <String>[];
   LocationStartAction prepareResult = LocationStartAction.proceed;
@@ -117,7 +117,8 @@ class FakeRecordingController extends RideRecordingController {
       calls.add(discard ? 'stop:discard' : 'stop');
 
   @override
-  Future<void> openLocationSettings() async => calls.add('openLocationSettings');
+  Future<void> openLocationSettings() async =>
+      calls.add('openLocationSettings');
 
   @override
   Future<void> openAppSettings() async => calls.add('openAppSettings');
@@ -127,11 +128,13 @@ class FakeRecordingController extends RideRecordingController {
 /// Start-tracking gate. Sharing the caller's db avoids creating a second
 /// AppDatabase instance (which Drift warns about).
 FakeRecordingController makeFakeRecording(AppDatabase db) {
-  return FakeRecordingController(RideTracker(
-    RideRepository(RideDao(db)),
-    TrackpointRepository(TrackpointDao(db)),
-    const HaversineDistanceCalculator(),
-  ));
+  return FakeRecordingController(
+    RideTracker(
+      RideRepository(RideDao(db)),
+      TrackpointRepository(TrackpointDao(db)),
+      const HaversineDistanceCalculator(),
+    ),
+  );
 }
 
 /// Overrides needed for any test that may navigate to the real `/ride` screen
@@ -145,23 +148,31 @@ FakeRecordingController makeFakeRecording(AppDatabase db) {
 // ignore: strict_top_level_inference
 activeRideTestOverrides(AppDatabase db, {FakeRecordingController? recording}) {
   final dir = Directory.systemTemp;
-  final tracker = RideTracker(RideRepository(RideDao(db)),
-      TrackpointRepository(TrackpointDao(db)), const HaversineDistanceCalculator());
+  final tracker = RideTracker(
+    RideRepository(RideDao(db)),
+    TrackpointRepository(TrackpointDao(db)),
+    const HaversineDistanceCalculator(),
+  );
   return [
     previewCacheDirProvider.overrideWithValue(dir),
-    rideTrackingStateProvider
-        .overrideWith((ref) => Stream.value(const RideTrackingState())),
-    activeRideControllerProvider.overrideWithValue(ActiveRideController(
-      tracker,
-      RoutePreviewCache(
+    rideTrackingStateProvider.overrideWith(
+      (ref) => Stream.value(const RideTrackingState()),
+    ),
+    activeRideControllerProvider.overrideWithValue(
+      ActiveRideController(
+        tracker,
+        RoutePreviewCache(
           baseDir: dir,
-          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
-    )),
+          render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+        ),
+      ),
+    ),
     // The Start-tracking gate (and the active-ride fallback gate) read the real
     // recording controller, which calls geolocator — unavailable under
     // `testWidgets` (MissingPluginException). A fake keeps the gate headless.
-    rideRecordingControllerProvider
-        .overrideWithValue(recording ?? FakeRecordingController(tracker)),
+    rideRecordingControllerProvider.overrideWithValue(
+      recording ?? FakeRecordingController(tracker),
+    ),
   ];
 }
 
@@ -182,17 +193,16 @@ homeStreamStubs({
   WeeklyStats daily = const WeeklyStats.zero(),
   WeeklyStats yearly = const WeeklyStats.zero(),
   List<HistoryItem> history = const [],
-}) =>
-    [
-      recentRidesProvider.overrideWith((ref) => Stream.value(recent)),
-      favoriteRidesProvider.overrideWith((ref) => Stream.value(favorites)),
-      weeklyStatsProvider.overrideWith((ref) => Stream.value(weekly)),
-      dailyStatsProvider.overrideWith((ref) => Stream.value(daily)),
-      yearlyStatsProvider.overrideWith((ref) => Stream.value(yearly)),
-      // The History tab is a PageView neighbor of Home, so any shell-mounting
-      // test builds it; keep it off the never-closing Drift `.watch()` stream.
-      historyItemsProvider.overrideWith((ref) => Stream.value(history)),
-    ];
+}) => [
+  recentRidesProvider.overrideWith((ref) => Stream.value(recent)),
+  favoriteRidesProvider.overrideWith((ref) => Stream.value(favorites)),
+  weeklyStatsProvider.overrideWith((ref) => Stream.value(weekly)),
+  dailyStatsProvider.overrideWith((ref) => Stream.value(daily)),
+  yearlyStatsProvider.overrideWith((ref) => Stream.value(yearly)),
+  // The History tab is a PageView neighbor of Home, so any shell-mounting
+  // test builds it; keep it off the never-closing Drift `.watch()` stream.
+  historyItemsProvider.overrideWith((ref) => Stream.value(history)),
+];
 
 class HomeEnv {
   HomeEnv(this.db, this.prefs);
@@ -200,7 +210,9 @@ class HomeEnv {
   final PreferencesRepository prefs;
 }
 
-Future<HomeEnv> buildHomeEnv({Map<String, Object> initialPrefs = const {}}) async {
+Future<HomeEnv> buildHomeEnv({
+  Map<String, Object> initialPrefs = const {},
+}) async {
   SharedPreferences.setMockInitialValues(initialPrefs);
   final prefs = PreferencesRepository(await SharedPreferences.getInstance());
   return HomeEnv(AppDatabase.memory(), prefs);
@@ -215,16 +227,24 @@ Future<int> insertRide(
   bool favorite = false,
   int? favoritedAt,
 }) async {
-  final id = await db.rideDao.insert(RidesCompanion.insert(
-    description: Value(description),
-    startTime: Value(startTime),
-    endTime: Value(endTime),
-    date: Value(date ?? startTime),
-  ));
+  final id = await db.rideDao.insert(
+    RidesCompanion.insert(
+      description: Value(description),
+      startTime: Value(startTime),
+      endTime: Value(endTime),
+      date: Value(date ?? startTime),
+    ),
+  );
   if (favorite) await db.rideDao.updateFavorite(id, true, favoritedAt ?? date);
   return id;
 }
 
 Future<void> addPoint(AppDatabase db, int rideId, double lat, double lng) =>
-    db.trackpointDao.insert(TrackpointsCompanion.insert(
-        rideId: rideId, latitude: lat, longitude: lng, timestamp: 0));
+    db.trackpointDao.insert(
+      TrackpointsCompanion.insert(
+        rideId: rideId,
+        latitude: lat,
+        longitude: lng,
+        timestamp: 0,
+      ),
+    );

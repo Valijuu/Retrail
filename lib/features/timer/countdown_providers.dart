@@ -19,16 +19,21 @@ final gpsNowNanosProvider = Provider<int Function()>((ref) {
 /// the moment a ready fix goes stale, so the row falls back to "searching"
 /// when no fix follows (e.g. indoors).
 final countdownGpsSignalProvider = Provider.autoDispose<GpsSignal>((ref) {
-  final state = ref.watch(rideTrackingStateProvider).asData?.value ??
+  final state =
+      ref.watch(rideTrackingStateProvider).asData?.value ??
       const RideTrackingState();
   final now = ref.watch(gpsNowNanosProvider)();
   final fix = state.location;
   final signal = gpsSignal(
-      fix: fix, serviceEnabled: state.locationServiceEnabled, nowNanos: now);
+    fix: fix,
+    serviceEnabled: state.locationServiceEnabled,
+    nowNanos: now,
+  );
   if (signal == GpsSignal.ready) {
     final ageNanos = now - fix!.elapsedRealtimeNanos;
-    final staleIn =
-        Duration(microseconds: (GpsFixFilter.maxFixAgeNanos - ageNanos) ~/ 1000 + 1);
+    final staleIn = Duration(
+      microseconds: (GpsFixFilter.maxFixAgeNanos - ageNanos) ~/ 1000 + 1,
+    );
     final timer = Timer(staleIn, ref.invalidateSelf);
     ref.onDispose(timer.cancel);
   }

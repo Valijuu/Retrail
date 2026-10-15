@@ -61,16 +61,20 @@ class _RoutePreviewState extends State<RoutePreview> {
     _upgradeSub = widget.cache.upgrades
         .where((id) => id == widget.rideId)
         .listen((_) {
-      final file = _ready ?? widget.cache.resolvedFileFor(widget.rideId,
-          brightness: _brightness ?? Brightness.light);
-      if (file != null) {
-        FileImage(file).evict();
-        if (widget.cacheWidth != null) {
-          ResizeImage(FileImage(file), width: widget.cacheWidth).evict();
-        }
-      }
-      if (mounted) setState(_maybeGenerate);
-    });
+          final file =
+              _ready ??
+              widget.cache.resolvedFileFor(
+                widget.rideId,
+                brightness: _brightness ?? Brightness.light,
+              );
+          if (file != null) {
+            FileImage(file).evict();
+            if (widget.cacheWidth != null) {
+              ResizeImage(FileImage(file), width: widget.cacheWidth).evict();
+            }
+          }
+          if (mounted) setState(_maybeGenerate);
+        });
   }
 
   @override
@@ -104,20 +108,27 @@ class _RoutePreviewState extends State<RoutePreview> {
       _file = null;
       return;
     }
-    _ready =
-        widget.cache.resolvedFileFor(widget.rideId, brightness: _brightness!);
+    _ready = widget.cache.resolvedFileFor(
+      widget.rideId,
+      brightness: _brightness!,
+    );
     _file = _ready != null
         ? null
-        : widget.pointsLoader().then((points) => widget.cache
-            .ensurePreview(widget.rideId, points, brightness: _brightness!));
+        : widget.pointsLoader().then(
+            (points) => widget.cache.ensurePreview(
+              widget.rideId,
+              points,
+              brightness: _brightness!,
+            ),
+          );
   }
 
   Widget _image(File file) => Image.file(
-        file,
-        fit: BoxFit.cover,
-        cacheWidth: widget.cacheWidth,
-        gaplessPlayback: true,
-      );
+    file,
+    fit: BoxFit.cover,
+    cacheWidth: widget.cacheWidth,
+    gaplessPlayback: true,
+  );
 
   @override
   Widget build(BuildContext context) {

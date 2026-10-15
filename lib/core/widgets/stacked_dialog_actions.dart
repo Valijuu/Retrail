@@ -28,13 +28,17 @@ class StackedDialogActions extends StatelessWidget {
         SizedBox(
           height: _buttonHeight,
           child: FilledButton(
-              onPressed: onPrimary, child: _label(primaryLabel)),
+            onPressed: onPrimary,
+            child: _label(primaryLabel),
+          ),
         ),
         const SizedBox(height: 8),
         SizedBox(
           height: _buttonHeight,
           child: TextButton(
-              onPressed: onSecondary, child: _label(secondaryLabel)),
+            onPressed: onSecondary,
+            child: _label(secondaryLabel),
+          ),
         ),
       ],
     );

@@ -11,8 +11,10 @@ import '../settings/settings_providers.dart';
 import 'recent_ride_ui.dart';
 
 /// "Now" in epoch ms — overridable in tests for deterministic time bounds.
-final nowMsProvider =
-    Provider<int Function()>((ref) => () => DateTime.now().millisecondsSinceEpoch);
+final nowMsProvider = Provider<int Function()>(
+  (ref) =>
+      () => DateTime.now().millisecondsSinceEpoch,
+);
 
 StreamProvider<WeeklyStats> _statsFor(Bounds Function(int) boundsOf) {
   return StreamProvider<WeeklyStats>((ref) {
@@ -35,8 +37,10 @@ final yearlyStatsProvider = _statsFor((now) => yearBounds(nowMs: now));
 /// belongs in "last rides", and showing them made a discarded ride flash on
 /// home until its delete landed.
 List<RecentRideUi> toRecentRides(
-    List<RideWithTrackpoints> list, DistanceCalculator calc,
-    {String? locale}) {
+  List<RideWithTrackpoints> list,
+  DistanceCalculator calc, {
+  String? locale,
+}) {
   final sorted = list.where((rwt) => rwt.ride.endTime != null).toList()
     ..sort((a, b) => (b.ride.date ?? 0).compareTo(a.ride.date ?? 0));
   return sorted
@@ -47,11 +51,16 @@ List<RecentRideUi> toRecentRides(
 
 /// Favorites sorted by when they were hearted (newest first), take 2.
 List<RecentRideUi> toFavoriteRides(
-    List<RideWithTrackpoints> list, DistanceCalculator calc,
-    {String? locale}) {
+  List<RideWithTrackpoints> list,
+  DistanceCalculator calc, {
+  String? locale,
+}) {
   final favs = list.where((rwt) => rwt.ride.isFavorite).toList()
-    ..sort((a, b) => (b.ride.favoritedAt ?? b.ride.date ?? 0)
-        .compareTo(a.ride.favoritedAt ?? a.ride.date ?? 0));
+    ..sort(
+      (a, b) => (b.ride.favoritedAt ?? b.ride.date ?? 0).compareTo(
+        a.ride.favoritedAt ?? a.ride.date ?? 0,
+      ),
+    );
   return favs
       .take(2)
       .map((rwt) => RecentRideUi.from(rwt, calc, locale: locale))
@@ -76,23 +85,28 @@ final favoriteRidesProvider = StreamProvider<List<RecentRideUi>>((ref) {
       .map((list) => toFavoriteRides(list, calc, locale: locale));
 });
 
-final lastActivityTypeProvider = StreamProvider<ActivityType>((ref) => ref
-    .watch(preferencesRepositoryProvider)
-    .lastActivityType
-    .map((id) => ActivityType.fromId(id) ?? ActivityType.defaultType));
+final lastActivityTypeProvider = StreamProvider<ActivityType>(
+  (ref) => ref
+      .watch(preferencesRepositoryProvider)
+      .lastActivityType
+      .map((id) => ActivityType.fromId(id) ?? ActivityType.defaultType),
+);
 
 /// Which period the Home hero card's stat row (Ø speed, rides, duration)
 /// summarises — picked by tapping the week / day / year column (the original
 /// only ever showed the week, with nothing saying so).
 enum StatsPeriod { week, day, year }
 
-final homeStatsPeriodProvider = StreamProvider<StatsPeriod>((ref) => ref
-    .watch(preferencesRepositoryProvider)
-    .homeStatsPeriod
-    .map((id) => StatsPeriod.values.asNameMap()[id] ?? StatsPeriod.week));
+final homeStatsPeriodProvider = StreamProvider<StatsPeriod>(
+  (ref) => ref
+      .watch(preferencesRepositoryProvider)
+      .homeStatsPeriod
+      .map((id) => StatsPeriod.values.asNameMap()[id] ?? StatsPeriod.week),
+);
 
 final userNameProvider = StreamProvider<String>(
-    (ref) => ref.watch(preferencesRepositoryProvider).userName);
+  (ref) => ref.watch(preferencesRepositoryProvider).userName,
+);
 
 /// Records the preselected activity type for the ride about to start.
 class HomeController {
@@ -106,15 +120,15 @@ class HomeController {
   /// (issue #27).
   void beginTracking() {
     final prefs = _ref.read(preferencesRepositoryProvider);
-    final type = ActivityType.fromId(prefs.lastActivityTypeNow) ??
+    final type =
+        ActivityType.fromId(prefs.lastActivityTypeNow) ??
         ActivityType.defaultType;
     _ref.read(rideTrackerProvider).setPendingActivityType(type.id);
     prefs.saveLastActivityType(type.id);
   }
 
-  void selectStatsPeriod(StatsPeriod period) => _ref
-      .read(preferencesRepositoryProvider)
-      .setHomeStatsPeriod(period.name);
+  void selectStatsPeriod(StatsPeriod period) =>
+      _ref.read(preferencesRepositoryProvider).setHomeStatsPeriod(period.name);
 }
 
 final homeControllerProvider = Provider<HomeController>(HomeController.new);

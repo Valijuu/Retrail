@@ -162,16 +162,19 @@ void main() {
       expect(c.read(historyFilterProvider).monthTo, 6);
     });
 
-    test('setMonthTo before the current monthFrom pulls monthFrom down with it', () {
-      final c = ProviderContainer();
-      addTearDown(c.dispose);
-      final notifier = c.read(historyFilterProvider.notifier);
-      notifier.setYear(2023);
-      notifier.setMonthFrom(6);
-      notifier.setMonthTo(4);
-      expect(c.read(historyFilterProvider).monthFrom, 4);
-      expect(c.read(historyFilterProvider).monthTo, 4);
-    });
+    test(
+      'setMonthTo before the current monthFrom pulls monthFrom down with it',
+      () {
+        final c = ProviderContainer();
+        addTearDown(c.dispose);
+        final notifier = c.read(historyFilterProvider.notifier);
+        notifier.setYear(2023);
+        notifier.setMonthFrom(6);
+        notifier.setMonthTo(4);
+        expect(c.read(historyFilterProvider).monthFrom, 4);
+        expect(c.read(historyFilterProvider).monthTo, 4);
+      },
+    );
 
     test('setMonthFrom does not touch other filter fields', () {
       final c = ProviderContainer();
@@ -185,20 +188,23 @@ void main() {
   });
 
   group('availableHistoryYearsProvider', () {
-    test('extracts distinct years from ride.date, sorted descending',
-        () async {
+    test('extracts distinct years from ride.date, sorted descending', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
       final repo = RideRepository(RideDao(db));
       await repo.startRide(
-          startedAtMs: DateTime(2022, 6, 1).millisecondsSinceEpoch);
+        startedAtMs: DateTime(2022, 6, 1).millisecondsSinceEpoch,
+      );
       await repo.startRide(
-          startedAtMs: DateTime(2024, 3, 1).millisecondsSinceEpoch);
+        startedAtMs: DateTime(2024, 3, 1).millisecondsSinceEpoch,
+      );
       await repo.startRide(
-          startedAtMs: DateTime(2024, 8, 1).millisecondsSinceEpoch);
+        startedAtMs: DateTime(2024, 8, 1).millisecondsSinceEpoch,
+      );
 
       final c = ProviderContainer(
-          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
+        overrides: [rideRepositoryProvider.overrideWithValue(repo)],
+      );
       addTearDown(c.dispose);
 
       final years = await firstData(c, availableHistoryYearsProvider);
@@ -212,14 +218,18 @@ void main() {
       final repo = RideRepository(dao);
       // Ride with a startTime but no date (date defaults to startedAtMs in
       // startRide, so insert directly to exercise the fallback).
-      await dao.insert(RidesCompanion.insert(
-        startTime: const drift.Value(
-            1700000000000), // 2023-11-14, arbitrary fixed epoch ms
-        date: const drift.Value.absent(),
-      ));
+      await dao.insert(
+        RidesCompanion.insert(
+          startTime: const drift.Value(
+            1700000000000,
+          ), // 2023-11-14, arbitrary fixed epoch ms
+          date: const drift.Value.absent(),
+        ),
+      );
 
       final c = ProviderContainer(
-          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
+        overrides: [rideRepositoryProvider.overrideWithValue(repo)],
+      );
       addTearDown(c.dispose);
 
       final years = await firstData(c, availableHistoryYearsProvider);
@@ -228,68 +238,82 @@ void main() {
   });
 
   group('yearPickerItemsProvider', () {
-    test('unions availableHistoryYearsProvider with the selected year',
-        () async {
-      final currentYear = DateTime.now().year;
-      final rideYear = currentYear - 2;
-      final selectedYear = currentYear - 3;
-      final db = AppDatabase.memory();
-      addTearDown(db.close);
-      final repo = RideRepository(RideDao(db));
-      await repo.startRide(
-          startedAtMs: DateTime(rideYear, 3, 1).millisecondsSinceEpoch);
+    test(
+      'unions availableHistoryYearsProvider with the selected year',
+      () async {
+        final currentYear = DateTime.now().year;
+        final rideYear = currentYear - 2;
+        final selectedYear = currentYear - 3;
+        final db = AppDatabase.memory();
+        addTearDown(db.close);
+        final repo = RideRepository(RideDao(db));
+        await repo.startRide(
+          startedAtMs: DateTime(rideYear, 3, 1).millisecondsSinceEpoch,
+        );
 
-      final c = ProviderContainer(
-          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
-      addTearDown(c.dispose);
+        final c = ProviderContainer(
+          overrides: [rideRepositoryProvider.overrideWithValue(repo)],
+        );
+        addTearDown(c.dispose);
 
-      // Let availableHistoryYearsProvider's stream settle first.
-      await firstData(c, availableHistoryYearsProvider);
-      // Selected year isn't among the DB-derived years — the defensive
-      // union (e.g. its rides were just bulk-deleted) must still surface it,
-      // alongside the always-included current year.
-      c.read(historyFilterProvider.notifier).setYear(selectedYear);
+        // Let availableHistoryYearsProvider's stream settle first.
+        await firstData(c, availableHistoryYearsProvider);
+        // Selected year isn't among the DB-derived years — the defensive
+        // union (e.g. its rides were just bulk-deleted) must still surface it,
+        // alongside the always-included current year.
+        c.read(historyFilterProvider.notifier).setYear(selectedYear);
 
-      expect(c.read(yearPickerItemsProvider),
-          [currentYear, rideYear, selectedYear]);
-    });
+        expect(c.read(yearPickerItemsProvider), [
+          currentYear,
+          rideYear,
+          selectedYear,
+        ]);
+      },
+    );
 
-    test('does not duplicate when the selected year is already available',
-        () async {
-      final currentYear = DateTime.now().year;
-      final rideYear = currentYear - 1;
-      final db = AppDatabase.memory();
-      addTearDown(db.close);
-      final repo = RideRepository(RideDao(db));
-      await repo.startRide(
-          startedAtMs: DateTime(rideYear, 3, 1).millisecondsSinceEpoch);
+    test(
+      'does not duplicate when the selected year is already available',
+      () async {
+        final currentYear = DateTime.now().year;
+        final rideYear = currentYear - 1;
+        final db = AppDatabase.memory();
+        addTearDown(db.close);
+        final repo = RideRepository(RideDao(db));
+        await repo.startRide(
+          startedAtMs: DateTime(rideYear, 3, 1).millisecondsSinceEpoch,
+        );
 
-      final c = ProviderContainer(
-          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
-      addTearDown(c.dispose);
+        final c = ProviderContainer(
+          overrides: [rideRepositoryProvider.overrideWithValue(repo)],
+        );
+        addTearDown(c.dispose);
 
-      await firstData(c, availableHistoryYearsProvider);
-      c.read(historyFilterProvider.notifier).setYear(rideYear);
+        await firstData(c, availableHistoryYearsProvider);
+        c.read(historyFilterProvider.notifier).setYear(rideYear);
 
-      expect(c.read(yearPickerItemsProvider), [currentYear, rideYear]);
-    });
+        expect(c.read(yearPickerItemsProvider), [currentYear, rideYear]);
+      },
+    );
 
-    test('always includes the current calendar year, even with no rides yet',
-        () async {
-      final db = AppDatabase.memory();
-      addTearDown(db.close);
-      final repo = RideRepository(RideDao(db));
-      // No rides inserted at all — the year the app just rolled into must
-      // still be selectable without waiting for a first ride in it.
+    test(
+      'always includes the current calendar year, even with no rides yet',
+      () async {
+        final db = AppDatabase.memory();
+        addTearDown(db.close);
+        final repo = RideRepository(RideDao(db));
+        // No rides inserted at all — the year the app just rolled into must
+        // still be selectable without waiting for a first ride in it.
 
-      final c = ProviderContainer(
-          overrides: [rideRepositoryProvider.overrideWithValue(repo)]);
-      addTearDown(c.dispose);
+        final c = ProviderContainer(
+          overrides: [rideRepositoryProvider.overrideWithValue(repo)],
+        );
+        addTearDown(c.dispose);
 
-      await firstData(c, availableHistoryYearsProvider);
+        await firstData(c, availableHistoryYearsProvider);
 
-      expect(c.read(yearPickerItemsProvider), [DateTime.now().year]);
-    });
+        expect(c.read(yearPickerItemsProvider), [DateTime.now().year]);
+      },
+    );
   });
 
   group('historyItemsProvider wired to effectiveRange', () {
@@ -297,41 +321,47 @@ void main() {
     // `effectiveRange` (unit-tested) and `RideDao.getRidesInRange`
     // (unit-tested) are correctly connected through `historyItemsProvider`
     // when a year filter is set.
-    test('setYear(2023) restricts results to rides dated in 2023 only',
-        () async {
-      final db = AppDatabase.memory();
-      addTearDown(db.close);
-      final repo = RideRepository(RideDao(db));
-      final id2023 = await repo.startRide(
-          startedAtMs: DateTime(2023, 6, 1).millisecondsSinceEpoch);
-      final id2024 = await repo.startRide(
-          startedAtMs: DateTime(2024, 6, 1).millisecondsSinceEpoch);
+    test(
+      'setYear(2023) restricts results to rides dated in 2023 only',
+      () async {
+        final db = AppDatabase.memory();
+        addTearDown(db.close);
+        final repo = RideRepository(RideDao(db));
+        final id2023 = await repo.startRide(
+          startedAtMs: DateTime(2023, 6, 1).millisecondsSinceEpoch,
+        );
+        final id2024 = await repo.startRide(
+          startedAtMs: DateTime(2024, 6, 1).millisecondsSinceEpoch,
+        );
 
-      final c = ProviderContainer(overrides: [
-        rideRepositoryProvider.overrideWithValue(repo),
-        // Avoid pulling in the real preferences/locale chain — this test
-        // only cares about which rides the range query returns.
-        dateFormatLocaleProvider.overrideWithValue('en_US'),
-      ]);
-      addTearDown(c.dispose);
+        final c = ProviderContainer(
+          overrides: [
+            rideRepositoryProvider.overrideWithValue(repo),
+            // Avoid pulling in the real preferences/locale chain — this test
+            // only cares about which rides the range query returns.
+            dateFormatLocaleProvider.overrideWithValue('en_US'),
+          ],
+        );
+        addTearDown(c.dispose);
 
-      final notifier = c.read(historyFilterProvider.notifier);
-      notifier.setYear(2023);
-      // The default month range (the real current calendar month, whatever
-      // that happens to be at test-run time) would otherwise filter out this
-      // June-dated fixture ride on months that aren't June — widen to the
-      // full year, since this test is about the year restriction only.
-      notifier.setMonthFrom(1);
-      notifier.setMonthTo(12);
+        final notifier = c.read(historyFilterProvider.notifier);
+        notifier.setYear(2023);
+        // The default month range (the real current calendar month, whatever
+        // that happens to be at test-run time) would otherwise filter out this
+        // June-dated fixture ride on months that aren't June — widen to the
+        // full year, since this test is about the year restriction only.
+        notifier.setMonthFrom(1);
+        notifier.setMonthTo(12);
 
-      final items = await firstData(c, historyItemsProvider);
-      final rideIds = items
-          .whereType<RideEntryItem>()
-          .map((e) => e.ride.rideId)
-          .toList();
+        final items = await firstData(c, historyItemsProvider);
+        final rideIds = items
+            .whereType<RideEntryItem>()
+            .map((e) => e.ride.rideId)
+            .toList();
 
-      expect(rideIds, [id2023]);
-      expect(rideIds, isNot(contains(id2024)));
-    });
+        expect(rideIds, [id2023]);
+        expect(rideIds, isNot(contains(id2024)));
+      },
+    );
   });
 }

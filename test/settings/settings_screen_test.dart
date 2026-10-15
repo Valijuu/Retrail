@@ -29,8 +29,9 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    controller =
-        FakeSettingsController(PreferencesRepository(await SharedPreferences.getInstance()));
+    controller = FakeSettingsController(
+      PreferencesRepository(await SharedPreferences.getInstance()),
+    );
   });
 
   Future<void> pump(
@@ -44,25 +45,29 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        themeModeProvider.overrideWith((ref) => Stream.value(theme)),
-        appLanguageProvider.overrideWith((ref) => Stream.value(language)),
-        lastActivityTypeProvider.overrideWith((ref) => Stream.value(activity)),
-        settingsControllerProvider.overrideWithValue(controller),
-      ],
-      child: MaterialApp(
-        theme: buildTheme(Brightness.light),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          themeModeProvider.overrideWith((ref) => Stream.value(theme)),
+          appLanguageProvider.overrideWith((ref) => Stream.value(language)),
+          lastActivityTypeProvider.overrideWith(
+            (ref) => Stream.value(activity),
+          ),
+          settingsControllerProvider.overrideWithValue(controller),
         ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(body: SettingsScreen()),
+        child: MaterialApp(
+          theme: buildTheme(Brightness.light),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(body: SettingsScreen()),
+        ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -90,8 +95,9 @@ void main() {
     expect(controller.calls, contains('lang:german'));
   });
 
-  testWidgets('activity row opens the picker; choosing a tile saves it',
-      (tester) async {
+  testWidgets('activity row opens the picker; choosing a tile saves it', (
+    tester,
+  ) async {
     await pump(tester);
     await tester.tap(find.text('Longboard'));
     await tester.pumpAndSettle();

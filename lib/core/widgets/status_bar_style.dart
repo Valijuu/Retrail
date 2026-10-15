@@ -13,7 +13,9 @@ class ThemeStatusBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: dark ? DarkChromeStatusBar.style : _light, child: child);
+      value: dark ? DarkChromeStatusBar.style : _light,
+      child: child,
+    );
   }
 
   static const _light = SystemUiOverlayStyle(

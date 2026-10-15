@@ -40,60 +40,72 @@ class PillDropdown<T> extends StatelessWidget {
     // sheet (none of them set an explicit selectedColor), keeping the
     // "selected" look consistent between chips and dropdown menus.
     final colorScheme = Theme.of(context).colorScheme;
-    final itemStyle =
-        Theme.of(context).textTheme.bodyLarge?.copyWith(color: colors.onSurface);
+    final itemStyle = Theme.of(
+      context,
+    ).textTheme.bodyLarge?.copyWith(color: colors.onSurface);
 
-    return LayoutBuilder(builder: (context, constraints) {
-      return MenuAnchor(
-        style: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(colors.surfaceContainer),
-          shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(_radius))),
-          // Match the menu's width to the anchor's — MenuAnchor otherwise
-          // sizes menuChildren to their own intrinsic content width, which
-          // would make the Von/Bis dropdowns (narrower, in an Expanded Row)
-          // pop a menu wider than the pill button itself.
-          minimumSize: WidgetStatePropertyAll(Size(constraints.maxWidth, 0)),
-        ),
-        builder: (context, controller, child) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: colors.surfaceContainer,
-            borderRadius: BorderRadius.circular(_radius),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return MenuAnchor(
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(colors.surfaceContainer),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(_radius),
+              ),
+            ),
+            // Match the menu's width to the anchor's — MenuAnchor otherwise
+            // sizes menuChildren to their own intrinsic content width, which
+            // would make the Von/Bis dropdowns (narrower, in an Expanded Row)
+            // pop a menu wider than the pill button itself.
+            minimumSize: WidgetStatePropertyAll(Size(constraints.maxWidth, 0)),
           ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(_radius),
-            onTap: () => controller.isOpen ? controller.close() : controller.open(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(child: Text(itemLabel(value), style: itemStyle)),
-                const SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down, color: colors.primary),
-              ],
+          builder: (context, controller, child) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainer,
+              borderRadius: BorderRadius.circular(_radius),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(_radius),
+              onTap: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: Text(itemLabel(value), style: itemStyle)),
+                  const SizedBox(width: 4),
+                  Icon(Icons.keyboard_arrow_down, color: colors.primary),
+                ],
+              ),
             ),
           ),
-        ),
-        menuChildren: [
-          for (final item in items)
-            MenuItemButton(
-              onPressed: () => onChanged(item),
-              child: item == value
-                  ? Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(_highlightRadius),
-                      ),
-                      child: Text(itemLabel(item),
+          menuChildren: [
+            for (final item in items)
+              MenuItemButton(
+                onPressed: () => onChanged(item),
+                child: item == value
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(_highlightRadius),
+                        ),
+                        child: Text(
+                          itemLabel(item),
                           style: itemStyle?.copyWith(
-                              color: colorScheme.onSecondaryContainer)),
-                    )
-                  : Text(itemLabel(item), style: itemStyle),
-            ),
-        ],
-      );
-    });
+                            color: colorScheme.onSecondaryContainer,
+                          ),
+                        ),
+                      )
+                    : Text(itemLabel(item), style: itemStyle),
+              ),
+          ],
+        );
+      },
+    );
   }
 }

@@ -7,8 +7,9 @@ import 'package:retrail/map/preview_snapshot.dart';
 Future<ui.Image> _solid(int size, ui.Color color) async {
   final recorder = ui.PictureRecorder();
   ui.Canvas(recorder).drawRect(
-      ui.Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
-      ui.Paint()..color = color);
+    ui.Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
+    ui.Paint()..color = color,
+  );
   return recorder.endRecording().toImage(size, size);
 }
 
@@ -28,8 +29,9 @@ class _FlakyTiles implements PreviewTileProvider {
   int _calls = 0;
 
   @override
-  Future<ui.Image?> tile(int z, int x, int y, ui.Brightness b) =>
-      _calls++ == 0 ? Future.value(null) : _solid(256, const ui.Color(0xFFDDDDDD));
+  Future<ui.Image?> tile(int z, int x, int y, ui.Brightness b) => _calls++ == 0
+      ? Future.value(null)
+      : _solid(256, const ui.Color(0xFFDDDDDD));
 }
 
 /// 1-px black/white columns: any resampling smears them into grey.
@@ -37,11 +39,15 @@ Future<ui.Image> _stripes(int size) async {
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder);
   final black = ui.Paint()..color = const ui.Color(0xFF000000);
-  canvas.drawRect(ui.Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
-      ui.Paint()..color = const ui.Color(0xFFFFFFFF));
+  canvas.drawRect(
+    ui.Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
+    ui.Paint()..color = const ui.Color(0xFFFFFFFF),
+  );
   for (var x = 0; x < size; x += 2) {
     canvas.drawRect(
-        ui.Rect.fromLTWH(x.toDouble(), 0, 1, size.toDouble()), black);
+      ui.Rect.fromLTWH(x.toDouble(), 0, 1, size.toDouble()),
+      black,
+    );
   }
   return recorder.endRecording().toImage(size, size);
 }
@@ -50,8 +56,7 @@ Future<ui.Image> _stripes(int size) async {
 /// the OpenFreeMap provider draws them.
 class _StripedTiles implements PreviewTileProvider {
   @override
-  Future<ui.Image?> tile(int z, int x, int y, ui.Brightness b) =>
-      _stripes(768);
+  Future<ui.Image?> tile(int z, int x, int y, ui.Brightness b) => _stripes(768);
 }
 
 const _points = <RoutePoint>[
@@ -80,8 +85,7 @@ void main() {
   });
 
   test('basemap tiles land on whole device pixels: a 1:1 tile stays sharp '
-      'instead of being resampled between pixels (blurred previews)',
-      () async {
+      'instead of being resampled between pixels (blurred previews)', () async {
     final result = await renderPreviewPng(
       points: _points,
       widthDp: 100,
@@ -111,24 +115,32 @@ void main() {
     for (final px in [-0.5, -1.5, 0.5, 2.5, -383.5]) {
       final left = px / ratio;
       final right = left + 256;
-      expect(snapToDevicePixel(right, ratio) - snapToDevicePixel(left, ratio),
-          closeTo(256, 1e-9), reason: 'tile edge at $px px');
+      expect(
+        snapToDevicePixel(right, ratio) - snapToDevicePixel(left, ratio),
+        closeTo(256, 1e-9),
+        reason: 'tile edge at $px px',
+      );
     }
   });
 
-  test('renders even when tiles are unavailable, but flags it incomplete',
-      () async {
-    final result = await renderPreviewPng(
-      points: _points,
-      widthDp: 100,
-      heightDp: 80,
-      pixelRatio: 1,
-      tiles: _NoTiles(),
-      brightness: ui.Brightness.dark,
-    );
-    expect(result.bytes, isNotEmpty); // terrain background still renders
-    expect(result.complete, isFalse); // must be regenerated, never cached final
-  });
+  test(
+    'renders even when tiles are unavailable, but flags it incomplete',
+    () async {
+      final result = await renderPreviewPng(
+        points: _points,
+        widthDp: 100,
+        heightDp: 80,
+        pixelRatio: 1,
+        tiles: _NoTiles(),
+        brightness: ui.Brightness.dark,
+      );
+      expect(result.bytes, isNotEmpty); // terrain background still renders
+      expect(
+        result.complete,
+        isFalse,
+      ); // must be regenerated, never cached final
+    },
+  );
 
   test('a single failed tile flags the snapshot incomplete', () async {
     final result = await renderPreviewPng(
@@ -143,16 +155,18 @@ void main() {
     expect(result.complete, isFalse); // one hole → stale, retried later
   });
 
-  test('the offline sketch is always incomplete (upgraded when online)',
-      () async {
-    final result = await renderSketchPng(
-      points: _points,
-      widthDp: 100,
-      heightDp: 80,
-      pixelRatio: 1,
-      brightness: ui.Brightness.light,
-    );
-    expect(result.bytes, isNotEmpty);
-    expect(result.complete, isFalse);
-  });
+  test(
+    'the offline sketch is always incomplete (upgraded when online)',
+    () async {
+      final result = await renderSketchPng(
+        points: _points,
+        widthDp: 100,
+        heightDp: 80,
+        pixelRatio: 1,
+        brightness: ui.Brightness.light,
+      );
+      expect(result.bytes, isNotEmpty);
+      expect(result.complete, isFalse);
+    },
+  );
 }

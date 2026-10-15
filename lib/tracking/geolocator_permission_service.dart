@@ -31,7 +31,8 @@ class GeolocatorPermissionService implements LocationPermissionService {
   Future<void> requestPreciseLocation() async {
     if (Platform.isIOS) {
       await Geolocator.requestTemporaryFullAccuracy(
-          purposeKey: _preciseLocationPurposeKey);
+        purposeKey: _preciseLocationPurposeKey,
+      );
     } else {
       await Geolocator.requestPermission();
     }

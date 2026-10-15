@@ -8,8 +8,13 @@ import '../../core/widgets/app_bottom_sheet.dart';
 /// Navigates to the labelled coordinate: launches straight away when only one
 /// app is available (Android's own chooser, or Apple Maps alone), otherwise
 /// lets the user pick from the installed apps first.
-Future<void> navigateTo(BuildContext context, NavigationLauncher launcher,
-    double lat, double lng, String label) async {
+Future<void> navigateTo(
+  BuildContext context,
+  NavigationLauncher launcher,
+  double lat,
+  double lng,
+  String label,
+) async {
   final apps = await launcher.availableApps();
   if (!context.mounted) return;
   final app = apps.length == 1
@@ -35,8 +40,10 @@ class _NavigationAppSheet extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-          child: Text(l10n.navigateWithTitle,
-              style: Theme.of(context).textTheme.titleMedium),
+          child: Text(
+            l10n.navigateWithTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ),
         for (final app in apps)
           ListTile(
@@ -56,7 +63,8 @@ class _NavigationAppSheet extends StatelessWidget {
         NavigationApp.googleMaps => l10n.navigationAppGoogleMaps,
         NavigationApp.waze => l10n.navigationAppWaze,
         // A single app launches directly, and Android only ever has [system].
-        NavigationApp.system =>
-          throw StateError('the system chooser is never listed'),
+        NavigationApp.system => throw StateError(
+          'the system chooser is never listed',
+        ),
       };
 }

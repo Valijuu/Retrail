@@ -22,12 +22,13 @@ class TrackpointRepository {
     required double longitude,
     required int timestampMs,
     double? speedMs,
-  }) =>
-      _dao.insert(TrackpointsCompanion.insert(
-        rideId: rideId,
-        latitude: latitude,
-        longitude: longitude,
-        timestamp: timestampMs,
-        speed: Value(speedMs),
-      ));
+  }) => _dao.insert(
+    TrackpointsCompanion.insert(
+      rideId: rideId,
+      latitude: latitude,
+      longitude: longitude,
+      timestamp: timestampMs,
+      speed: Value(speedMs),
+    ),
+  );
 }

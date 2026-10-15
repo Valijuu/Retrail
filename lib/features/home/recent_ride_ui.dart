@@ -25,8 +25,11 @@ class RecentRideUi {
   final double? startLat;
   final double? startLng;
 
-  static RecentRideUi from(RideWithTrackpoints rwt, DistanceCalculator calc,
-      {String? locale}) {
+  static RecentRideUi from(
+    RideWithTrackpoints rwt,
+    DistanceCalculator calc, {
+    String? locale,
+  }) {
     final stats = computeRideStats(rwt, calc);
     final start = rwt.trackpoints.isNotEmpty ? rwt.trackpoints.first : null;
     return RecentRideUi(

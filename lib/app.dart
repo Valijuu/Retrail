@@ -17,7 +17,8 @@ class RetrailApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
-    final themeMode = ref.watch(themeModeProvider).asData?.value ?? ThemeMode.system;
+    final themeMode =
+        ref.watch(themeModeProvider).asData?.value ?? ThemeMode.system;
     final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(

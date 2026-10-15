@@ -19,7 +19,8 @@ class ProfilePhotoChooser extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final manager = ref.read(profilePhotoManagerProvider);
     final current = ref.watch(currentProfilePhotoProvider).asData?.value;
-    final recent = ref.watch(recentProfilePhotosProvider).asData?.value ?? const [];
+    final recent =
+        ref.watch(recentProfilePhotosProvider).asData?.value ?? const [];
 
     return SizedBox(
       height: 84,
@@ -40,7 +41,8 @@ class ProfilePhotoChooser extends ConsumerWidget {
                   shape: BoxShape.circle,
                   color: colors.surfaceContainer,
                   border: Border.all(
-                      color: colors.onSurfaceVariant.withValues(alpha: 0.2)),
+                    color: colors.onSurfaceVariant.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Icon(Icons.add_a_photo, color: colors.primary, size: 22),
               ),
@@ -96,8 +98,12 @@ class _RecentPhoto extends StatelessWidget {
                   // Dedicated ClipOval (not Container.clipBehavior, which can
                   // leave square corners under Impeller); ring drawn on top.
                   ClipOval(
-                    child: Image.file(File(path),
-                        fit: BoxFit.cover, width: 64, height: 64),
+                    child: Image.file(
+                      File(path),
+                      fit: BoxFit.cover,
+                      width: 64,
+                      height: 64,
+                    ),
                   ),
                   DecoratedBox(
                     decoration: BoxDecoration(
@@ -125,7 +131,11 @@ class _RecentPhoto extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 10,
                   backgroundColor: colors.deleteActionBg,
-                  child: Icon(Icons.close, size: 12, color: colors.deleteActionText),
+                  child: Icon(
+                    Icons.close,
+                    size: 12,
+                    color: colors.deleteActionText,
+                  ),
                 ),
               ),
             ),

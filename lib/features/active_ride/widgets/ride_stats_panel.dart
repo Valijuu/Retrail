@@ -37,8 +37,9 @@ class RideStatsPanel extends StatelessWidget {
             width: 24,
             height: 3,
             decoration: BoxDecoration(
-                color: colors.surfaceContainer,
-                borderRadius: BorderRadius.circular(2)),
+              color: colors.surfaceContainer,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           Expanded(
             child: Row(
@@ -47,15 +48,19 @@ class RideStatsPanel extends StatelessWidget {
                   child: _StatCell(
                     label: l10n.mapStatSpeed,
                     value: formatSpeedKmh(speed, locale: locale),
-                    valueColor:
-                        (speed ?? 0) > 0 ? colors.primary : colors.onSurface,
+                    valueColor: (speed ?? 0) > 0
+                        ? colors.primary
+                        : colors.onSurface,
                   ),
                 ),
                 const SizedBox(width: 5),
                 Expanded(
                   child: _StatCell(
                     label: l10n.mapStatDistance,
-                    value: formatDistanceKm(state.distanceMetres, locale: locale),
+                    value: formatDistanceKm(
+                      state.distanceMetres,
+                      locale: locale,
+                    ),
                   ),
                 ),
               ],
@@ -86,7 +91,9 @@ class RideStatsPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: _ActionButton(
-                  label: state.isPaused ? l10n.mapResumeRide : l10n.mapPauseRide,
+                  label: state.isPaused
+                      ? l10n.mapResumeRide
+                      : l10n.mapPauseRide,
                   filled: state.isPaused,
                   onTap: onPauseResume,
                 ),
@@ -120,18 +127,25 @@ class _StatCell extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Container(
       decoration: BoxDecoration(
-          color: colors.surfaceContainer, borderRadius: AppShapes.input),
+        color: colors.surfaceContainer,
+        borderRadius: AppShapes.input,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       alignment: Alignment.centerLeft,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
-          Text(value,
-              style: text.titleMedium
-                  ?.copyWith(color: valueColor ?? colors.onSurface)),
+          Text(
+            label,
+            style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+          ),
+          Text(
+            value,
+            style: text.titleMedium?.copyWith(
+              color: valueColor ?? colors.onSurface,
+            ),
+          ),
         ],
       ),
     );
@@ -154,23 +168,23 @@ class _ActionButton extends StatelessWidget {
     final colors = context.colors;
     final style = ButtonStyle(
       shape: const WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: AppShapes.pill)),
-      backgroundColor:
-          WidgetStatePropertyAll(filled ? colors.primary : colors.surface),
-      foregroundColor:
-          WidgetStatePropertyAll(filled ? colors.onPrimary : colors.primary),
+        RoundedRectangleBorder(borderRadius: AppShapes.pill),
+      ),
+      backgroundColor: WidgetStatePropertyAll(
+        filled ? colors.primary : colors.surface,
+      ),
+      foregroundColor: WidgetStatePropertyAll(
+        filled ? colors.onPrimary : colors.primary,
+      ),
       side: filled
           ? null
           : WidgetStatePropertyAll(
-              BorderSide(color: colors.surfaceContainer, width: 1.5)),
+              BorderSide(color: colors.surfaceContainer, width: 1.5),
+            ),
       // Size/weight only — set here rather than on the Text, where the
       // theme's labelLarge color would override foregroundColor.
       textStyle: WidgetStatePropertyAll(Theme.of(context).textTheme.labelLarge),
     );
-    return TextButton(
-      onPressed: onTap,
-      style: style,
-      child: Text(label),
-    );
+    return TextButton(onPressed: onTap, style: style, child: Text(label));
   }
 }

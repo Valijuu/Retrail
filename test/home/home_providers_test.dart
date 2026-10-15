@@ -38,82 +38,102 @@ void main() {
   final lastMonth = DateTime(2026, 5, 1, 12);
 
   // ignore: strict_top_level_inference
-  Future<ProviderContainer> containerWith(HomeEnv env,
-      {extraOverrides = const []}) async {
-    final c = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(env.db),
-      preferencesRepositoryProvider.overrideWithValue(env.prefs),
-      nowMsProvider.overrideWithValue(() => now.millisecondsSinceEpoch),
-      ...extraOverrides,
-    ]);
+  Future<ProviderContainer> containerWith(
+    HomeEnv env, {
+    extraOverrides = const [],
+  }) async {
+    final c = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(env.db),
+        preferencesRepositoryProvider.overrideWithValue(env.prefs),
+        nowMsProvider.overrideWithValue(() => now.millisecondsSinceEpoch),
+        ...extraOverrides,
+      ],
+    );
     addTearDown(c.dispose);
     return c;
   }
 
-  Future<int> rideAt(HomeEnv env, DateTime at,
-      {Duration duration = const Duration(hours: 1)}) {
-    return insertRide(env.db,
-        startTime: at.millisecondsSinceEpoch,
-        endTime: at.add(duration).millisecondsSinceEpoch);
+  Future<int> rideAt(
+    HomeEnv env,
+    DateTime at, {
+    Duration duration = const Duration(hours: 1),
+  }) {
+    return insertRide(
+      env.db,
+      startTime: at.millisecondsSinceEpoch,
+      endTime: at.add(duration).millisecondsSinceEpoch,
+    );
   }
 
-  test('weekly/daily/yearly providers each count only their in-range rides',
-      () async {
-    final env = await buildHomeEnv();
-    addTearDown(env.db.close);
-    await rideAt(env, earlierToday);
-    await rideAt(env, earlierThisWeek);
-    await rideAt(env, lastMonth);
-    final c = await containerWith(env);
+  test(
+    'weekly/daily/yearly providers each count only their in-range rides',
+    () async {
+      final env = await buildHomeEnv();
+      addTearDown(env.db.close);
+      await rideAt(env, earlierToday);
+      await rideAt(env, earlierThisWeek);
+      await rideAt(env, lastMonth);
+      final c = await containerWith(env);
 
-    expect((await firstData(c, dailyStatsProvider)).rideCount, 1);
-    expect((await firstData(c, weeklyStatsProvider)).rideCount, 2);
-    expect((await firstData(c, yearlyStatsProvider)).rideCount, 3);
-  });
-
-  test('recentRidesProvider returns the 2 newest by date, newest first',
-      () async {
-    final env = await buildHomeEnv();
-    addTearDown(env.db.close);
-    await rideAt(env, lastMonth);
-    final mid = await rideAt(env, earlierThisWeek);
-    final newest = await rideAt(env, earlierToday);
-    final c = await containerWith(env);
-
-    final recent = await firstData(c, recentRidesProvider);
-    expect(recent.map((r) => r.rideId).toList(), [newest, mid]);
-  });
+      expect((await firstData(c, dailyStatsProvider)).rideCount, 1);
+      expect((await firstData(c, weeklyStatsProvider)).rideCount, 2);
+      expect((await firstData(c, yearlyStatsProvider)).rideCount, 3);
+    },
+  );
 
   test(
-      'recentRidesProvider formats an untitled ride\'s fallback title in the '
+    'recentRidesProvider returns the 2 newest by date, newest first',
+    () async {
+      final env = await buildHomeEnv();
+      addTearDown(env.db.close);
+      await rideAt(env, lastMonth);
+      final mid = await rideAt(env, earlierThisWeek);
+      final newest = await rideAt(env, earlierToday);
+      final c = await containerWith(env);
+
+      final recent = await firstData(c, recentRidesProvider);
+      expect(recent.map((r) => r.rideId).toList(), [newest, mid]);
+    },
+  );
+
+  test('recentRidesProvider formats an untitled ride\'s fallback title in the '
       'app\'s selected locale, not English regardless of it', () async {
     final env = await buildHomeEnv();
     addTearDown(env.db.close);
     // Tuesday — "Dienstag" in German, unmistakably not "Tuesday".
     await rideAt(env, DateTime(2026, 6, 16, 8));
-    final c = await containerWith(env,
-        extraOverrides: [localeProvider.overrideWithValue(const Locale('de'))]);
+    final c = await containerWith(
+      env,
+      extraOverrides: [localeProvider.overrideWithValue(const Locale('de'))],
+    );
 
     final recent = await firstData(c, recentRidesProvider);
     expect(recent.single.title, contains('Dienstag'));
   });
 
-  test('favoriteRidesProvider returns only favorites, newest hearted first',
-      () async {
-    final env = await buildHomeEnv();
-    addTearDown(env.db.close);
-    await rideAt(env, earlierToday); // not a favorite
-    final favOld = await insertRide(env.db,
+  test(
+    'favoriteRidesProvider returns only favorites, newest hearted first',
+    () async {
+      final env = await buildHomeEnv();
+      addTearDown(env.db.close);
+      await rideAt(env, earlierToday); // not a favorite
+      final favOld = await insertRide(
+        env.db,
         startTime: earlierThisWeek.millisecondsSinceEpoch,
         favorite: true,
-        favoritedAt: earlierThisWeek.millisecondsSinceEpoch);
-    final favNew = await insertRide(env.db,
+        favoritedAt: earlierThisWeek.millisecondsSinceEpoch,
+      );
+      final favNew = await insertRide(
+        env.db,
         startTime: lastMonth.millisecondsSinceEpoch,
         favorite: true,
-        favoritedAt: now.millisecondsSinceEpoch);
-    final c = await containerWith(env);
+        favoritedAt: now.millisecondsSinceEpoch,
+      );
+      final c = await containerWith(env);
 
-    final favorites = await firstData(c, favoriteRidesProvider);
-    expect(favorites.map((r) => r.rideId).toList(), [favNew, favOld]);
-  });
+      final favorites = await firstData(c, favoriteRidesProvider);
+      expect(favorites.map((r) => r.rideId).toList(), [favNew, favOld]);
+    },
+  );
 }

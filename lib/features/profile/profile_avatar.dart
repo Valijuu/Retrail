@@ -32,20 +32,25 @@ class ProfileAvatar extends StatelessWidget {
           // the image (square corners poke past the ring) under Impeller.
           ClipOval(
             child: photoPath != null
-                ? Image.file(File(photoPath!),
+                ? Image.file(
+                    File(photoPath!),
                     fit: BoxFit.cover,
                     width: size,
                     height: size,
                     // Decode at display size — the cropped photo can be far
                     // larger than this avatar, and a full-resolution decode +
                     // GPU upload visibly janks the first Home build.
-                    cacheWidth:
-                        (size * MediaQuery.devicePixelRatioOf(context)).round())
+                    cacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
+                        .round(),
+                  )
                 : Container(
                     color: colors.surfaceContainer,
                     alignment: Alignment.center,
-                    child: Icon(Icons.person,
-                        size: size * 0.5, color: colors.subtleText),
+                    child: Icon(
+                      Icons.person,
+                      size: size * 0.5,
+                      color: colors.subtleText,
+                    ),
                   ),
           ),
           // Ring drawn on top so it never insets/shrinks the photo.

@@ -45,8 +45,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   // scroll-settle (not onPageChanged, which fires mid-animation) so Home
   // rebuilds after the swipe finishes, not during.
   final GreetingSelector _greetings = GreetingSelector();
-  late final ValueNotifier<int> _greetingIndex =
-      ValueNotifier(_greetings.next(skaterGreetingCount));
+  late final ValueNotifier<int> _greetingIndex = ValueNotifier(
+    _greetings.next(skaterGreetingCount),
+  );
   int _lastSettledPage = 0;
 
   /// Tabs visited since the last landing on Home, most recent last. Home is
@@ -70,10 +71,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _goToTab(int index) => _controller.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+    index,
+    duration: const Duration(milliseconds: 250),
+    curve: Curves.easeOut,
+  );
 
   void _onPageChanged(int index) => _current.value = index;
 
@@ -124,33 +125,34 @@ class _MainShellState extends ConsumerState<MainShell> {
       // the rider lands on after a notification stop.
       body: RideSavedNotice(
         child: NotificationListener<ScrollEndNotification>(
-        onNotification: (n) {
-          if (n.depth == 0) _onPageSettled();
-          return false;
-        },
-        child: PageView(
-          controller: _controller,
-          onPageChanged: _onPageChanged,
-          children: [
-            ValueListenableBuilder<int>(
-              valueListenable: _greetingIndex,
-              builder: (_, greetingIndex, _) => HomeScreen(
-                greetingIndex: greetingIndex,
-                onOpenRide: (rideId) {
-                  ref.read(historyTargetRideProvider.notifier).state = rideId;
-                  _goToTab(1);
-                },
-                onAvatarTap: () => showAppBottomSheet<void>(
-                  context: context,
-                  builder: (_) => const ProfileEditSheet(),
+          onNotification: (n) {
+            if (n.depth == 0) _onPageSettled();
+            return false;
+          },
+          child: PageView(
+            controller: _controller,
+            onPageChanged: _onPageChanged,
+            children: [
+              ValueListenableBuilder<int>(
+                valueListenable: _greetingIndex,
+                builder: (_, greetingIndex, _) => HomeScreen(
+                  greetingIndex: greetingIndex,
+                  onOpenRide: (rideId) {
+                    ref.read(historyTargetRideProvider.notifier).state = rideId;
+                    _goToTab(1);
+                  },
+                  onAvatarTap: () => showAppBottomSheet<void>(
+                    context: context,
+                    builder: (_) => const ProfileEditSheet(),
+                  ),
                 ),
               ),
-            ),
-            HistoryScreen(onRegisterBackHandler: (h) => _historyBack = h),
-            const SettingsScreen(),
-          ],
+              HistoryScreen(onRegisterBackHandler: (h) => _historyBack = h),
+              const SettingsScreen(),
+            ],
+          ),
         ),
-      )),
+      ),
       // The back scope lives with the bottom bar so a tab change rebuilds
       // only this subtree, not the PageView.
       bottomNavigationBar: ValueListenableBuilder<int>(
@@ -159,7 +161,11 @@ class _MainShellState extends ConsumerState<MainShell> {
           canPop: current == 0,
           onPopInvokedWithResult: (didPop, _) => _onBack(didPop),
           child: _BottomNav(
-              tabs: tabs, current: current, onTap: _goToTab, colors: colors),
+            tabs: tabs,
+            current: current,
+            onTap: _goToTab,
+            colors: colors,
+          ),
         ),
       ),
     );
@@ -193,7 +199,11 @@ class _BottomNav extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Divider(height: 0.5, thickness: 0.5, color: colors.onSurfaceVariant.withValues(alpha: 0.2)),
+        Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: colors.onSurfaceVariant.withValues(alpha: 0.2),
+        ),
         ColoredBox(
           color: colors.surface,
           child: SafeArea(
@@ -203,7 +213,14 @@ class _BottomNav extends StatelessWidget {
               child: Row(
                 children: [
                   for (var i = 0; i < tabs.length; i++)
-                    Expanded(child: _NavItem(spec: tabs[i], selected: i == current, onTap: () => onTap(i), colors: colors)),
+                    Expanded(
+                      child: _NavItem(
+                        spec: tabs[i],
+                        selected: i == current,
+                        onTap: () => onTap(i),
+                        colors: colors,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -246,11 +263,15 @@ class _NavItem extends StatelessWidget {
             child: Icon(spec.icon, color: tint, semanticLabel: spec.label),
           ),
           const SizedBox(height: 2),
-          Text(spec.label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tint)),
+          Text(
+            spec.label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: tint),
+          ),
         ],
       ),
     );

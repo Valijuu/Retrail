@@ -35,7 +35,8 @@ final rideSavedNoticeControllerProvider = Provider<RideSavedNoticeController>(
 
 /// The parked ride id; emits when a notification stop parks one.
 final pendingRideDetailsProvider = StreamProvider<int?>(
-    (ref) => ref.watch(preferencesRepositoryProvider).pendingRideDetails);
+  (ref) => ref.watch(preferencesRepositoryProvider).pendingRideDetails,
+);
 
 /// Shows "Ride saved · Add details" once the app is in front after a ride was
 /// stopped from outside it (#75). Waits while the app is in the background —
@@ -83,16 +84,18 @@ class _RideSavedNoticeState extends ConsumerState<RideSavedNotice>
       final ride = await ref.read(rideSavedNoticeControllerProvider).take();
       if (ride == null || !mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(appSnackBar(
-        icon: Icons.check_circle,
-        message: l10n.rideSavedNotice,
-        action: SnackBarAction(
-          label: l10n.rideSavedAddDetails,
-          onPressed: () {
-            if (mounted) showEditRideSheet(context, ref, ride);
-          },
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        appSnackBar(
+          icon: Icons.check_circle,
+          message: l10n.rideSavedNotice,
+          action: SnackBarAction(
+            label: l10n.rideSavedAddDetails,
+            onPressed: () {
+              if (mounted) showEditRideSheet(context, ref, ride);
+            },
+          ),
         ),
-      ));
+      );
     } finally {
       _taking = false;
     }

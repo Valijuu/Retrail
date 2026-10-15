@@ -102,7 +102,8 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
-    final activity = ref.watch(lastActivityTypeProvider).asData?.value ??
+    final activity =
+        ref.watch(lastActivityTypeProvider).asData?.value ??
         ActivityType.defaultType;
     // The ring shows the current second draining: while the digit reads N it
     // sweeps from N/total down to (N-1)/total, so it is empty exactly when the
@@ -112,82 +113,97 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
     final ringFrom = _total > 0 ? value / _total : 0.0;
     final ringTo = _total > 0 && value > 0 ? (value - 1) / _total : 0.0;
 
-    return DarkChromeStatusBar(child: Scaffold(
-      backgroundColor: _surface.surface,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 32),
-        child: Stack(
-          children: [
-            // Fill the width (so the column centres on screen, not just within
-            // its own shrink-wrapped width) and reserve the bottom 180 for the
-            // GPS row + Start button, centring the countdown in what's left.
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 180,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(l10n.timerGetReady,
-                        style: text.labelMedium
-                            ?.copyWith(color: _accent.onSurfaceVariant)),
-                    const SizedBox(height: 16),
-                    _ActivityChip(activity: activity),
-                    const SizedBox(height: 32),
-                    _CountdownRing(from: ringFrom, to: ringTo, value: value),
-                    const SizedBox(height: 20),
-                    _AddTimeChip(
+    return DarkChromeStatusBar(
+      child: Scaffold(
+        backgroundColor: _surface.surface,
+        body: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Stack(
+            children: [
+              // Fill the width (so the column centres on screen, not just within
+              // its own shrink-wrapped width) and reserve the bottom 180 for the
+              // GPS row + Start button, centring the countdown in what's left.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 180,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        l10n.timerGetReady,
+                        style: text.labelMedium?.copyWith(
+                          color: _accent.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _ActivityChip(activity: activity),
+                      const SizedBox(height: 32),
+                      _CountdownRing(from: ringFrom, to: ringTo, value: value),
+                      const SizedBox(height: 20),
+                      _AddTimeChip(
                         label: l10n.timerAddFiveSec,
-                        onTap: () => _timer.addTime(5)),
-                    const SizedBox(height: 28),
-                    Text(l10n.timerTagline,
+                        onTap: () => _timer.addTime(5),
+                      ),
+                      const SizedBox(height: 28),
+                      Text(
+                        l10n.timerTagline,
                         textAlign: TextAlign.center,
                         style: text.bodyMedium?.copyWith(
-                            color: _accent.onSurfaceVariant, height: 1.5)),
-                  ],
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const _GpsStatusRow(),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton(
-                          onPressed: _goToRide,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _accent.primary,
-                            foregroundColor: _accent.onPrimary,
-                            // On the button style, not the Text: the
-                            // theme's titleMedium color would override
-                            // foregroundColor (and follow the app theme).
-                            textStyle: text.titleMedium,
-                            shape: const RoundedRectangleBorder(
-                                borderRadius: AppShapes.pill),
-                          ),
-                          child: Text(l10n.timerStartNow),
+                          color: _accent.onSurfaceVariant,
+                          height: 1.5,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      bottom: 32,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const _GpsStatusRow(),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: FilledButton(
+                            onPressed: _goToRide,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _accent.primary,
+                              foregroundColor: _accent.onPrimary,
+                              // On the button style, not the Text: the
+                              // theme's titleMedium color would override
+                              // foregroundColor (and follow the app theme).
+                              textStyle: text.titleMedium,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: AppShapes.pill,
+                              ),
+                            ),
+                            child: Text(l10n.timerStartNow),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -200,17 +216,22 @@ class _ActivityChip extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
-          color: _surface.surfaceContainer, borderRadius: AppShapes.pill),
+        color: _surface.surfaceContainer,
+        borderRadius: AppShapes.pill,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           activity.glyph(size: 18, color: _accent.primaryContainer),
           const SizedBox(width: 8),
-          Text(activity.label(l10n),
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: _accent.primaryContainer,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            activity.label(l10n),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: _accent.primaryContainer,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -232,9 +253,13 @@ class _AddTimeChip extends StatelessWidget {
         borderRadius: AppShapes.pill,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Text(label,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: _accent.primaryContainer, fontWeight: FontWeight.w500)),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: _accent.primaryContainer,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );
@@ -260,28 +285,36 @@ class _GpsStatusRow extends ConsumerWidget {
     };
     return Container(
       decoration: BoxDecoration(
-          color: _surface.surfaceContainer, borderRadius: AppShapes.input),
+        color: _surface.surfaceContainer,
+        borderRadius: AppShapes.input,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                  color: ready ? _accent.primary : _accent.onSurfaceVariant,
-                  shape: BoxShape.circle)),
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: ready ? _accent.primary : _accent.onSurfaceVariant,
+              shape: BoxShape.circle,
+            ),
+          ),
           const SizedBox(width: 10),
-          Text(l10n.gpsStatusLabel,
-              style:
-                  text.labelMedium?.copyWith(color: _accent.onSurfaceVariant)),
+          Text(
+            l10n.gpsStatusLabel,
+            style: text.labelMedium?.copyWith(color: _accent.onSurfaceVariant),
+          ),
           const SizedBox(width: 10),
-          Text(status,
-              style: text.labelMedium?.copyWith(
-                  color: ready
-                      ? _accent.primaryContainer
-                      : _accent.onSurfaceVariant,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            status,
+            style: text.labelMedium?.copyWith(
+              color: ready
+                  ? _accent.primaryContainer
+                  : _accent.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -289,8 +322,11 @@ class _GpsStatusRow extends ConsumerWidget {
 }
 
 class _CountdownRing extends StatelessWidget {
-  const _CountdownRing(
-      {required this.from, required this.to, required this.value});
+  const _CountdownRing({
+    required this.from,
+    required this.to,
+    required this.value,
+  });
 
   /// Sweep at the start of the current second (only used on the first build).
   final double from;
@@ -317,9 +353,10 @@ class _CountdownRing extends StatelessWidget {
             builder: (context, animated, _) => CustomPaint(
               size: const Size.square(180),
               painter: _RingPainter(
-                  progress: animated,
-                  track: _surface.surfaceContainer,
-                  arc: _accent.primary),
+                progress: animated,
+                track: _surface.surfaceContainer,
+                arc: _accent.primary,
+              ),
             ),
           ),
           AnimatedSwitcher(
@@ -342,12 +379,13 @@ class _CountdownRing extends StatelessWidget {
                 child: SlideTransition(position: slide, child: child),
               );
             },
-            child: Text('$value',
-                key: ValueKey(value),
-                style: Theme.of(context)
-                    .textTheme
-                    .displayMedium
-                    ?.copyWith(color: _accent.surface)),
+            child: Text(
+              '$value',
+              key: ValueKey(value),
+              style: Theme.of(
+                context,
+              ).textTheme.displayMedium?.copyWith(color: _accent.surface),
+            ),
           ),
         ],
       ),
@@ -356,8 +394,11 @@ class _CountdownRing extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter(
-      {required this.progress, required this.track, required this.arc});
+  _RingPainter({
+    required this.progress,
+    required this.track,
+    required this.arc,
+  });
   final double progress;
   final Color track;
   final Color arc;

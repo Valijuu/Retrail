@@ -46,34 +46,39 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   /// Sets the month-range start. Pulls [HistoryFilter.monthTo] up to match if
   /// it would otherwise fall before the new start (Von/Bis range picker UX).
   void setMonthFrom(int month) => state = state.copyWith(
-      monthFrom: month,
-      monthTo: state.monthTo != null && month > state.monthTo!
-          ? month
-          : state.monthTo);
+    monthFrom: month,
+    monthTo: state.monthTo != null && month > state.monthTo!
+        ? month
+        : state.monthTo,
+  );
 
   /// Sets the month-range end. Pulls [HistoryFilter.monthFrom] down to match
   /// if it would otherwise fall after the new end (Von/Bis range picker UX).
   void setMonthTo(int month) => state = state.copyWith(
-      monthTo: month,
-      monthFrom: state.monthFrom != null && month < state.monthFrom!
-          ? month
-          : state.monthFrom);
+    monthTo: month,
+    monthFrom: state.monthFrom != null && month < state.monthFrom!
+        ? month
+        : state.monthFrom,
+  );
 
   void reset() => state = _defaultFilter();
 }
 
 final historyFilterProvider =
     NotifierProvider<HistoryFilterNotifier, HistoryFilter>(
-        HistoryFilterNotifier.new);
+      HistoryFilterNotifier.new,
+    );
 
 /// Count of active non-default filters (search excluded) for the icon badge.
-final activeFilterCountProvider =
-    Provider<int>((ref) => activeFilterCount(ref.watch(historyFilterProvider)));
+final activeFilterCountProvider = Provider<int>(
+  (ref) => activeFilterCount(ref.watch(historyFilterProvider)),
+);
 
 /// Whether the filter/search can hide rides (see [narrowsRides]) — picks the
 /// History empty state.
-final historyNarrowsRidesProvider =
-    Provider<bool>((ref) => narrowsRides(ref.watch(historyFilterProvider)));
+final historyNarrowsRidesProvider = Provider<bool>(
+  (ref) => narrowsRides(ref.watch(historyFilterProvider)),
+);
 
 /// The filtered/sorted/date-grouped history list. Recomputes when rides or the
 /// filter change. Widget tests stub this with a finite stream (Drift `.watch()`
@@ -93,14 +98,17 @@ final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
 /// plain ride list (small, rarely-changing; no trackpoint join needed) rather
 /// than a new SQL query. `autoDispose` so the underlying `watch()` stream
 /// closes once the filter sheet (its only consumer) is no longer open.
-final availableHistoryYearsProvider = StreamProvider.autoDispose<List<int>>((ref) {
+final availableHistoryYearsProvider = StreamProvider.autoDispose<List<int>>((
+  ref,
+) {
   final repo = ref.watch(rideRepositoryProvider);
   return repo.getAllRides().map((rides) {
     final years = <int>{
       for (final ride in rides)
         if (ride.date != null || ride.startTime != null)
-          DateTime.fromMillisecondsSinceEpoch(ride.date ?? ride.startTime!)
-              .year,
+          DateTime.fromMillisecondsSinceEpoch(
+            ride.date ?? ride.startTime!,
+          ).year,
     };
     return years.toList()..sort((a, b) => b.compareTo(a));
   });

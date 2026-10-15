@@ -67,25 +67,19 @@ void main() {
       },
     );
 
-    test(
-      'at the finish of a "6" that lies on its middle (along 200 of 600) '
-      'is undecided',
-      () {
-        expect(directionAtJoin(_six, at(100, 0)), FollowDirection.undecided);
-      },
-    );
+    test('at the finish of a "6" that lies on its middle (along 200 of 600) '
+        'is undecided', () {
+      expect(directionAtJoin(_six, at(100, 0)), FollowDirection.undecided);
+    });
 
-    test(
-      'at the start of a route that lies on its own middle (along 400 of '
-      '600) is undecided',
-      () {
-        final sixReversed = RouteTrack(_six.points.reversed.toList());
-        expect(
-          directionAtJoin(sixReversed, at(100, 0)),
-          FollowDirection.undecided,
-        );
-      },
-    );
+    test('at the start of a route that lies on its own middle (along 400 of '
+        '600) is undecided', () {
+      final sixReversed = RouteTrack(_six.points.reversed.toList());
+      expect(
+        directionAtJoin(sixReversed, at(100, 0)),
+        FollowDirection.undecided,
+      );
+    });
 
     test('a single-point route is undecided', () {
       expect(

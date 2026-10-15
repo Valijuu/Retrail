@@ -16,23 +16,32 @@ const _fullViewBoxSvg =
 
 void main() {
   test('badge glyph fills centre (white), amber shows at corners', () async {
-    final Uint8List png =
-        await activityBadgePngFromLoader(SvgStringLoader(_fullViewBoxSvg));
+    final Uint8List png = await activityBadgePngFromLoader(
+      SvgStringLoader(_fullViewBoxSvg),
+    );
 
     final codec = await instantiateImageCodec(png);
     final frame = await codec.getNextFrame();
-    final data =
-        (await frame.image.toByteData(format: ImageByteFormat.rawRgba))!;
+    final data = (await frame.image.toByteData(
+      format: ImageByteFormat.rawRgba,
+    ))!;
 
     Color pixel(int x, int y) {
       final i = (y * frame.image.width + x) * 4;
       return Color.fromARGB(
-          data.getUint8(i + 3), data.getUint8(i), data.getUint8(i + 1),
-          data.getUint8(i + 2));
+        data.getUint8(i + 3),
+        data.getUint8(i),
+        data.getUint8(i + 1),
+        data.getUint8(i + 2),
+      );
     }
 
     final centre = pixel(48, 48);
-    expect(centre.r * 255, closeTo(255, 1), reason: 'centre should be white glyph');
+    expect(
+      centre.r * 255,
+      closeTo(255, 1),
+      reason: 'centre should be white glyph',
+    );
     expect(centre.g * 255, closeTo(255, 1));
     expect(centre.b * 255, closeTo(255, 1));
 

@@ -35,17 +35,25 @@ class InitScreen extends ConsumerWidget {
               const Spacer(),
               // The app icon (transparent-background variant) — branding the
               // welcome step for every activity, not just boarders.
-              Image.asset('assets/branding/app_icon_foreground.png',
-                  width: 132, height: 132),
+              Image.asset(
+                'assets/branding/app_icon_foreground.png',
+                width: 132,
+                height: 132,
+              ),
               const SizedBox(height: 24),
-              Text(l10n.initWelcomeTitle,
-                  textAlign: TextAlign.center,
-                  style: text.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w500)),
+              Text(
+                l10n.initWelcomeTitle,
+                textAlign: TextAlign.center,
+                style: text.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 12),
-              Text(l10n.initNameQuestion,
-                  textAlign: TextAlign.center,
-                  style: text.bodyLarge?.copyWith(color: colors.onSurfaceVariant)),
+              Text(
+                l10n.initNameQuestion,
+                textAlign: TextAlign.center,
+                style: text.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+              ),
               const SizedBox(height: 32),
               TextField(
                 maxLength: 30,
@@ -61,9 +69,13 @@ class InitScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text('${name.length}/30',
-                  textAlign: TextAlign.right,
-                  style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
+              Text(
+                '${name.length}/30',
+                textAlign: TextAlign.right,
+                style: text.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: next,

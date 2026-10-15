@@ -68,7 +68,12 @@ void main() {
     final id = await insertRide(typ: 'LONGBOARD');
     final before = (await repo.getById(id).first)!;
     await controller.updateRideDetails(
-        before, 'Sunset', 'nice', ActivityType.scooter, false);
+      before,
+      'Sunset',
+      'nice',
+      ActivityType.scooter,
+      false,
+    );
     final ride = (await repo.getById(id).first)!;
     expect(ride.description, 'Sunset');
     expect(ride.comment, 'nice');
@@ -85,16 +90,18 @@ void main() {
     expect(ride.favoritedAt, 1000);
   });
 
-  test('updateRideDetails keeps favoritedAt when the flag is unchanged',
-      () async {
-    final id = await insertRide();
-    await db.rideDao.updateFavorite(id, true, 42);
-    final before = (await repo.getById(id).first)!;
-    await controller.updateRideDetails(before, 'Sunset', null, null, true);
-    final ride = (await repo.getById(id).first)!;
-    expect(ride.isFavorite, isTrue);
-    expect(ride.favoritedAt, 42, reason: 'Recent favorites order stays put');
-  });
+  test(
+    'updateRideDetails keeps favoritedAt when the flag is unchanged',
+    () async {
+      final id = await insertRide();
+      await db.rideDao.updateFavorite(id, true, 42);
+      final before = (await repo.getById(id).first)!;
+      await controller.updateRideDetails(before, 'Sunset', null, null, true);
+      final ride = (await repo.getById(id).first)!;
+      expect(ride.isFavorite, isTrue);
+      expect(ride.favoritedAt, 42, reason: 'Recent favorites order stays put');
+    },
+  );
 
   test('toggleFavorite flips the flag', () async {
     final id = await insertRide();
@@ -106,10 +113,10 @@ void main() {
 
 class _SpyCache extends RoutePreviewCache {
   _SpyCache(Directory dir, this.evicted)
-      : super(
-            baseDir: dir,
-            render: (_, _) async =>
-                PreviewResult(Uint8List(0), complete: true));
+    : super(
+        baseDir: dir,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      );
   final List<int> evicted;
 
   @override

@@ -28,16 +28,19 @@ void main() {
     controller = _MockController();
     tracker = _MockTracker();
     when(() => controller.stop()).thenAnswer((_) async {});
-    when(() => tracker.state)
-        .thenReturn(const RideTrackingState(isTracking: true));
+    when(
+      () => tracker.state,
+    ).thenReturn(const RideTrackingState(isTracking: true));
     when(() => tracker.lastCompletedRideId).thenReturn(5);
     SharedPreferences.setMockInitialValues({});
     prefs = PreferencesRepository(await SharedPreferences.getInstance());
-    container = ProviderContainer(overrides: [
-      rideRecordingControllerProvider.overrideWithValue(controller),
-      rideTrackerProvider.overrideWithValue(tracker),
-      preferencesRepositoryProvider.overrideWithValue(prefs),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        rideRecordingControllerProvider.overrideWithValue(controller),
+        rideTrackerProvider.overrideWithValue(tracker),
+        preferencesRepositoryProvider.overrideWithValue(prefs),
+      ],
+    );
   });
 
   tearDown(() => container.dispose());
@@ -64,13 +67,15 @@ void main() {
     expect(prefs.pendingRideDetailsNow, 5);
   });
 
-  test('stop with no ride recording parks nothing (stale id stays unused)',
-      () async {
-    when(() => tracker.state).thenReturn(const RideTrackingState());
-    rideControlRelay(container, RideNotificationIds.stop);
-    await Future<void>.delayed(Duration.zero);
-    expect(prefs.pendingRideDetailsNow, isNull);
-  });
+  test(
+    'stop with no ride recording parks nothing (stale id stays unused)',
+    () async {
+      when(() => tracker.state).thenReturn(const RideTrackingState());
+      rideControlRelay(container, RideNotificationIds.stop);
+      await Future<void>.delayed(Duration.zero);
+      expect(prefs.pendingRideDetailsNow, isNull);
+    },
+  );
 
   test('open → requests the active-ride deep link, no controller call', () {
     rideControlRelay(container, RideNotificationIds.open);

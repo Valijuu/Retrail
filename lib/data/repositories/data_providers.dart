@@ -15,21 +15,26 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
-final rideDaoProvider =
-    Provider<RideDao>((ref) => RideDao(ref.watch(appDatabaseProvider)));
+final rideDaoProvider = Provider<RideDao>(
+  (ref) => RideDao(ref.watch(appDatabaseProvider)),
+);
 
 final trackpointDaoProvider = Provider<TrackpointDao>(
-    (ref) => TrackpointDao(ref.watch(appDatabaseProvider)));
+  (ref) => TrackpointDao(ref.watch(appDatabaseProvider)),
+);
 
-final rideRepositoryProvider =
-    Provider<RideRepository>((ref) => RideRepository(ref.watch(rideDaoProvider)));
+final rideRepositoryProvider = Provider<RideRepository>(
+  (ref) => RideRepository(ref.watch(rideDaoProvider)),
+);
 
 final trackpointRepositoryProvider = Provider<TrackpointRepository>(
-    (ref) => TrackpointRepository(ref.watch(trackpointDaoProvider)));
+  (ref) => TrackpointRepository(ref.watch(trackpointDaoProvider)),
+);
 
 /// Overridden in `main` with a loaded [SharedPreferences] instance
 /// (`PreferencesRepository(await SharedPreferences.getInstance())`).
 final preferencesRepositoryProvider = Provider<PreferencesRepository>(
   (ref) => throw UnimplementedError(
-      'preferencesRepositoryProvider must be overridden in main()'),
+    'preferencesRepositoryProvider must be overridden in main()',
+  ),
 );

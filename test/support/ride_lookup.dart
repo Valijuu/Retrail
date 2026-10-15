@@ -7,11 +7,13 @@ import 'package:retrail/data/repositories/ride_repository.dart';
 /// read ([RideDao.findById]), so these streams live here rather than as dead
 /// DAO/repository API.
 extension RideRepositoryLookup on RideRepository {
-  Stream<Ride?> getById(int rideId) => getAllRides()
-      .map((rides) => rides.firstWhereOrNull((r) => r.rideId == rideId));
+  Stream<Ride?> getById(int rideId) => getAllRides().map(
+    (rides) => rides.firstWhereOrNull((r) => r.rideId == rideId),
+  );
 }
 
 extension RideDaoLookup on RideDao {
-  Stream<Ride?> getById(int rideId) =>
-      getAll().map((rides) => rides.firstWhereOrNull((r) => r.rideId == rideId));
+  Stream<Ride?> getById(int rideId) => getAll().map(
+    (rides) => rides.firstWhereOrNull((r) => r.rideId == rideId),
+  );
 }

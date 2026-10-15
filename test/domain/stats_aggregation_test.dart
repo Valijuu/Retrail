@@ -15,10 +15,15 @@ void main() {
   });
 
   test('sums distance and duration across rides', () {
-    final r1 = rwt(buildRide(startTime: 0, endTime: 3600000),
-        [buildTp(), buildTp(), buildTp()]); // 200 m, 1 h
-    final r2 = rwt(buildRide(startTime: 0, endTime: 3600000),
-        [buildTp(), buildTp()]); // 100 m, 1 h
+    final r1 = rwt(buildRide(startTime: 0, endTime: 3600000), [
+      buildTp(),
+      buildTp(),
+      buildTp(),
+    ]); // 200 m, 1 h
+    final r2 = rwt(buildRide(startTime: 0, endTime: 3600000), [
+      buildTp(),
+      buildTp(),
+    ]); // 100 m, 1 h
 
     final w = aggregateStats([r1, r2], calc);
     expect(w.rideCount, 2);

@@ -38,8 +38,7 @@ void main() {
       }
     });
 
-    test(
-        'granted + services on but only APPROXIMATE location → ask for '
+    test('granted + services on but only APPROXIMATE location → ask for '
         'precise (issue #28: coarse fixes never pass the accuracy filter)', () {
       for (final p in [
         LocationPermission.whileInUse,
@@ -47,7 +46,10 @@ void main() {
       ]) {
         expect(
           permissionGateDecision(
-              serviceEnabled: true, permission: p, precise: false),
+            serviceEnabled: true,
+            permission: p,
+            precise: false,
+          ),
           LocationStartAction.requestPreciseLocation,
         );
       }
@@ -110,8 +112,7 @@ void main() {
           LocationStartAction.showRationale,
         );
       });
-      test(
-          'services off + denied / undetermined → open location settings — '
+      test('services off + denied / undetermined → open location settings — '
           'iOS cannot grant while services are off, so the request would '
           'never resolve', () {
         for (final p in [
@@ -128,8 +129,7 @@ void main() {
           );
         }
       });
-      test(
-          'without the flag (Android) services off + deniedForever → show '
+      test('without the flag (Android) services off + deniedForever → show '
           'rationale, original order unchanged', () {
         expect(
           permissionGateDecision(

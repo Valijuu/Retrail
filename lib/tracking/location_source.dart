@@ -30,26 +30,27 @@ abstract interface class LocationSource {
 /// (invalid) and Android's accuracy-less `0` as "no speed", so the tracker's
 /// stationary guard doesn't drop valid fixes at ride start.
 LocationFix fixFromPosition(Position p) => LocationFix(
-      latitude: p.latitude,
-      longitude: p.longitude,
-      accuracy: p.accuracy,
-      hasSpeed: p.speed >= 0 && p.speedAccuracy > 0,
-      speed: p.speed,
-      elapsedRealtimeNanos: p.timestamp.microsecondsSinceEpoch * 1000,
-    );
+  latitude: p.latitude,
+  longitude: p.longitude,
+  accuracy: p.accuracy,
+  hasSpeed: p.speed >= 0 && p.speedAccuracy > 0,
+  speed: p.speed,
+  elapsedRealtimeNanos: p.timestamp.microsecondsSinceEpoch * 1000,
+);
 
 /// Production [LocationSource] over `geolocator`.
 class GeolocatorLocationSource implements LocationSource {
   const GeolocatorLocationSource();
 
   @override
-  Stream<LocationFix> get fixes =>
-      Geolocator.getPositionStream(locationSettings: _settings())
-          .map(fixFromPosition);
+  Stream<LocationFix> get fixes => Geolocator.getPositionStream(
+    locationSettings: _settings(),
+  ).map(fixFromPosition);
 
   @override
-  Stream<bool> get serviceEnabled => Geolocator.getServiceStatusStream()
-      .map((status) => status == ServiceStatus.enabled);
+  Stream<bool> get serviceEnabled => Geolocator.getServiceStatusStream().map(
+    (status) => status == ServiceStatus.enabled,
+  );
 
   @override
   Future<LocationFix?> lastKnown() async {

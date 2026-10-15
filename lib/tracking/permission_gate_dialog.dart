@@ -28,17 +28,17 @@ class PermissionGateDialog extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final (title, body) = switch (action) {
       LocationStartAction.openLocationSettings => (
-          l10n.permissionEnableLocationTitle,
-          // iOS only lets apps open their own settings page, not Location
-          // Services — so name the path the user has to take from there.
-          defaultTargetPlatform == TargetPlatform.iOS
-              ? l10n.permissionEnableLocationBodyIos
-              : l10n.permissionEnableLocationBody
-        ),
+        l10n.permissionEnableLocationTitle,
+        // iOS only lets apps open their own settings page, not Location
+        // Services — so name the path the user has to take from there.
+        defaultTargetPlatform == TargetPlatform.iOS
+            ? l10n.permissionEnableLocationBodyIos
+            : l10n.permissionEnableLocationBody,
+      ),
       LocationStartAction.requestPreciseLocation => (
-          l10n.permissionPreciseLocationTitle,
-          l10n.permissionPreciseLocationBody
-        ),
+        l10n.permissionPreciseLocationTitle,
+        l10n.permissionPreciseLocationBody,
+      ),
       _ => (l10n.permissionLocationTitle, l10n.permissionLocationBody),
     };
     return AlertDialog(

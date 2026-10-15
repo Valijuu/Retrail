@@ -24,17 +24,20 @@ class _MockRecording extends Mock implements RideRecordingController {}
 
 late _MockRecording _recording;
 
-Future<Widget> _app(WidgetTester tester,
-    {Map<String, Object> prefs = const {'last_activity_type': 'SCOOTER'},
-    Brightness brightness = Brightness.light,
-    bool beginProceeds = true,
-    GpsSignal gps = GpsSignal.ready,
-    Locale? locale}) async {
+Future<Widget> _app(
+  WidgetTester tester, {
+  Map<String, Object> prefs = const {'last_activity_type': 'SCOOTER'},
+  Brightness brightness = Brightness.light,
+  bool beginProceeds = true,
+  GpsSignal gps = GpsSignal.ready,
+  Locale? locale,
+}) async {
   _recording = _MockRecording();
   when(() => _recording.arm()).thenAnswer((_) async {});
   when(() => _recording.disarm()).thenAnswer((_) async {});
-  when(() => _recording.beginArmedRide())
-      .thenAnswer((_) async => beginProceeds);
+  when(
+    () => _recording.beginArmedRide(),
+  ).thenAnswer((_) async => beginProceeds);
   when(() => _recording.armCancelled).thenReturn(false);
   tester.view.physicalSize = const Size(400, 900);
   tester.view.devicePixelRatio = 1.0;
@@ -42,15 +45,20 @@ Future<Widget> _app(WidgetTester tester,
   addTearDown(tester.view.resetDevicePixelRatio);
   SharedPreferences.setMockInitialValues(prefs);
   final repo = PreferencesRepository(await SharedPreferences.getInstance());
-  final router = GoRouter(initialLocation: '/timer', routes: [
-    GoRoute(
+  final router = GoRouter(
+    initialLocation: '/timer',
+    routes: [
+      GoRoute(
         path: '/',
-        builder: (c, s) => const Scaffold(body: Center(child: Text('home')))),
-    GoRoute(path: '/timer', builder: (c, s) => const CountdownScreen()),
-    GoRoute(
+        builder: (c, s) => const Scaffold(body: Center(child: Text('home'))),
+      ),
+      GoRoute(path: '/timer', builder: (c, s) => const CountdownScreen()),
+      GoRoute(
         path: '/ride',
-        builder: (c, s) => const Scaffold(body: Center(child: Text('ride')))),
-  ]);
+        builder: (c, s) => const Scaffold(body: Center(child: Text('ride'))),
+      ),
+    ],
+  );
   return ProviderScope(
     overrides: [
       preferencesRepositoryProvider.overrideWithValue(repo),
@@ -73,8 +81,9 @@ Future<Widget> _app(WidgetTester tester,
 }
 
 void main() {
-  testWidgets('renders label, activity chip, digit, tagline and GPS row',
-      (tester) async {
+  testWidgets('renders label, activity chip, digit, tagline and GPS row', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
     expect(find.text('GET READY'), findsOneWidget);
@@ -85,24 +94,27 @@ void main() {
     expect(find.text('ready'), findsOneWidget);
   });
 
-  testWidgets('light theme: light status bar icons on the dark screen (#66)',
-      (tester) async {
+  testWidgets('light theme: light status bar icons on the dark screen (#66)', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
     expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
     expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
   });
 
-  testWidgets('no accurate fix yet: the GPS row says searching (#69)',
-      (tester) async {
+  testWidgets('no accurate fix yet: the GPS row says searching (#69)', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester, gps: GpsSignal.searching));
     await tester.pump();
     expect(find.text('searching…'), findsOneWidget);
     expect(find.text('ready'), findsNothing);
   });
 
-  testWidgets('location services off: the GPS row says off (#69)',
-      (tester) async {
+  testWidgets('location services off: the GPS row says off (#69)', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester, gps: GpsSignal.off));
     await tester.pump();
     expect(find.text('off'), findsOneWidget);
@@ -110,15 +122,17 @@ void main() {
   });
 
   testWidgets('German copy for searching (#69)', (tester) async {
-    await tester.pumpWidget(await _app(tester,
-        gps: GpsSignal.searching, locale: const Locale('de')));
+    await tester.pumpWidget(
+      await _app(tester, gps: GpsSignal.searching, locale: const Locale('de')),
+    );
     await tester.pump();
     expect(find.text('wird gesucht…'), findsOneWidget);
   });
 
   testWidgets('German copy for off (#69)', (tester) async {
     await tester.pumpWidget(
-        await _app(tester, gps: GpsSignal.off, locale: const Locale('de')));
+      await _app(tester, gps: GpsSignal.off, locale: const Locale('de')),
+    );
     await tester.pump();
     expect(find.text('aus'), findsOneWidget);
   });
@@ -128,7 +142,10 @@ void main() {
     await tester.pump();
     // 400-wide screen → centre at x≈200. The bug pinned the block to the left
     // (Stack topStart + a shrink-wrapped column), landing the digit near x≈114.
-    expect(tester.getCenter(find.text('5')).dx, moreOrLessEquals(200, epsilon: 1));
+    expect(
+      tester.getCenter(find.text('5')).dx,
+      moreOrLessEquals(200, epsilon: 1),
+    );
   });
 
   testWidgets('+5 sec. extends the countdown', (tester) async {
@@ -169,8 +186,9 @@ void main() {
     verifyNever(() => _recording.beginArmedRide());
   });
 
-  testWidgets('reaching 0 begins the armed ride before navigating',
-      (tester) async {
+  testWidgets('reaching 0 begins the armed ride before navigating', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
     for (var i = 0; i < 5; i++) {
@@ -184,8 +202,9 @@ void main() {
     verifyNever(() => _recording.disarm());
   });
 
-  testWidgets('a start cancelled meanwhile (notification Stop) goes home',
-      (tester) async {
+  testWidgets('a start cancelled meanwhile (notification Stop) goes home', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester, beginProceeds: false));
     await tester.pump();
     await tester.tap(find.text('Start now'));
@@ -195,8 +214,9 @@ void main() {
     expect(find.text('ride'), findsNothing);
   });
 
-  testWidgets('back right after Start now, before the ride began, disarms',
-      (tester) async {
+  testWidgets('back right after Start now, before the ride began, disarms', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester));
     final begin = Completer<bool>();
     when(() => _recording.beginArmedRide()).thenAnswer((_) => begin.future);
@@ -230,13 +250,15 @@ void main() {
 
   /// The ring's current sweep (0 = empty, 1 = full), read off its painter.
   double ringProgress(WidgetTester tester) {
-    final paint = tester.widgetList<CustomPaint>(find.byType(CustomPaint))
+    final paint = tester
+        .widgetList<CustomPaint>(find.byType(CustomPaint))
         .firstWhere((p) => p.painter.runtimeType.toString() == '_RingPainter');
     return (paint.painter as dynamic).progress as double;
   }
 
-  testWidgets('the ring drains in step with the digit and is empty at 0',
-      (tester) async {
+  testWidgets('the ring drains in step with the digit and is empty at 0', (
+    tester,
+  ) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
     expect(ringProgress(tester), moreOrLessEquals(1.0, epsilon: 0.01));
@@ -259,7 +281,9 @@ void main() {
         '(the countdown\'s fixed palette)', (tester) async {
       await tester.pumpWidget(await _app(tester, brightness: brightness));
       await tester.pump();
-      final label = tester.renderObject<RenderParagraph>(find.text('Start now'));
+      final label = tester.renderObject<RenderParagraph>(
+        find.text('Start now'),
+      );
       expect(label.text.style?.color, AppColors.light.onPrimary);
     });
   }

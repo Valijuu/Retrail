@@ -5,8 +5,9 @@ import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/core/theme/theme_context.dart';
 
 void main() {
-  testWidgets('context.colors returns the AppColors extension from the theme',
-      (tester) async {
+  testWidgets('context.colors returns the AppColors extension from the theme', (
+    tester,
+  ) async {
     late AppColors fromContext;
     await tester.pumpWidget(
       MaterialApp(

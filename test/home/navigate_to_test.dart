@@ -15,42 +15,50 @@ class _FakeLauncher implements NavigationLauncher {
 
   @override
   Future<void> launch(
-          NavigationApp app, double lat, double lng, String label) async =>
-      launches.add((app, lat, lng, label));
+    NavigationApp app,
+    double lat,
+    double lng,
+    String label,
+  ) async => launches.add((app, lat, lng, label));
 }
 
 void main() {
   Future<void> pumpAndTap(WidgetTester tester, _FakeLauncher launcher) async {
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(Brightness.light),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => TextButton(
-            onPressed: () =>
-                navigateTo(context, launcher, 52.5, 13.4, 'Morning roll'),
-            child: const Text('go'),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  navigateTo(context, launcher, 52.5, 13.4, 'Morning roll'),
+              child: const Text('go'),
+            ),
           ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('go'));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a single available app launches directly, no chooser',
-      (tester) async {
+  testWidgets('a single available app launches directly, no chooser', (
+    tester,
+  ) async {
     final launcher = _FakeLauncher([NavigationApp.system]);
     await pumpAndTap(tester, launcher);
 
     expect(find.byType(BottomSheet), findsNothing);
-    expect(launcher.launches,
-        [(NavigationApp.system, 52.5, 13.4, 'Morning roll')]);
+    expect(launcher.launches, [
+      (NavigationApp.system, 52.5, 13.4, 'Morning roll'),
+    ]);
   });
 
-  testWidgets('several installed apps open a chooser; the pick is launched',
-      (tester) async {
+  testWidgets('several installed apps open a chooser; the pick is launched', (
+    tester,
+  ) async {
     final launcher = _FakeLauncher([
       NavigationApp.appleMaps,
       NavigationApp.googleMaps,
@@ -66,28 +74,36 @@ void main() {
 
     await tester.tap(find.text('Google Maps'));
     await tester.pumpAndSettle();
-    expect(launcher.launches,
-        [(NavigationApp.googleMaps, 52.5, 13.4, 'Morning roll')]);
+    expect(launcher.launches, [
+      (NavigationApp.googleMaps, 52.5, 13.4, 'Morning roll'),
+    ]);
     expect(find.byType(BottomSheet), findsNothing);
   });
 
-  testWidgets('the chooser keeps its last entry clear of the home indicator',
-      (tester) async {
+  testWidgets('the chooser keeps its last entry clear of the home indicator', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     tester.view.padding = const FakeViewPadding(bottom: 34);
     tester.view.viewPadding = const FakeViewPadding(bottom: 34);
     addTearDown(tester.view.reset);
-    await pumpAndTap(tester,
-        _FakeLauncher([NavigationApp.appleMaps, NavigationApp.waze]));
+    await pumpAndTap(
+      tester,
+      _FakeLauncher([NavigationApp.appleMaps, NavigationApp.waze]),
+    );
 
-    expect(tester.getBottomLeft(find.byType(ListTile).last).dy,
-        lessThanOrEqualTo(900 - 34));
+    expect(
+      tester.getBottomLeft(find.byType(ListTile).last).dy,
+      lessThanOrEqualTo(900 - 34),
+    );
   });
 
   testWidgets('dismissing the chooser launches nothing', (tester) async {
-    final launcher =
-        _FakeLauncher([NavigationApp.appleMaps, NavigationApp.waze]);
+    final launcher = _FakeLauncher([
+      NavigationApp.appleMaps,
+      NavigationApp.waze,
+    ]);
     await pumpAndTap(tester, launcher);
 
     await tester.tapAt(const Offset(10, 10)); // scrim

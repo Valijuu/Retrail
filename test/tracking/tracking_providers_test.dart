@@ -85,17 +85,19 @@ void main() {
     await db.close();
   });
 
-  ProviderContainer makeContainer() => ProviderContainer(overrides: [
-        rideRepositoryProvider.overrideWithValue(RideRepository(RideDao(db))),
-        trackpointRepositoryProvider
-            .overrideWithValue(TrackpointRepository(TrackpointDao(db))),
-        locationSourceProvider.overrideWithValue(source),
-        locationPermissionServiceProvider.overrideWithValue(_GrantedPerms()),
-        rideForegroundServiceProvider.overrideWithValue(_NoopService()),
-      ]);
+  ProviderContainer makeContainer() => ProviderContainer(
+    overrides: [
+      rideRepositoryProvider.overrideWithValue(RideRepository(RideDao(db))),
+      trackpointRepositoryProvider.overrideWithValue(
+        TrackpointRepository(TrackpointDao(db)),
+      ),
+      locationSourceProvider.overrideWithValue(source),
+      locationPermissionServiceProvider.overrideWithValue(_GrantedPerms()),
+      rideForegroundServiceProvider.overrideWithValue(_NoopService()),
+    ],
+  );
 
-  test(
-      'disposing the container mid-ride cancels the GPS subscription '
+  test('disposing the container mid-ride cancels the GPS subscription '
       '(issue #2: leaked when stop() never ran)', () async {
     // App shutdown mid-ride, a torn-down provider scope, or a fresh container
     // in a test: stop() never runs, so cleanup has to come from the provider.
@@ -106,44 +108,60 @@ void main() {
     container.dispose();
     await Future<void>.delayed(Duration.zero); // let the cancel land
 
-    expect(source.hasListener, isFalse,
-        reason: 'the fix subscription must not outlive the provider container');
+    expect(
+      source.hasListener,
+      isFalse,
+      reason: 'the fix subscription must not outlive the provider container',
+    );
   });
 
   test(
-      'rideNotificationCopyProvider follows the device locale when the app '
-      'language is "system" (issue: always fell back to English there, '
-      'since localeProvider is null for "system" and the ternary treated '
-      'that as "not German" instead of resolving the actual device locale)',
-      () {
-    final german = ProviderContainer(overrides: [
-      localeProvider.overrideWithValue(null), // "system"
-      effectiveLocaleProvider.overrideWithValue(const Locale('de')),
-    ]);
-    addTearDown(german.dispose);
-    expect(german.read(rideNotificationCopyProvider).recordingTitle,
-        'Fahrt wird aufgezeichnet');
-    expect(german.read(rideNotificationCopyProvider).pause, 'Pause');
-    expect(german.read(rideNotificationCopyProvider).stop, 'Beenden');
+    'rideNotificationCopyProvider follows the device locale when the app '
+    'language is "system" (issue: always fell back to English there, '
+    'since localeProvider is null for "system" and the ternary treated '
+    'that as "not German" instead of resolving the actual device locale)',
+    () {
+      final german = ProviderContainer(
+        overrides: [
+          localeProvider.overrideWithValue(null), // "system"
+          effectiveLocaleProvider.overrideWithValue(const Locale('de')),
+        ],
+      );
+      addTearDown(german.dispose);
+      expect(
+        german.read(rideNotificationCopyProvider).recordingTitle,
+        'Fahrt wird aufgezeichnet',
+      );
+      expect(german.read(rideNotificationCopyProvider).pause, 'Pause');
+      expect(german.read(rideNotificationCopyProvider).stop, 'Beenden');
 
-    final english = ProviderContainer(overrides: [
-      localeProvider.overrideWithValue(null),
-      effectiveLocaleProvider.overrideWithValue(const Locale('en')),
-    ]);
-    addTearDown(english.dispose);
-    expect(english.read(rideNotificationCopyProvider).recordingTitle,
-        'Recording ride');
-  });
+      final english = ProviderContainer(
+        overrides: [
+          localeProvider.overrideWithValue(null),
+          effectiveLocaleProvider.overrideWithValue(const Locale('en')),
+        ],
+      );
+      addTearDown(english.dispose);
+      expect(
+        english.read(rideNotificationCopyProvider).recordingTitle,
+        'Recording ride',
+      );
+    },
+  );
 
-  test('rideNotificationCopyProvider carries the locale for number formatting',
-      () {
-    final german = ProviderContainer(overrides: [
-      localeProvider.overrideWithValue(null),
-      effectiveLocaleProvider.overrideWithValue(const Locale('de', 'DE')),
-    ]);
-    addTearDown(german.dispose);
-    expect(german.read(rideNotificationCopyProvider).locale, 'de_DE');
-  });
+  test(
+    'rideNotificationCopyProvider carries the locale for number formatting',
+    () {
+      final german = ProviderContainer(
+        overrides: [
+          localeProvider.overrideWithValue(null),
+          effectiveLocaleProvider.overrideWithValue(const Locale('de', 'DE')),
+        ],
+      );
+      addTearDown(german.dispose);
+      expect(german.read(rideNotificationCopyProvider).locale, 'de_DE');
+    },
+  );
 
   group('rideForegroundServiceProvider picks the platform implementation', () {
     tearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -152,16 +170,20 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       final container = ProviderContainer();
       addTearDown(container.dispose);
-      expect(container.read(rideForegroundServiceProvider),
-          isA<LiveActivityService>());
+      expect(
+        container.read(rideForegroundServiceProvider),
+        isA<LiveActivityService>(),
+      );
     });
 
     test('Android → foreground-task notification', () {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       final container = ProviderContainer();
       addTearDown(container.dispose);
-      expect(container.read(rideForegroundServiceProvider),
-          isA<ForegroundTaskService>());
+      expect(
+        container.read(rideForegroundServiceProvider),
+        isA<ForegroundTaskService>(),
+      );
     });
   });
 }

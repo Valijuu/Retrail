@@ -15,8 +15,8 @@ int _systemNow() => DateTime.now().millisecondsSinceEpoch;
 /// Thin wrapper over [RideDao], mirroring the original Kotlin `RideRepository`.
 class RideRepository {
   RideRepository(this._dao, {NowMs? now, DistanceCalculator? calc})
-      : _now = now ?? _systemNow,
-        _calc = calc ?? const HaversineDistanceCalculator();
+    : _now = now ?? _systemNow,
+      _calc = calc ?? const HaversineDistanceCalculator();
 
   final RideDao _dao;
   final NowMs _now;
@@ -28,8 +28,9 @@ class RideRepository {
       _dao.getAllRidesWithTrackpoints();
 
   Stream<List<RideWithTrackpoints>> getRidesWithTrackpointsBetween(
-          int weekStartMs, int weekEndMs) =>
-      _dao.getRidesWithTrackpointsBetween(weekStartMs, weekEndMs);
+    int weekStartMs,
+    int weekEndMs,
+  ) => _dao.getRidesWithTrackpointsBetween(weekStartMs, weekEndMs);
 
   /// Drives the History list — rides only, no trackpoints join (see
   /// issue #21 / [RideDao.getRidesInRange]).
@@ -39,11 +40,13 @@ class RideRepository {
   /// Opens a ride row at recording start and returns its id. Takes plain
   /// values so callers (the tracker) never touch Drift's companion types.
   Future<int> startRide({String? activityTypeId, required int startedAtMs}) =>
-      _dao.insert(RidesCompanion.insert(
-        typ: Value(activityTypeId),
-        startTime: Value(startedAtMs),
-        date: Value(startedAtMs),
-      ));
+      _dao.insert(
+        RidesCompanion.insert(
+          typ: Value(activityTypeId),
+          startTime: Value(startedAtMs),
+          date: Value(startedAtMs),
+        ),
+      );
 
   /// Stamps the end time AND caches [RideStats] + hasRoute onto the row
   /// (distance, duration, avg/max speed, whether it has any trackpoints) —
@@ -67,8 +70,11 @@ class RideRepository {
     );
   }
 
-  Future<void> updateRideDetails(int rideId, String? description, String? comment) =>
-      _dao.updateRideDetails(rideId, description, comment);
+  Future<void> updateRideDetails(
+    int rideId,
+    String? description,
+    String? comment,
+  ) => _dao.updateRideDetails(rideId, description, comment);
 
   Future<void> updateRideType(int rideId, String? typ) =>
       _dao.updateRideType(rideId, typ);

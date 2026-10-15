@@ -51,14 +51,17 @@ class HistoryFilterSheet extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(l10n.historyFilterTitle,
-                      style:
-                          text.titleLarge?.copyWith(color: colors.onSurface)),
+                  child: Text(
+                    l10n.historyFilterTitle,
+                    style: text.titleLarge?.copyWith(color: colors.onSurface),
+                  ),
                 ),
                 TextButton(
                   onPressed: notifier.reset,
-                  child: Text(l10n.actionReset,
-                      style: TextStyle(color: colors.primary)),
+                  child: Text(
+                    l10n.actionReset,
+                    style: TextStyle(color: colors.primary),
+                  ),
                 ),
               ],
             ),
@@ -141,9 +144,10 @@ class HistoryFilterSheet extends ConsumerWidget {
                 Icon(Icons.favorite, size: 20, color: colors.primary),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(l10n.historyFilterFavoritesOnly,
-                      style:
-                          text.bodyLarge?.copyWith(color: colors.onSurface)),
+                  child: Text(
+                    l10n.historyFilterFavoritesOnly,
+                    style: text.bodyLarge?.copyWith(color: colors.onSurface),
+                  ),
                 ),
                 Switch(
                   value: filter.favoritesOnly,
@@ -166,11 +170,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return Text(text.toUpperCase(),
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: colors.onSurfaceVariant));
+    return Text(
+      text.toUpperCase(),
+      style: Theme.of(
+        context,
+      ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+    );
   }
 }
 
@@ -196,11 +201,12 @@ class _MonthRangeDropdown extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: colors.onSurfaceVariant)),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+        ),
         const SizedBox(height: 4),
         PillDropdown<int>(
           value: value,

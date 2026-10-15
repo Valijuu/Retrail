@@ -40,8 +40,13 @@ class ImageCropperPhotoPicker implements ProfilePhotoPicker {
     if (cropped == null) return null;
 
     final dir = await getApplicationDocumentsDirectory();
-    final dest = File(p.join(
-        dir.path, 'profile_photos', '${DateTime.now().millisecondsSinceEpoch}.jpg'));
+    final dest = File(
+      p.join(
+        dir.path,
+        'profile_photos',
+        '${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ),
+    );
     await dest.parent.create(recursive: true);
     await File(cropped.path).copy(dest.path);
     return dest.path;

@@ -9,14 +9,17 @@ void main() {
   setUp(() => db = AppDatabase.memory());
   tearDown(() => db.close());
 
-  RidesCompanion ride({String? title, int? start, int? end}) => RidesCompanion.insert(
+  RidesCompanion ride({String? title, int? start, int? end}) =>
+      RidesCompanion.insert(
         description: Value(title),
         startTime: Value(start),
         endTime: Value(end),
       );
 
   test('insert returns an id and the row reads back', () async {
-    final id = await db.rideDao.insert(ride(title: 'Morning cruise', start: 1000));
+    final id = await db.rideDao.insert(
+      ride(title: 'Morning cruise', start: 1000),
+    );
     final fetched = await db.rideDao.getById(id).first;
     expect(fetched, isNotNull);
     expect(fetched!.rideId, id);
@@ -39,24 +42,28 @@ void main() {
 
   test('upsert updates an existing row in place', () async {
     final id = await db.rideDao.insert(ride(title: 'first'));
-    await db.rideDao
-        .insert(RidesCompanion(rideId: Value(id), description: const Value('renamed')));
+    await db.rideDao.insert(
+      RidesCompanion(rideId: Value(id), description: const Value('renamed')),
+    );
     final all = await db.rideDao.getAll().first;
     expect(all, hasLength(1));
     expect(all.single.description, 'renamed');
   });
 
-  test('updateEndTime / updateRideDetails / updateRideType mutate columns', () async {
-    final id = await db.rideDao.insert(ride(title: 'x', start: 100));
-    await db.rideDao.updateEndTime(id, 999);
-    await db.rideDao.updateRideDetails(id, 'title2', 'note2');
-    await db.rideDao.updateRideType(id, 'SKATEBOARD');
-    final r = await db.rideDao.getById(id).first;
-    expect(r!.endTime, 999);
-    expect(r.description, 'title2');
-    expect(r.comment, 'note2');
-    expect(r.typ, 'SKATEBOARD');
-  });
+  test(
+    'updateEndTime / updateRideDetails / updateRideType mutate columns',
+    () async {
+      final id = await db.rideDao.insert(ride(title: 'x', start: 100));
+      await db.rideDao.updateEndTime(id, 999);
+      await db.rideDao.updateRideDetails(id, 'title2', 'note2');
+      await db.rideDao.updateRideType(id, 'SKATEBOARD');
+      final r = await db.rideDao.getById(id).first;
+      expect(r!.endTime, 999);
+      expect(r.description, 'title2');
+      expect(r.comment, 'note2');
+      expect(r.typ, 'SKATEBOARD');
+    },
+  );
 
   test('updateFavorite writes both is_favorite and favorited_at', () async {
     final id = await db.rideDao.insert(ride(title: 'fav'));
@@ -71,22 +78,26 @@ void main() {
     expect(r.favoritedAt, isNull);
   });
 
-  test('updateStats writes distance/duration/avg/max speed + hasRoute',
-      () async {
-    final id = await db.rideDao.insert(ride(title: 'stats'));
-    await db.rideDao.updateStats(id,
+  test(
+    'updateStats writes distance/duration/avg/max speed + hasRoute',
+    () async {
+      final id = await db.rideDao.insert(ride(title: 'stats'));
+      await db.rideDao.updateStats(
+        id,
         distanceMetres: 1234.5,
         durationMs: 60000,
         avgSpeedKmh: 12.3,
         maxSpeedKmh: 20.1,
-        hasRoute: true);
-    final r = await db.rideDao.getById(id).first;
-    expect(r!.distanceMetres, 1234.5);
-    expect(r.durationMs, 60000);
-    expect(r.avgSpeedKmh, 12.3);
-    expect(r.maxSpeedKmh, 20.1);
-    expect(r.hasRoute, true);
-  });
+        hasRoute: true,
+      );
+      final r = await db.rideDao.getById(id).first;
+      expect(r!.distanceMetres, 1234.5);
+      expect(r.durationMs, 60000);
+      expect(r.avgSpeedKmh, 12.3);
+      expect(r.maxSpeedKmh, 20.1);
+      expect(r.hasRoute, true);
+    },
+  );
 
   test('deleteById removes the ride', () async {
     final id = await db.rideDao.insert(ride(title: 'gone'));
@@ -94,11 +105,16 @@ void main() {
     expect(await db.rideDao.getById(id).first, isNull);
   });
 
-  test('getRidesWithTrackpointsBetween filters by startTime (inclusive)', () async {
-    await db.rideDao.insert(ride(title: 'before', start: 50));
-    await db.rideDao.insert(ride(title: 'inside', start: 150));
-    await db.rideDao.insert(ride(title: 'after', start: 350));
-    final res = await db.rideDao.getRidesWithTrackpointsBetween(100, 300).first;
-    expect(res.map((e) => e.ride.description), ['inside']);
-  });
+  test(
+    'getRidesWithTrackpointsBetween filters by startTime (inclusive)',
+    () async {
+      await db.rideDao.insert(ride(title: 'before', start: 50));
+      await db.rideDao.insert(ride(title: 'inside', start: 150));
+      await db.rideDao.insert(ride(title: 'after', start: 350));
+      final res = await db.rideDao
+          .getRidesWithTrackpointsBetween(100, 300)
+          .first;
+      expect(res.map((e) => e.ride.description), ['inside']);
+    },
+  );
 }

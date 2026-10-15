@@ -37,8 +37,12 @@ RouteEndpointStyle routeEndpointStyle(
   if (points.isEmpty) return RouteEndpointStyle.none;
   if (points.length == 1) return RouteEndpointStyle.startOnly;
   final start = points.first, finish = points.last;
-  final endpointGap =
-      calc.distanceBetween(start.lat, start.lng, finish.lat, finish.lng);
+  final endpointGap = calc.distanceBetween(
+    start.lat,
+    start.lng,
+    finish.lat,
+    finish.lng,
+  );
   return endpointGap <= _maxLoopGapMetres
       ? RouteEndpointStyle.loop
       : RouteEndpointStyle.open;
@@ -78,8 +82,11 @@ List<({double x, double y, double angle})> directionArrows(
     while (nextArrowAt <= walkedLength + segmentLength) {
       if (nextArrowAt >= endMargin && nextArrowAt <= lastArrowAt) {
         final t = (nextArrowAt - walkedLength) / segmentLength;
-        arrows.add(
-            (x: from.x + dx * t, y: from.y + dy * t, angle: math.atan2(dy, dx)));
+        arrows.add((
+          x: from.x + dx * t,
+          y: from.y + dy * t,
+          angle: math.atan2(dy, dx),
+        ));
       }
       nextArrowAt += spacing;
     }

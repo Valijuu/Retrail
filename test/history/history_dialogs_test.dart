@@ -17,33 +17,35 @@ import 'package:retrail/map/map_attribution.dart';
 
 import '../support/live_map_stub.dart';
 
-Widget _host(Widget child,
-        {Locale? locale, Brightness brightness = Brightness.light}) =>
-    MaterialApp(
-      locale: locale,
-      theme: buildTheme(brightness),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: child),
-    );
+Widget _host(
+  Widget child, {
+  Locale? locale,
+  Brightness brightness = Brightness.light,
+}) => MaterialApp(
+  locale: locale,
+  theme: buildTheme(brightness),
+  localizationsDelegates: const [
+    AppLocalizations.delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
 
 Ride _ride() => const Ride(
-      rideId: 1,
-      description: 'Morning roll',
-      typ: 'LONGBOARD',
-      startTime: 0,
-      endTime: 600000,
-      date: 1718193600000,
-      comment: 'felt great',
-      isFavorite: false,
-      favoritedAt: null,
-      hasRoute: false,
-    );
+  rideId: 1,
+  description: 'Morning roll',
+  typ: 'LONGBOARD',
+  startTime: 0,
+  endTime: 600000,
+  date: 1718193600000,
+  comment: 'felt great',
+  isFavorite: false,
+  favoritedAt: null,
+  hasRoute: false,
+);
 
 void main() {
   useStubLiveMap();
@@ -57,15 +59,19 @@ void main() {
 
       String? savedTitle;
       ActivityType? savedType;
-      await tester.pumpWidget(_host(EditRideSheet(
-        initialDescription: 'Old title',
-        initialType: ActivityType.longboard,
-        onDismiss: () {},
-        onSave: (t, c, type, _) {
-          savedTitle = t;
-          savedType = type;
-        },
-      )));
+      await tester.pumpWidget(
+        _host(
+          EditRideSheet(
+            initialDescription: 'Old title',
+            initialType: ActivityType.longboard,
+            onDismiss: () {},
+            onSave: (t, c, type, _) {
+              savedTitle = t;
+              savedType = type;
+            },
+          ),
+        ),
+      );
       expect(find.text('Edit ride'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField).first, 'New title');
@@ -78,19 +84,24 @@ void main() {
     });
 
     // Issue #76: favorite an older ride without hunting for the card heart.
-    testWidgets('favorite toggle starts from the ride and is saved',
-        (tester) async {
+    testWidgets('favorite toggle starts from the ride and is saved', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       bool? savedFavorite;
-      await tester.pumpWidget(_host(EditRideSheet(
-        initialFavorite: true,
-        onDismiss: () {},
-        onSave: (_, _, _, favorite) => savedFavorite = favorite,
-      )));
+      await tester.pumpWidget(
+        _host(
+          EditRideSheet(
+            initialFavorite: true,
+            onDismiss: () {},
+            onSave: (_, _, _, favorite) => savedFavorite = favorite,
+          ),
+        ),
+      );
       expect(find.byIcon(Icons.favorite), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.favorite));
@@ -102,43 +113,55 @@ void main() {
     });
 
     testWidgets(
-        'activity chips draw no checkmark over their glyph (issue #29) — '
-        'selection shows through the chip fill instead', (tester) async {
-      tester.view.physicalSize = const Size(400, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      'activity chips draw no checkmark over their glyph (issue #29) — '
+      'selection shows through the chip fill instead',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_host(EditRideSheet(
-        initialType: ActivityType.skateboard,
-        onDismiss: () {},
-        onSave: (_, _, _, _) {},
-      )));
+        await tester.pumpWidget(
+          _host(
+            EditRideSheet(
+              initialType: ActivityType.skateboard,
+              onDismiss: () {},
+              onSave: (_, _, _, _) {},
+            ),
+          ),
+        );
 
-      final chips = tester.widgetList<FilterChip>(find.byType(FilterChip));
-      expect(chips, hasLength(ActivityType.values.length));
-      expect(chips.every((c) => c.showCheckmark == false), isTrue);
-    });
+        final chips = tester.widgetList<FilterChip>(find.byType(FilterChip));
+        expect(chips, hasLength(ActivityType.values.length));
+        expect(chips.every((c) => c.showCheckmark == false), isTrue);
+      },
+    );
   });
 
   group('RideDetailDialog', () {
-    testWidgets('shows stats and the no-route placeholder when empty',
-        (tester) async {
+    testWidgets('shows stats and the no-route placeholder when empty', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       var dismissed = false;
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
-        stats: const RideStats(
-            durationMs: 600000,
-            distanceMetres: 4200,
-            maxSpeedKmh: 22,
-            avgSpeedKmh: 15),
-        onDismiss: () => dismissed = true,
-      )));
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+            stats: const RideStats(
+              durationMs: 600000,
+              distanceMetres: 4200,
+              maxSpeedKmh: 22,
+              avgSpeedKmh: 15,
+            ),
+            onDismiss: () => dismissed = true,
+          ),
+        ),
+      );
 
       expect(find.text('No route'), findsOneWidget); // empty trackpoints
       expect(find.text('4.20 km'), findsOneWidget);
@@ -151,149 +174,199 @@ void main() {
     });
 
     testWidgets(
-        'the activity row wraps instead of overflowing at 320 px, text scale '
-        '2.0, German (issue #46)', (tester) async {
-      tester.view.physicalSize = const Size(320, 640);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      'the activity row wraps instead of overflowing at 320 px, text scale '
+      '2.0, German (issue #46)',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_host(
-        Builder(
-          builder: (context) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: const TextScaler.linear(2.0)),
-            child: RideDetailDialog(
-              rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
-              // Single-digit speeds: with the Ahem test font (1 em per glyph)
-              // a "22,0 km/h" value alone is wider than the dialog, which
-              // real fonts are not.
-              stats: const RideStats(
-                  durationMs: 600000,
-                  distanceMetres: 4200,
-                  maxSpeedKmh: 9,
-                  avgSpeedKmh: 5),
-              onDismiss: () {},
+        await tester.pumpWidget(
+          _host(
+            Builder(
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(2.0)),
+                child: RideDetailDialog(
+                  rwt: RideWithTrackpoints(
+                    ride: _ride(),
+                    trackpoints: const [],
+                  ),
+                  // Single-digit speeds: with the Ahem test font (1 em per glyph)
+                  // a "22,0 km/h" value alone is wider than the dialog, which
+                  // real fonts are not.
+                  stats: const RideStats(
+                    durationMs: 600000,
+                    distanceMetres: 4200,
+                    maxSpeedKmh: 9,
+                    avgSpeedKmh: 5,
+                  ),
+                  onDismiss: () {},
+                ),
+              ),
             ),
+            locale: const Locale('de'),
           ),
-        ),
-        locale: const Locale('de'),
-      ));
+        );
 
-      expect(find.text('Longboard'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        expect(find.text('Longboard'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets(
-        'on a small screen (iPhone 8) the Close button stays visible and '
-        'tappable', (tester) async {
-      tester.view.physicalSize = const Size(375, 667);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      'on a small screen (iPhone 8) the Close button stays visible and '
+      'tappable',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 667);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      var dismissed = false;
-      await tester.pumpWidget(_host(
-        RideDetailDialog(
-          rwt: RideWithTrackpoints(
-            ride: _ride().copyWith(
-                comment: const Value('Lange Runde am Rhein entlang, erst '
-                    'Rückenwind, dann Gegenwind, zweimal Pause am Kiosk.')),
-            trackpoints: const [
-              Trackpoint(
-                  trackpointId: 0,
-                  rideId: 1,
-                  latitude: 52.0,
-                  longitude: 13.0,
-                  timestamp: 0),
-              Trackpoint(
-                  trackpointId: 1,
-                  rideId: 1,
-                  latitude: 52.02,
-                  longitude: 13.0,
-                  timestamp: 1),
-            ],
+        var dismissed = false;
+        await tester.pumpWidget(
+          _host(
+            RideDetailDialog(
+              rwt: RideWithTrackpoints(
+                ride: _ride().copyWith(
+                  comment: const Value(
+                    'Lange Runde am Rhein entlang, erst '
+                    'Rückenwind, dann Gegenwind, zweimal Pause am Kiosk.',
+                  ),
+                ),
+                trackpoints: const [
+                  Trackpoint(
+                    trackpointId: 0,
+                    rideId: 1,
+                    latitude: 52.0,
+                    longitude: 13.0,
+                    timestamp: 0,
+                  ),
+                  Trackpoint(
+                    trackpointId: 1,
+                    rideId: 1,
+                    latitude: 52.02,
+                    longitude: 13.0,
+                    timestamp: 1,
+                  ),
+                ],
+              ),
+              stats: const RideStats(
+                durationMs: 600000,
+                distanceMetres: 4200,
+                maxSpeedKmh: 22,
+                avgSpeedKmh: 15,
+              ),
+              onDismiss: () => dismissed = true,
+            ),
+            locale: const Locale('de'),
           ),
-          stats: const RideStats(
-              durationMs: 600000,
-              distanceMetres: 4200,
-              maxSpeedKmh: 22,
-              avgSpeedKmh: 15),
-          onDismiss: () => dismissed = true,
-        ),
-        locale: const Locale('de'),
-      ));
+        );
 
-      final close = find.text('Schließen');
-      expect(close, findsOneWidget);
-      final rect = tester.getRect(close);
-      expect(rect.bottom, lessThanOrEqualTo(667),
-          reason: 'Close must not be pushed below the screen');
-      await tester.tap(close);
-      expect(dismissed, isTrue);
-    });
+        final close = find.text('Schließen');
+        expect(close, findsOneWidget);
+        final rect = tester.getRect(close);
+        expect(
+          rect.bottom,
+          lessThanOrEqualTo(667),
+          reason: 'Close must not be pushed below the screen',
+        );
+        await tester.tap(close);
+        expect(dismissed, isTrue);
+      },
+    );
 
-    testWidgets('frames the whole route (fitBounds) instead of the endpoint',
-        (tester) async {
+    testWidgets('frames the whole route (fitBounds) instead of the endpoint', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-          Trackpoint(
-              trackpointId: 0,
-              rideId: 1,
-              latitude: 52.0,
-              longitude: 13.0,
-              timestamp: 0),
-          Trackpoint(
-              trackpointId: 1,
-              rideId: 1,
-              latitude: 52.02,
-              longitude: 13.0,
-              timestamp: 1),
-        ]),
-        stats: const RideStats(
-            durationMs: 600000,
-            distanceMetres: 4200,
-            maxSpeedKmh: 22,
-            avgSpeedKmh: 15),
-        onDismiss: () {},
-      )));
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(
+              ride: _ride(),
+              trackpoints: const [
+                Trackpoint(
+                  trackpointId: 0,
+                  rideId: 1,
+                  latitude: 52.0,
+                  longitude: 13.0,
+                  timestamp: 0,
+                ),
+                Trackpoint(
+                  trackpointId: 1,
+                  rideId: 1,
+                  latitude: 52.02,
+                  longitude: 13.0,
+                  timestamp: 1,
+                ),
+              ],
+            ),
+            stats: const RideStats(
+              durationMs: 600000,
+              distanceMetres: 4200,
+              maxSpeedKmh: 22,
+              avgSpeedKmh: 15,
+            ),
+            onDismiss: () {},
+          ),
+        ),
+      );
 
       final map = tester.widget<LiveMap>(find.byType(LiveMap));
-      expect(map.fitBounds, isTrue); // whole route, not centred on the last point
+      expect(
+        map.fitBounds,
+        isTrue,
+      ); // whole route, not centred on the last point
     });
 
-    testWidgets('Follow route button shows with a route and fires',
-        (tester) async {
+    testWidgets('Follow route button shows with a route and fires', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       var followed = false;
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-          Trackpoint(
-              trackpointId: 0,
-              rideId: 1,
-              latitude: 48.0,
-              longitude: 11.0,
-              timestamp: 0),
-          Trackpoint(
-              trackpointId: 1,
-              rideId: 1,
-              latitude: 48.001,
-              longitude: 11.0,
-              timestamp: 1),
-        ]),
-        stats: const RideStats(
-            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
-        onDismiss: () {},
-        onFollowRoute: () => followed = true,
-      )));
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(
+              ride: _ride(),
+              trackpoints: const [
+                Trackpoint(
+                  trackpointId: 0,
+                  rideId: 1,
+                  latitude: 48.0,
+                  longitude: 11.0,
+                  timestamp: 0,
+                ),
+                Trackpoint(
+                  trackpointId: 1,
+                  rideId: 1,
+                  latitude: 48.001,
+                  longitude: 11.0,
+                  timestamp: 1,
+                ),
+              ],
+            ),
+            stats: const RideStats(
+              durationMs: 1,
+              distanceMetres: 1,
+              maxSpeedKmh: 1,
+              avgSpeedKmh: 1,
+            ),
+            onDismiss: () {},
+            onFollowRoute: () => followed = true,
+          ),
+        ),
+      );
       final button = find.widgetWithText(FilledButton, 'Follow route');
       expect(button, findsOneWidget);
       await tester.tap(button);
@@ -312,105 +385,155 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        await tester.pumpWidget(_host(RideDetailDialog(
-          rwt: RideWithTrackpoints(ride: _ride(), trackpoints: [
-            for (var i = 0; i < n; i++)
-              Trackpoint(
-                  trackpointId: i,
-                  rideId: 1,
-                  latitude: 48.0 + i * 0.001,
-                  longitude: 11.0,
-                  timestamp: i),
-          ]),
-          stats: const RideStats(
-              durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
-          onDismiss: () {},
-          onFollowRoute: cb ? () {} : null,
-        )));
+        await tester.pumpWidget(
+          _host(
+            RideDetailDialog(
+              rwt: RideWithTrackpoints(
+                ride: _ride(),
+                trackpoints: [
+                  for (var i = 0; i < n; i++)
+                    Trackpoint(
+                      trackpointId: i,
+                      rideId: 1,
+                      latitude: 48.0 + i * 0.001,
+                      longitude: 11.0,
+                      timestamp: i,
+                    ),
+                ],
+              ),
+              stats: const RideStats(
+                durationMs: 1,
+                distanceMetres: 1,
+                maxSpeedKmh: 1,
+                avgSpeedKmh: 1,
+              ),
+              onDismiss: () {},
+              onFollowRoute: cb ? () {} : null,
+            ),
+          ),
+        );
         expect(find.text('Follow route'), findsNothing);
       });
     }
 
-    testWidgets('one trackpoint + callback: Follow route button shown',
-        (tester) async {
+    testWidgets('one trackpoint + callback: Follow route button shown', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-          Trackpoint(
-              trackpointId: 0,
-              rideId: 1,
-              latitude: 48.0,
-              longitude: 11.0,
-              timestamp: 0),
-        ]),
-        stats: const RideStats(
-            durationMs: 1, distanceMetres: 0, maxSpeedKmh: 1, avgSpeedKmh: 1),
-        onDismiss: () {},
-        onFollowRoute: () {},
-      )));
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(
+              ride: _ride(),
+              trackpoints: const [
+                Trackpoint(
+                  trackpointId: 0,
+                  rideId: 1,
+                  latitude: 48.0,
+                  longitude: 11.0,
+                  timestamp: 0,
+                ),
+              ],
+            ),
+            stats: const RideStats(
+              durationMs: 1,
+              distanceMetres: 0,
+              maxSpeedKmh: 1,
+              avgSpeedKmh: 1,
+            ),
+            onDismiss: () {},
+            onFollowRoute: () {},
+          ),
+        ),
+      );
       expect(find.widgetWithText(FilledButton, 'Follow route'), findsOneWidget);
     });
 
     for (final (label, size, locale, text) in [
       ('en 600x900', const Size(600, 900), const Locale('en'), 'Follow route'),
-      ('de 375x667', const Size(375, 667), const Locale('de'),
-          'Strecke nachfahren'),
+      (
+        'de 375x667',
+        const Size(375, 667),
+        const Locale('de'),
+        'Strecke nachfahren',
+      ),
     ]) {
-      testWidgets('Follow route label is not truncated ($label)',
-          (tester) async {
+      testWidgets('Follow route label is not truncated ($label)', (
+        tester,
+      ) async {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        await tester.pumpWidget(_host(
-          RideDetailDialog(
-            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-              Trackpoint(
-                  trackpointId: 0,
-                  rideId: 1,
-                  latitude: 48.0,
-                  longitude: 11.0,
-                  timestamp: 0),
-              Trackpoint(
-                  trackpointId: 1,
-                  rideId: 1,
-                  latitude: 48.001,
-                  longitude: 11.0,
-                  timestamp: 1),
-            ]),
-            stats: const RideStats(
+        await tester.pumpWidget(
+          _host(
+            RideDetailDialog(
+              rwt: RideWithTrackpoints(
+                ride: _ride(),
+                trackpoints: const [
+                  Trackpoint(
+                    trackpointId: 0,
+                    rideId: 1,
+                    latitude: 48.0,
+                    longitude: 11.0,
+                    timestamp: 0,
+                  ),
+                  Trackpoint(
+                    trackpointId: 1,
+                    rideId: 1,
+                    latitude: 48.001,
+                    longitude: 11.0,
+                    timestamp: 1,
+                  ),
+                ],
+              ),
+              stats: const RideStats(
                 durationMs: 1,
                 distanceMetres: 1,
                 maxSpeedKmh: 1,
-                avgSpeedKmh: 1),
-            onDismiss: () {},
-            onFollowRoute: () {},
+                avgSpeedKmh: 1,
+              ),
+              onDismiss: () {},
+              onFollowRoute: () {},
+            ),
+            locale: locale,
           ),
-          locale: locale,
-        ));
+        );
         expect(find.text(text), findsOneWidget);
         expect(
-            tester.renderObject<RenderParagraph>(find.text(text)).didExceedMaxLines,
-            isFalse);
+          tester
+              .renderObject<RenderParagraph>(find.text(text))
+              .didExceedMaxLines,
+          isFalse,
+        );
       });
     }
 
-    testWidgets('no Follow route button without a route or callback',
-        (tester) async {
+    testWidgets('no Follow route button without a route or callback', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
-        stats: const RideStats(
-            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
-        onDismiss: () {},
-        onFollowRoute: () {},
-      )));
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+            stats: const RideStats(
+              durationMs: 1,
+              distanceMetres: 1,
+              maxSpeedKmh: 1,
+              avgSpeedKmh: 1,
+            ),
+            onDismiss: () {},
+            onFollowRoute: () {},
+          ),
+        ),
+      );
       expect(find.text('Follow route'), findsNothing);
     });
 
@@ -420,185 +543,250 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-          Trackpoint(
-              trackpointId: 0,
-              rideId: 1,
-              latitude: 52.0,
-              longitude: 13.0,
-              timestamp: 0),
-          Trackpoint(
-              trackpointId: 1,
-              rideId: 1,
-              latitude: 52.02,
-              longitude: 13.0,
-              timestamp: 1),
-        ]),
-        stats: const RideStats(
-            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
-        onDismiss: () {},
-      )));
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(
+              ride: _ride(),
+              trackpoints: const [
+                Trackpoint(
+                  trackpointId: 0,
+                  rideId: 1,
+                  latitude: 52.0,
+                  longitude: 13.0,
+                  timestamp: 0,
+                ),
+                Trackpoint(
+                  trackpointId: 1,
+                  rideId: 1,
+                  latitude: 52.02,
+                  longitude: 13.0,
+                  timestamp: 1,
+                ),
+              ],
+            ),
+            stats: const RideStats(
+              durationMs: 1,
+              distanceMetres: 1,
+              maxSpeedKmh: 1,
+              avgSpeedKmh: 1,
+            ),
+            onDismiss: () {},
+          ),
+        ),
+      );
       final credit = tester.widget<MapAttribution>(find.byType(MapAttribution));
       expect(credit.onOpen, isNotNull);
 
       await tester.tap(find.byIcon(Icons.fullscreen));
       await tester.pump();
-      final fullscreenCredit =
-          tester.widget<MapAttribution>(find.byType(MapAttribution));
+      final fullscreenCredit = tester.widget<MapAttribution>(
+        find.byType(MapAttribution),
+      );
       expect(fullscreenCredit.onOpen, isNotNull);
     });
 
     testWidgets('no route: no map credit', (tester) async {
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
-        stats: const RideStats(
-            durationMs: 1, distanceMetres: 1, maxSpeedKmh: 1, avgSpeedKmh: 1),
-        onDismiss: () {},
-      )));
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+            stats: const RideStats(
+              durationMs: 1,
+              distanceMetres: 1,
+              maxSpeedKmh: 1,
+              avgSpeedKmh: 1,
+            ),
+            onDismiss: () {},
+          ),
+        ),
+      );
       expect(find.byType(MapAttribution), findsNothing);
     });
 
     testWidgets(
-        'fullscreen keeps the SAME map (state moves, no second native map '
-        'to start) — there and back', (tester) async {
-      tester.view.physicalSize = const Size(400, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      'fullscreen keeps the SAME map (state moves, no second native map '
+      'to start) — there and back',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-          Trackpoint(
-              trackpointId: 0,
-              rideId: 1,
-              latitude: 52.0,
-              longitude: 13.0,
-              timestamp: 0),
-          Trackpoint(
-              trackpointId: 1,
-              rideId: 1,
-              latitude: 52.02,
-              longitude: 13.0,
-              timestamp: 1),
-        ]),
-        stats: const RideStats(
-            durationMs: 600000,
-            distanceMetres: 4200,
-            maxSpeedKmh: 22,
-            avgSpeedKmh: 15),
-        onDismiss: () {},
-      )));
-      final dialogMap = tester.state(find.byType(LiveMap));
+        await tester.pumpWidget(
+          _host(
+            RideDetailDialog(
+              rwt: RideWithTrackpoints(
+                ride: _ride(),
+                trackpoints: const [
+                  Trackpoint(
+                    trackpointId: 0,
+                    rideId: 1,
+                    latitude: 52.0,
+                    longitude: 13.0,
+                    timestamp: 0,
+                  ),
+                  Trackpoint(
+                    trackpointId: 1,
+                    rideId: 1,
+                    latitude: 52.02,
+                    longitude: 13.0,
+                    timestamp: 1,
+                  ),
+                ],
+              ),
+              stats: const RideStats(
+                durationMs: 600000,
+                distanceMetres: 4200,
+                maxSpeedKmh: 22,
+                avgSpeedKmh: 15,
+              ),
+              onDismiss: () {},
+            ),
+          ),
+        );
+        final dialogMap = tester.state(find.byType(LiveMap));
 
-      await tester.tap(find.byIcon(Icons.fullscreen));
-      await tester.pump();
-      expect(identical(tester.state(find.byType(LiveMap)), dialogMap), isTrue,
-          reason: 'fullscreen must reuse the dialog map');
+        await tester.tap(find.byIcon(Icons.fullscreen));
+        await tester.pump();
+        expect(
+          identical(tester.state(find.byType(LiveMap)), dialogMap),
+          isTrue,
+          reason: 'fullscreen must reuse the dialog map',
+        );
 
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pump();
-      expect(identical(tester.state(find.byType(LiveMap)), dialogMap), isTrue,
-          reason: 'closing fullscreen must keep the same map');
-    });
+        await tester.tap(find.byIcon(Icons.close));
+        await tester.pump();
+        expect(
+          identical(tester.state(find.byType(LiveMap)), dialogMap),
+          isTrue,
+          reason: 'closing fullscreen must keep the same map',
+        );
+      },
+    );
 
     testWidgets(
-        'a rebuild hands the map (dialog and fullscreen) the SAME points '
-        'list, so it does not re-push the route source (issue #42)',
-        (tester) async {
-      tester.view.physicalSize = const Size(400, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      'a rebuild hands the map (dialog and fullscreen) the SAME points '
+      'list, so it does not re-push the route source (issue #42)',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_host(RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-          Trackpoint(
-              trackpointId: 0,
-              rideId: 1,
-              latitude: 52.0,
-              longitude: 13.0,
-              timestamp: 0),
-          Trackpoint(
-              trackpointId: 1,
-              rideId: 1,
-              latitude: 52.02,
-              longitude: 13.0,
-              timestamp: 1),
-        ]),
-        stats: const RideStats(
-            durationMs: 600000,
-            distanceMetres: 4200,
-            maxSpeedKmh: 22,
-            avgSpeedKmh: 15),
-        onDismiss: () {},
-      )));
-      final before = tester.widget<LiveMap>(find.byType(LiveMap)).points;
+        await tester.pumpWidget(
+          _host(
+            RideDetailDialog(
+              rwt: RideWithTrackpoints(
+                ride: _ride(),
+                trackpoints: const [
+                  Trackpoint(
+                    trackpointId: 0,
+                    rideId: 1,
+                    latitude: 52.0,
+                    longitude: 13.0,
+                    timestamp: 0,
+                  ),
+                  Trackpoint(
+                    trackpointId: 1,
+                    rideId: 1,
+                    latitude: 52.02,
+                    longitude: 13.0,
+                    timestamp: 1,
+                  ),
+                ],
+              ),
+              stats: const RideStats(
+                durationMs: 600000,
+                distanceMetres: 4200,
+                maxSpeedKmh: 22,
+                avgSpeedKmh: 15,
+              ),
+              onDismiss: () {},
+            ),
+          ),
+        );
+        final before = tester.widget<LiveMap>(find.byType(LiveMap)).points;
 
-      tester.element(find.byType(RideDetailDialog)).markNeedsBuild();
-      await tester.pump();
+        tester.element(find.byType(RideDetailDialog)).markNeedsBuild();
+        await tester.pump();
 
-      final after = tester.widget<LiveMap>(find.byType(LiveMap)).points;
-      expect(identical(before, after), isTrue);
+        final after = tester.widget<LiveMap>(find.byType(LiveMap)).points;
+        expect(identical(before, after), isTrue);
 
-      // Fullscreen: same list as the dialog map, and stable across rebuilds.
-      await tester.tap(find.byIcon(Icons.fullscreen));
-      await tester.pump();
-      final fullscreen = tester.widget<LiveMap>(find.byType(LiveMap)).points;
-      expect(identical(before, fullscreen), isTrue);
+        // Fullscreen: same list as the dialog map, and stable across rebuilds.
+        await tester.tap(find.byIcon(Icons.fullscreen));
+        await tester.pump();
+        final fullscreen = tester.widget<LiveMap>(find.byType(LiveMap)).points;
+        expect(identical(before, fullscreen), isTrue);
 
-      tester.element(find.byType(RideDetailDialog)).markNeedsBuild();
-      await tester.pump();
-      expect(
+        tester.element(find.byType(RideDetailDialog)).markNeedsBuild();
+        await tester.pump();
+        expect(
           identical(
-              fullscreen, tester.widget<LiveMap>(find.byType(LiveMap)).points),
-          isTrue);
-    });
+            fullscreen,
+            tester.widget<LiveMap>(find.byType(LiveMap)).points,
+          ),
+          isTrue,
+        );
+      },
+    );
 
     for (final (brightness, palette) in [
       (Brightness.light, AppColors.light),
       (Brightness.dark, AppColors.dark),
     ]) {
-      testWidgets(
-          'fullscreen / close map buttons follow the theme '
+      testWidgets('fullscreen / close map buttons follow the theme '
           '(${brightness.name}), translucent over the map', (tester) async {
         tester.view.physicalSize = const Size(400, 900);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_host(
-          RideDetailDialog(
-            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const [
-              Trackpoint(
-                  trackpointId: 0,
-                  rideId: 1,
-                  latitude: 52.0,
-                  longitude: 13.0,
-                  timestamp: 0),
-              Trackpoint(
-                  trackpointId: 1,
-                  rideId: 1,
-                  latitude: 52.02,
-                  longitude: 13.0,
-                  timestamp: 1),
-            ]),
-            stats: const RideStats(
+        await tester.pumpWidget(
+          _host(
+            RideDetailDialog(
+              rwt: RideWithTrackpoints(
+                ride: _ride(),
+                trackpoints: const [
+                  Trackpoint(
+                    trackpointId: 0,
+                    rideId: 1,
+                    latitude: 52.0,
+                    longitude: 13.0,
+                    timestamp: 0,
+                  ),
+                  Trackpoint(
+                    trackpointId: 1,
+                    rideId: 1,
+                    latitude: 52.02,
+                    longitude: 13.0,
+                    timestamp: 1,
+                  ),
+                ],
+              ),
+              stats: const RideStats(
                 durationMs: 600000,
                 distanceMetres: 4200,
                 maxSpeedKmh: 22,
-                avgSpeedKmh: 15),
-            onDismiss: () {},
+                avgSpeedKmh: 15,
+              ),
+              onDismiss: () {},
+            ),
+            brightness: brightness,
           ),
-          brightness: brightness,
-        ));
+        );
 
         void expectThemed(IconData icon) {
           final button = find.byIcon(icon);
-          final face = tester.widget<Material>(find.ancestor(
+          final face = tester.widget<Material>(
+            find.ancestor(
               of: button,
               matching: find.byWidgetPredicate(
-                  (w) => w is Material && w.shape is CircleBorder)));
+                (w) => w is Material && w.shape is CircleBorder,
+              ),
+            ),
+          );
           // App-surface face like the live map's recenter button and compass —
           // but see-through, so it doesn't hide the map corner beneath it.
           expect(face.color!.withValues(alpha: 1), palette.surface);
@@ -614,23 +802,28 @@ void main() {
     }
   });
 
-  testWidgets('RideDetailDialog: German uses the decimal comma in its stats',
-      (tester) async {
+  testWidgets('RideDetailDialog: German uses the decimal comma in its stats', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(_host(
+    await tester.pumpWidget(
+      _host(
         RideDetailDialog(
           rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
           stats: const RideStats(
-              durationMs: 600000,
-              distanceMetres: 4200,
-              maxSpeedKmh: 22,
-              avgSpeedKmh: 15),
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15,
+          ),
           onDismiss: () {},
         ),
-        locale: const Locale('de')));
+        locale: const Locale('de'),
+      ),
+    );
     expect(find.text('4,20 km'), findsOneWidget);
     expect(find.text('22,0 km/h'), findsOneWidget);
     expect(find.text('15,0 km/h'), findsOneWidget);

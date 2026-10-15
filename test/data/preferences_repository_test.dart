@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<PreferencesRepository> build([Map<String, Object> initial = const {}]) async {
+  Future<PreferencesRepository> build([
+    Map<String, Object> initial = const {},
+  ]) async {
     SharedPreferences.setMockInitialValues(initial);
     return PreferencesRepository(await SharedPreferences.getInstance());
   }
@@ -41,12 +43,15 @@ void main() {
     expect(await future, ['system', 'light']);
   });
 
-  test('home stats period defaults to the week and persists a choice', () async {
-    final prefs = await build();
-    expect(await prefs.homeStatsPeriod.first, 'week');
-    await prefs.setHomeStatsPeriod('year');
-    expect(await prefs.homeStatsPeriod.first, 'year');
-  });
+  test(
+    'home stats period defaults to the week and persists a choice',
+    () async {
+      final prefs = await build();
+      expect(await prefs.homeStatsPeriod.first, 'week');
+      await prefs.setHomeStatsPeriod('year');
+      expect(await prefs.homeStatsPeriod.first, 'year');
+    },
+  );
 
   // Issue #75: a ride stopped from the notification waits here for the
   // in-app "Ride saved" hint — across a process restart.
@@ -55,7 +60,9 @@ void main() {
     expect(prefs.pendingRideDetailsNow, isNull);
     await prefs.setPendingRideDetails(7);
     expect(prefs.pendingRideDetailsNow, 7);
-    final reopened = PreferencesRepository(await SharedPreferences.getInstance());
+    final reopened = PreferencesRepository(
+      await SharedPreferences.getInstance(),
+    );
     expect(reopened.pendingRideDetailsNow, 7);
     await prefs.setPendingRideDetails(null);
     expect(prefs.pendingRideDetailsNow, isNull);

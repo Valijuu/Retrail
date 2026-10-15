@@ -39,29 +39,33 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final env = await buildHomeEnv(
-        initialPrefs: {'onboarding_done': true, ...prefs});
+      initialPrefs: {'onboarding_done': true, ...prefs},
+    );
     addTearDown(env.db.close);
     // Build the recording controller from env.db so only one AppDatabase
     // instance exists per test (avoids Drift's multiple-database warning).
     final recording = makeFakeRecording(env.db);
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(env.db),
-        preferencesRepositoryProvider.overrideWithValue(env.prefs),
-        // A stream, like the real ConnectivityObserver — Home must keep it
-        // subscribed so the Start tap sees the real value (issue #31: a bare
-        // read saw a paused provider and always assumed online).
-        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
-        if (tracking) isTrackingProvider.overrideWithValue(true),
-        ...activeRideTestOverrides(env.db, recording: recording),
-        ...homeStreamStubs(
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(env.db),
+          preferencesRepositoryProvider.overrideWithValue(env.prefs),
+          // A stream, like the real ConnectivityObserver — Home must keep it
+          // subscribed so the Start tap sees the real value (issue #31: a bare
+          // read saw a paused provider and always assumed online).
+          isOnlineProvider.overrideWith((ref) => Stream.value(online)),
+          if (tracking) isTrackingProvider.overrideWithValue(true),
+          ...activeRideTestOverrides(env.db, recording: recording),
+          ...homeStreamStubs(
             recent: recent,
             favorites: favorites,
             weekly: weekly,
-            yearly: yearly),
-      ],
-      child: const RetrailApp(),
-    ));
+            yearly: yearly,
+          ),
+        ],
+        child: const RetrailApp(),
+      ),
+    );
     await _settle(tester);
     return recording;
   }
@@ -74,8 +78,9 @@ void main() {
     expect(find.text('No favorites yet.'), findsOneWidget);
   });
 
-  testWidgets('renders ride cards and hero stats from populated data',
-      (tester) async {
+  testWidgets('renders ride cards and hero stats from populated data', (
+    tester,
+  ) async {
     await pumpHome(
       tester,
       recent: const [
@@ -100,51 +105,68 @@ void main() {
   });
 
   testWidgets(
-      'tapping "This year" switches the stat row to the year and remembers it',
-      (tester) async {
-    await pumpHome(
-      tester,
-      weekly: const WeeklyStats(
-          totalKm: 5, rideCount: 3, avgSpeedKmh: 0, totalDurationSeconds: 0),
-      yearly: const WeeklyStats(
-          totalKm: 50, rideCount: 42, avgSpeedKmh: 0, totalDurationSeconds: 0),
-    );
-    expect(find.text('3'), findsOneWidget); // week by default
+    'tapping "This year" switches the stat row to the year and remembers it',
+    (tester) async {
+      await pumpHome(
+        tester,
+        weekly: const WeeklyStats(
+          totalKm: 5,
+          rideCount: 3,
+          avgSpeedKmh: 0,
+          totalDurationSeconds: 0,
+        ),
+        yearly: const WeeklyStats(
+          totalKm: 50,
+          rideCount: 42,
+          avgSpeedKmh: 0,
+          totalDurationSeconds: 0,
+        ),
+      );
+      expect(find.text('3'), findsOneWidget); // week by default
 
-    await tester.tap(find.text('This year'));
-    await _settle(tester);
-    expect(find.text('42'), findsOneWidget);
-    expect(find.text('3'), findsNothing);
+      await tester.tap(find.text('This year'));
+      await _settle(tester);
+      expect(find.text('42'), findsOneWidget);
+      expect(find.text('3'), findsNothing);
 
-    final container =
-        ProviderScope.containerOf(tester.element(find.text('This year')));
-    final saved = await tester.runAsync(() => container
-        .read(preferencesRepositoryProvider)
-        .homeStatsPeriod
-        .first);
-    expect(saved, 'year');
-  });
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('This year')),
+      );
+      final saved = await tester.runAsync(
+        () =>
+            container.read(preferencesRepositoryProvider).homeStatsPeriod.first,
+      );
+      expect(saved, 'year');
+    },
+  );
 
   testWidgets('a remembered period is restored on launch', (tester) async {
     await pumpHome(
       tester,
       prefs: {'home_stats_period': 'year'},
       yearly: const WeeklyStats(
-          totalKm: 50, rideCount: 42, avgSpeedKmh: 0, totalDurationSeconds: 0),
+        totalKm: 50,
+        rideCount: 42,
+        avgSpeedKmh: 0,
+        totalDurationSeconds: 0,
+      ),
     );
     expect(find.text('42'), findsOneWidget);
   });
 
   testWidgets(
-      'Start tracking sits 16dp below the scrolling list, matching the gap '
-      'below it', (tester) async {
-    await pumpHome(tester);
-    final button = find.widgetWithText(FilledButton, 'Start tracking');
-    expect(
+    'Start tracking sits 16dp below the scrolling list, matching the gap '
+    'below it',
+    (tester) async {
+      await pumpHome(tester);
+      final button = find.widgetWithText(FilledButton, 'Start tracking');
+      expect(
         tester.getTopLeft(button).dy -
             tester.getBottomLeft(find.byType(ListView)).dy,
-        16);
-  });
+        16,
+      );
+    },
+  );
 
   testWidgets('Start tracking routes to the countdown timer', (tester) async {
     await pumpHome(tester);
@@ -153,27 +175,30 @@ void main() {
     expect(find.text('GET READY'), findsOneWidget);
   });
 
-  testWidgets(
-      'first Start after launch keeps the saved activity instead of '
+  testWidgets('first Start after launch keeps the saved activity instead of '
       'overwriting it with the default (issue #27)', (tester) async {
     await pumpHome(tester, prefs: {'last_activity_type': 'OTHER'});
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
 
     expect(find.text('Other'), findsOneWidget); // countdown activity chip
-    final container =
-        ProviderScope.containerOf(tester.element(find.text('GET READY')));
-    expect(container.read(rideTrackerProvider).state.activityType,
-        ActivityType.other);
-    final saved = await tester.runAsync(() => container
-        .read(preferencesRepositoryProvider)
-        .lastActivityType
-        .first);
+    final container = ProviderScope.containerOf(
+      tester.element(find.text('GET READY')),
+    );
+    expect(
+      container.read(rideTrackerProvider).state.activityType,
+      ActivityType.other,
+    );
+    final saved = await tester.runAsync(
+      () =>
+          container.read(preferencesRepositoryProvider).lastActivityType.first,
+    );
     expect(saved, 'OTHER');
   });
 
-  testWidgets('Start tracking requests permission before the countdown',
-      (tester) async {
+  testWidgets('Start tracking requests permission before the countdown', (
+    tester,
+  ) async {
     final recording = await pumpHome(tester);
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
@@ -182,8 +207,9 @@ void main() {
     expect(find.text('GET READY'), findsOneWidget);
   });
 
-  testWidgets('blocked permission shows the rationale and does not navigate',
-      (tester) async {
+  testWidgets('blocked permission shows the rationale and does not navigate', (
+    tester,
+  ) async {
     final recording = await pumpHome(tester);
     recording.prepareResult = LocationStartAction.showRationale;
     await tester.tap(find.text('Start tracking'));
@@ -193,14 +219,18 @@ void main() {
     expect(find.text('GET READY'), findsNothing); // never reached the countdown
   });
 
-  testWidgets('offline Start still gates permission before the countdown',
-      (tester) async {
+  testWidgets('offline Start still gates permission before the countdown', (
+    tester,
+  ) async {
     // Offline funnels through the same gate (recording needs location even with
     // no tiles); the offline confirm must not skip the prompt.
     final recording = await pumpHome(tester, online: false);
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
-    expect(find.text("You're offline"), findsOneWidget); // offline confirm first
+    expect(
+      find.text("You're offline"),
+      findsOneWidget,
+    ); // offline confirm first
     await tester.tap(find.text('Start anyway'));
     await _settle(tester);
     expect(recording.calls, contains('prepare'));
@@ -208,22 +238,29 @@ void main() {
   });
 
   testWidgets(
-      'offline confirm uses the stacked full-width buttons of the location '
-      'dialog — primary on top, no shrink-to-fit', (tester) async {
-    await pumpHome(tester, online: false);
-    await tester.tap(find.text('Start tracking'));
-    await _settle(tester);
+    'offline confirm uses the stacked full-width buttons of the location '
+    'dialog — primary on top, no shrink-to-fit',
+    (tester) async {
+      await pumpHome(tester, online: false);
+      await tester.tap(find.text('Start tracking'));
+      await _settle(tester);
 
-    final primary = find.widgetWithText(FilledButton, 'Start anyway');
-    final secondary = find.widgetWithText(TextButton, 'Skip');
-    expect(tester.getSize(primary).width, tester.getSize(secondary).width);
-    expect(tester.getTopLeft(primary).dy,
-        lessThan(tester.getTopLeft(secondary).dy));
-    expect(
+      final primary = find.widgetWithText(FilledButton, 'Start anyway');
+      final secondary = find.widgetWithText(TextButton, 'Skip');
+      expect(tester.getSize(primary).width, tester.getSize(secondary).width);
+      expect(
+        tester.getTopLeft(primary).dy,
+        lessThan(tester.getTopLeft(secondary).dy),
+      );
+      expect(
         find.descendant(
-            of: find.byType(AlertDialog), matching: find.byType(FittedBox)),
-        findsNothing);
-  });
+          of: find.byType(AlertDialog),
+          matching: find.byType(FittedBox),
+        ),
+        findsNothing,
+      );
+    },
+  );
 
   testWidgets('reopens the active ride when already tracking', (tester) async {
     await pumpHome(tester, tracking: true);
@@ -232,31 +269,41 @@ void main() {
     expect(find.text('Retrail ride'), findsOneWidget);
   });
 
-  testWidgets('reopening an active ride keeps its followed reference',
-      (tester) async {
+  testWidgets('reopening an active ride keeps its followed reference', (
+    tester,
+  ) async {
     await pumpHome(tester, tracking: true);
-    final container =
-        ProviderScope.containerOf(tester.element(find.text('Start tracking')));
-    container.read(routeFollowProvider.notifier).start(
-        reference: const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)],
-        recording: true);
+    final container = ProviderScope.containerOf(
+      tester.element(find.text('Start tracking')),
+    );
+    container
+        .read(routeFollowProvider.notifier)
+        .start(
+          reference: const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)],
+          recording: true,
+        );
     await tester.tap(find.text('Start tracking'));
     await _settle(tester);
     expect(container.read(routeFollowProvider), isNotNull);
   });
 
   testWidgets(
-      'Start clears a reference left over from an abandoned follow start',
-      (tester) async {
-    await pumpHome(tester);
-    final container =
-        ProviderScope.containerOf(tester.element(find.text('Start tracking')));
-    container.read(routeFollowProvider.notifier).start(
-        reference: const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)],
-        recording: true);
-    await tester.tap(find.text('Start tracking'));
-    await _settle(tester);
-    expect(find.text('GET READY'), findsOneWidget);
-    expect(container.read(routeFollowProvider), isNull);
-  });
+    'Start clears a reference left over from an abandoned follow start',
+    (tester) async {
+      await pumpHome(tester);
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Start tracking')),
+      );
+      container
+          .read(routeFollowProvider.notifier)
+          .start(
+            reference: const [(lat: 48.0, lng: 11.0), (lat: 48.001, lng: 11.0)],
+            recording: true,
+          );
+      await tester.tap(find.text('Start tracking'));
+      await _settle(tester);
+      expect(find.text('GET READY'), findsOneWidget);
+      expect(container.read(routeFollowProvider), isNull);
+    },
+  );
 }

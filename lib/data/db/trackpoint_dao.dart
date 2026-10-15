@@ -7,7 +7,8 @@ part 'trackpoint_dao.g.dart';
 
 /// Drift port of the original Room `TrackPointDao`.
 @DriftAccessor(tables: [Trackpoints])
-class TrackpointDao extends DatabaseAccessor<AppDatabase> with _$TrackpointDaoMixin {
+class TrackpointDao extends DatabaseAccessor<AppDatabase>
+    with _$TrackpointDaoMixin {
   TrackpointDao(super.db);
 
   /// A single ride's trackpoints, indexed via `trackpoints_ride_id`. Used to

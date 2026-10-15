@@ -38,8 +38,10 @@ void main() {
         (lat: 49.4450, lng: 11.1050),
       ];
       final framing = computeFraming(points, widthDp, heightDp);
-      final center =
-          (lat: (49.4400 + 49.4450) / 2.0, lng: (11.0800 + 11.1050) / 2.0);
+      final center = (
+        lat: (49.4400 + 49.4450) / 2.0,
+        lng: (11.0800 + 11.1050) / 2.0,
+      );
       final o = projectPoint(center, framing);
       expect(o.x, closeTo(widthDp / 2, 0.5));
       expect(o.y, closeTo(heightDp / 2, 0.5));
@@ -102,12 +104,13 @@ void main() {
     });
 
     test('cache decode width matches the render width at that pixel ratio', () {
-      expect(previewImageCacheWidth,
-          (previewRenderWidthDp * previewPixelRatio).round());
+      expect(
+        previewImageCacheWidth,
+        (previewRenderWidthDp * previewPixelRatio).round(),
+      );
     });
 
-    test(
-        'the remaining upscale on a large full-bleed card at a typical '
+    test('the remaining upscale on a large full-bleed card at a typical '
         'high-density ratio stays within an imperceptible range', () {
       // 411dp (this file's test slot width) x a common 3.0 device ratio: the
       // largest realistic gap between rendered and displayed resolution.

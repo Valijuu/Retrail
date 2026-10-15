@@ -26,9 +26,12 @@ void main() {
   late bool throwing;
   late int nowMs;
 
-  LiveActivityService service() =>
-      LiveActivityService(liveActivityChannel, () => _copy, _accents,
-          now: () => nowMs);
+  LiveActivityService service() => LiveActivityService(
+    liveActivityChannel,
+    () => _copy,
+    _accents,
+    now: () => nowMs,
+  );
 
   setUp(() {
     calls = [];
@@ -47,43 +50,50 @@ void main() {
 
   List<String> methods() => calls.map((c) => c.method).toList();
 
-  test('start sends attributes (labels + ARGB accents) and initial content',
-      () async {
-    await service().start();
+  test(
+    'start sends attributes (labels + ARGB accents) and initial content',
+    () async {
+      await service().start();
 
-    expect(methods(), ['isSupported', 'start']);
-    expect(calls.last.arguments, {
-      'attributes': {
-        'pauseLabel': 'Pause',
-        'resumeLabel': 'Resume',
-        'stopLabel': 'Stop',
-        'accentLight': 0xFFB45309,
-        'accentDark': 0xFFF59E42,
-      },
-      'content': {
-        'title': 'Recording ride',
-        'distanceText': '0.00 km',
-        'isPaused': false,
-        'elapsedSeconds': 0,
-        'snapshotEpochMs': _t0,
-      },
-    });
-  });
+      expect(methods(), ['isSupported', 'start']);
+      expect(calls.last.arguments, {
+        'attributes': {
+          'pauseLabel': 'Pause',
+          'resumeLabel': 'Resume',
+          'stopLabel': 'Stop',
+          'accentLight': 0xFFB45309,
+          'accentDark': 0xFFF59E42,
+        },
+        'content': {
+          'title': 'Recording ride',
+          'distanceText': '0.00 km',
+          'isPaused': false,
+          'elapsedSeconds': 0,
+          'snapshotEpochMs': _t0,
+        },
+      });
+    },
+  );
 
-  test('unsupported → start/update/stop send nothing beyond the check',
-      () async {
-    supported = false;
-    final s = service();
-    await s.start();
-    await s.update(isPaused: false, elapsedSeconds: 5, distanceMetres: 500);
-    await s.stop();
+  test(
+    'unsupported → start/update/stop send nothing beyond the check',
+    () async {
+      supported = false;
+      final s = service();
+      await s.start();
+      await s.update(isPaused: false, elapsedSeconds: 5, distanceMetres: 500);
+      await s.stop();
 
-    expect(methods(), ['isSupported']);
-  });
+      expect(methods(), ['isSupported']);
+    },
+  );
 
   test('update before start sends nothing', () async {
-    await service()
-        .update(isPaused: false, elapsedSeconds: 5, distanceMetres: 500);
+    await service().update(
+      isPaused: false,
+      elapsedSeconds: 5,
+      distanceMetres: 500,
+    );
     expect(calls, isEmpty);
   });
 
@@ -137,8 +147,9 @@ void main() {
     final s = service();
     await expectLater(s.start(), completes);
     await expectLater(
-        s.update(isPaused: false, elapsedSeconds: 1, distanceMetres: 100),
-        completes);
+      s.update(isPaused: false, elapsedSeconds: 1, distanceMetres: 100),
+      completes,
+    );
     await expectLater(s.stop(), completes);
   });
 
@@ -156,8 +167,7 @@ void main() {
     expect(calls, isEmpty);
   });
 
-  test(
-      'a failed start is retried on a later update (e.g. phone was locked '
+  test('a failed start is retried on a later update (e.g. phone was locked '
       'when the ride began), throttled to once per 30 s', () async {
     var failStart = true;
     messenger.setMockMethodCallHandler(liveActivityChannel, (call) async {
@@ -215,11 +225,13 @@ void main() {
     await expectLater(service().start(), completes);
   });
 
-  test('ensureNotificationPermission → true (Live Activities need none)',
-      () async {
-    expect(await service().ensureNotificationPermission(), isTrue);
-    expect(calls, isEmpty);
-  });
+  test(
+    'ensureNotificationPermission → true (Live Activities need none)',
+    () async {
+      expect(await service().ensureNotificationPermission(), isTrue);
+      expect(calls, isEmpty);
+    },
+  );
 
   test('incoming action calls reach the listener with their id', () async {
     final received = <String>[];
@@ -227,8 +239,9 @@ void main() {
 
     await messenger.handlePlatformMessage(
       liveActivityChannel.name,
-      liveActivityChannel.codec
-          .encodeMethodCall(const MethodCall('action', 'ride_pause')),
+      liveActivityChannel.codec.encodeMethodCall(
+        const MethodCall('action', 'ride_pause'),
+      ),
       (_) {},
     );
     expect(received, ['ride_pause']);

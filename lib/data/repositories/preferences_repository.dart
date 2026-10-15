@@ -62,7 +62,8 @@ class PreferencesRepository {
 
   /// Period the Home hero card's stat row shows: `week` | `day` | `year`.
   Stream<String> get homeStatsPeriod => _watch(
-      () => _prefs.getString(_kHomeStatsPeriod) ?? defaultHomeStatsPeriod);
+    () => _prefs.getString(_kHomeStatsPeriod) ?? defaultHomeStatsPeriod,
+  );
 
   Future<void> setHomeStatsPeriod(String period) async {
     await _prefs.setString(_kHomeStatsPeriod, period);

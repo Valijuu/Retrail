@@ -110,7 +110,10 @@ class ForegroundTaskService implements RideForegroundService {
       serviceTypes: const [ForegroundServiceTypes.location],
       notificationTitle: c.recordingTitle,
       notificationText: notificationBody(
-          elapsedSeconds: 0, distanceMetres: 0, locale: c.locale),
+        elapsedSeconds: 0,
+        distanceMetres: 0,
+        locale: c.locale,
+      ),
       notificationButtons: _buttons(isPaused: false, copy: c),
       callback: startRideTaskCallback,
     );
@@ -127,9 +130,10 @@ class ForegroundTaskService implements RideForegroundService {
     await FlutterForegroundTask.updateService(
       notificationTitle: isPaused ? c.pausedTitle : c.recordingTitle,
       notificationText: notificationBody(
-          elapsedSeconds: elapsedSeconds,
-          distanceMetres: distanceMetres,
-          locale: c.locale),
+        elapsedSeconds: elapsedSeconds,
+        distanceMetres: distanceMetres,
+        locale: c.locale,
+      ),
       notificationButtons: _buttons(isPaused: isPaused, copy: c),
     );
   }
@@ -155,12 +159,11 @@ class ForegroundTaskService implements RideForegroundService {
   static List<NotificationButton> _buttons({
     required bool isPaused,
     required RideNotificationCopy copy,
-  }) =>
-      [
-        if (isPaused)
-          NotificationButton(id: RideNotificationIds.resume, text: copy.resume)
-        else
-          NotificationButton(id: RideNotificationIds.pause, text: copy.pause),
-        NotificationButton(id: RideNotificationIds.stop, text: copy.stop),
-      ];
+  }) => [
+    if (isPaused)
+      NotificationButton(id: RideNotificationIds.resume, text: copy.resume)
+    else
+      NotificationButton(id: RideNotificationIds.pause, text: copy.pause),
+    NotificationButton(id: RideNotificationIds.stop, text: copy.stop),
+  ];
 }

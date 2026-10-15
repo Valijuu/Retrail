@@ -14,8 +14,12 @@ import '../core/theme/theme_context.dart';
 /// is up. Mirrors the original `RouteSketch` scaling. [inset] keeps the
 /// route that far from every edge, so endpoint markers drawn on it aren't
 /// clipped by the box.
-List<PreviewOffset> sketchOffsets(List<RoutePoint> points, double boxW,
-    double boxH, {double inset = 0}) {
+List<PreviewOffset> sketchOffsets(
+  List<RoutePoint> points,
+  double boxW,
+  double boxH, {
+  double inset = 0,
+}) {
   if (points.isEmpty) return const [];
   final w = boxW - 2 * inset;
   final h = boxH - 2 * inset;
@@ -28,8 +32,10 @@ List<PreviewOffset> sketchOffsets(List<RoutePoint> points, double boxW,
   // The floor only bounds the SCALE for a degenerate extent (a single point,
   // a due N–S / E–W line); centring uses the real extent, otherwise such a
   // route was pinned to the box's top/left edge (issue #31).
-  final scale = math.min(w / math.max(maxLng - minLng, 0.0001),
-      h / math.max(maxLat - minLat, 0.0001));
+  final scale = math.min(
+    w / math.max(maxLng - minLng, 0.0001),
+    h / math.max(maxLat - minLat, 0.0001),
+  );
   final padX = inset + (w - (maxLng - minLng) * scale) / 2;
   final padY = inset + (h - (maxLat - minLat) * scale) / 2;
   return [
@@ -55,8 +61,9 @@ class RouteSketch extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return CustomPaint(
-        painter: _RouteSketchPainter(points, colors, camera),
-        size: Size.infinite);
+      painter: _RouteSketchPainter(points, colors, camera),
+      size: Size.infinite,
+    );
   }
 }
 
@@ -80,24 +87,37 @@ class _RouteSketchPainter extends CustomPainter {
     if (points.isEmpty || (points.length < 2 && cam == null)) return;
     final offsets = cam != null
         ? cameraOffsets(points, cam, width: size.width, height: size.height)
-        : sketchOffsets(points, size.width, size.height,
-            inset: routeMarkerInset);
+        : sketchOffsets(
+            points,
+            size.width,
+            size.height,
+            inset: routeMarkerInset,
+          );
     if (offsets.length >= 2) {
       final path = Path()..moveTo(offsets.first.x, offsets.first.y);
       for (final o in offsets.skip(1)) {
         path.lineTo(o.x, o.y);
       }
-      canvas.drawPath(path,
-          _stroke(colors.routeLineHalo, cam != null ? _mapHaloWidth : 6));
-      canvas.drawPath(path,
-          _stroke(colors.routeLineBlue, cam != null ? _mapLineWidth : 3.5));
+      canvas.drawPath(
+        path,
+        _stroke(colors.routeLineHalo, cam != null ? _mapHaloWidth : 6),
+      );
+      canvas.drawPath(
+        path,
+        _stroke(colors.routeLineBlue, cam != null ? _mapLineWidth : 3.5),
+      );
     }
     // With a camera the sketch stands in for the map: its markers at the map's
     // size, and no arrows — MapLibre places its own along the line, which a
     // canvas can't match, so a second set would show through the fade.
-    paintRouteDecorations(canvas, offsets, routeEndpointStyle(points), colors,
-        arrows: cam == null,
-        markerScale: cam != null ? mapEndpointMarkerScale : 1);
+    paintRouteDecorations(
+      canvas,
+      offsets,
+      routeEndpointStyle(points),
+      colors,
+      arrows: cam == null,
+      markerScale: cam != null ? mapEndpointMarkerScale : 1,
+    );
   }
 
   Paint _stroke(Color color, double width) => Paint()

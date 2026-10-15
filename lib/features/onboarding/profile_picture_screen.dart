@@ -39,12 +39,16 @@ class ProfilePictureScreen extends ConsumerWidget {
                     ? l10n.profilePictureGreetingNamed(name)
                     : l10n.profilePictureGreetingAnon,
                 textAlign: TextAlign.center,
-                style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w500),
+                style: text.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 12),
-              Text(l10n.profilePictureSubtitle,
-                  textAlign: TextAlign.center,
-                  style: text.bodyLarge?.copyWith(color: colors.onSurfaceVariant)),
+              Text(
+                l10n.profilePictureSubtitle,
+                textAlign: TextAlign.center,
+                style: text.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
+              ),
               const SizedBox(height: 32),
               Center(child: ProfileAvatar(photoPath: current)),
               const SizedBox(height: 28),

@@ -73,19 +73,27 @@ void main() {
 
   /// [_pbf] painted the way the provider paints a z14 tile, with [zoom] for
   /// the style and [painter] for labels.
-  Future<List<int>> reference(double zoom, vtr.TextPainterProvider painter,
-) async {
+  Future<List<int>> reference(
+    double zoom,
+    vtr.TextPainterProvider painter,
+  ) async {
     final style = previewStyle(
-        jsonDecode(await _asset(kRetrailLightStyleAsset)) as Map<String, dynamic>);
+      jsonDecode(await _asset(kRetrailLightStyleAsset)) as Map<String, dynamic>,
+    );
     final theme = vtr.ThemeReader().read(style);
-    final tile = vtr.TileFactory(theme, const vtr.Logger.noop())
-        .createTileData(vtr.VectorTileReader().read(_pbf))
-        .toTile();
+    final tile = vtr.TileFactory(
+      theme,
+      const vtr.Logger.noop(),
+    ).createTileData(vtr.VectorTileReader().read(_pbf)).toTile();
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder)..scale(3);
-    vtr.Renderer(theme: theme, painterProvider: painter).render(canvas,
-        vtr.TileSource(tileset: vtr.Tileset({kOpenFreeMapSource: tile})),
-        zoomScaleFactor: 1, zoom: zoom, rotation: 0);
+    vtr.Renderer(theme: theme, painterProvider: painter).render(
+      canvas,
+      vtr.TileSource(tileset: vtr.Tileset({kOpenFreeMapSource: tile})),
+      zoomScaleFactor: 1,
+      zoom: zoom,
+      rotation: 0,
+    );
     final image = await recorder.endRecording().toImage(768, 768);
     final bytes = await image.toByteData();
     image.dispose();
@@ -94,8 +102,9 @@ void main() {
 
   Future<List<int>> providerTile() async {
     final server = _Server();
-    final image =
-        await provider(server).tile(14, 8675, 5426, ui.Brightness.light);
+    final image = await provider(
+      server,
+    ).tile(14, 8675, 5426, ui.Brightness.light);
     final bytes = (await image!.toByteData())!.buffer.asUint8List();
     image.dispose();
     return bytes;
@@ -106,7 +115,12 @@ void main() {
     // width — on a dark map they show as jagged spikes around the letters.
     const color = ui.Color(0xFF1F1F1F);
     final diagonal = [
-      for (final (dx, dy) in [(-1.5, -1.5), (1.5, 1.5), (1.5, -1.5), (-1.5, 1.5)])
+      for (final (dx, dy) in [
+        (-1.5, -1.5),
+        (1.5, 1.5),
+        (1.5, -1.5),
+        (-1.5, 1.5),
+      ])
         ui.Shadow(offset: ui.Offset(dx, dy), blurRadius: 1.5, color: color),
     ];
 
@@ -128,14 +142,16 @@ void main() {
 
   const scaled = PreviewTextPainterProvider(kPreviewLabelScale);
 
-  test('styles a tile one zoom level below its grid zoom: MapLibre styles '
-      'assume 512 px tiles, the preview grid is 256 dp, so line widths and '
-      'label sizes match the live map instead of looking a level too big',
-      () async {
-    final bytes = await providerTile();
-    expect(bytes, isNot(equals(await reference(14, scaled))));
-    expect(bytes, equals(await reference(13, scaled)));
-  });
+  test(
+    'styles a tile one zoom level below its grid zoom: MapLibre styles '
+    'assume 512 px tiles, the preview grid is 256 dp, so line widths and '
+    'label sizes match the live map instead of looking a level too big',
+    () async {
+      final bytes = await providerTile();
+      expect(bytes, isNot(equals(await reference(14, scaled))));
+      expect(bytes, equals(await reference(13, scaled)));
+    },
+  );
 
   group('PreviewTextPainterProvider', () {
     final symbol = vtr.StyledSymbol(
@@ -155,8 +171,9 @@ void main() {
     test('lays labels out at kPreviewLabelScale of the style size: the small '
         'preview is shown stretched across the card', () {
       expect(kPreviewLabelScale, lessThan(1));
-      final scaled = const PreviewTextPainterProvider(kPreviewLabelScale)
-          .provide(symbol);
+      final scaled = const PreviewTextPainterProvider(
+        kPreviewLabelScale,
+      ).provide(symbol);
       final full = const vtr.DefaultTextPainterProvider().provide(symbol);
       expect(scaled.width, closeTo(full.width * kPreviewLabelScale, 1));
       expect(scaled.height, closeTo(full.height * kPreviewLabelScale, 1));
@@ -164,8 +181,9 @@ void main() {
 
     test('gives labels the centred halo (previewHalo), not vtr\'s diagonal '
         'copies', () {
-      final painter = const PreviewTextPainterProvider(kPreviewLabelScale)
-          .provide(symbol);
+      final painter = const PreviewTextPainterProvider(
+        kPreviewLabelScale,
+      ).provide(symbol);
       final shadows = (painter.text! as TextSpan).style!.shadows!;
       expect(shadows, isNotEmpty);
       expect(shadows.every((s) => s.offset == ui.Offset.zero), isTrue);

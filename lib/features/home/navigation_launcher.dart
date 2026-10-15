@@ -12,9 +12,12 @@ enum NavigationApp { system, appleMaps, googleMaps, waze }
 Uri navigationUri(NavigationApp app, double lat, double lng, String label) =>
     switch (app) {
       NavigationApp.system => Uri.parse(
-          'geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(label)})'),
-      NavigationApp.appleMaps =>
-        Uri.https('maps.apple.com', '/', {'ll': '$lat,$lng', 'q': label}),
+        'geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(label)})',
+      ),
+      NavigationApp.appleMaps => Uri.https('maps.apple.com', '/', {
+        'll': '$lat,$lng',
+        'q': label,
+      }),
       // Parsed from a literal string: both apps ignore the point unless it is
       // the `scheme://?…` form with an unencoded comma, which Uri() won't emit.
       NavigationApp.googleMaps => Uri.parse('comgooglemaps://?daddr=$lat,$lng'),
@@ -55,11 +58,18 @@ class UrlNavigationLauncher implements NavigationLauncher {
 
   @override
   Future<void> launch(
-      NavigationApp app, double lat, double lng, String label) async {
-    await launchUrl(navigationUri(app, lat, lng, label),
-        mode: LaunchMode.externalApplication);
+    NavigationApp app,
+    double lat,
+    double lng,
+    String label,
+  ) async {
+    await launchUrl(
+      navigationUri(app, lat, lng, label),
+      mode: LaunchMode.externalApplication,
+    );
   }
 }
 
-final navigationLauncherProvider =
-    Provider<NavigationLauncher>((ref) => const UrlNavigationLauncher());
+final navigationLauncherProvider = Provider<NavigationLauncher>(
+  (ref) => const UrlNavigationLauncher(),
+);

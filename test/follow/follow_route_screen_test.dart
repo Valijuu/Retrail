@@ -20,12 +20,16 @@ import '../support/live_map_stub.dart';
 class FakeNavigationLauncher implements NavigationLauncher {
   final launches = <(double, double, String)>[];
   @override
-  Future<List<NavigationApp>> availableApps() async =>
-      const [NavigationApp.system];
+  Future<List<NavigationApp>> availableApps() async => const [
+    NavigationApp.system,
+  ];
   @override
   Future<void> launch(
-          NavigationApp app, double lat, double lng, String label) async =>
-      launches.add((lat, lng, label));
+    NavigationApp app,
+    double lat,
+    double lng,
+    String label,
+  ) async => launches.add((lat, lng, label));
 }
 
 class _FakeFollow extends RouteFollowNotifier {
@@ -44,77 +48,100 @@ class _FakeFollow extends RouteFollowNotifier {
     calls.add('pauseFor');
     pausedFor = track;
   }
+
   @override
   void stop() {
     calls.add('stop');
     state = null;
   }
+
   @override
   void flipDirection() => calls.add('flip');
   void emit(RouteFollowState s) => state = s;
 }
 
-RouteFollowState _state({String? title = 'Rhein', RouteProgress? progress,
-        bool locationOn = true,
-        // Decided by default, so progress shows as is; undecided tests opt in.
-        FollowDirection direction = FollowDirection.forward,
-        RouteTrack? orientedTrack,
-        List<List<({double lat, double lng})>> ridden = const [],
-        FollowReverseNotice? reverseNotice}) =>
-    RouteFollowState(
-      track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
-      recording: false,
-      rideTitle: title,
-      progress: progress,
-      locationServiceEnabled: locationOn,
-      direction: direction,
-      orientedTrack: orientedTrack,
-      ridden: ridden,
-      reverseNotice: reverseNotice,
-    );
+RouteFollowState _state({
+  String? title = 'Rhein',
+  RouteProgress? progress,
+  bool locationOn = true,
+  // Decided by default, so progress shows as is; undecided tests opt in.
+  FollowDirection direction = FollowDirection.forward,
+  RouteTrack? orientedTrack,
+  List<List<({double lat, double lng})>> ridden = const [],
+  FollowReverseNotice? reverseNotice,
+}) => RouteFollowState(
+  track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
+  recording: false,
+  rideTitle: title,
+  progress: progress,
+  locationServiceEnabled: locationOn,
+  direction: direction,
+  orientedTrack: orientedTrack,
+  ridden: ridden,
+  reverseNotice: reverseNotice,
+);
 
-RouteProgress _p({bool joined = true, bool off = false, double offset = 2,
-        double remaining = 812, bool finished = false}) =>
-    RouteProgress(alongM: 300, remainingM: remaining, offsetM: offset,
-        isOffRoute: off, isFinished: finished, hasJoined: joined);
+RouteProgress _p({
+  bool joined = true,
+  bool off = false,
+  double offset = 2,
+  double remaining = 812,
+  bool finished = false,
+}) => RouteProgress(
+  alongM: 300,
+  remainingM: remaining,
+  offsetM: offset,
+  isOffRoute: off,
+  isFinished: finished,
+  hasJoined: joined,
+);
 
 void main() {
   useStubLiveMap();
   late _FakeFollow follow;
   late FakeNavigationLauncher launcher;
 
-  Future<void> pump(WidgetTester tester, RouteFollowState? s,
-      {bool online = true, Size size = const Size(400, 900),
-      Locale? locale}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    RouteFollowState? s, {
+    bool online = true,
+    Size size = const Size(400, 900),
+    Locale? locale,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     follow = _FakeFollow(s);
     launcher = FakeNavigationLauncher();
-    final router = GoRouter(initialLocation: '/follow', routes: [
-      GoRoute(path: '/', builder: (c, s) => const Text('HOME')),
-      GoRoute(path: '/follow', builder: (c, s) => const FollowRouteScreen()),
-    ]);
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        routeFollowProvider.overrideWith(() => follow),
-        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
-        navigationLauncherProvider.overrideWithValue(launcher),
+    final router = GoRouter(
+      initialLocation: '/follow',
+      routes: [
+        GoRoute(path: '/', builder: (c, s) => const Text('HOME')),
+        GoRoute(path: '/follow', builder: (c, s) => const FollowRouteScreen()),
       ],
-      child: MaterialApp.router(
-        theme: buildTheme(Brightness.light),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          routeFollowProvider.overrideWith(() => follow),
+          isOnlineProvider.overrideWith((ref) => Stream.value(online)),
+          navigationLauncherProvider.overrideWithValue(launcher),
         ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: locale,
-        routerConfig: router,
+        child: MaterialApp.router(
+          theme: buildTheme(Brightness.light),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: locale,
+          routerConfig: router,
+        ),
       ),
-    ));
+    );
     await tester.pump();
   }
 
@@ -126,18 +153,25 @@ void main() {
     expect(follow.calls, contains('resume'));
   });
 
-  testWidgets('light theme: light status bar icons over the dark header (#66)',
-      (tester) async {
-    await pump(tester, _state(progress: _p()));
-    expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
-    expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
-  });
+  testWidgets(
+    'light theme: light status bar icons over the dark header (#66)',
+    (tester) async {
+      await pump(tester, _state(progress: _p()));
+      expect(
+        SystemChrome.latestStyle?.statusBarIconBrightness,
+        Brightness.light,
+      );
+      expect(SystemChrome.latestStyle?.statusBarBrightness, Brightness.dark);
+    },
+  );
 
-  testWidgets('before the first fix: the remaining line shows the route length',
-      (tester) async {
-    await pump(tester, _state());
-    expect(find.text('1.11 km to go'), findsOneWidget);
-  });
+  testWidgets(
+    'before the first fix: the remaining line shows the route length',
+    (tester) async {
+      await pump(tester, _state());
+      expect(find.text('1.11 km to go'), findsOneWidget);
+    },
+  );
 
   testWidgets('no ride title line when the ride has none', (tester) async {
     await pump(tester, _state(title: null, progress: _p()));
@@ -172,9 +206,13 @@ void main() {
     expect(find.text('End following?'), findsOneWidget);
   });
 
-  testWidgets('not on the route yet: banner + Navigate to start',
-      (tester) async {
-    await pump(tester, _state(progress: _p(joined: false, off: true, offset: 250)));
+  testWidgets('not on the route yet: banner + Navigate to start', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      _state(progress: _p(joined: false, off: true, offset: 250)),
+    );
     expect(find.text('250 m to the route'), findsOneWidget);
     await tester.tap(find.text('Navigate to start'));
     await tester.pump();
@@ -182,10 +220,13 @@ void main() {
     expect(launcher.launches.first.$3, 'Rhein');
   });
 
-  testWidgets('a blank ride title navigates with the "Follow route" label',
-      (tester) async {
-    await pump(tester,
-        _state(title: '   ', progress: _p(joined: false, off: true, offset: 250)));
+  testWidgets('a blank ride title navigates with the "Follow route" label', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      _state(title: '   ', progress: _p(joined: false, off: true, offset: 250)),
+    );
     await tester.tap(find.text('Navigate to start'));
     await tester.pump();
     expect(launcher.launches.first.$3, 'Follow route');
@@ -201,8 +242,9 @@ void main() {
     expect(find.text('Finish reached'), findsOneWidget);
   });
 
-  testWidgets('app backgrounded pauses the feed, foreground resumes it',
-      (tester) async {
+  testWidgets('app backgrounded pauses the feed, foreground resumes it', (
+    tester,
+  ) async {
     await pump(tester, _state(progress: _p()));
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await tester.pump();
@@ -219,8 +261,9 @@ void main() {
     expect(follow.calls, isNot(contains('pause')));
   });
 
-  testWidgets('leaving the screen pauses only its own session\'s feed (#50)',
-      (tester) async {
+  testWidgets('leaving the screen pauses only its own session\'s feed (#50)', (
+    tester,
+  ) async {
     final session = _state(progress: _p());
     await pump(tester, session);
     await tester.pumpWidget(const SizedBox());
@@ -231,15 +274,20 @@ void main() {
   testWidgets('offline shows the map offline banner', (tester) async {
     await pump(tester, _state(progress: _p()), online: false);
     await tester.pump();
-    expect(find.text('Offline — map tiles may not be available'), findsOneWidget);
+    expect(
+      find.text('Offline — map tiles may not be available'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('location off shows the follow location banner', (tester) async {
     await pump(tester, _state(progress: _p(), locationOn: false));
     expect(
-        find.text(
-            "Location is off — your position can't be shown. Tap to turn it on."),
-        findsOneWidget);
+      find.text(
+        "Location is off — your position can't be shown. Tap to turn it on.",
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('without a reference it goes home', (tester) async {
@@ -250,8 +298,9 @@ void main() {
     expect(follow.calls, isNot(contains('pauseFor')));
   });
 
-  testWidgets('leaving keeps the follow chrome until the route changes',
-      (tester) async {
+  testWidgets('leaving keeps the follow chrome until the route changes', (
+    tester,
+  ) async {
     await pump(tester, _state(progress: _p()));
     await tester.tap(find.text('End'));
     await tester.pumpAndSettle();
@@ -261,8 +310,10 @@ void main() {
   });
 
   testWidgets('reversed: the remaining text says so', (tester) async {
-    await pump(tester,
-        _state(progress: _p(), direction: FollowDirection.reverse));
+    await pump(
+      tester,
+      _state(progress: _p(), direction: FollowDirection.reverse),
+    );
     expect(find.text('0.81 km to go · opposite direction'), findsOneWidget);
     // Reversed by hand: no notice.
     expect(find.byType(SnackBar), findsNothing);
@@ -270,81 +321,111 @@ void main() {
 
   testWidgets('a start at the finish tells the rider once', (tester) async {
     await pump(tester, _state(direction: FollowDirection.undecided));
-    follow.emit(_state(
+    follow.emit(
+      _state(
         progress: _p(),
         direction: FollowDirection.reverse,
-        reverseNotice: FollowReverseNotice.atFinish));
+        reverseNotice: FollowReverseNotice.atFinish,
+      ),
+    );
     await tester.pump();
     expect(
-        find.text("You're starting at the route's finish, so it's followed "
-            'in the opposite direction.'),
-        findsOneWidget);
+      find.text(
+        "You're starting at the route's finish, so it's followed "
+        'in the opposite direction.',
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('the direction notice can be closed and goes away on its own',
-      (tester) async {
+  testWidgets('the direction notice can be closed and goes away on its own', (
+    tester,
+  ) async {
     await pump(tester, _state(direction: FollowDirection.undecided));
-    follow.emit(_state(
+    follow.emit(
+      _state(
         progress: _p(),
         direction: FollowDirection.reverse,
-        reverseNotice: FollowReverseNotice.atFinish));
+        reverseNotice: FollowReverseNotice.atFinish,
+      ),
+    );
     await tester.pump();
     final bar = tester.widget<SnackBar>(find.byType(SnackBar));
     expect(bar.showCloseIcon, isTrue);
     expect(bar.duration, const Duration(seconds: 3));
   });
 
-  testWidgets('an opposite direction detected on the way tells the rider',
-      (tester) async {
+  testWidgets('an opposite direction detected on the way tells the rider', (
+    tester,
+  ) async {
     await pump(tester, _state(direction: FollowDirection.undecided));
-    follow.emit(_state(
+    follow.emit(
+      _state(
         progress: _p(),
         direction: FollowDirection.reverse,
-        reverseNotice: FollowReverseNotice.detected));
+        reverseNotice: FollowReverseNotice.detected,
+      ),
+    );
     await tester.pump();
     expect(
-        find.text('Opposite direction detected: the route is followed the '
-            'other way.'),
-        findsOneWidget);
+      find.text(
+        'Opposite direction detected: the route is followed the '
+        'other way.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('undecided: the route length, never the finish', (tester) async {
-    await pump(tester,
-        _state(progress: _p(finished: true, remaining: 3),
-            direction: FollowDirection.undecided));
+    await pump(
+      tester,
+      _state(
+        progress: _p(finished: true, remaining: 3),
+        direction: FollowDirection.undecided,
+      ),
+    );
     expect(find.text('1.11 km to go'), findsOneWidget);
     expect(find.text('Finish reached'), findsNothing);
   });
 
-  testWidgets('joined: the flip button shows and flips the direction',
-      (tester) async {
+  testWidgets('joined: the flip button shows and flips the direction', (
+    tester,
+  ) async {
     await pump(tester, _state(progress: _p()));
     await tester.tap(find.byTooltip('Reverse direction'));
     expect(follow.calls, contains('flip'));
   });
 
   testWidgets('not joined: no flip button', (tester) async {
-    await pump(tester,
-        _state(progress: _p(joined: false, off: true, offset: 250)));
+    await pump(
+      tester,
+      _state(progress: _p(joined: false, off: true, offset: 250)),
+    );
     expect(find.byTooltip('Reverse direction'), findsNothing);
   });
 
-  testWidgets('the map draws the oriented route and its ridden parts',
-      (tester) async {
-    final reversed = RouteTrack(
-        const [(lat: 48.01, lng: 11.0), (lat: 48.0, lng: 11.0)]);
+  testWidgets('the map draws the oriented route and its ridden parts', (
+    tester,
+  ) async {
+    final reversed = RouteTrack(const [
+      (lat: 48.01, lng: 11.0),
+      (lat: 48.0, lng: 11.0),
+    ]);
     const ridden = [
       [(lat: 48.01, lng: 11.0), (lat: 48.005, lng: 11.0)],
     ];
-    await pump(tester,
-        _state(progress: _p(), orientedTrack: reversed, ridden: ridden));
+    await pump(
+      tester,
+      _state(progress: _p(), orientedTrack: reversed, ridden: ridden),
+    );
     final map = tester.widget<RideMapArea>(find.byType(RideMapArea));
     expect(map.reference, same(reversed));
     expect(map.referenceDone, ridden);
   });
 
-  testWidgets('the remaining text shares one bottom bar with End',
-      (tester) async {
+  testWidgets('the remaining text shares one bottom bar with End', (
+    tester,
+  ) async {
     await pump(tester, _state(progress: _p()));
     expect(find.byType(FollowRemainingLine), findsNothing);
     final label = tester.getRect(find.text('0.81 km to go'));
@@ -353,29 +434,48 @@ void main() {
     expect(label.right, lessThanOrEqualTo(end.left));
   });
 
-  testWidgets('before joining: Navigate to start spans the bar below',
-      (tester) async {
-    await pump(tester,
-        _state(progress: _p(joined: false, off: true, offset: 250)));
+  testWidgets('before joining: Navigate to start spans the bar below', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      _state(progress: _p(joined: false, off: true, offset: 250)),
+    );
     final label = tester.getRect(find.text('0.81 km to go'));
     final end = tester.getRect(find.widgetWithText(FilledButton, 'End'));
-    final nav = tester.getRect(find.ancestor(
-        of: find.text('Navigate to start'), matching: find.byType(FilledButton)));
+    final nav = tester.getRect(
+      find.ancestor(
+        of: find.text('Navigate to start'),
+        matching: find.byType(FilledButton),
+      ),
+    );
     expect(nav.top, greaterThanOrEqualTo(end.bottom));
     expect(nav.left, label.left);
     expect(nav.right, end.right);
   });
 
   for (final (locale, texts) in [
-    (const Locale('en'), ['0.81 km to go · opposite direction', 'End', 'Navigate to start']),
-    (const Locale('de'), ['noch 0,81 km · Gegenrichtung', 'Beenden', 'Zum Start navigieren']),
+    (
+      const Locale('en'),
+      ['0.81 km to go · opposite direction', 'End', 'Navigate to start'],
+    ),
+    (
+      const Locale('de'),
+      ['noch 0,81 km · Gegenrichtung', 'Beenden', 'Zum Start navigieren'],
+    ),
   ]) {
-    testWidgets('375 px, $locale: the bottom bar fits without overflow',
-        (tester) async {
-      await pump(tester,
-          _state(progress: _p(joined: false, off: true, offset: 250),
-              direction: FollowDirection.reverse),
-          size: const Size(375, 667), locale: locale);
+    testWidgets('375 px, $locale: the bottom bar fits without overflow', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        _state(
+          progress: _p(joined: false, off: true, offset: 250),
+          direction: FollowDirection.reverse,
+        ),
+        size: const Size(375, 667),
+        locale: locale,
+      );
       expect(tester.takeException(), isNull);
       for (final t in texts) {
         expect(find.text(t), findsOneWidget, reason: t);

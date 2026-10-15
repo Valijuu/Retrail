@@ -91,12 +91,12 @@ class _GrantedPerms implements LocationPermissionService {
 /// foreground service.
 class FakeRecording extends RideRecordingController {
   FakeRecording(RideTracker tracker)
-      : super(
-          tracker: tracker,
-          source: _NoopSource(),
-          permissions: _GrantedPerms(),
-          service: _NoopService(),
-        );
+    : super(
+        tracker: tracker,
+        source: _NoopSource(),
+        permissions: _GrantedPerms(),
+        service: _NoopService(),
+      );
 
   final calls = <String>[];
   LocationStartAction next = LocationStartAction.proceed;
@@ -112,7 +112,8 @@ class FakeRecording extends RideRecordingController {
       calls.add(discard ? 'stop:discard' : 'stop');
 
   @override
-  Future<void> openLocationSettings() async => calls.add('openLocationSettings');
+  Future<void> openLocationSettings() async =>
+      calls.add('openLocationSettings');
 }
 
 /// Records intent calls without touching the DB / preview pipeline.
@@ -127,7 +128,11 @@ class RecordingController extends ActiveRideController {
   @override
   void pauseOrResume(bool isPaused) => calls.add('pauseOrResume:$isPaused');
   @override
-  Future<void> saveRide({String? title, String? comment, bool favorite = false}) async {
+  Future<void> saveRide({
+    String? title,
+    String? comment,
+    bool favorite = false,
+  }) async {
     saved = (title: title, comment: comment, favorite: favorite);
     calls.add('save');
   }
@@ -157,15 +162,14 @@ RouteFollowState followState({
   List<List<({double lat, double lng})>> ridden = const [],
   // Decided by default, so progress shows as is; undecided tests opt in.
   FollowDirection direction = FollowDirection.forward,
-}) =>
-    RouteFollowState(
-      track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
-      recording: recording,
-      progress: progress,
-      direction: direction,
-      orientedTrack: orientedTrack,
-      ridden: ridden,
-    );
+}) => RouteFollowState(
+  track: RouteTrack(const [(lat: 48.0, lng: 11.0), (lat: 48.01, lng: 11.0)]),
+  recording: recording,
+  progress: progress,
+  direction: direction,
+  orientedTrack: orientedTrack,
+  ridden: ridden,
+);
 
 RouteProgress progress({
   double along = 300,
@@ -174,14 +178,14 @@ RouteProgress progress({
   bool off = false,
   bool joined = true,
   bool finished = false,
-}) =>
-    RouteProgress(
-        alongM: along,
-        remainingM: remaining,
-        offsetM: offset,
-        isOffRoute: off,
-        isFinished: finished,
-        hasJoined: joined);
+}) => RouteProgress(
+  alongM: along,
+  remainingM: remaining,
+  offsetM: offset,
+  isOffRoute: off,
+  isFinished: finished,
+  hasJoined: joined,
+);
 
 void main() {
   useStubLiveMap();
@@ -193,14 +197,16 @@ void main() {
   setUp(() {
     db = AppDatabase.memory();
     final tracker = RideTracker(
-        RideRepository(RideDao(db)),
-        TrackpointRepository(TrackpointDao(db)),
-        const HaversineDistanceCalculator());
+      RideRepository(RideDao(db)),
+      TrackpointRepository(TrackpointDao(db)),
+      const HaversineDistanceCalculator(),
+    );
     controller = RecordingController(
       tracker,
       RoutePreviewCache(
-          baseDir: Directory.systemTemp,
-          render: (_, _) async => PreviewResult(Uint8List(0), complete: true)),
+        baseDir: Directory.systemTemp,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      ),
     );
     recording = FakeRecording(tracker);
   });
@@ -225,40 +231,47 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final notifier = _FixedFollow(follow);
-    final router = GoRouter(initialLocation: '/ride', routes: [
-      GoRoute(path: '/ride', builder: (c, s) => const ActiveRideScreen()),
-      GoRoute(
+    final router = GoRouter(
+      initialLocation: '/ride',
+      routes: [
+        GoRoute(path: '/ride', builder: (c, s) => const ActiveRideScreen()),
+        GoRoute(
           path: '/',
-          builder: (c, s) => const Scaffold(body: Center(child: Text('home')))),
-    ]);
-
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        rideTrackingStateProvider.overrideWith((ref) => Stream.value(state)),
-        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
-        activeRideControllerProvider.overrideWithValue(controller),
-        rideRecordingControllerProvider.overrideWithValue(recording),
-        routeFollowProvider.overrideWith(() => notifier),
+          builder: (c, s) => const Scaffold(body: Center(child: Text('home'))),
+        ),
       ],
-      child: MaterialApp.router(
-        theme: buildTheme(Brightness.light),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          rideTrackingStateProvider.overrideWith((ref) => Stream.value(state)),
+          isOnlineProvider.overrideWith((ref) => Stream.value(online)),
+          activeRideControllerProvider.overrideWithValue(controller),
+          rideRecordingControllerProvider.overrideWithValue(recording),
+          routeFollowProvider.overrideWith(() => notifier),
         ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: router,
+        child: MaterialApp.router(
+          theme: buildTheme(Brightness.light),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
       ),
-    ));
+    );
     await tester.pump(); // post-frame (start) + stream emission
     await tester.pump();
     return notifier;
   }
 
-  testWidgets('without a reference: no remaining line, no follow banner',
-      (tester) async {
+  testWidgets('without a reference: no remaining line, no follow banner', (
+    tester,
+  ) async {
     await pumpScreen(tester, state: tracking, follow: null);
     expect(find.byType(FollowRemainingLine), findsNothing);
     expect(find.byType(RideWarningBanner), findsNothing);
@@ -266,17 +279,25 @@ void main() {
     expect(map.reference, isNull);
   });
 
-  testWidgets('recording with a reference: map gets it, remaining line shows',
-      (tester) async {
-    final reversed = RouteTrack(
-        const [(lat: 48.01, lng: 11.0), (lat: 48.0, lng: 11.0)]);
+  testWidgets('recording with a reference: map gets it, remaining line shows', (
+    tester,
+  ) async {
+    final reversed = RouteTrack(const [
+      (lat: 48.01, lng: 11.0),
+      (lat: 48.0, lng: 11.0),
+    ]);
     const ridden = [
       [(lat: 48.01, lng: 11.0), (lat: 48.005, lng: 11.0)],
     ];
-    await pumpScreen(tester,
-        state: tracking,
-        follow: followState(
-            progress: progress(), orientedTrack: reversed, ridden: ridden));
+    await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(
+        progress: progress(),
+        orientedTrack: reversed,
+        ridden: ridden,
+      ),
+    );
     final map = tester.widget<RideMapArea>(find.byType(RideMapArea));
     // The map draws the route as ridden (oriented) and its ridden parts.
     expect(map.reference, same(reversed));
@@ -284,33 +305,45 @@ void main() {
     expect(find.text('0.81 km to go'), findsOneWidget);
   });
 
-  testWidgets('before the first fix: the remaining line shows the route length',
-      (tester) async {
-    await pumpScreen(tester, state: tracking, follow: followState());
-    expect(find.text('1.11 km to go'), findsOneWidget);
-  });
+  testWidgets(
+    'before the first fix: the remaining line shows the route length',
+    (tester) async {
+      await pumpScreen(tester, state: tracking, follow: followState());
+      expect(find.text('1.11 km to go'), findsOneWidget);
+    },
+  );
 
   testWidgets('before joining: distance-to-route banner', (tester) async {
-    await pumpScreen(tester,
-        state: tracking,
-        follow: followState(
-            progress: progress(joined: false, off: true, offset: 250)));
+    await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(
+        progress: progress(joined: false, off: true, offset: 250),
+      ),
+    );
     expect(find.text('250 m to the route'), findsOneWidget);
   });
 
   testWidgets('off route after joining: off-route banner', (tester) async {
-    await pumpScreen(tester,
-        state: tracking,
-        follow: followState(progress: progress(off: true, offset: 45)));
+    await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(progress: progress(off: true, offset: 45)),
+    );
     expect(find.text('Off route — head back to the line'), findsOneWidget);
   });
 
-  testWidgets('a follow-only reference is not shown on the ride screen',
-      (tester) async {
-    await pumpScreen(tester,
-        state: tracking,
-        follow: followState(
-            progress: progress(off: true, offset: 45), recording: false));
+  testWidgets('a follow-only reference is not shown on the ride screen', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(
+        progress: progress(off: true, offset: 45),
+        recording: false,
+      ),
+    );
     expect(find.byType(FollowRemainingLine), findsNothing);
     expect(find.byType(RideWarningBanner), findsNothing);
     final map = tester.widget<RideMapArea>(find.byType(RideMapArea));
@@ -318,8 +351,11 @@ void main() {
   });
 
   testWidgets('leaving the ride clears the reference', (tester) async {
-    final follow = await pumpScreen(tester,
-        state: tracking, follow: followState(progress: progress()));
+    final follow = await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(progress: progress()),
+    );
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pump();
     await tester.tap(find.text('Discard'));
@@ -327,62 +363,84 @@ void main() {
     expect(follow.stopped, isTrue);
   });
 
-  testWidgets('finished: the remaining line says the finish is reached',
-      (tester) async {
-    await pumpScreen(tester,
-        state: tracking,
-        follow: followState(progress: progress(finished: true, remaining: 3)));
+  testWidgets('finished: the remaining line says the finish is reached', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(progress: progress(finished: true, remaining: 3)),
+    );
     expect(find.text('Finish reached'), findsOneWidget);
   });
 
   testWidgets(
-      'leaving keeps the follow chrome frozen behind the exit scrim while the '
-      'reference is already cleared', (tester) async {
-    final follow = await pumpScreen(tester,
+    'leaving keeps the follow chrome frozen behind the exit scrim while the '
+    'reference is already cleared',
+    (tester) async {
+      final follow = await pumpScreen(
+        tester,
         state: tracking,
-        follow: followState(progress: progress(off: true, offset: 45)));
-    await tester.tap(find.byIcon(Icons.arrow_back));
-    await tester.pump();
-    await tester.tap(find.text('Discard'));
-    await tester.pump();
-    expect(follow.stopped, isTrue);
-    expect(find.byType(FollowRemainingLine), findsOneWidget);
-    expect(find.text('Off route — head back to the line'), findsOneWidget);
-  });
+        follow: followState(progress: progress(off: true, offset: 45)),
+      );
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pump();
+      await tester.tap(find.text('Discard'));
+      await tester.pump();
+      expect(follow.stopped, isTrue);
+      expect(find.byType(FollowRemainingLine), findsOneWidget);
+      expect(find.text('Off route — head back to the line'), findsOneWidget);
+    },
+  );
 
   testWidgets('reversed: the remaining line says so', (tester) async {
-    await pumpScreen(tester,
-        state: tracking,
-        follow: followState(
-            progress: progress(), direction: FollowDirection.reverse));
+    await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(
+        progress: progress(),
+        direction: FollowDirection.reverse,
+      ),
+    );
     expect(find.text('0.81 km to go · opposite direction'), findsOneWidget);
   });
 
   testWidgets(
-      'undecided: the remaining line shows the route length, never the finish',
-      (tester) async {
-    await pumpScreen(tester,
+    'undecided: the remaining line shows the route length, never the finish',
+    (tester) async {
+      await pumpScreen(
+        tester,
         state: tracking,
         follow: followState(
-            progress: progress(finished: true, remaining: 3),
-            direction: FollowDirection.undecided));
-    expect(find.text('1.11 km to go'), findsOneWidget);
-    expect(find.text('Finish reached'), findsNothing);
-  });
+          progress: progress(finished: true, remaining: 3),
+          direction: FollowDirection.undecided,
+        ),
+      );
+      expect(find.text('1.11 km to go'), findsOneWidget);
+      expect(find.text('Finish reached'), findsNothing);
+    },
+  );
 
-  testWidgets('joined: the flip button shows and flips the direction',
-      (tester) async {
-    final follow = await pumpScreen(tester,
-        state: tracking, follow: followState(progress: progress()));
+  testWidgets('joined: the flip button shows and flips the direction', (
+    tester,
+  ) async {
+    final follow = await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(progress: progress()),
+    );
     await tester.tap(find.byTooltip('Reverse direction'));
     expect(follow.flips, 1);
   });
 
   testWidgets('not joined: no flip button', (tester) async {
-    await pumpScreen(tester,
-        state: tracking,
-        follow: followState(
-            progress: progress(joined: false, off: true, offset: 250)));
+    await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(
+        progress: progress(joined: false, off: true, offset: 250),
+      ),
+    );
     expect(find.byTooltip('Reverse direction'), findsNothing);
   });
 
@@ -392,40 +450,54 @@ void main() {
   });
 
   testWidgets(
-      'iPhone 8: a recording follow leaves the stats panel its full height',
-      (tester) async {
-    const iPhone8 = Size(375, 667);
-    await pumpScreen(tester,
-        state: tracking, follow: null, size: iPhone8, topInset: 20);
-    expect(tester.takeException(), isNull);
-    final plain = tester.getSize(find.byType(RideStatsPanel));
-    await tester.pumpWidget(const SizedBox()); // a fresh ProviderScope
-    await pumpScreen(tester,
+    'iPhone 8: a recording follow leaves the stats panel its full height',
+    (tester) async {
+      const iPhone8 = Size(375, 667);
+      await pumpScreen(
+        tester,
+        state: tracking,
+        follow: null,
+        size: iPhone8,
+        topInset: 20,
+      );
+      expect(tester.takeException(), isNull);
+      final plain = tester.getSize(find.byType(RideStatsPanel));
+      await tester.pumpWidget(const SizedBox()); // a fresh ProviderScope
+      await pumpScreen(
+        tester,
         state: tracking,
         follow: followState(progress: progress()),
         size: iPhone8,
-        topInset: 20);
-    expect(tester.takeException(), isNull);
-    expect(tester.getSize(find.byType(RideStatsPanel)), plain);
-    // The remaining line sits under the map instead.
-    expect(tester.getBottomLeft(find.byType(FollowRemainingLine)).dy,
-        tester.getTopLeft(find.byType(RideStatsPanel)).dy);
-  });
+        topInset: 20,
+      );
+      expect(tester.takeException(), isNull);
+      expect(tester.getSize(find.byType(RideStatsPanel)), plain);
+      // The remaining line sits under the map instead.
+      expect(
+        tester.getBottomLeft(find.byType(FollowRemainingLine)).dy,
+        tester.getTopLeft(find.byType(RideStatsPanel)).dy,
+      );
+    },
+  );
 
-  testWidgets('iPhone 8: no banner changes the stats panel height',
-      (tester) async {
+  testWidgets('iPhone 8: no banner changes the stats panel height', (
+    tester,
+  ) async {
     const iPhone8 = Size(375, 667);
-    Future<Size> panelFor(
-        {RideTrackingState state = tracking,
-        RouteFollowState? follow,
-        bool online = true}) async {
+    Future<Size> panelFor({
+      RideTrackingState state = tracking,
+      RouteFollowState? follow,
+      bool online = true,
+    }) async {
       await tester.pumpWidget(const SizedBox()); // a fresh ProviderScope
-      await pumpScreen(tester,
-          state: state,
-          follow: follow,
-          online: online,
-          size: iPhone8,
-          topInset: 20);
+      await pumpScreen(
+        tester,
+        state: state,
+        follow: follow,
+        online: online,
+        size: iPhone8,
+        topInset: 20,
+      );
       expect(tester.takeException(), isNull);
       return tester.getSize(find.byType(RideStatsPanel));
     }
@@ -433,22 +505,31 @@ void main() {
     final plain = await panelFor();
     final cases = {
       'off route': await panelFor(
-          follow: followState(progress: progress(off: true, offset: 45))),
+        follow: followState(progress: progress(off: true, offset: 45)),
+      ),
       'not joined': await panelFor(
-          follow: followState(
-              progress: progress(joined: false, off: true, offset: 250))),
+        follow: followState(
+          progress: progress(joined: false, off: true, offset: 250),
+        ),
+      ),
       'offline': await panelFor(online: false),
       'GPS off': await panelFor(
-          state: const RideTrackingState(
-              isTracking: true, locationServiceEnabled: false)),
+        state: const RideTrackingState(
+          isTracking: true,
+          locationServiceEnabled: false,
+        ),
+      ),
     };
     cases.forEach((name, size) => expect(size, plain, reason: name));
   });
 
   testWidgets('a banner appearing, then going with the follow, keeps the '
       'same map', (tester) async {
-    final follow = await pumpScreen(tester,
-        state: tracking, follow: followState(progress: progress()));
+    final follow = await pumpScreen(
+      tester,
+      state: tracking,
+      follow: followState(progress: progress()),
+    );
     final before = tester.state(find.byType(LiveMap));
     follow.emit(followState(progress: progress(off: true, offset: 45)));
     await tester.pump();
@@ -463,8 +544,9 @@ void main() {
     expect(tester.state(find.byType(LiveMap)), same(before));
   });
 
-  testWidgets('a follow and its banner appearing together keep the same map',
-      (tester) async {
+  testWidgets('a follow and its banner appearing together keep the same map', (
+    tester,
+  ) async {
     final follow = await pumpScreen(tester, state: tracking, follow: null);
     final before = tester.state(find.byType(LiveMap));
     follow.emit(followState(progress: progress(off: true, offset: 45)));

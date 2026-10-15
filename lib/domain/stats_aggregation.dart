@@ -13,10 +13,10 @@ class WeeklyStats {
   });
 
   const WeeklyStats.zero()
-      : totalKm = 0.0,
-        rideCount = 0,
-        avgSpeedKmh = 0.0,
-        totalDurationSeconds = 0;
+    : totalKm = 0.0,
+      rideCount = 0,
+      avgSpeedKmh = 0.0,
+      totalDurationSeconds = 0;
 
   final double totalKm;
   final int rideCount;
@@ -27,18 +27,23 @@ class WeeklyStats {
 /// Aggregates per-ride stats into [WeeklyStats] — reused for week/day/year,
 /// matching the identical HomeViewModel blocks. Empty input → all zeros.
 WeeklyStats aggregateStats(
-    List<RideWithTrackpoints> rides, DistanceCalculator calc) {
+  List<RideWithTrackpoints> rides,
+  DistanceCalculator calc,
+) {
   final stats = rides.map((r) => computeRideStats(r, calc)).toList();
-  final totalDistanceMetres =
-      stats.fold<double>(0.0, (sum, s) => sum + s.distanceMetres);
+  final totalDistanceMetres = stats.fold<double>(
+    0.0,
+    (sum, s) => sum + s.distanceMetres,
+  );
   final totalDurationMs = stats.fold<int>(0, (sum, s) => sum + s.durationMs);
   final totalKm = totalDistanceMetres / 1000.0;
 
   return WeeklyStats(
     totalKm: totalKm,
     rideCount: rides.length,
-    avgSpeedKmh:
-        totalDurationMs > 0 ? totalKm / (totalDurationMs / 3600000.0) : 0.0,
+    avgSpeedKmh: totalDurationMs > 0
+        ? totalKm / (totalDurationMs / 3600000.0)
+        : 0.0,
     totalDurationSeconds: totalDurationMs ~/ 1000,
   );
 }

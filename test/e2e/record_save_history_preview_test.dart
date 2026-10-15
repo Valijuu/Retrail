@@ -95,8 +95,9 @@ void main() {
           renders++;
           capturedRoute = points;
           return PreviewResult(
-              Uint8List.fromList([0x89, 0x50, 0x4e, 0x47]), // PNG magic stub
-              complete: true);
+            Uint8List.fromList([0x89, 0x50, 0x4e, 0x47]), // PNG magic stub
+            complete: true,
+          );
         },
       );
       final controller = ActiveRideController(tracker, cache);
@@ -162,15 +163,18 @@ void main() {
       // ── 4. Preview: the history card's request is a cache hit, no re-render ──
       // A card fetches its own trackpoints lazily (see HistoryRideCard/
       // _Thumbnail) — reproduce that here directly against the real DB.
-      final tps = await TrackpointRepository(TrackpointDao(db))
-          .getForRide(rideId)
-          .first;
+      final tps = await TrackpointRepository(
+        TrackpointDao(db),
+      ).getForRide(rideId).first;
       expect(tps, hasLength(2));
       final route = <RoutePoint>[
         for (final t in tps) (lat: t.latitude, lng: t.longitude),
       ];
-      final servedAgain =
-          await cache.ensurePreview(rideId, route, brightness: Brightness.light);
+      final servedAgain = await cache.ensurePreview(
+        rideId,
+        route,
+        brightness: Brightness.light,
+      );
       expect(servedAgain.path, previewFile.path);
       expect(renders, 2, reason: 'cached PNG reused — no per-scroll render');
     },

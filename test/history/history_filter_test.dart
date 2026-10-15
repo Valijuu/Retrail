@@ -50,8 +50,11 @@ void main() {
     // HistoryFilterNotifier) — activeFilterCount treats any
     // set year as a deviation from that default, no "now" reference needed.
     test('activeFilterCount counts a set year', () {
-      const f =
-          HistoryFilter(year: 2020, monthFrom: _nowMonth, monthTo: _nowMonth);
+      const f = HistoryFilter(
+        year: 2020,
+        monthFrom: _nowMonth,
+        monthTo: _nowMonth,
+      );
       expect(activeFilterCount(f), 2);
     });
 
@@ -92,24 +95,34 @@ void main() {
       expect(updated.monthTo, 8);
     });
 
-    test('copyWith clearMonthFrom resets monthFrom to null, monthTo untouched', () {
-      const f = HistoryFilter(monthFrom: 6, monthTo: 8);
-      final updated = f.copyWith(clearMonthFrom: true);
-      expect(updated.monthFrom, isNull);
-      expect(updated.monthTo, 8);
-    });
+    test(
+      'copyWith clearMonthFrom resets monthFrom to null, monthTo untouched',
+      () {
+        const f = HistoryFilter(monthFrom: 6, monthTo: 8);
+        final updated = f.copyWith(clearMonthFrom: true);
+        expect(updated.monthFrom, isNull);
+        expect(updated.monthTo, 8);
+      },
+    );
 
-    test('copyWith clearMonthTo resets monthTo to null, monthFrom untouched', () {
-      const f = HistoryFilter(monthFrom: 6, monthTo: 8);
-      final updated = f.copyWith(clearMonthTo: true);
-      expect(updated.monthFrom, 6);
-      expect(updated.monthTo, isNull);
-    });
+    test(
+      'copyWith clearMonthTo resets monthTo to null, monthFrom untouched',
+      () {
+        const f = HistoryFilter(monthFrom: 6, monthTo: 8);
+        final updated = f.copyWith(clearMonthTo: true);
+        expect(updated.monthFrom, 6);
+        expect(updated.monthTo, isNull);
+      },
+    );
 
     test('copyWith clearMonthFrom/clearMonthTo win over passed values', () {
       const f = HistoryFilter(monthFrom: 6, monthTo: 8);
       final updated = f.copyWith(
-          monthFrom: 3, monthTo: 5, clearMonthFrom: true, clearMonthTo: true);
+        monthFrom: 3,
+        monthTo: 5,
+        clearMonthFrom: true,
+        clearMonthTo: true,
+      );
       expect(updated.monthFrom, isNull);
       expect(updated.monthTo, isNull);
     });
@@ -146,8 +159,10 @@ void main() {
     });
 
     test('a different sort order alone does not narrow', () {
-      expect(narrowsRides(const HistoryFilter(sort: SortOrder.distance)),
-          isFalse);
+      expect(
+        narrowsRides(const HistoryFilter(sort: SortOrder.distance)),
+        isFalse,
+      );
     });
 
     test('a blank search query does not narrow', () {

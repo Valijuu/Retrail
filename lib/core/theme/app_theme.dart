@@ -14,23 +14,26 @@ import 'app_typography.dart';
 /// blends into the surface — matching the original's status-bar behavior — and
 /// floating, card-shaped snack bars in the warm brand container.
 ThemeData buildTheme(Brightness brightness) {
-  final tokens = brightness == Brightness.dark ? AppColors.dark : AppColors.light;
+  final tokens = brightness == Brightness.dark
+      ? AppColors.dark
+      : AppColors.light;
 
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: tokens.primary,
-    brightness: brightness,
-  ).copyWith(
-    primary: tokens.primary,
-    onPrimary: tokens.onPrimary,
-    primaryContainer: tokens.primaryContainer,
-    onPrimaryContainer: tokens.onPrimaryContainer,
-    surface: tokens.surface,
-    onSurface: tokens.onSurface,
-    onSurfaceVariant: tokens.onSurfaceVariant,
-    // Original mapped Compose's `surfaceVariant` to the SurfaceContainer token;
-    // the modern M3 slot is surfaceContainerHighest.
-    surfaceContainerHighest: tokens.surfaceContainer,
-  );
+  final colorScheme =
+      ColorScheme.fromSeed(
+        seedColor: tokens.primary,
+        brightness: brightness,
+      ).copyWith(
+        primary: tokens.primary,
+        onPrimary: tokens.onPrimary,
+        primaryContainer: tokens.primaryContainer,
+        onPrimaryContainer: tokens.onPrimaryContainer,
+        surface: tokens.surface,
+        onSurface: tokens.onSurface,
+        onSurfaceVariant: tokens.onSurfaceVariant,
+        // Original mapped Compose's `surfaceVariant` to the SurfaceContainer token;
+        // the modern M3 slot is surfaceContainerHighest.
+        surfaceContainerHighest: tokens.surfaceContainer,
+      );
 
   return ThemeData(
     useMaterial3: true,
@@ -48,9 +51,9 @@ ThemeData buildTheme(Brightness brightness) {
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: tokens.primaryContainer,
-      contentTextStyle: appTextTheme(brightness)
-          .bodyMedium
-          ?.copyWith(color: tokens.onPrimaryContainer),
+      contentTextStyle: appTextTheme(
+        brightness,
+      ).bodyMedium?.copyWith(color: tokens.onPrimaryContainer),
       actionTextColor: tokens.primary,
       closeIconColor: tokens.onPrimaryContainer,
       shape: const RoundedRectangleBorder(borderRadius: AppShapes.card),

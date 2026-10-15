@@ -58,10 +58,10 @@ class ActivityTile extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelLarge
-                      ?.copyWith(color: tint, fontWeight: FontWeight.w500),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: tint,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
