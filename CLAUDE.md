@@ -30,6 +30,7 @@ One short-lived branch per feature/phase. `main` stays always-green and linear.
 1. **Branch:** before implementing a phase, create `phase/NN-<name>` off the latest `main`.
 2. **Implement test-first** on that branch. Commit as you go.
 3. **Done = green:** a feature is only complete when `flutter analyze` is clean and `flutter test` passes.
+   **Formatting:** run `dart format` on every changed Dart file before committing (Dart's default tall style, no formatter config). The `.githooks/pre-commit` hook rejects unformatted staged Dart files; formatting-only commits go into `.git-blame-ignore-revs` (`git config blame.ignoreRevsFile .git-blame-ignore-revs` locally).
 4. **Integrate:** rebase the branch onto the latest `main` (linear history), then fast-forward `main` to it.
 5. **Clean up:** delete the feature branch after the fast-forward merge.
 

@@ -1,0 +1,5 @@
+# Formatting-only commits, skipped by `git blame` (GitHub reads this file;
+# locally: git config blame.ignoreRevsFile .git-blame-ignore-revs).
+
+# chore: format the whole repo with the tall dart formatter (#59)
+c6c7d71b98a11762defd0c413d26b0cce3075a20
