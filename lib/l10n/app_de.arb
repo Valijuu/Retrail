@@ -193,7 +193,7 @@
   "permissionPreciseLocationTitle": "Genauer Standort benötigt",
   "permissionPreciseLocationBody": "Mit ungefährem Standort kann Retrail deine Strecke nicht aufzeichnen. Erlaube den genauen Standort in den App-Einstellungen.",
   "batteryHintTitle": "Aufnahme im Hintergrund sichern",
-  "batteryHintBody": "Manche Handys beenden Apps zum Akkusparen, sobald der Bildschirm aus ist. Dann bricht deine Aufnahme ab. Tippe in den App-Einstellungen auf „Akku“ und wähle „Nicht eingeschränkt“.",
+  "batteryHintBody": "Manche Handys beenden Apps zum Akkusparen, sobald der Bildschirm aus ist. Dann bricht deine Aufnahme ab. Erlaube Retrail in den App-Einstellungen unter „Akku“, ohne Einschränkung im Hintergrund zu laufen.",
   "actionNotNow": "Nicht jetzt",
   "followRemaining": "noch {distance}",
   "followRemainingReversed": "noch {distance} · Gegenrichtung",

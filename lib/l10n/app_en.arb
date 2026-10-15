@@ -194,7 +194,7 @@
   "permissionPreciseLocationTitle": "Precise location needed",
   "permissionPreciseLocationBody": "With approximate location Retrail can't record your route. Allow precise location in the app settings.",
   "batteryHintTitle": "Keep recording in the background",
-  "batteryHintBody": "Some phones close apps to save battery once the screen is off, which ends your recording. In the app settings, tap \"Battery\" and choose \"Unrestricted\".",
+  "batteryHintBody": "Some phones close apps to save battery once the screen is off, which ends your recording. In the app settings, under \"Battery\", let Retrail run in the background without restrictions.",
   "actionNotNow": "Not now",
   "followRemaining": "{distance} to go",
   "@followRemaining": { "placeholders": { "distance": { "type": "String" } } },
