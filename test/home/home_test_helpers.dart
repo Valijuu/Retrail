@@ -19,6 +19,7 @@ import 'package:retrail/features/home/home_providers.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
+import 'package:retrail/tracking/battery_optimization.dart';
 import 'package:retrail/tracking/location_fix.dart';
 import 'package:retrail/tracking/location_permission.dart';
 import 'package:retrail/tracking/location_source.dart';
@@ -71,6 +72,16 @@ class _NoopService implements RideForegroundService {
   }) async {}
   @override
   Future<bool> ensureNotificationPermission() async => true;
+}
+
+/// Battery-optimization seam with a fixed answer; unrestricted by default so
+/// the ride-start hint (#68) stays out of tests that don't exercise it.
+class FakeBatteryOptimization implements BatteryOptimizationService {
+  FakeBatteryOptimization({this.restricted = false});
+  final bool restricted;
+
+  @override
+  Future<bool> isRestricted() async => restricted;
 }
 
 /// Records the platform-lifecycle calls without touching geolocator / the
@@ -146,7 +157,11 @@ FakeRecordingController makeFakeRecording(AppDatabase db) {
 /// Return type is inferred as `List<Override>` (the `Override` type isn't
 /// publicly nameable from `flutter_riverpod`).
 // ignore: strict_top_level_inference
-activeRideTestOverrides(AppDatabase db, {FakeRecordingController? recording}) {
+activeRideTestOverrides(
+  AppDatabase db, {
+  FakeRecordingController? recording,
+  bool batteryRestricted = false,
+}) {
   final dir = Directory.systemTemp;
   final tracker = RideTracker(
     RideRepository(RideDao(db)),
@@ -172,6 +187,10 @@ activeRideTestOverrides(AppDatabase db, {FakeRecordingController? recording}) {
     // `testWidgets` (MissingPluginException). A fake keeps the gate headless.
     rideRecordingControllerProvider.overrideWithValue(
       recording ?? FakeRecordingController(tracker),
+    ),
+    // The real check calls flutter_foreground_task (MissingPluginException).
+    batteryOptimizationServiceProvider.overrideWithValue(
+      FakeBatteryOptimization(restricted: batteryRestricted),
     ),
   ];
 }

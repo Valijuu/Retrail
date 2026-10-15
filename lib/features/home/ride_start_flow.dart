@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/widgets/stacked_dialog_actions.dart';
 import '../../l10n/app_localizations.dart';
+import '../../tracking/battery_optimization.dart';
 import '../../tracking/location_permission.dart';
 import '../../tracking/permission_gate_dialog.dart';
 import '../../tracking/tracking_providers.dart';
@@ -15,7 +16,8 @@ import 'home_providers.dart';
 /// commits the pending activity, asks before an offline start, resolves
 /// location (and notification) permission up front — before the countdown,
 /// mirroring the original `HomePage` — and opens the countdown when granted.
-/// A blocked gate surfaces the rationale / enable-location prompt instead.
+/// A blocked gate surfaces the rationale / enable-location prompt instead; a
+/// battery-restricted Android phone gets a hint first (#68).
 /// [beforeCountdown] runs only when the countdown is about to open (the
 /// follow launcher sets its reference there, so a blocked or declined start
 /// never leaves one behind). Returns whether the countdown was opened.
@@ -31,6 +33,8 @@ Future<bool> runRideStartFlow(
   final action = await ref.read(rideRecordingControllerProvider).prepare();
   if (!context.mounted) return false;
   if (action == LocationStartAction.proceed) {
+    if (!await _passBatteryHint(context, ref)) return false;
+    if (!context.mounted) return false;
     beforeCountdown?.call();
     context.go(AppRoutes.timer);
     return true;
@@ -59,6 +63,42 @@ Future<void> showPermissionGateBlocked(
       onDismiss: () => Navigator.pop(c),
     ),
   );
+}
+
+enum _BatteryHintChoice { openSettings, notNow }
+
+/// The battery-optimization hint (#68), once permission is granted. Returns
+/// whether to continue to the countdown: "Open settings" leaves the start so
+/// the next Start re-checks the exemption; "Not now" is remembered.
+Future<bool> _passBatteryHint(BuildContext context, WidgetRef ref) async {
+  final hint = ref.read(batteryHintProvider);
+  if (!await hint.shouldShow() || !context.mounted) return true;
+  final l10n = AppLocalizations.of(context);
+  final choice = await showDialog<_BatteryHintChoice>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text(l10n.batteryHintTitle),
+      content: Text(l10n.batteryHintBody),
+      actions: [
+        StackedDialogActions(
+          primaryLabel: l10n.permissionOpenSettings,
+          onPrimary: () => Navigator.pop(c, _BatteryHintChoice.openSettings),
+          secondaryLabel: l10n.actionNotNow,
+          onSecondary: () => Navigator.pop(c, _BatteryHintChoice.notNow),
+        ),
+      ],
+    ),
+  );
+  switch (choice) {
+    case _BatteryHintChoice.openSettings:
+      await ref.read(rideRecordingControllerProvider).openAppSettings();
+      return false;
+    case _BatteryHintChoice.notNow:
+      await hint.dismiss();
+      return true;
+    case null: // dismissed by tapping outside: ask again next time
+      return true;
+  }
 }
 
 Future<bool> _confirmOffline(BuildContext context) async {

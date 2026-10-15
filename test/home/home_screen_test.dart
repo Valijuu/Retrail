@@ -33,6 +33,7 @@ void main() {
     WeeklyStats weekly = const WeeklyStats.zero(),
     WeeklyStats yearly = const WeeklyStats.zero(),
     Map<String, Object> prefs = const {},
+    bool batteryRestricted = false,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -55,7 +56,11 @@ void main() {
           // read saw a paused provider and always assumed online).
           isOnlineProvider.overrideWith((ref) => Stream.value(online)),
           if (tracking) isTrackingProvider.overrideWithValue(true),
-          ...activeRideTestOverrides(env.db, recording: recording),
+          ...activeRideTestOverrides(
+            env.db,
+            recording: recording,
+            batteryRestricted: batteryRestricted,
+          ),
           ...homeStreamStubs(
             recent: recent,
             favorites: favorites,
@@ -217,6 +222,60 @@ void main() {
     expect(recording.calls, contains('prepare'));
     expect(find.text('Location needed'), findsOneWidget); // rationale dialog
     expect(find.text('GET READY'), findsNothing); // never reached the countdown
+  });
+
+  testWidgets(
+    'a battery-restricted phone explains the risk before the countdown (#68)',
+    (tester) async {
+      await pumpHome(tester, batteryRestricted: true);
+      await tester.tap(find.text('Start tracking'));
+      await _settle(tester);
+      expect(find.text('Keep recording in the background'), findsOneWidget);
+      expect(find.text('GET READY'), findsNothing);
+    },
+  );
+
+  testWidgets('"Not now" starts the countdown and is remembered (#68)', (
+    tester,
+  ) async {
+    await pumpHome(tester, batteryRestricted: true);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    await tester.tap(find.text('Not now'));
+    await _settle(tester);
+    expect(find.text('GET READY'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      tester.element(find.text('GET READY')),
+    );
+    expect(
+      container.read(preferencesRepositoryProvider).batteryHintDismissedNow,
+      isTrue,
+    );
+  });
+
+  testWidgets('"Open settings" opens the app settings and stays on Home so '
+      'the next Start re-checks (#68)', (tester) async {
+    final recording = await pumpHome(tester, batteryRestricted: true);
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    await tester.tap(find.text('Open settings'));
+    await _settle(tester);
+    expect(recording.calls, contains('openAppSettings'));
+    expect(find.text('Keep recording in the background'), findsNothing);
+    expect(find.text('GET READY'), findsNothing);
+  });
+
+  testWidgets('a hint answered with "Not now" earlier stays away (#68)', (
+    tester,
+  ) async {
+    await pumpHome(
+      tester,
+      batteryRestricted: true,
+      prefs: {'battery_hint_dismissed': true},
+    );
+    await tester.tap(find.text('Start tracking'));
+    await _settle(tester);
+    expect(find.text('GET READY'), findsOneWidget);
   });
 
   testWidgets('offline Start still gates permission before the countdown', (

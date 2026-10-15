@@ -21,6 +21,7 @@ class PreferencesRepository {
   static const _kRecentPhotos = 'profile_photos';
   static const _kHomeStatsPeriod = 'home_stats_period';
   static const _kPendingRideDetails = 'pending_ride_details';
+  static const _kBatteryHintDismissed = 'battery_hint_dismissed';
 
   static const defaultUserName = 'Retrailer';
   static const defaultThemeMode = 'system';
@@ -82,6 +83,15 @@ class PreferencesRepository {
     } else {
       await _prefs.setInt(_kPendingRideDetails, rideId);
     }
+    _notify();
+  }
+
+  /// The user answered the battery-optimization hint with "Not now" (#68).
+  bool get batteryHintDismissedNow =>
+      _prefs.getBool(_kBatteryHintDismissed) ?? false;
+
+  Future<void> setBatteryHintDismissed() async {
+    await _prefs.setBool(_kBatteryHintDismissed, true);
     _notify();
   }
 
