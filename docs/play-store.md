@@ -289,10 +289,30 @@ Per release, as entered in the Play Console (≤ 500 characters per language,
 line breaks included). Style: `Neu:` / `Behoben:` headings (EN `New:` /
 `Fixed:`) with one `•` per change, the section with the biggest change first,
 user benefit instead of internals; the closed test names fixes concretely and
-ends with "Danke fürs Testen! / Thanks for testing!" — production stays
+ends with the plain feedback line "Feedback an / Feedback to
+retrail.app@proton.me" (no thank-you for testing) — production stays
 shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
+
+### 1.1.2+5 (closed test, 2026-10-18)
+
+```
+<de-DE>
+Behoben:
+• Vor der ersten Fahrt weist die App darauf hin, wenn die Akku-Optimierung die Aufzeichnung bei ausgeschaltetem Bildschirm stoppen könnte – mit direktem Weg in die Einstellungen
+• Das Menü einer Fahrt im Verlauf hat wieder die passende Farbe statt Pink
+
+Feedback an retrail.app@proton.me
+</de-DE>
+<en-US>
+Fixed:
+• Before a ride, the app now warns you if battery optimization could stop recording with the screen off, with a direct link to the settings
+• The ride menu in the history has the right color again instead of pink
+
+Feedback to retrail.app@proton.me
+</en-US>
+```
 
 ### 1.1.1+4 (closed test, 2026-10-14)
 
