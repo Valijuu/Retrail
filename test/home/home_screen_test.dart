@@ -230,7 +230,10 @@ void main() {
       await pumpHome(tester, batteryRestricted: true);
       await tester.tap(find.text('Start tracking'));
       await _settle(tester);
-      expect(find.text('Keep recording in the background'), findsOneWidget);
+      expect(
+        find.text('Battery optimization can stop recording'),
+        findsOneWidget,
+      );
       expect(find.text('GET READY'), findsNothing);
     },
   );
@@ -261,7 +264,7 @@ void main() {
     await tester.tap(find.text('Open settings'));
     await _settle(tester);
     expect(recording.calls, contains('openAppSettings'));
-    expect(find.text('Keep recording in the background'), findsNothing);
+    expect(find.text('Battery optimization can stop recording'), findsNothing);
     expect(find.text('GET READY'), findsNothing);
   });
 
