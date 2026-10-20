@@ -1,23 +1,22 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../core/widgets/status_bar_style.dart';
 import '../../domain/activity_type.dart';
 import '../../l10n/app_localizations.dart';
-import '../../tracking/gps_signal.dart';
 import '../../tracking/ride_recording_controller.dart';
 import '../../tracking/tracking_providers.dart';
 import '../home/home_providers.dart';
-import '../onboarding/activity_type_ui.dart';
 import '../shell/routes.dart';
-import 'countdown_providers.dart';
 import 'countdown_timer.dart';
+import 'widgets/countdown_chips.dart';
+import 'widgets/countdown_gps_status_row.dart';
+import 'widgets/countdown_palette.dart';
+import 'widgets/countdown_ring.dart';
 
 /// Pre-ride countdown. Ports `TimerPage`: an animated 10→0 ring, the read-only
 /// activity chip, a +5 action, a live GPS-signal row (#69) and a Start-now
@@ -37,10 +36,6 @@ class CountdownScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<CountdownScreen> createState() => _CountdownScreenState();
 }
-
-// Fixed palette (no theme resolution): dark backgrounds + light-theme accents.
-const _surface = AppColors.dark; // backgrounds
-const _accent = AppColors.light; // arc, digit, labels, chip text
 
 class _CountdownScreenState extends ConsumerState<CountdownScreen> {
   final CountdownTimer _timer = CountdownTimer();
@@ -115,7 +110,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
 
     return DarkChromeStatusBar(
       child: Scaffold(
-        backgroundColor: _surface.surface,
+        backgroundColor: countdownSurface.surface,
         body: Padding(
           padding: const EdgeInsets.symmetric(vertical: 32),
           child: Stack(
@@ -136,15 +131,15 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
                       Text(
                         l10n.timerGetReady,
                         style: text.labelMedium?.copyWith(
-                          color: _accent.onSurfaceVariant,
+                          color: countdownAccent.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _ActivityChip(activity: activity),
+                      CountdownActivityChip(activity: activity),
                       const SizedBox(height: 32),
-                      _CountdownRing(from: ringFrom, to: ringTo, value: value),
+                      CountdownRing(from: ringFrom, to: ringTo, value: value),
                       const SizedBox(height: 20),
-                      _AddTimeChip(
+                      CountdownAddTimeChip(
                         label: l10n.timerAddFiveSec,
                         onTap: () => _timer.addTime(5),
                       ),
@@ -153,7 +148,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
                         l10n.timerTagline,
                         textAlign: TextAlign.center,
                         style: text.bodyMedium?.copyWith(
-                          color: _accent.onSurfaceVariant,
+                          color: countdownAccent.onSurfaceVariant,
                           height: 1.5,
                         ),
                       ),
@@ -173,7 +168,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const _GpsStatusRow(),
+                        const CountdownGpsStatusRow(),
                         const SizedBox(height: 20),
                         SizedBox(
                           width: double.infinity,
@@ -181,8 +176,8 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
                           child: FilledButton(
                             onPressed: _goToRide,
                             style: FilledButton.styleFrom(
-                              backgroundColor: _accent.primary,
-                              foregroundColor: _accent.onPrimary,
+                              backgroundColor: countdownAccent.primary,
+                              foregroundColor: countdownAccent.onPrimary,
                               // On the button style, not the Text: the
                               // theme's titleMedium color would override
                               // foregroundColor (and follow the app theme).
@@ -205,230 +200,4 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
       ),
     );
   }
-}
-
-class _ActivityChip extends StatelessWidget {
-  const _ActivityChip({required this.activity});
-  final ActivityType activity;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: _surface.surfaceContainer,
-        borderRadius: AppShapes.pill,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          activity.glyph(size: 18, color: _accent.primaryContainer),
-          const SizedBox(width: 8),
-          Text(
-            activity.label(l10n),
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: _accent.primaryContainer,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AddTimeChip extends StatelessWidget {
-  const _AddTimeChip({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: _surface.surfaceContainer,
-      borderRadius: AppShapes.pill,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppShapes.pill,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: _accent.primaryContainer,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The GPS status from the fixes the armed recording streams (#69): the
-/// original's row was static and always said "ready". Display only — the
-/// ride still starts at 0 either way.
-class _GpsStatusRow extends ConsumerWidget {
-  const _GpsStatusRow();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final text = Theme.of(context).textTheme;
-    final signal = ref.watch(countdownGpsSignalProvider);
-    final ready = signal == GpsSignal.ready;
-    final status = switch (signal) {
-      GpsSignal.ready => l10n.gpsStatusReady,
-      GpsSignal.searching => l10n.gpsStatusSearching,
-      GpsSignal.off => l10n.gpsStatusOff,
-    };
-    return Container(
-      decoration: BoxDecoration(
-        color: _surface.surfaceContainer,
-        borderRadius: AppShapes.input,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: ready ? _accent.primary : _accent.onSurfaceVariant,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            l10n.gpsStatusLabel,
-            style: text.labelMedium?.copyWith(color: _accent.onSurfaceVariant),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            status,
-            style: text.labelMedium?.copyWith(
-              color: ready
-                  ? _accent.primaryContainer
-                  : _accent.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CountdownRing extends StatelessWidget {
-  const _CountdownRing({
-    required this.from,
-    required this.to,
-    required this.value,
-  });
-
-  /// Sweep at the start of the current second (only used on the first build).
-  final double from;
-
-  /// Sweep the ring glides to by the end of the current second.
-  final double to;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 180,
-      height: 180,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // The builder starts at [from] on the first build, then on every
-          // tick glides from wherever it is to the new [to] linearly over the
-          // 1 s tick, so the arc drains smoothly instead of snapping.
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: from, end: to),
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.linear,
-            builder: (context, animated, _) => CustomPaint(
-              size: const Size.square(180),
-              painter: _RingPainter(
-                progress: animated,
-                track: _surface.surfaceContainer,
-                arc: _accent.primary,
-              ),
-            ),
-          ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 320),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            // A continuous "odometer" roll: the old digit drifts UP and fades
-            // out while the new one rises in from below — short travel (35% of
-            // the digit height), eased, faded. The previous full-height linear
-            // slide made the outgoing digit bounce back the way it came, which
-            // read as jerky.
-            transitionBuilder: (child, anim) {
-              final incoming = child.key == ValueKey(value);
-              final slide = Tween<Offset>(
-                begin: Offset(0, incoming ? 0.35 : -0.35),
-                end: Offset.zero,
-              ).animate(anim);
-              return FadeTransition(
-                opacity: anim,
-                child: SlideTransition(position: slide, child: child),
-              );
-            },
-            child: Text(
-              '$value',
-              key: ValueKey(value),
-              style: Theme.of(
-                context,
-              ).textTheme.displayMedium?.copyWith(color: _accent.surface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RingPainter extends CustomPainter {
-  _RingPainter({
-    required this.progress,
-    required this.track,
-    required this.arc,
-  });
-  final double progress;
-  final Color track;
-  final Color arc;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const stroke = 10.0;
-    final radius = (size.shortestSide - stroke) / 2;
-    final center = size.center(Offset.zero);
-    final trackPaint = Paint()
-      ..color = track
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke;
-    canvas.drawCircle(center, radius, trackPaint);
-
-    final arcPaint = Paint()
-      ..color = arc
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * progress.clamp(0.0, 1.0),
-      false,
-      arcPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) =>
-      old.progress != progress || old.arc != arc || old.track != track;
 }
