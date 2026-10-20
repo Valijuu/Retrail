@@ -295,6 +295,33 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
+### 1.2.0+6 (closed test, 2026-10-20)
+
+```
+<de-DE>
+Neu:
+• Fährst du eine gespeicherte Fahrt nach und zeichnest auf, wird die neue Fahrt mit dem Original verknüpft
+• Vergleich im Verlauf: Original und alle Nachfahrten mit Strecke, Zeit und Tempo – die schnellste Zeit auf der Strecke bekommt einen Pokal, die Anfahrt zählt nicht mit
+• Filter „Nachgefahrene Strecken“ mit Suche und Mehrfachauswahl
+
+Entfernt:
+• Der Chip „Gutes Tempo“
+
+Feedback an retrail.app@proton.me
+</de-DE>
+<en-US>
+New:
+• Follow a saved ride while recording, and the new ride is linked to the original
+• Compare in the history: the original and every repeat with distance, time and pace – the fastest time on the route gets a trophy, the way there doesn't count
+• "Followed routes" filter with search and multi-select
+
+Removed:
+• The "Great pace" chip
+
+Feedback to retrail.app@proton.me
+</en-US>
+```
+
 ### 1.1.2+5 (closed test, 2026-10-18)
 
 ```
