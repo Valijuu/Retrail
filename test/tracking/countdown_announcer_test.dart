@@ -119,4 +119,28 @@ void main() {
     await announcer().stop();
     verify(() => tts.stop()).called(1);
   });
+
+  test('iOS: no session activated up front, so music keeps playing until '
+      'the first cue', () async {
+    await announcer(isIos: true).prepare(const Locale('en'));
+    verifyNever(() => tts.setSharedInstance(true));
+  });
+
+  test(
+    'iOS stop releases the audio session so ducked music comes back',
+    () async {
+      await announcer(isIos: true).stop();
+      verify(() => tts.stop()).called(1);
+      verify(() => tts.setSharedInstance(false)).called(1);
+    },
+  );
+
+  test('an app language without its own copy (fr) falls back to English, '
+      'voice included', () async {
+    final a = announcer();
+    await a.prepare(const Locale('fr', 'FR'));
+    await a.go();
+    verify(() => tts.setLanguage('en-US')).called(1);
+    verify(() => tts.speak('Go!', focus: true)).called(1);
+  });
 }

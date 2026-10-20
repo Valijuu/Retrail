@@ -55,12 +55,13 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
 
   @override
   Future<void> prepare(Locale locale) async {
-    _goPhrase = lookupAppLocalizations(locale).timerCueGo;
+    final voice = _withCopy(locale);
+    _goPhrase = lookupAppLocalizations(voice).timerCueGo;
     await _quietly(() async {
       if (_isIos) {
-        await _tts.setSharedInstance(true);
-        // Ducks music while speaking; the plugin deactivates the session
-        // after each phrase, so the music comes back up.
+        // Category only — no session activated up front, which would cut
+        // the rider's music before the first cue. The synthesizer activates
+        // it per phrase (ducking music) and the plugin deactivates it after.
         await _tts.setIosAudioCategory(
           IosTextToSpeechAudioCategory.playback,
           [
@@ -72,7 +73,7 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
           IosTextToSpeechAudioMode.voicePrompt,
         );
       }
-      await _tts.setLanguage(_voiceTag(locale));
+      await _tts.setLanguage(_voiceTag(voice));
     });
   }
 
@@ -83,7 +84,12 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
   Future<void> go() => _cue(_goPhrase, _goBuzzMs);
 
   @override
-  Future<void> stop() => _quietly(_tts.stop);
+  Future<void> stop() async {
+    await _quietly(_tts.stop);
+    // A cancelled phrase doesn't release the iOS session the way a finished
+    // one does, which would keep music ducked.
+    if (_isIos) await _quietly(() => _tts.setSharedInstance(false));
+  }
 
   Future<void> _cue(String phrase, int buzzMs) async {
     await _quietly(() => _vibrate(buzzMs));
@@ -107,6 +113,14 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
     } catch (_) {}
   }
 }
+
+/// The app's own language for [locale], or English when the app has no copy
+/// for it ("system" on a French phone): the go phrase and the voice must
+/// match the copy the app shows.
+Locale _withCopy(Locale locale) =>
+    locale.languageCode == 'de' || locale.languageCode == 'en'
+    ? locale
+    : const Locale('en');
 
 /// A full voice tag: iOS needs a region ("de-DE"), the app locale may only
 /// carry the language.

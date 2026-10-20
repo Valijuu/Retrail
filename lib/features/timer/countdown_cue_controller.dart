@@ -19,17 +19,20 @@ class CountdownCueController {
   final bool Function() _enabled;
   final Locale Function() _locale;
   int? _lastCued;
+  bool _started = false;
 
   /// The countdown opened: ready the voice for the app language.
   void begin() {
     _lastCued = null;
+    _started = false;
     if (_enabled()) unawaited(_announcer.prepare(_locale()));
   }
 
   /// The countdown shows [secondsLeft]. A value seen again (a rebuild) is not
   /// repeated; after +5 the window is counted again.
   void onValue(int secondsLeft) {
-    if (secondsLeft == _lastCued) return;
+    // After go nothing more is counted (a +5 tapped while the ride starts).
+    if (_started || secondsLeft == _lastCued) return;
     final cue = countdownCueFor(secondsLeft);
     _lastCued = cue;
     if (cue != null && _enabled()) unawaited(_announcer.count(cue));
@@ -37,6 +40,7 @@ class CountdownCueController {
 
   /// The ride starts.
   void onStart() {
+    _started = true;
     if (_enabled()) unawaited(_announcer.go());
   }
 

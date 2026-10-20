@@ -349,5 +349,31 @@ void main() {
       await tester.pump();
       expect(_announcer.calls, isEmpty);
     });
+
+    testWidgets('+5 at 3 announces the window again from 5', (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      for (var i = 0; i < 7; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+      await tester.tap(find.text('+5 sec.'));
+      await tester.pump();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+      expect(_announcer.calls, ['prepare', '5', '4', '3', '5', '4']);
+    });
+
+    testWidgets('a Stop from the notification cuts the voice', (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+      when(() => _recording.armCancelled).thenReturn(true);
+      await tester.pump(const Duration(seconds: 1));
+      expect(_announcer.calls.last, 'stop');
+      expect(_announcer.calls, isNot(contains('go')));
+    });
   });
 }

@@ -67,6 +67,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
       _navigated = true;
       _begun = true; // already torn down by the stop
       _timer.stop();
+      _cue.end();
       context.go(AppRoutes.main);
       return;
     }
@@ -150,7 +151,10 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
                       const SizedBox(height: 20),
                       CountdownAddTimeChip(
                         label: l10n.timerAddFiveSec,
-                        onTap: () => _timer.addTime(5),
+                        onTap: () {
+                          // The ride is already starting: no more time.
+                          if (!_navigated) _timer.addTime(5);
+                        },
                       ),
                       const SizedBox(height: 28),
                       Text(

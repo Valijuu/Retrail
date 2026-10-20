@@ -83,4 +83,23 @@ void main() {
       ..end();
     expect(announcer.calls.last, 'stop');
   });
+
+  test('after go, a late tick (+5 during the start) stays silent', () {
+    controller()
+      ..begin()
+      ..onStart()
+      ..onValue(5)
+      ..onValue(4);
+    expect(announcer.calls.skip(1), ['go']);
+  });
+
+  test('the next countdown counts again', () {
+    final c = controller()
+      ..begin()
+      ..onStart()
+      ..begin()
+      ..onValue(5);
+    expect(c, isNotNull);
+    expect(announcer.calls.last, '5');
+  });
 }
