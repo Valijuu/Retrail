@@ -23,9 +23,12 @@ class DateHeaderItem extends HistoryItem {
 /// doesn't join them (see issue #21); a card fetches its own, lazily, only
 /// to render a not-yet-cached route preview (HistoryRideCard/_Thumbnail).
 class RideEntryItem extends HistoryItem {
-  const RideEntryItem(this.ride, this.stats);
+  const RideEntryItem(this.ride, this.stats, {this.followCount = 0});
   final Ride ride;
   final RideStats stats;
+
+  /// How often this ride was followed and recorded again (Spec 20).
+  final int followCount;
 }
 
 /// Filters, sorts and (for date sort) date-groups the history into a flat
@@ -38,6 +41,7 @@ List<HistoryItem> buildHistoryItems(
   HistoryFilter f, {
   int? nowMs,
   String? locale,
+  Map<int, int> followCounts = const {},
 }) {
   // Multi-select activities: a ride matches ANY selected type; empty = all.
   final activityIds = {for (final a in f.activities) a.id};
@@ -47,6 +51,12 @@ List<HistoryItem> buildHistoryItems(
 
   final entries = rides
       .where((ride) => !f.favoritesOnly || ride.isFavorite)
+      .where(
+        (ride) =>
+            f.routeIds.isEmpty ||
+            f.routeIds.contains(ride.rideId) ||
+            f.routeIds.contains(ride.followedRideId),
+      )
       .where((ride) => activityIds.isEmpty || activityIds.contains(ride.typ))
       .where((ride) {
         if (!hasMonthRange) return true;
@@ -71,6 +81,7 @@ List<HistoryItem> buildHistoryItems(
         (ride) => RideEntryItem(
           ride,
           storedRideStats(ride) ?? statsWithoutTrackpoints(ride),
+          followCount: followCounts[ride.rideId] ?? 0,
         ),
       )
       .toList();

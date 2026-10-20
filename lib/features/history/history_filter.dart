@@ -20,6 +20,7 @@ class HistoryFilter {
     this.year,
     this.monthFrom,
     this.monthTo,
+    this.routeIds = const {},
   });
 
   final SortOrder sort;
@@ -41,6 +42,10 @@ class HistoryFilter {
   final int? monthFrom;
   final int? monthTo;
 
+  /// Followed routes, by their original's ride id (Spec 20): a ride matches
+  /// when it is one of them or followed one. Empty = all rides.
+  final Set<int> routeIds;
+
   HistoryFilter copyWith({
     SortOrder? sort,
     String? query,
@@ -52,6 +57,7 @@ class HistoryFilter {
     bool clearMonthFrom = false,
     int? monthTo,
     bool clearMonthTo = false,
+    Set<int>? routeIds,
   }) => HistoryFilter(
     sort: sort ?? this.sort,
     query: query ?? this.query,
@@ -60,6 +66,7 @@ class HistoryFilter {
     year: clearYear ? null : (year ?? this.year),
     monthFrom: clearMonthFrom ? null : (monthFrom ?? this.monthFrom),
     monthTo: clearMonthTo ? null : (monthTo ?? this.monthTo),
+    routeIds: routeIds ?? this.routeIds,
   );
 
   @override
@@ -71,7 +78,8 @@ class HistoryFilter {
       _setEq.equals(other.activities, activities) &&
       other.year == year &&
       other.monthFrom == monthFrom &&
-      other.monthTo == monthTo;
+      other.monthTo == monthTo &&
+      _setEq.equals(other.routeIds, routeIds);
 
   @override
   int get hashCode => Object.hash(
@@ -82,6 +90,7 @@ class HistoryFilter {
     year,
     monthFrom,
     monthTo,
+    _setEq.hash(routeIds),
   );
 }
 
@@ -100,6 +109,7 @@ int activeFilterCount(HistoryFilter f) {
   if (f.activities.isNotEmpty) count++;
   if (f.year != null) count++;
   if (f.monthFrom != null || f.monthTo != null) count++;
+  if (f.routeIds.isNotEmpty) count++;
   return count;
 }
 
@@ -112,4 +122,5 @@ bool narrowsRides(HistoryFilter f) =>
     f.activities.isNotEmpty ||
     f.year != null ||
     f.monthFrom != null ||
-    f.monthTo != null;
+    f.monthTo != null ||
+    f.routeIds.isNotEmpty;

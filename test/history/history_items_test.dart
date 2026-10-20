@@ -22,6 +22,7 @@ Ride _ride(
   double? avgSpeedKmh,
   double? maxSpeedKmh,
   bool hasRoute = false,
+  int? followed,
 }) => Ride(
   rideId: id,
   description: desc,
@@ -37,6 +38,7 @@ Ride _ride(
   avgSpeedKmh: avgSpeedKmh,
   maxSpeedKmh: maxSpeedKmh,
   hasRoute: hasRoute,
+  followedRideId: followed,
 );
 
 List<HistoryItem> _build(List<Ride> rides, HistoryFilter f) =>
@@ -152,6 +154,52 @@ void main() {
         noTimestamp,
         _ride(1, date: DateTime(2020, 4, 1).millisecondsSinceEpoch),
       ], const HistoryFilter(monthFrom: 3, monthTo: 5));
+      expect(_rideIds(items), [1]);
+    });
+  });
+
+  group('followed routes (Spec 20)', () {
+    test('each entry carries how often its ride was followed', () {
+      final items = buildHistoryItems(
+        [_ride(1), _ride(2, followed: 1)],
+        const HistoryFilter(sort: SortOrder.distance),
+        nowMs: _now,
+        followCounts: const {1: 2},
+      );
+      final counts = {
+        for (final i in items.whereType<RideEntryItem>())
+          i.ride.rideId: i.followCount,
+      };
+      expect(counts, {1: 2, 2: 0});
+    });
+
+    test('a route filter keeps the originals and their follows', () {
+      final items = _build([
+        _ride(1),
+        _ride(2, followed: 1),
+        _ride(3),
+        _ride(4, followed: 3),
+        _ride(5),
+        _ride(6, followed: 5),
+      ], const HistoryFilter(routeIds: {1, 3}));
+      expect(_rideIds(items), unorderedEquals([1, 2, 3, 4]));
+    });
+
+    test('no route filter keeps every ride', () {
+      final items = _build([
+        _ride(1),
+        _ride(2, followed: 1),
+        _ride(3),
+      ], const HistoryFilter());
+      expect(_rideIds(items), unorderedEquals([1, 2, 3]));
+    });
+
+    test('the route filter combines with the others', () {
+      final items = _build([
+        _ride(1, fav: true),
+        _ride(2, followed: 1),
+        _ride(3, fav: true),
+      ], const HistoryFilter(routeIds: {1}, favoritesOnly: true));
       expect(_rideIds(items), [1]);
     });
   });
@@ -315,6 +363,12 @@ void main() {
       // year + month range + sort + favorites + activities = 5; query is
       // excluded (it has its own visible bar).
       expect(activeFilterCount(f), 5);
+    });
+
+    test('a route filter counts once and narrows the rides', () {
+      const f = HistoryFilter(routeIds: {1, 3});
+      expect(activeFilterCount(f), 1);
+      expect(narrowsRides(f), isTrue);
     });
   });
 }
