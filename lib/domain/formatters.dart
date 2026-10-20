@@ -37,6 +37,14 @@ String formatRideDate(int? timestampMs, {String? locale}) => timestampMs == null
         locale,
       ).format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
 
+/// `dd.MM.yyyy`, or `—` when null.
+String formatRideDay(int? timestampMs, {String? locale}) => timestampMs == null
+    ? '—'
+    : _cachedFormat(
+        'dd.MM.yyyy',
+        locale,
+      ).format(DateTime.fromMillisecondsSinceEpoch(timestampMs));
+
 /// `HH:mm`, or `—` when null.
 String formatRideTime(int? timestampMs, {String? locale}) => timestampMs == null
     ? '—'

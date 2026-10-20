@@ -17,11 +17,14 @@ import 'history_providers.dart';
 import 'history_ride_card.dart';
 import 'open_edit_ride_sheet.dart';
 import 'ride_detail_dialog.dart';
+import 'route_group_providers.dart';
+import 'widgets/route_group_sheet.dart';
 import 'widgets/history_empty_state.dart';
 import '../../data/db/app_database.dart' show Ride, Trackpoint;
 import '../../data/db/followed_route.dart' show RouteRoot;
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../data/repositories/data_providers.dart';
+import '../../domain/ride_stats.dart';
 import '../../map/preview_projection.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../../core/theme/theme_context.dart';
@@ -253,10 +256,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   /// Fetches this ride's trackpoints on demand — the list itself doesn't have
   /// them (issue #21) — then opens the read-only detail dialog.
   Future<void> _openDetail(RideEntryItem entry) async {
+    final ride = entry.ride;
     final tps = await ref
         .read(trackpointRepositoryProvider)
-        .getForRide(entry.ride.rideId)
+        .getForRide(ride.rideId)
         .first;
+    // Spec 20: a follow links to its original, an original to its group.
+    final originalId = ride.followedRideId;
+    final original = originalId == null
+        ? null
+        : await ref.read(rideRepositoryProvider).findById(originalId);
+    final followCount =
+        ref.read(followCountsProvider).value?[ride.rideId] ?? entry.followCount;
     if (!mounted) return;
     await showDialog<void>(
       context: context,
@@ -273,9 +284,35 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           Navigator.of(context).pop();
           _followRoute(entry.ride, tps);
         },
+        followedFrom: original,
+        onOpenOriginal: original == null
+            ? null
+            : () {
+                Navigator.of(context).pop();
+                _openDetail(
+                  RideEntryItem(
+                    original,
+                    storedRideStats(original) ??
+                        statsWithoutTrackpoints(original),
+                  ),
+                );
+              },
+        followCount: followCount,
+        onOpenGroup: () {
+          Navigator.of(context).pop();
+          _openRouteGroup(entry);
+        },
       ),
     );
   }
+
+  /// The comparison of [entry]'s route group, [entry] selected (Spec 20).
+  Future<void> _openRouteGroup(RideEntryItem entry) => showRouteGroupSheet(
+    context,
+    rootId: entry.ride.routeRootId,
+    highlightRideId: entry.ride.rideId,
+    onOpenRide: _openDetail,
+  );
 
   /// Loads [ride]'s route and starts "Follow route" for it (Spec 17).
   Future<void> _followRoute(Ride ride, [List<Trackpoint>? trackpoints]) async {
@@ -434,6 +471,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           onEdit: () => showEditRideSheet(context, ref, item.ride),
           onDelete: () => _confirmDelete(single: rideId),
           onFollowRoute: () => _followRoute(item.ride),
+          onOpenRouteGroup: () => _openRouteGroup(item),
           onToggleFavorite: () =>
               ref.read(historyControllerProvider).toggleFavorite(item.ride),
         );

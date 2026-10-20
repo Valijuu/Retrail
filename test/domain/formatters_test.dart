@@ -33,6 +33,13 @@ void main() {
       expect(formatRideTime(ms, locale: 'en'), '09:05');
       expect(formatRideDayKey(ms), '2026-06-17');
     });
+
+    test('formatRideDay is the date without the time — "17.06.2026", '
+        'null -> "—"', () {
+      final ms = DateTime(2026, 6, 17, 9, 5).millisecondsSinceEpoch;
+      expect(formatRideDay(ms, locale: 'en'), '17.06.2026');
+      expect(formatRideDay(null), '—');
+    });
   });
 
   group('formatSpeedKmh', () {

@@ -3,15 +3,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_shapes.dart';
+import '../../data/db/app_database.dart' show Ride;
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../domain/activity_type.dart';
 import '../../domain/formatters.dart';
 import '../../domain/ride_stats.dart';
+import '../../domain/ride_title.dart';
 import '../../l10n/app_localizations.dart';
 import '../../map/live_map.dart';
 import '../../map/map_attribution.dart';
 import '../../map/preview_projection.dart';
 import '../onboarding/activity_type_ui.dart';
+import 'widgets/route_link_row.dart';
 import '../../core/theme/theme_context.dart';
 
 /// Read-only ride detail: interactive map (with fullscreen), date, activity,
@@ -23,6 +26,10 @@ class RideDetailDialog extends StatefulWidget {
     required this.stats,
     required this.onDismiss,
     this.onFollowRoute,
+    this.followedFrom,
+    this.followCount = 0,
+    this.onOpenOriginal,
+    this.onOpenGroup,
   });
 
   final RideWithTrackpoints rwt;
@@ -31,6 +38,14 @@ class RideDetailDialog extends StatefulWidget {
 
   /// Starts "Follow route" (Spec 17). Null hides the button.
   final VoidCallback? onFollowRoute;
+
+  /// The original this ride followed, linked via [onOpenOriginal] (Spec 20).
+  final Ride? followedFrom;
+  final VoidCallback? onOpenOriginal;
+
+  /// How often this ride was followed, linked via [onOpenGroup] (Spec 20).
+  final int followCount;
+  final VoidCallback? onOpenGroup;
 
   @override
   State<RideDetailDialog> createState() => _RideDetailDialogState();
@@ -63,6 +78,32 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
   void didUpdateWidget(RideDetailDialog oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.rwt != oldWidget.rwt) _points = _routeOf(widget.rwt);
+  }
+
+  /// The route link line, if any: to the original, or to the comparison
+  /// (Spec 20).
+  List<Widget> _routeLink(AppLocalizations l10n, String locale) {
+    final original = widget.followedFrom;
+    final openOriginal = widget.onOpenOriginal;
+    final openGroup = widget.onOpenGroup;
+    final String label;
+    final VoidCallback onTap;
+    if (original != null && openOriginal != null) {
+      label = l10n.rideFollowedFrom(
+        rideDisplayTitle(original, locale: locale),
+        formatRideDay(original.date ?? original.startTime, locale: locale),
+      );
+      onTap = openOriginal;
+    } else if (widget.followCount > 0 && openGroup != null) {
+      label = l10n.chipFollowCount(widget.followCount);
+      onTap = openGroup;
+    } else {
+      return const [];
+    }
+    return [
+      const SizedBox(height: 8),
+      RouteLinkRow(label: label, onTap: onTap),
+    ];
   }
 
   @override
@@ -213,6 +254,7 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                             fontStyle: FontStyle.italic,
                           ),
                         ),
+                      ..._routeLink(l10n, locale),
                       const SizedBox(height: 16),
                       Divider(
                         height: 1,

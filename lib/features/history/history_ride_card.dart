@@ -2,19 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_shapes.dart';
-import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
 import '../../domain/formatters.dart';
 import '../../domain/ride_title.dart';
 import '../../l10n/app_localizations.dart';
 import '../../map/map_attribution.dart';
 import '../../map/preview_projection.dart';
-import '../../map/route_preview.dart';
-import '../active_ride/active_ride_providers.dart';
 import '../home/navigation_chooser.dart';
 import '../home/navigation_launcher.dart';
 import '../onboarding/activity_type_ui.dart';
 import 'history_items.dart';
+import 'widgets/ride_preview_thumbnail.dart';
 import '../../core/theme/theme_context.dart';
 
 /// One ride row: cached-PNG thumbnail (no per-scroll tiles), navigate-to-start,
@@ -34,6 +32,7 @@ class HistoryRideCard extends ConsumerStatefulWidget {
     required this.onDelete,
     required this.onToggleFavorite,
     this.onFollowRoute,
+    this.onOpenRouteGroup,
   });
 
   final RideEntryItem entry;
@@ -54,6 +53,10 @@ class HistoryRideCard extends ConsumerStatefulWidget {
 
   /// Starts "Follow route"; null hides the menu entry.
   final VoidCallback? onFollowRoute;
+
+  /// Opens the comparison of this ride's route group from its Followed /
+  /// "n× followed" chip (Spec 20).
+  final VoidCallback? onOpenRouteGroup;
 
   @override
   ConsumerState<HistoryRideCard> createState() => _HistoryRideCardState();
@@ -105,6 +108,9 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
         '${formatDuration(stats.durationMs)} · '
         'Ø ${stats.avgSpeedKmh.round()} km/h';
     final activity = ActivityType.fromId(ride.typ);
+    final isFollow = ride.followedRideId != null;
+    final followCount = widget.entry.followCount;
+    final openGroup = widget.selectionMode ? null : widget.onOpenRouteGroup;
 
     return InkWell(
       onTap: widget.selectionMode ? widget.onTap : null,
@@ -195,7 +201,9 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                   ),
                   if (activity != null ||
                       stats.avgSpeedKmh > 10 ||
-                      !hasRoute) ...[
+                      !hasRoute ||
+                      isFollow ||
+                      followCount > 0) ...[
                     const SizedBox(height: 5),
                     Wrap(
                       spacing: 5,
@@ -222,6 +230,30 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                             label: l10n.chipNoRoute,
                             bg: colors.surfaceContainer,
                             fg: colors.onSurfaceVariant,
+                          ),
+                        if (isFollow)
+                          _Chip(
+                            label: l10n.chipFollowed,
+                            leading: Icon(
+                              Icons.alt_route,
+                              size: 13,
+                              color: colors.onPrimaryContainer,
+                            ),
+                            bg: colors.primaryContainer,
+                            fg: colors.onPrimaryContainer,
+                            onTap: openGroup,
+                          ),
+                        if (followCount > 0)
+                          _Chip(
+                            label: l10n.chipFollowCount(followCount),
+                            leading: Icon(
+                              Icons.alt_route,
+                              size: 13,
+                              color: colors.onPrimaryContainer,
+                            ),
+                            bg: colors.primaryContainer,
+                            fg: colors.onPrimaryContainer,
+                            onTap: openGroup,
                           ),
                       ],
                     ),
@@ -253,22 +285,10 @@ class _Thumbnail extends ConsumerWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  /// This ride's trackpoints, fetched only when actually needed (a
-  /// not-yet-cached preview render, or a navigate-to-start tap) — the list
-  /// itself no longer joins them (issue #21).
-  Future<List<RoutePoint>> _loadPoints(WidgetRef ref) async {
-    final tps = await ref
-        .read(trackpointRepositoryProvider)
-        .getForRide(rideId)
-        .first;
-    return [for (final tp in tps) (lat: tp.latitude, lng: tp.longitude)];
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
-    final text = Theme.of(context).textTheme;
     return ClipRRect(
       // Independently round the thumbnail's top corners (as the original did),
       // so the full-bleed preview image can't bleed past the card's rounded
@@ -289,25 +309,7 @@ class _Thumbnail extends ConsumerWidget {
                 key: ValueKey('ride_map_$rideId'),
                 behavior: HitTestBehavior.opaque,
                 onTap: onTap,
-                child: ColoredBox(
-                  color: hasRoute ? colors.mapTerrain : colors.mapTerrainGrid,
-                  child: hasRoute
-                      ? RoutePreview(
-                          rideId: rideId,
-                          hasRoute: true,
-                          pointsLoader: () => _loadPoints(ref),
-                          cache: ref.watch(routePreviewCacheProvider),
-                          cacheWidth: previewImageCacheWidth,
-                        )
-                      : Center(
-                          child: Text(
-                            l10n.chipNoRoute,
-                            style: text.bodyMedium?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                ),
+                child: RidePreviewThumbnail(rideId: rideId, hasRoute: hasRoute),
               ),
             ),
             if (selectionMode)
@@ -357,7 +359,7 @@ class _Thumbnail extends ConsumerWidget {
                   child: IconButton(
                     iconSize: 20,
                     onPressed: () async {
-                      final points = await _loadPoints(ref);
+                      final points = await loadRidePoints(ref, rideId);
                       if (points.isEmpty || !context.mounted) return;
                       await navigateTo(
                         context,
@@ -455,15 +457,19 @@ class _Chip extends StatelessWidget {
     required this.bg,
     required this.fg,
     this.leading,
+    this.onTap,
   });
   final String label;
   final Color bg;
   final Color fg;
   final Widget? leading;
 
+  /// Makes the chip a button of its own, so a tap doesn't reach the card.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final chip = Container(
       decoration: BoxDecoration(color: bg, borderRadius: AppShapes.pill),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: Row(
@@ -478,6 +484,15 @@ class _Chip extends StatelessWidget {
             style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg),
           ),
         ],
+      ),
+    );
+    final tap = onTap;
+    if (tap == null) return chip;
+    return Semantics(
+      button: true,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(onTap: tap, borderRadius: AppShapes.pill, child: chip),
       ),
     );
   }

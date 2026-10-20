@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,9 @@ import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_ride_card.dart';
 import 'package:retrail/features/history/history_screen.dart';
 import 'package:retrail/features/history/ride_detail_dialog.dart';
+import 'package:retrail/features/history/route_group_providers.dart';
+import 'package:retrail/features/history/widgets/route_group_sheet.dart';
+import 'package:retrail/domain/route_group.dart';
 import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/features/home/navigation_launcher.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -139,6 +143,7 @@ Ride _ride(
   String? typ,
   bool fav = false,
   bool hasRoute = false,
+  int? followed,
 }) => Ride(
   rideId: id,
   description: desc,
@@ -150,6 +155,7 @@ Ride _ride(
   isFavorite: fav,
   favoritedAt: null,
   hasRoute: hasRoute,
+  followedRideId: followed,
 );
 
 RideEntryItem _entry(int id, {String? desc, String? typ, bool fav = false}) =>
@@ -192,6 +198,7 @@ void main() {
     Map<int, List<Trackpoint>> trackpoints = const {},
     Stream<bool>? online,
     Locale? locale,
+    RouteGroupView? routeGroup,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -212,6 +219,9 @@ void main() {
         if (navLauncher != null)
           navigationLauncherProvider.overrideWithValue(navLauncher),
         isOnlineProvider.overrideWith((ref) => online ?? Stream.value(true)),
+        rideRepositoryProvider.overrideWithValue(RideRepository(RideDao(db))),
+        if (routeGroup != null)
+          routeGroupProvider.overrideWith((ref, _) => Stream.value(routeGroup)),
       ],
     );
     // Simulate Home parking a jump target *before* the History screen mounts
@@ -925,5 +935,121 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(RideDetailDialog), findsNothing);
     expect(find.text('Record this ride?'), findsOneWidget);
+  });
+
+  group('followed rides (Spec 20)', () {
+    RideEntryItem followEntry(int id, {int followCount = 0, int? followed}) =>
+        RideEntryItem(
+          _ride(id, desc: 'Ride $id', followed: followed),
+          const RideStats(
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15,
+          ),
+          followCount: followCount,
+        );
+
+    RouteGroupView view() {
+      final original = followEntry(1, followCount: 1);
+      final follow = followEntry(2, followed: 1);
+      RouteGroupRide r(RideEntryItem e) => RouteGroupRide(
+        rideId: e.ride.rideId,
+        timestampMs: e.ride.date!,
+        durationMs: e.stats.durationMs,
+        coverage: 1,
+      );
+      return RouteGroupView(buildRouteGroup(r(original), [r(follow)]), {
+        1: original,
+        2: follow,
+      });
+    }
+
+    Future<void> pumpFollowed(WidgetTester tester) => pump(tester, [
+      followEntry(1, followCount: 1),
+      followEntry(2, followed: 1),
+    ], routeGroup: view());
+
+    testWidgets('a follow shows "Followed", its original the count', (
+      tester,
+    ) async {
+      await pump(tester, [
+        followEntry(1, followCount: 2),
+        followEntry(2, followed: 1),
+        followEntry(3),
+      ]);
+      expect(find.text('Followed'), findsOneWidget);
+      expect(find.text('2× followed'), findsOneWidget);
+    });
+
+    testWidgets('tapping either chip opens the group, the tapped ride '
+        'selected', (tester) async {
+      await pumpFollowed(tester);
+      await tester.tap(find.text('Followed'));
+      await tester.pumpAndSettle();
+      final sheet = tester.widget<RouteGroupSheet>(
+        find.byType(RouteGroupSheet),
+      );
+      expect(sheet.rootId, 1);
+      expect(sheet.highlightRideId, 2);
+      Navigator.of(tester.element(find.byType(RouteGroupSheet))).pop();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('1× followed'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<RouteGroupSheet>(find.byType(RouteGroupSheet))
+            .highlightRideId,
+        1,
+      );
+    });
+
+    testWidgets('in selection mode a chip tap does not open the group', (
+      tester,
+    ) async {
+      await pumpFollowed(tester);
+      await tester.longPress(find.text('Ride 1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Followed'));
+      await tester.pumpAndSettle();
+      expect(find.byType(RouteGroupSheet), findsNothing);
+    });
+
+    testWidgets('a follow\'s detail links to its original and opens it', (
+      tester,
+    ) async {
+      LiveMap.debugMapBuilderOverride = (_) =>
+          const SizedBox(key: ValueKey('stub-map'));
+      addTearDown(() => LiveMap.debugMapBuilderOverride = null);
+      final originalId = await db.rideDao.insert(
+        RidesCompanion.insert(
+          description: const Value('Hausrunde'),
+          date: const Value(1718193600000),
+        ),
+      );
+      await pump(tester, [
+        RideEntryItem(
+          _ride(2, desc: 'Ride 2', hasRoute: true, followed: originalId),
+          const RideStats(
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15,
+          ),
+        ),
+      ]);
+      await tester.tap(find.byKey(const ValueKey('ride_map_2')));
+      await tester.pumpAndSettle();
+      final link = find.text('Followed from “Hausrunde” · 12.06.2024');
+      expect(link, findsOneWidget);
+
+      await tester.tap(link);
+      await tester.pumpAndSettle();
+      final dialog = tester.widget<RideDetailDialog>(
+        find.byType(RideDetailDialog),
+      );
+      expect(dialog.rwt.ride.rideId, originalId);
+    });
   });
 }

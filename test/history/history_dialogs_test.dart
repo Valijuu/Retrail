@@ -828,4 +828,90 @@ void main() {
     expect(find.text('22,0 km/h'), findsOneWidget);
     expect(find.text('15,0 km/h'), findsOneWidget);
   });
+
+  group('RideDetailDialog route link (Spec 20)', () {
+    const stats = RideStats(
+      durationMs: 600000,
+      distanceMetres: 4200,
+      maxSpeedKmh: 22,
+      avgSpeedKmh: 15,
+    );
+
+    Future<void> pumpDialog(
+      WidgetTester tester, {
+      Ride? followedFrom,
+      int followCount = 0,
+      VoidCallback? onOpenOriginal,
+      VoidCallback? onOpenGroup,
+    }) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(ride: _ride(), trackpoints: const []),
+            stats: stats,
+            onDismiss: () {},
+            followedFrom: followedFrom,
+            followCount: followCount,
+            onOpenOriginal: onOpenOriginal,
+            onOpenGroup: onOpenGroup,
+          ),
+        ),
+      );
+    }
+
+    testWidgets('a follow names its original and opens it', (tester) async {
+      var opened = false;
+      await pumpDialog(
+        tester,
+        followedFrom: _ride().copyWith(
+          rideId: 9,
+          description: const Value('Hausrunde'),
+        ),
+        onOpenOriginal: () => opened = true,
+      );
+      final link = find.text('Followed from “Hausrunde” · 12.06.2024');
+      expect(link, findsOneWidget);
+      await tester.tap(link);
+      expect(opened, isTrue);
+    });
+
+    testWidgets('an original without a title is named by its date', (
+      tester,
+    ) async {
+      await pumpDialog(
+        tester,
+        followedFrom: _ride().copyWith(
+          rideId: 9,
+          description: const Value(null),
+        ),
+        onOpenOriginal: () {},
+      );
+      expect(
+        find.textContaining('Followed from “Wednesday, June 12, 2024”'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an original shows how often it was followed and opens the '
+        'group', (tester) async {
+      var opened = false;
+      await pumpDialog(
+        tester,
+        followCount: 2,
+        onOpenGroup: () => opened = true,
+      );
+      await tester.tap(find.text('2× followed'));
+      expect(opened, isTrue);
+    });
+
+    testWidgets('a plain ride has no link row', (tester) async {
+      await pumpDialog(tester);
+      expect(find.textContaining('followed'), findsNothing);
+      expect(find.textContaining('Followed'), findsNothing);
+    });
+  });
 }
