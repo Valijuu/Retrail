@@ -295,6 +295,31 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
+### 1.3.0+7 (closed test, 2026-10-20)
+
+```
+<de-DE>
+Neu:
+• Countdown-Ansage: Die letzten fünf Sekunden werden angesagt und vibrieren, beim Start kommt „Fahrt gestartet“ – so merkst du auch mit dem Handy in der Tasche, wann die Aufnahme läuft. Abschaltbar in den Einstellungen
+• Der Countdown dauert jetzt 10 statt 5 Sekunden
+
+Behoben:
+• Der Countdown zeigt nach einer Fahrt mit ausgeschaltetem GPS nicht mehr fälschlich „GPS aus“
+
+Feedback an retrail.app@proton.me
+</de-DE>
+<en-US>
+New:
+• Countdown cue: the last five seconds are spoken with a buzz each, and "Ride started" when recording begins – so you know it's running with the phone in your pocket. Can be turned off in the settings
+• The countdown now runs 10 instead of 5 seconds
+
+Fixed:
+• The countdown no longer wrongly shows "GPS off" after a ride that ended with GPS switched off
+
+Feedback to retrail.app@proton.me
+</en-US>
+```
+
 ### 1.2.0+6 (closed test, 2026-10-20)
 
 ```

@@ -84,7 +84,7 @@ bundle is signed with the upload key above (`CN=Valijuu`), not
 `CN=Android Debug`, and stores it as `release/retrail-<version>.aab`
 (gitignored). The global skill script does the same:
 `~/.claude/skills/play-release/scripts/build-release.sh --expect-owner "CN=Valijuu" --name retrail`
-(used for 1.0.1+2; 1.1.0+3 to 1.2.0+6 were built with `tool/build_release.sh`). Upload that file in the Play Console. Bump
+(used for 1.0.1+2; 1.1.0+3 to 1.3.0+7 were built with `tool/build_release.sh`). Upload that file in the Play Console. Bump
 `version:` in `pubspec.yaml` (the `+N` build number) for every upload.
 
 ## Play Console state
@@ -99,7 +99,8 @@ Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.
 | 1.1.0+3 | Closed test (Alpha) | 2026-10-12 | published — QA report fixes (#73–#76), countdown recording fix (#77), floating snack bars |
 | 1.1.1+4 | Closed test (Alpha) | 2026-10-14 | built, upload pending — status bar icons on the dark ride screens (#66), live GPS status in the countdown (#69) |
 | 1.1.2+5 | Closed test (Alpha) | 2026-10-18 | built — battery optimization hint (#68), ride menu colour |
-| 1.2.0+6 | Closed test (Alpha) | 2026-10-20 | built, upload pending — followed rides (Spec 20: link, comparison, route filter, #79 time on the route); "Great pace" chip removed. DB migration v3 → v5 on update |
+| 1.2.0+6 | Closed test (Alpha) | 2026-10-20 | published — followed rides (Spec 20: link, comparison, route filter, #79 time on the route); "Great pace" chip removed. DB migration v3 → v5 on update |
+| 1.3.0+7 | Closed test (Alpha) | 2026-10-20 | built, upload pending — countdown cue (Spec 21, #81: spoken 5…1 + "Ride started", vibration, settings switch), countdown 10 s, stale "GPS off" in the countdown (#78 point 2). New permission `VIBRATE` (normal, no form) |
 
 Next: 12+ testers for 14 days from opt-in; a further update during the test
 (#68; iOS check of #78; retake the ride screenshots for #66), then apply for production access; #67 before the public launch. Releases
