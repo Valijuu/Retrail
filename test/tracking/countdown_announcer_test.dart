@@ -66,7 +66,7 @@ void main() {
     await a.count(1);
     await a.go();
     expect(buzzes.last, greaterThan(buzzes.first));
-    verify(() => tts.speak('Los!', focus: true)).called(1);
+    verify(() => tts.speak('Fahrt gestartet', focus: true)).called(1);
   });
 
   test('prepare picks a regional voice for a bare language', () async {
@@ -141,6 +141,6 @@ void main() {
     await a.prepare(const Locale('fr', 'FR'));
     await a.go();
     verify(() => tts.setLanguage('en-US')).called(1);
-    verify(() => tts.speak('Go!', focus: true)).called(1);
+    verify(() => tts.speak('Ride started', focus: true)).called(1);
   });
 }

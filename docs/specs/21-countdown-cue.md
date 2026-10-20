@@ -4,7 +4,7 @@
 **Depends on:** Spec 11 (countdown, now 10 s), Spec 14 (settings).
 
 ## Goal
-During the pre-ride countdown the phone is often already in a pocket, so the rider can't see when recording starts. In the last five seconds the system voice says **"5, 4, 3, 2, 1"**, and **"Go!"** (de: „Los!“) when the ride starts. Each number comes with a short buzz, and "Go" with a long one. Only the countdown is announced. There are no other voice prompts (pause, distance, …).
+During the pre-ride countdown the phone is often already in a pocket, so the rider can't see when recording starts. In the last five seconds the system voice says **"5, 4, 3, 2, 1"**, and **"Ride started"** (de: „Fahrt gestartet“) when the ride starts — a confirmation that recording runs, rather than a "go" signal. Each number comes with a short buzz, and the start cue (called "Go" below) with a long one. Only the countdown is announced. There are no other voice prompts (pause, distance, …).
 
 ## Behaviour
 1. **Window.** Seconds `countdownCueFrom` (5) … 1 are spoken from the countdown tick (`countdownCueFor`). 0 is silent on the tick. "Go" comes from the ride start instead, so it is said exactly once, whether the countdown runs out or the rider taps **Start now** (then only "Go"). After **+5 sec.** the window is counted again from 5. A value seen twice in a row (a rebuild) is not repeated.

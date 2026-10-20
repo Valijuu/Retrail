@@ -124,6 +124,25 @@ void main() {
       expect(toggle.value, isTrue);
     });
 
+    testWidgets('comes first, above the activity', (tester) async {
+      await pump(tester);
+      expect(
+        tester.getTopLeft(find.text('COUNTDOWN')).dy,
+        lessThan(tester.getTopLeft(find.text('Activity')).dy),
+      );
+    });
+
+    testWidgets('one explanation only, as the section subtitle', (
+      tester,
+    ) async {
+      await pump(tester);
+      expect(
+        find.textContaining('Speaks the last five seconds'),
+        findsOneWidget,
+      );
+      expect(find.text('Before a ride starts.'), findsNothing);
+    });
+
     testWidgets('reflects a switched-off cue', (tester) async {
       await pump(tester, countdownCue: false);
       expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);

@@ -79,7 +79,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     // The real settings screen renders its sections (e.g. the THEME header).
-    expect(find.text('THEME'), findsOneWidget);
+    expect(find.text('COUNTDOWN'), findsOneWidget);
   });
 
   testWidgets('tapping the Home avatar opens the profile edit sheet', (
@@ -184,12 +184,12 @@ void main() {
       await settle(tester);
       await tester.tap(find.text('Settings'));
       await settle(tester);
-      expect(find.text('THEME'), findsOneWidget);
+      expect(find.text('COUNTDOWN'), findsOneWidget);
 
       expect(await tester.binding.handlePopRoute(), isTrue); // consumed
       await settle(tester);
       expect(find.text('Recent rides'), findsOneWidget);
-      expect(find.text('THEME'), findsNothing);
+      expect(find.text('COUNTDOWN'), findsNothing);
     },
   );
 
@@ -202,7 +202,7 @@ void main() {
       await settle(tester);
       await tester.tap(find.text('Settings'));
       await settle(tester);
-      expect(find.text('THEME'), findsOneWidget);
+      expect(find.text('COUNTDOWN'), findsOneWidget);
 
       expect(await tester.binding.handlePopRoute(), isTrue);
       await settle(tester);
@@ -229,7 +229,10 @@ void main() {
 
       expect(await tester.binding.handlePopRoute(), isTrue);
       await settle(tester);
-      expect(find.text('THEME'), findsOneWidget); // Settings, not History again
+      expect(
+        find.text('COUNTDOWN'),
+        findsOneWidget,
+      ); // Settings, not History again
 
       expect(await tester.binding.handlePopRoute(), isTrue);
       await settle(tester);

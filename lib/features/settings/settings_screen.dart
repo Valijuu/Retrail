@@ -12,8 +12,8 @@ import 'settings_providers.dart';
 import '../../core/theme/theme_context.dart';
 import 'widgets/settings_rows.dart';
 
-/// Settings tab: default activity, language, appearance and the countdown
-/// cue. Reads the live preference providers; a [SettingsController] writes
+/// Settings tab: the countdown cue, default activity, language and
+/// appearance. Reads the live preference providers; a [SettingsController] writes
 /// back. Ports `SettingsPage`.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -49,6 +49,20 @@ class SettingsScreen extends ConsumerWidget {
                   style: text.titleLarge?.copyWith(color: colors.onSurface),
                 ),
               ),
+
+              // Countdown cue (#81).
+              _SectionHeader(
+                title: l10n.settingsSectionCountdown,
+                subtitle: l10n.settingsCountdownSubtitle,
+              ),
+              const SizedBox(height: 8),
+              SettingsSwitchRow(
+                icon: Icons.record_voice_over_outlined,
+                label: l10n.settingsCountdownCueLabel,
+                value: countdownCue,
+                onChanged: controller.setCountdownCue,
+              ),
+              const SizedBox(height: 16),
 
               // Default activity.
               _SectionHeader(
@@ -105,20 +119,6 @@ class SettingsScreen extends ConsumerWidget {
                 label: l10n.settingsThemeDark,
                 selected: theme == ThemeMode.dark,
                 onTap: () => controller.setTheme(ThemeMode.dark),
-              ),
-              const SizedBox(height: 16),
-
-              // Countdown cue (#81).
-              _SectionHeader(
-                title: l10n.settingsSectionCountdown,
-                subtitle: l10n.settingsCountdownSubtitle,
-              ),
-              const SizedBox(height: 8),
-              SettingsSwitchRow(
-                label: l10n.settingsCountdownCueLabel,
-                description: l10n.settingsCountdownCueDescription,
-                value: countdownCue,
-                onChanged: controller.setCountdownCue,
               ),
               const SizedBox(height: 16),
             ],

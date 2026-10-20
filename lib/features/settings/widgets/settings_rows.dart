@@ -58,17 +58,18 @@ class SettingsOptionRow extends StatelessWidget {
   }
 }
 
-/// An on/off row with a description (countdown cue, #81).
+/// An on/off card row, laid out like the activity row: icon, label, switch
+/// (countdown cue, #81). The section subtitle above explains it.
 class SettingsSwitchRow extends StatelessWidget {
   const SettingsSwitchRow({
     super.key,
+    required this.icon,
     required this.label,
-    required this.description,
     required this.value,
     required this.onChanged,
   });
+  final IconData icon;
   final String label;
-  final String description;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -79,38 +80,31 @@ class SettingsSwitchRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
-        color: colors.surface,
+        color: colors.surfaceContainer,
         borderRadius: AppShapes.card,
         child: InkWell(
           onTap: () => onChanged(!value),
           borderRadius: AppShapes.card,
           child: MergeSemantics(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              // 8 + the compact 32 switch = the activity row's 48.
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
+                  Icon(icon, size: 24, color: colors.primary),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: text.bodyLarge?.copyWith(
-                            color: colors.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          description,
-                          style: text.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      label,
+                      style: text.bodyLarge?.copyWith(color: colors.onSurface),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Switch(value: value, onChanged: onChanged),
+                  Switch(
+                    value: value,
+                    onChanged: onChanged,
+                    // The whole card is the tap target.
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ],
               ),
             ),

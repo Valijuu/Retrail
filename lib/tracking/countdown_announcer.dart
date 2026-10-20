@@ -56,7 +56,7 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
   @override
   Future<void> prepare(Locale locale) async {
     final voice = _withCopy(locale);
-    _goPhrase = lookupAppLocalizations(voice).timerCueGo;
+    _goPhrase = lookupAppLocalizations(voice).timerCueRideStarted;
     await _quietly(() async {
       if (_isIos) {
         // Category only — no session activated up front, which would cut
