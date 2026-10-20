@@ -6,6 +6,7 @@ import '../../../core/widgets/app_bottom_sheet.dart';
 import '../../../domain/formatters.dart';
 import '../../../domain/ride_title.dart';
 import '../../../domain/route_group.dart';
+import '../../../domain/route_row_stats.dart';
 import '../../../l10n/app_localizations.dart';
 import '../history_items.dart';
 import '../route_group_providers.dart';
@@ -70,7 +71,7 @@ class RouteGroupSheet extends ConsumerWidget {
     );
     Widget row(RouteGroupRide r) => _RideRow(
       entry: view.entries[r.rideId]!,
-      durationMs: r.durationMs,
+      stats: view.rowOf(r.rideId),
       best: r.rideId == group.bestRideId,
       selected: r.rideId == highlightRideId,
       onTap: onOpenRide,
@@ -120,21 +121,19 @@ class RouteGroupSheet extends ConsumerWidget {
   }
 }
 
-/// One ride of the group: date, then distance · the compared time · average
-/// speed.
+/// One ride of the group: date, then distance · time · average speed — a
+/// follow's on the route, with what it rode off it as a hint (#79).
 class _RideRow extends StatelessWidget {
   const _RideRow({
     required this.entry,
-    required this.durationMs,
+    required this.stats,
     required this.best,
     required this.selected,
     required this.onTap,
   });
 
   final RideEntryItem entry;
-
-  /// The time the ride competes with: a follow's time on the route (#79).
-  final int durationMs;
+  final RouteRowStats stats;
   final bool best;
   final bool selected;
   final ValueChanged<RideEntryItem> onTap;
@@ -144,7 +143,7 @@ class _RideRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final locale = Localizations.localeOf(context).toString();
-    final stats = entry.stats;
+    final offRoute = stats.offRouteMetres;
     return ListTile(
       key: ValueKey('route_group_row_${entry.ride.rideId}'),
       selected: selected,
@@ -152,10 +151,24 @@ class _RideRow extends StatelessWidget {
       selectedColor: colors.onPrimaryContainer,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
       title: Text(formatRideDate(entry.ride.date, locale: locale)),
-      subtitle: Text(
-        '${formatShortDistanceKm(stats.distanceMetres, locale: locale)} · '
-        '${formatDuration(durationMs)} · '
-        'Ø ${stats.avgSpeedKmh.round()} km/h',
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${formatShortDistanceKm(stats.distanceMetres, locale: locale)} · '
+            '${formatDuration(stats.durationMs)} · '
+            'Ø ${stats.avgSpeedKmh.round()} km/h',
+          ),
+          if (offRoute != null)
+            Text(
+              l10n.routeGroupOffRoute(
+                formatShortDistanceKm(offRoute, locale: locale),
+              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: selected ? null : colors.onSurfaceVariant,
+              ),
+            ),
+        ],
       ),
       trailing: best
           ? Icon(

@@ -142,6 +142,8 @@
   "routeGroupFollows": "Followed ({count})",
   "@routeGroupFollows": {"placeholders": {"count": {"type": "int"}}},
   "routeGroupPartial": "Partial — no best time",
+  "routeGroupOffRoute": "+{distance} off the route",
+  "@routeGroupOffRoute": {"placeholders": {"distance": {"type": "String"}}},
   "a11yBestTime": "Best time",
   "rideFollowedFrom": "Followed from “{title}” · {date}",
   "@rideFollowedFrom": {"placeholders": {"title": {"type": "String"}, "date": {"type": "String"}}},

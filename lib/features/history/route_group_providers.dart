@@ -5,6 +5,7 @@ import '../../data/db/followed_route.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../domain/ride_stats.dart';
 import '../../domain/route_group.dart';
+import '../../domain/route_row_stats.dart';
 import 'history_items.dart';
 
 /// How often each original was followed, by its ride id (Spec 20).
@@ -24,6 +25,18 @@ class RouteGroupView {
   const RouteGroupView(this.group, this.entries);
   final RouteGroup group;
   final Map<int, RideEntryItem> entries;
+
+  /// What [rideId]'s row shows: a follow's route part, measured on the
+  /// original's length, else the whole ride (#79).
+  RouteRowStats rowOf(int rideId) {
+    final ride = entries[rideId]!;
+    return routeRowStats(
+      ride.stats,
+      routeLengthM: entries[group.original.rideId]!.stats.distanceMetres,
+      coverage: ride.ride.followCoverage,
+      routeTimeMs: ride.ride.followRouteMs,
+    );
+  }
 }
 
 /// The route group of the original [rootId]; null once it is gone (Spec 20).

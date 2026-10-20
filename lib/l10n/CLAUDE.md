@@ -42,6 +42,7 @@ English is the default and should read naturally (not a literal back-translation
 | n× followed (detail link) | n× nachgefahren |
 | Comparison sections | Original / Nachgefahren (n) / Teilstrecken – ohne Bestzeit |
 | Best time | Bestzeit |
+| Off-route hint (comparison row) | +2,4 km abseits der Strecke |
 | Followed from (detail) | Nachgefahren von „Titel“ · Datum |
 | Followed routes filter / all / count | Nachgefahrene Strecken / Alle Strecken / n Strecken |
 | Route picker search / no match | Strecke suchen / Keine Strecke gefunden |

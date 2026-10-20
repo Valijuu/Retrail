@@ -141,6 +141,8 @@
   "routeGroupFollows": "Nachgefahren ({count})",
   "@routeGroupFollows": {"placeholders": {"count": {"type": "int"}}},
   "routeGroupPartial": "Teilstrecken – ohne Bestzeit",
+  "routeGroupOffRoute": "+{distance} abseits der Strecke",
+  "@routeGroupOffRoute": {"placeholders": {"distance": {"type": "String"}}},
   "a11yBestTime": "Bestzeit",
   "rideFollowedFrom": "Nachgefahren von „{title}“ · {date}",
   "@rideFollowedFrom": {"placeholders": {"title": {"type": "String"}, "date": {"type": "String"}}},

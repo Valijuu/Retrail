@@ -23,6 +23,7 @@ RideEntryItem _entry(
   double distanceMetres = 4200,
   int? followed,
   double? coverage,
+  int? routeTimeMs,
 }) => RideEntryItem(
   Ride(
     rideId: id,
@@ -32,6 +33,7 @@ RideEntryItem _entry(
     hasRoute: true,
     followedRideId: followed,
     followCoverage: coverage,
+    followRouteMs: routeTimeMs,
   ),
   RideStats(
     durationMs: durationMs,
@@ -150,11 +152,19 @@ void main() {
     );
   });
 
-  testWidgets('a follow\'s row shows the time it is compared with — its time '
-      'on the route (#79)', (tester) async {
+  testWidgets('a follow\'s row shows the route — its distance, time and '
+      'average on it, the rest as a hint (#79)', (tester) async {
     final entries = [
-      _entry(1, title: 'Hausrunde'),
-      _entry(2, at: _t0 + _day, durationMs: 900000, followed: 1, coverage: 1),
+      _entry(1, title: 'Hausrunde', distanceMetres: 4600),
+      _entry(
+        2,
+        at: _t0 + _day,
+        durationMs: 1144000,
+        distanceMetres: 7000,
+        followed: 1,
+        coverage: 1,
+        routeTimeMs: 773000,
+      ),
     ];
     await pump(
       tester,
@@ -163,7 +173,7 @@ void main() {
           RouteGroupRide(
             rideId: 2,
             timestampMs: _t0 + _day,
-            durationMs: 300000,
+            durationMs: 773000,
             coverage: 1,
           ),
         ]),
@@ -172,9 +182,23 @@ void main() {
       highlight: 2,
     );
     expect(
-      find.descendant(of: row(2), matching: find.textContaining('05:00')),
+      find.descendant(
+        of: row(2),
+        matching: find.text('4.6 km · 12:53 · Ø 21 km/h'),
+      ),
       findsOneWidget,
     );
+    expect(
+      find.descendant(of: row(2), matching: find.text('+2.4 km off the route')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a ride without metres off the route has no hint', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.textContaining('off the route'), findsNothing);
   });
 
   testWidgets('only the best time has the trophy', (tester) async {
