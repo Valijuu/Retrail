@@ -22,6 +22,7 @@ class PreferencesRepository {
   static const _kHomeStatsPeriod = 'home_stats_period';
   static const _kPendingRideDetails = 'pending_ride_details';
   static const _kBatteryHintDismissed = 'battery_hint_dismissed';
+  static const _kCountdownCueEnabled = 'countdown_cue_enabled';
 
   static const defaultUserName = 'Retrailer';
   static const defaultThemeMode = 'system';
@@ -92,6 +93,18 @@ class PreferencesRepository {
 
   Future<void> setBatteryHintDismissed() async {
     await _prefs.setBool(_kBatteryHintDismissed, true);
+    _notify();
+  }
+
+  /// Spoken 5…1 + "go" and vibration in the pre-ride countdown (#81). On
+  /// unless switched off in the settings.
+  Stream<bool> get countdownCueEnabled => _watch(() => countdownCueEnabledNow);
+
+  bool get countdownCueEnabledNow =>
+      _prefs.getBool(_kCountdownCueEnabled) ?? true;
+
+  Future<void> setCountdownCueEnabled(bool enabled) async {
+    await _prefs.setBool(_kCountdownCueEnabled, enabled);
     _notify();
   }
 

@@ -22,6 +22,8 @@ class FakeSettingsController extends SettingsController {
   @override
   Future<void> setDefaultActivity(ActivityType t) async =>
       calls.add('activity:${t.id}');
+  @override
+  Future<void> setCountdownCue(bool enabled) async => calls.add('cue:$enabled');
 }
 
 void main() {
@@ -39,6 +41,8 @@ void main() {
     ThemeMode theme = ThemeMode.system,
     AppLanguage language = AppLanguage.system,
     ActivityType activity = ActivityType.longboard,
+    bool countdownCue = true,
+    Locale locale = const Locale('en'),
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -53,6 +57,9 @@ void main() {
           lastActivityTypeProvider.overrideWith(
             (ref) => Stream.value(activity),
           ),
+          countdownCueEnabledProvider.overrideWith(
+            (ref) => Stream.value(countdownCue),
+          ),
           settingsControllerProvider.overrideWithValue(controller),
         ],
         child: MaterialApp(
@@ -64,6 +71,7 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: locale,
           home: const Scaffold(body: SettingsScreen()),
         ),
       ),
@@ -105,5 +113,33 @@ void main() {
     await tester.tap(find.text('Scooter'));
     await tester.pumpAndSettle();
     expect(controller.calls, contains('activity:SCOOTER'));
+  });
+
+  group('countdown cue switch (#81)', () {
+    testWidgets('shows the section with the switch on', (tester) async {
+      await pump(tester);
+      expect(find.text('COUNTDOWN'), findsOneWidget);
+      expect(find.text('Count down out loud'), findsOneWidget);
+      final toggle = tester.widget<Switch>(find.byType(Switch));
+      expect(toggle.value, isTrue);
+    });
+
+    testWidgets('reflects a switched-off cue', (tester) async {
+      await pump(tester, countdownCue: false);
+      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+    });
+
+    testWidgets('tapping the row switches the cue off', (tester) async {
+      await pump(tester);
+      await tester.ensureVisible(find.text('Count down out loud'));
+      await tester.tap(find.text('Count down out loud'));
+      expect(controller.calls, contains('cue:false'));
+    });
+
+    testWidgets('German copy', (tester) async {
+      await pump(tester, locale: const Locale('de'));
+      expect(find.text('COUNTDOWN'), findsOneWidget);
+      expect(find.text('Countdown ansagen'), findsOneWidget);
+    });
   });
 }

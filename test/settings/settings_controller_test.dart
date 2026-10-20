@@ -33,4 +33,11 @@ void main() {
     await controller.setDefaultActivity(ActivityType.scooter);
     expect(await prefs.lastActivityType.first, 'SCOOTER');
   });
+
+  test('setCountdownCue persists the switch (#81)', () async {
+    await controller.setCountdownCue(false);
+    expect(await prefs.countdownCueEnabled.first, isFalse);
+    await controller.setCountdownCue(true);
+    expect(await prefs.countdownCueEnabled.first, isTrue);
+  });
 }

@@ -70,6 +70,11 @@ final dateFormatLocaleProvider = Provider<String>(
   (ref) => ref.watch(effectiveLocaleProvider).toString(),
 );
 
+/// Whether the countdown speaks 5…1 + "go" and vibrates (#81).
+final countdownCueEnabledProvider = StreamProvider<bool>(
+  (ref) => ref.watch(preferencesRepositoryProvider).countdownCueEnabled,
+);
+
 /// Thin testable seam over the preference writers (mirrors `SettingsViewModel`).
 /// DataStore stays the single source of truth — the screen reads the live
 /// providers and the controller only writes back.
@@ -89,6 +94,9 @@ class SettingsController {
 
   Future<void> setDefaultActivity(ActivityType type) =>
       _prefs.saveLastActivityType(type.id);
+
+  Future<void> setCountdownCue(bool enabled) =>
+      _prefs.setCountdownCueEnabled(enabled);
 }
 
 final settingsControllerProvider = Provider<SettingsController>(

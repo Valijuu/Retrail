@@ -30,6 +30,8 @@ class SettingsScreen extends ConsumerWidget {
         ref.watch(themeModeProvider).asData?.value ?? ThemeMode.system;
     final language =
         ref.watch(appLanguageProvider).asData?.value ?? AppLanguage.system;
+    final countdownCue =
+        ref.watch(countdownCueEnabledProvider).asData?.value ?? true;
 
     return Semantics(
       label: l10n.a11ySettingsScreen,
@@ -101,6 +103,20 @@ class SettingsScreen extends ConsumerWidget {
                 label: l10n.settingsThemeDark,
                 selected: theme == ThemeMode.dark,
                 onTap: () => controller.setTheme(ThemeMode.dark),
+              ),
+              const SizedBox(height: 16),
+
+              // Countdown cue (#81).
+              _SectionHeader(
+                title: l10n.settingsSectionCountdown,
+                subtitle: l10n.settingsCountdownSubtitle,
+              ),
+              const SizedBox(height: 8),
+              _SwitchRow(
+                label: l10n.settingsCountdownCueLabel,
+                description: l10n.settingsCountdownCueDescription,
+                value: countdownCue,
+                onChanged: controller.setCountdownCue,
               ),
               const SizedBox(height: 16),
             ],
@@ -248,6 +264,67 @@ class _OptionRow extends StatelessWidget {
                     label,
                     style: text.bodyLarge?.copyWith(color: colors.onSurface),
                   ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
+    required this.label,
+    required this.description,
+    required this.value,
+    required this.onChanged,
+  });
+  final String label;
+  final String description;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: colors.surface,
+        borderRadius: AppShapes.card,
+        child: InkWell(
+          onTap: () => onChanged(!value),
+          borderRadius: AppShapes.card,
+          child: MergeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: text.bodyLarge?.copyWith(
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          description,
+                          style: text.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Switch(value: value, onChanged: onChanged),
                 ],
               ),
             ),

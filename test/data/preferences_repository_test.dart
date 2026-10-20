@@ -75,4 +75,21 @@ void main() {
     await prefs.setPendingRideDetails(3);
     expect(await future, [null, 3]);
   });
+
+  group('countdown cue switch (#81)', () {
+    test('is on by default', () async {
+      final prefs = await build();
+      expect(await prefs.countdownCueEnabled.first, isTrue);
+      expect(prefs.countdownCueEnabledNow, isTrue);
+    });
+
+    test('persists off and re-emits', () async {
+      final prefs = await build();
+      final future = prefs.countdownCueEnabled.take(2).toList();
+      await Future<void>.delayed(Duration.zero);
+      await prefs.setCountdownCueEnabled(false);
+      expect(await future, [true, false]);
+      expect(prefs.countdownCueEnabledNow, isFalse);
+    });
+  });
 }
