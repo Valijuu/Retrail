@@ -228,6 +228,31 @@ void main() {
       expect(links.single.coverage, closeTo(1, 0.01));
     });
 
+    test('the route time runs from joining to the last progress, without '
+        'the way there or past the finish (#79)', () async {
+      notifier().start(reference: _straight, sourceRideId: 7, recording: true);
+      final fixes = <(LatLng, int)>[
+        (at(-200, 0), 0), // on the way to the route
+        (at(-100, 0), 10),
+        for (var n = 0.0; n <= 300; n += 20) (at(n, 0), 20 + n ~/ 20),
+        (at(400, 0), 45), // past the finish
+        (at(500, 0), 55),
+      ];
+      for (final (p, elapsed) in fixes) {
+        tracker.add(
+          RideTrackingState(
+            isTracking: true,
+            elapsedSeconds: elapsed,
+            location: fix(p.lat, p.lng),
+          ),
+        );
+        await flush();
+      }
+      tracker.add(const RideTrackingState(isTracking: false));
+      await flush();
+      expect(links.single.routeTimeMs, 15000);
+    });
+
     test('never on the route: nothing is linked', () async {
       notifier().start(reference: _straight, sourceRideId: 7, recording: true);
       await rideAndStop([at(0, 500), at(20, 500)]);

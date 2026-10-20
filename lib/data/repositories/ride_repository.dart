@@ -111,12 +111,18 @@ class RideRepository {
   }
 
   /// Links [rideId] to the original it was recorded following, with the
-  /// share of that route ridden (Spec 20).
+  /// share of that route ridden and the time on it (Spec 20, #79).
   Future<void> setFollowedRide(
     int rideId, {
     required int originalId,
     required double coverage,
-  }) => _dao.updateFollowedRide(rideId, originalId, coverage);
+    int? routeTimeMs,
+  }) => _dao.updateFollowedRide(
+    rideId,
+    originalId,
+    coverage,
+    routeTimeMs: routeTimeMs,
+  );
 
   /// How often each original was followed, by its ride id.
   Stream<Map<int, int>> watchFollowCounts() => _dao.watchFollowCounts();

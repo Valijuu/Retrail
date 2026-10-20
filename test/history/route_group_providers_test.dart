@@ -64,9 +64,15 @@ void main() {
     int at = 0,
     int durationMs = 600000,
     double coverage = 1,
+    int? routeTimeMs,
   }) async {
     final id = await ride(at: at, durationMs: durationMs);
-    await repo.setFollowedRide(id, originalId: originalId, coverage: coverage);
+    await repo.setFollowedRide(
+      id,
+      originalId: originalId,
+      coverage: coverage,
+      routeTimeMs: routeTimeMs,
+    );
     return id;
   }
 
@@ -88,6 +94,26 @@ void main() {
     expect(view.group.partial.map((r) => r.rideId), [part]);
     expect(view.group.bestRideId, fast);
     expect(view.entries[fast]!.stats.distanceMetres, 4000);
+  });
+
+  test('follows compete with their time on the route, not the whole ride '
+      '(#79)', () async {
+    final a = await ride(at: 100, durationMs: 900000);
+    // Longest ride overall, but the fastest on the route.
+    final f = await follow(
+      a,
+      at: 200,
+      durationMs: 1200000,
+      routeTimeMs: 800000,
+    );
+    await follow(a, at: 300, durationMs: 850000, routeTimeMs: 850000);
+
+    final view = (await firstData(c, routeGroupProvider(a)))!;
+    expect(view.group.bestRideId, f);
+    expect(
+      view.group.complete.firstWhere((r) => r.rideId == f).durationMs,
+      800000,
+    );
   });
 
   test('routeGroupProvider is null once the original is gone', () async {

@@ -193,6 +193,17 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _followRouteMsMeta = const VerificationMeta(
+    'followRouteMs',
+  );
+  @override
+  late final GeneratedColumn<int> followRouteMs = GeneratedColumn<int>(
+    'follow_route_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     rideId,
@@ -211,6 +222,7 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     hasRoute,
     followedRideId,
     followCoverage,
+    followRouteMs,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -341,6 +353,15 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         ),
       );
     }
+    if (data.containsKey('follow_route_ms')) {
+      context.handle(
+        _followRouteMsMeta,
+        followRouteMs.isAcceptableOrUnknown(
+          data['follow_route_ms']!,
+          _followRouteMsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -414,6 +435,10 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         DriftSqlType.double,
         data['${effectivePrefix}follow_coverage'],
       ),
+      followRouteMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}follow_route_ms'],
+      ),
     );
   }
 
@@ -440,6 +465,7 @@ class Ride extends DataClass implements Insertable<Ride> {
   final bool hasRoute;
   final int? followedRideId;
   final double? followCoverage;
+  final int? followRouteMs;
   const Ride({
     required this.rideId,
     this.description,
@@ -457,6 +483,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     required this.hasRoute,
     this.followedRideId,
     this.followCoverage,
+    this.followRouteMs,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -503,6 +530,9 @@ class Ride extends DataClass implements Insertable<Ride> {
     if (!nullToAbsent || followCoverage != null) {
       map['follow_coverage'] = Variable<double>(followCoverage);
     }
+    if (!nullToAbsent || followRouteMs != null) {
+      map['follow_route_ms'] = Variable<int>(followRouteMs);
+    }
     return map;
   }
 
@@ -546,6 +576,9 @@ class Ride extends DataClass implements Insertable<Ride> {
       followCoverage: followCoverage == null && nullToAbsent
           ? const Value.absent()
           : Value(followCoverage),
+      followRouteMs: followRouteMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(followRouteMs),
     );
   }
 
@@ -571,6 +604,7 @@ class Ride extends DataClass implements Insertable<Ride> {
       hasRoute: serializer.fromJson<bool>(json['hasRoute']),
       followedRideId: serializer.fromJson<int?>(json['followedRideId']),
       followCoverage: serializer.fromJson<double?>(json['followCoverage']),
+      followRouteMs: serializer.fromJson<int?>(json['followRouteMs']),
     );
   }
   @override
@@ -593,6 +627,7 @@ class Ride extends DataClass implements Insertable<Ride> {
       'hasRoute': serializer.toJson<bool>(hasRoute),
       'followedRideId': serializer.toJson<int?>(followedRideId),
       'followCoverage': serializer.toJson<double?>(followCoverage),
+      'followRouteMs': serializer.toJson<int?>(followRouteMs),
     };
   }
 
@@ -613,6 +648,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     bool? hasRoute,
     Value<int?> followedRideId = const Value.absent(),
     Value<double?> followCoverage = const Value.absent(),
+    Value<int?> followRouteMs = const Value.absent(),
   }) => Ride(
     rideId: rideId ?? this.rideId,
     description: description.present ? description.value : this.description,
@@ -636,6 +672,9 @@ class Ride extends DataClass implements Insertable<Ride> {
     followCoverage: followCoverage.present
         ? followCoverage.value
         : this.followCoverage,
+    followRouteMs: followRouteMs.present
+        ? followRouteMs.value
+        : this.followRouteMs,
   );
   Ride copyWithCompanion(RidesCompanion data) {
     return Ride(
@@ -673,6 +712,9 @@ class Ride extends DataClass implements Insertable<Ride> {
       followCoverage: data.followCoverage.present
           ? data.followCoverage.value
           : this.followCoverage,
+      followRouteMs: data.followRouteMs.present
+          ? data.followRouteMs.value
+          : this.followRouteMs,
     );
   }
 
@@ -694,7 +736,8 @@ class Ride extends DataClass implements Insertable<Ride> {
           ..write('maxSpeedKmh: $maxSpeedKmh, ')
           ..write('hasRoute: $hasRoute, ')
           ..write('followedRideId: $followedRideId, ')
-          ..write('followCoverage: $followCoverage')
+          ..write('followCoverage: $followCoverage, ')
+          ..write('followRouteMs: $followRouteMs')
           ..write(')'))
         .toString();
   }
@@ -717,6 +760,7 @@ class Ride extends DataClass implements Insertable<Ride> {
     hasRoute,
     followedRideId,
     followCoverage,
+    followRouteMs,
   );
   @override
   bool operator ==(Object other) =>
@@ -737,7 +781,8 @@ class Ride extends DataClass implements Insertable<Ride> {
           other.maxSpeedKmh == this.maxSpeedKmh &&
           other.hasRoute == this.hasRoute &&
           other.followedRideId == this.followedRideId &&
-          other.followCoverage == this.followCoverage);
+          other.followCoverage == this.followCoverage &&
+          other.followRouteMs == this.followRouteMs);
 }
 
 class RidesCompanion extends UpdateCompanion<Ride> {
@@ -757,6 +802,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
   final Value<bool> hasRoute;
   final Value<int?> followedRideId;
   final Value<double?> followCoverage;
+  final Value<int?> followRouteMs;
   const RidesCompanion({
     this.rideId = const Value.absent(),
     this.description = const Value.absent(),
@@ -774,6 +820,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.hasRoute = const Value.absent(),
     this.followedRideId = const Value.absent(),
     this.followCoverage = const Value.absent(),
+    this.followRouteMs = const Value.absent(),
   });
   RidesCompanion.insert({
     this.rideId = const Value.absent(),
@@ -792,6 +839,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.hasRoute = const Value.absent(),
     this.followedRideId = const Value.absent(),
     this.followCoverage = const Value.absent(),
+    this.followRouteMs = const Value.absent(),
   });
   static Insertable<Ride> custom({
     Expression<int>? rideId,
@@ -810,6 +858,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Expression<bool>? hasRoute,
     Expression<int>? followedRideId,
     Expression<double>? followCoverage,
+    Expression<int>? followRouteMs,
   }) {
     return RawValuesInsertable({
       if (rideId != null) 'ride_id': rideId,
@@ -828,6 +877,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       if (hasRoute != null) 'has_route': hasRoute,
       if (followedRideId != null) 'followed_ride_id': followedRideId,
       if (followCoverage != null) 'follow_coverage': followCoverage,
+      if (followRouteMs != null) 'follow_route_ms': followRouteMs,
     });
   }
 
@@ -848,6 +898,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Value<bool>? hasRoute,
     Value<int?>? followedRideId,
     Value<double?>? followCoverage,
+    Value<int?>? followRouteMs,
   }) {
     return RidesCompanion(
       rideId: rideId ?? this.rideId,
@@ -866,6 +917,7 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       hasRoute: hasRoute ?? this.hasRoute,
       followedRideId: followedRideId ?? this.followedRideId,
       followCoverage: followCoverage ?? this.followCoverage,
+      followRouteMs: followRouteMs ?? this.followRouteMs,
     );
   }
 
@@ -920,6 +972,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     if (followCoverage.present) {
       map['follow_coverage'] = Variable<double>(followCoverage.value);
     }
+    if (followRouteMs.present) {
+      map['follow_route_ms'] = Variable<int>(followRouteMs.value);
+    }
     return map;
   }
 
@@ -941,7 +996,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
           ..write('maxSpeedKmh: $maxSpeedKmh, ')
           ..write('hasRoute: $hasRoute, ')
           ..write('followedRideId: $followedRideId, ')
-          ..write('followCoverage: $followCoverage')
+          ..write('followCoverage: $followCoverage, ')
+          ..write('followRouteMs: $followRouteMs')
           ..write(')'))
         .toString();
   }
@@ -1414,6 +1470,7 @@ typedef $$RidesTableCreateCompanionBuilder =
       Value<bool> hasRoute,
       Value<int?> followedRideId,
       Value<double?> followCoverage,
+      Value<int?> followRouteMs,
     });
 typedef $$RidesTableUpdateCompanionBuilder =
     RidesCompanion Function({
@@ -1433,6 +1490,7 @@ typedef $$RidesTableUpdateCompanionBuilder =
       Value<bool> hasRoute,
       Value<int?> followedRideId,
       Value<double?> followCoverage,
+      Value<int?> followRouteMs,
     });
 
 final class $$RidesTableReferences
@@ -1555,6 +1613,11 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
 
   ColumnFilters<double> get followCoverage => $composableBuilder(
     column: $table.followCoverage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get followRouteMs => $composableBuilder(
+    column: $table.followRouteMs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1691,6 +1754,11 @@ class $$RidesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get followRouteMs => $composableBuilder(
+    column: $table.followRouteMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RidesTableOrderingComposer get followedRideId {
     final $$RidesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1782,6 +1850,11 @@ class $$RidesTableAnnotationComposer
 
   GeneratedColumn<double> get followCoverage => $composableBuilder(
     column: $table.followCoverage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get followRouteMs => $composableBuilder(
+    column: $table.followRouteMs,
     builder: (column) => column,
   );
 
@@ -1878,6 +1951,7 @@ class $$RidesTableTableManager
                 Value<bool> hasRoute = const Value.absent(),
                 Value<int?> followedRideId = const Value.absent(),
                 Value<double?> followCoverage = const Value.absent(),
+                Value<int?> followRouteMs = const Value.absent(),
               }) => RidesCompanion(
                 rideId: rideId,
                 description: description,
@@ -1895,6 +1969,7 @@ class $$RidesTableTableManager
                 hasRoute: hasRoute,
                 followedRideId: followedRideId,
                 followCoverage: followCoverage,
+                followRouteMs: followRouteMs,
               ),
           createCompanionCallback:
               ({
@@ -1914,6 +1989,7 @@ class $$RidesTableTableManager
                 Value<bool> hasRoute = const Value.absent(),
                 Value<int?> followedRideId = const Value.absent(),
                 Value<double?> followCoverage = const Value.absent(),
+                Value<int?> followRouteMs = const Value.absent(),
               }) => RidesCompanion.insert(
                 rideId: rideId,
                 description: description,
@@ -1931,6 +2007,7 @@ class $$RidesTableTableManager
                 hasRoute: hasRoute,
                 followedRideId: followedRideId,
                 followCoverage: followCoverage,
+                followRouteMs: followRouteMs,
               ),
           withReferenceMapper: (p0) => p0
               .map(

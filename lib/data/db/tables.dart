@@ -45,6 +45,12 @@ class Rides extends Table {
   // Share of the original ridden (followCoverage, 0–1) when this ride was
   // saved; null on a ride that followed nothing.
   RealColumn get followCoverage => real().named('follow_coverage').nullable()();
+
+  // Recorded time on the followed route (join → last progress, pauses
+  // excluded, #79) — what the route group's best time compares; null on a
+  // ride that followed nothing.
+  IntColumn get followRouteMs =>
+      integer().named('follow_route_ms').nullable()();
 }
 
 /// Mirrors the original Room `trackpoints` table (entity `Trackpoint`).

@@ -136,15 +136,17 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
       );
 
   /// Links [rideId] to the [originalId] it was recorded following, with the
-  /// share of it ridden (Spec 20).
+  /// share of it ridden and the time on it (Spec 20, #79).
   Future<void> updateFollowedRide(
     int rideId,
     int originalId,
-    double coverage,
-  ) => (update(rides)..where((r) => r.rideId.equals(rideId))).write(
+    double coverage, {
+    int? routeTimeMs,
+  }) => (update(rides)..where((r) => r.rideId.equals(rideId))).write(
     RidesCompanion(
       followedRideId: Value(originalId),
       followCoverage: Value(coverage),
+      followRouteMs: Value(routeTimeMs),
     ),
   );
 

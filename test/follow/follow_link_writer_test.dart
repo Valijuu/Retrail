@@ -51,18 +51,27 @@ void main() {
     final original = await repo.startRide(startedAtMs: 1);
     final rideId = await recordAndStop();
 
-    c.read(followLinkWriterProvider)((originalId: original, coverage: 0.95));
+    c.read(followLinkWriterProvider)((
+      originalId: original,
+      coverage: 0.95,
+      routeTimeMs: 840000,
+    ));
     await pumpEventQueue();
 
     final ride = await repo.findById(rideId);
     expect(ride!.followedRideId, original);
     expect(ride.followCoverage, 0.95);
+    expect(ride.followRouteMs, 840000);
   });
 
   test('an original deleted during the ride is no error', () async {
     final rideId = await recordAndStop();
 
-    c.read(followLinkWriterProvider)((originalId: 999, coverage: 1));
+    c.read(followLinkWriterProvider)((
+      originalId: 999,
+      coverage: 1,
+      routeTimeMs: null,
+    ));
     await pumpEventQueue();
 
     expect((await repo.findById(rideId))!.followedRideId, isNull);

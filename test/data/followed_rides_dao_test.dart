@@ -156,6 +156,7 @@ void main() {
     expect(rides.single.description, 'Old');
     expect(rides.single.followedRideId, isNull);
     expect(rides.single.followCoverage, isNull);
+    expect(rides.single.followRouteMs, isNull);
 
     final id = await v3.rideDao.insert(
       RidesCompanion.insert(description: const Value('New')),

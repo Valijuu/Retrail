@@ -20,7 +20,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +54,10 @@ class AppDatabase extends _$AppDatabase {
         // (Spec 20). Nullable, so existing rides stay unlinked.
         await m.addColumn(rides, rides.followedRideId);
         await m.addColumn(rides, rides.followCoverage);
+      }
+      if (from < 5) {
+        // v5: the time on the followed route, for a fair best time (#79).
+        await m.addColumn(rides, rides.followRouteMs);
       }
     },
     beforeOpen: (details) async {

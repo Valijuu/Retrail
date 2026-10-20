@@ -150,6 +150,33 @@ void main() {
     );
   });
 
+  testWidgets('a follow\'s row shows the time it is compared with — its time '
+      'on the route (#79)', (tester) async {
+    final entries = [
+      _entry(1, title: 'Hausrunde'),
+      _entry(2, at: _t0 + _day, durationMs: 900000, followed: 1, coverage: 1),
+    ];
+    await pump(
+      tester,
+      view: RouteGroupView(
+        buildRouteGroup(_groupRide(entries[0]), [
+          RouteGroupRide(
+            rideId: 2,
+            timestampMs: _t0 + _day,
+            durationMs: 300000,
+            coverage: 1,
+          ),
+        ]),
+        {for (final e in entries) e.ride.rideId: e},
+      ),
+      highlight: 2,
+    );
+    expect(
+      find.descendant(of: row(2), matching: find.textContaining('05:00')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('only the best time has the trophy', (tester) async {
     await pump(tester);
     final trophy = find.byIcon(Icons.emoji_events);

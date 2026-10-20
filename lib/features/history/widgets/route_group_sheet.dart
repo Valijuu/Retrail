@@ -70,6 +70,7 @@ class RouteGroupSheet extends ConsumerWidget {
     );
     Widget row(RouteGroupRide r) => _RideRow(
       entry: view.entries[r.rideId]!,
+      durationMs: r.durationMs,
       best: r.rideId == group.bestRideId,
       selected: r.rideId == highlightRideId,
       onTap: onOpenRide,
@@ -119,16 +120,21 @@ class RouteGroupSheet extends ConsumerWidget {
   }
 }
 
-/// One ride of the group: date, then distance · duration · average speed.
+/// One ride of the group: date, then distance · the compared time · average
+/// speed.
 class _RideRow extends StatelessWidget {
   const _RideRow({
     required this.entry,
+    required this.durationMs,
     required this.best,
     required this.selected,
     required this.onTap,
   });
 
   final RideEntryItem entry;
+
+  /// The time the ride competes with: a follow's time on the route (#79).
+  final int durationMs;
   final bool best;
   final bool selected;
   final ValueChanged<RideEntryItem> onTap;
@@ -148,7 +154,7 @@ class _RideRow extends StatelessWidget {
       title: Text(formatRideDate(entry.ride.date, locale: locale)),
       subtitle: Text(
         '${formatShortDistanceKm(stats.distanceMetres, locale: locale)} · '
-        '${formatDuration(stats.durationMs)} · '
+        '${formatDuration(durationMs)} · '
         'Ø ${stats.avgSpeedKmh.round()} km/h',
       ),
       trailing: best

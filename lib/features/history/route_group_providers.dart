@@ -47,7 +47,9 @@ RouteGroupView? _view(int rootId, List<Ride> rides) {
   RouteGroupRide groupRide(RideEntryItem e) => RouteGroupRide(
     rideId: e.ride.rideId,
     timestampMs: e.ride.date ?? e.ride.startTime ?? 0,
-    durationMs: e.stats.durationMs,
+    // A follow competes with its time on the route (#79); the original's
+    // ride is the route.
+    durationMs: e.ride.followRouteMs ?? e.stats.durationMs,
     coverage: e.ride.followCoverage,
   );
   final group = buildRouteGroup(groupRide(entries[rootId]!), [

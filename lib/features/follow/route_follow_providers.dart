@@ -30,7 +30,7 @@ enum FollowReverseNotice { atFinish, detected }
 
 /// What a saved repeat ride links to (Spec 20): the original it followed
 /// and the share of it ridden.
-typedef FollowLink = ({int originalId, double coverage});
+typedef FollowLink = ({int originalId, double coverage, int? routeTimeMs});
 
 /// A reference route being followed (Spec 17), with the rider's progress.
 class RouteFollowState {
@@ -47,6 +47,7 @@ class RouteFollowState {
     RouteTrack? orientedTrack,
     this.ridden = const [],
     this.coverage = 0,
+    this.routeTimeMs,
     this.reverseNotice,
   }) : orientedTrack = orientedTrack ?? track;
 
@@ -74,13 +75,22 @@ class RouteFollowState {
   /// while undecided.
   final double coverage;
 
+  /// Recorded time on the route, pauses excluded (#79): from joining it to
+  /// the last fix that grew [coverage], so the way there and anything past
+  /// the finish don't count. Null until the ridden part first grows.
+  final int? routeTimeMs;
+
   /// The link a recorded repeat is saved with: only for a reference from a
   /// saved ride that the rider actually joined (Spec 20).
   FollowLink? get followLink {
     final originalId = sourceRideId;
     if (!recording || originalId == null) return null;
     if (progress?.hasJoined != true) return null;
-    return (originalId: originalId, coverage: coverage);
+    return (
+      originalId: originalId,
+      coverage: coverage,
+      routeTimeMs: routeTimeMs,
+    );
   }
 
   bool get isReversed => direction == FollowDirection.reverse;
@@ -114,6 +124,7 @@ class RouteFollowState {
     RouteTrack? orientedTrack,
     List<List<LatLng>>? ridden,
     double? coverage,
+    int? routeTimeMs,
     FollowReverseNotice? reverseNotice,
   }) => RouteFollowState(
     track: track,
@@ -129,6 +140,7 @@ class RouteFollowState {
     orientedTrack: orientedTrack ?? this.orientedTrack,
     ridden: ridden ?? this.ridden,
     coverage: coverage ?? this.coverage,
+    routeTimeMs: routeTimeMs ?? this.routeTimeMs,
     reverseNotice: reverseNotice ?? this.reverseNotice,
   );
 }
@@ -149,6 +161,11 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
 
   /// The session's direction and ridden-range state machine (Spec 18).
   FollowTracker? _tracker;
+
+  /// Recorder time when the rider joined the route, and the coverage the
+  /// route time was last taken at (#79).
+  int? _joinedAtS;
+  double _timedCoverage = 0;
 
   /// The intervals [RouteFollowState.ridden] was last cut from.
   List<(double, double)> _drawnRidden = const [];
@@ -173,7 +190,10 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
       if (fix == null || identical(fix, prev?.asData?.value.location)) return;
       // The recorder's location may be its stale last-known seed: it would
       // decide the direction from where the rider was long ago.
-      if (state?.recording == true && _isFresh(fix)) onFix(fix);
+      if (state?.recording == true && _isFresh(fix)) {
+        onFix(fix);
+        _timeOnRoute(recorder.elapsedSeconds);
+      }
     });
     return null;
   }
@@ -189,6 +209,8 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     final track = RouteTrack(reference, distance: distance);
     _tracker = FollowTracker.start(track, distance: distance);
     _drawnRidden = const [];
+    _joinedAtS = null;
+    _timedCoverage = 0;
     state = RouteFollowState(
       track: track,
       recording: recording,
@@ -295,6 +317,17 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     state = _following(s, flipped);
   }
 
+  /// Takes the route time at recorder time [elapsedS]: starts the clock on
+  /// joining, and moves its end on every fix that grew the ridden part.
+  void _timeOnRoute(int elapsedS) {
+    final s = state;
+    if (s == null || s.progress?.hasJoined != true) return;
+    final joinedAtS = _joinedAtS ??= elapsedS;
+    if (s.coverage <= _timedCoverage) return;
+    _timedCoverage = s.coverage;
+    state = s.copyWith(routeTimeMs: (elapsedS - joinedAtS) * 1000);
+  }
+
   /// [s] with [tracker]'s direction and progress, and the ridden segments
   /// cut from its intervals once decided (reused while they are unchanged).
   RouteFollowState _following(RouteFollowState s, FollowTracker tracker) {
@@ -352,6 +385,7 @@ final followLinkWriterProvider = Provider<void Function(FollowLink)>(
             rideId,
             originalId: link.originalId,
             coverage: link.coverage,
+            routeTimeMs: link.routeTimeMs,
           )
           // The original was deleted during the ride: nothing to link to.
           .then<void>((_) {}, onError: (Object _) {}),
