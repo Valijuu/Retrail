@@ -12,6 +12,7 @@ import '../home/navigation_chooser.dart';
 import '../home/navigation_launcher.dart';
 import '../onboarding/activity_type_ui.dart';
 import 'history_items.dart';
+import 'route_group_providers.dart';
 import 'widgets/ride_preview_thumbnail.dart';
 import '../../core/theme/theme_context.dart';
 
@@ -109,7 +110,10 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
         'Ø ${stats.avgSpeedKmh.round()} km/h';
     final activity = ActivityType.fromId(ride.typ);
     final isFollow = ride.followedRideId != null;
-    final followCount = widget.entry.followCount;
+    // Read per card, so a count change doesn't rebuild the whole list.
+    final followCount = ref.watch(
+      followCountsProvider.select((counts) => counts.value?[ride.rideId] ?? 0),
+    );
     final openGroup = widget.selectionMode ? null : widget.onOpenRouteGroup;
 
     return InkWell(

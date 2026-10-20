@@ -159,20 +159,6 @@ void main() {
   });
 
   group('followed routes (Spec 20)', () {
-    test('each entry carries how often its ride was followed', () {
-      final items = buildHistoryItems(
-        [_ride(1), _ride(2, followed: 1)],
-        const HistoryFilter(sort: SortOrder.distance),
-        nowMs: _now,
-        followCounts: const {1: 2},
-      );
-      final counts = {
-        for (final i in items.whereType<RideEntryItem>())
-          i.ride.rideId: i.followCount,
-      };
-      expect(counts, {1: 2, 2: 0});
-    });
-
     test('a route filter keeps the originals and their follows', () {
       final items = _build([
         _ride(1),

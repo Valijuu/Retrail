@@ -44,6 +44,15 @@ class HistoryController {
     }
   }
 
+  /// The ride to follow when [ride] is chosen (Spec 20): a repeat is followed
+  /// along its original, so its coverage and best time are measured against
+  /// the whole route, not against a possibly partial repeat.
+  Future<Ride> followSource(Ride ride) async {
+    final originalId = ride.followedRideId;
+    if (originalId == null) return ride;
+    return await _repo.findById(originalId) ?? ride;
+  }
+
   Future<void> toggleFavorite(Ride ride) =>
       _repo.updateFavorite(ride.rideId, !ride.isFavorite);
 }

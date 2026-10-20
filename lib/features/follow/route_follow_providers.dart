@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/repositories/data_providers.dart';
 import '../../domain/follow_coverage.dart';
 import '../../domain/follow_direction.dart';
 import '../../domain/follow_tracker.dart';
@@ -157,8 +158,16 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     ref.onDispose(_cancelFeed);
     ref.listen(rideTrackingStateProvider, (prev, next) {
       final recorder = next.asData?.value;
+      if (recorder == null) return;
+      // Spec 20: the recording ended (save, skip or a stop from the
+      // notification) — link the ride while the follow is still here.
+      final wasTracking = prev?.asData?.value.isTracking ?? false;
+      if (wasTracking && !recorder.isTracking) {
+        final link = state?.followLink;
+        if (link != null) ref.read(followLinkWriterProvider)(link);
+      }
       // Not tracking: the location is the display-only seed, not progress.
-      if (recorder == null || !recorder.isTracking) return;
+      if (!recorder.isTracking) return;
       final fix = recorder.location;
       // The recorder re-emits every second with an unchanged location.
       if (fix == null || identical(fix, prev?.asData?.value.location)) return;
@@ -329,6 +338,26 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
     _serviceSub = null;
   }
 }
+
+/// Stores a recorded repeat's [FollowLink] on the ride the recorder just
+/// stopped (Spec 20). A seam, so tests capture the links instead.
+final followLinkWriterProvider = Provider<void Function(FollowLink)>(
+  (ref) => (link) {
+    final rideId = ref.read(rideTrackerProvider).lastCompletedRideId;
+    if (rideId == null) return;
+    unawaited(
+      ref
+          .read(rideRepositoryProvider)
+          .setFollowedRide(
+            rideId,
+            originalId: link.originalId,
+            coverage: link.coverage,
+          )
+          // The original was deleted during the ride: nothing to link to.
+          .then<void>((_) {}, onError: (Object _) {}),
+    );
+  },
+);
 
 final routeFollowProvider =
     NotifierProvider<RouteFollowNotifier, RouteFollowState?>(

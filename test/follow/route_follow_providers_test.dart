@@ -93,11 +93,13 @@ void main() {
   late FakePermissions permissions;
   late StreamController<RideTrackingState> tracker;
   late ProviderContainer c;
+  late List<FollowLink> links;
   // The follow clock; fixes default to capture time 0, i.e. fresh.
   var nowNanos = 0;
 
   setUp(() {
     nowNanos = 0;
+    links = [];
     source = FakeLocationSource();
     permissions = FakePermissions();
     tracker = StreamController<RideTrackingState>.broadcast();
@@ -107,6 +109,7 @@ void main() {
         locationPermissionServiceProvider.overrideWithValue(permissions),
         rideTrackingStateProvider.overrideWith((ref) => tracker.stream),
         followNowNanosProvider.overrideWithValue(() => nowNanos),
+        followLinkWriterProvider.overrideWithValue(links.add),
       ],
     );
     c.listen(routeFollowProvider, (_, _) {});
@@ -203,6 +206,54 @@ void main() {
     );
     await flush();
     expect(c.read(routeFollowProvider)!.progress!.alongM, closeTo(111.2, 1));
+  });
+
+  group('linking the stopped ride (Spec 20)', () {
+    Future<void> rideAndStop(List<LatLng> points) async {
+      for (final p in points) {
+        tracker.add(
+          RideTrackingState(isTracking: true, location: fix(p.lat, p.lng)),
+        );
+        await flush();
+      }
+      tracker.add(const RideTrackingState(isTracking: false));
+      await flush();
+    }
+
+    test('a recorded follow links the stopped ride to its original', () async {
+      notifier().start(reference: _straight, sourceRideId: 7, recording: true);
+      await rideAndStop([for (var n = 0.0; n <= 300; n += 20) at(n, 0)]);
+      expect(links, hasLength(1));
+      expect(links.single.originalId, 7);
+      expect(links.single.coverage, closeTo(1, 0.01));
+    });
+
+    test('never on the route: nothing is linked', () async {
+      notifier().start(reference: _straight, sourceRideId: 7, recording: true);
+      await rideAndStop([at(0, 500), at(20, 500)]);
+      expect(links, isEmpty);
+    });
+
+    test('a reference not from a saved ride links nothing', () async {
+      notifier().start(reference: _straight, recording: true);
+      await rideAndStop([at(0, 0), at(100, 0)]);
+      expect(links, isEmpty);
+    });
+
+    test('a pause is not a stop', () async {
+      notifier().start(reference: _straight, sourceRideId: 7, recording: true);
+      tracker.add(RideTrackingState(isTracking: true, location: fix(48, 11)));
+      await flush();
+      tracker.add(
+        RideTrackingState(
+          isTracking: true,
+          isPaused: true,
+          location: fix(48, 11),
+        ),
+      );
+      await flush();
+      expect(links, isEmpty);
+    });
   });
 
   test('recording mode never opens its own GPS feed', () async {

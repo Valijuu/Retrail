@@ -8,23 +8,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
-import '../follow/follow_route_launcher.dart';
 import '../shell/main_shell.dart';
 import 'confirm_delete_dialog.dart';
 import 'filter_sheet.dart';
 import 'history_items.dart';
+import 'history_ride_actions.dart';
 import 'history_providers.dart';
 import 'history_ride_card.dart';
 import 'open_edit_ride_sheet.dart';
-import 'ride_detail_dialog.dart';
-import 'route_group_providers.dart';
-import 'widgets/route_group_sheet.dart';
 import 'widgets/history_empty_state.dart';
-import '../../data/db/app_database.dart' show Ride, Trackpoint;
-import '../../data/db/followed_route.dart' show RouteRoot;
-import '../../data/db/ride_with_trackpoints.dart';
 import '../../data/repositories/data_providers.dart';
-import '../../domain/ride_stats.dart';
 import '../../map/preview_projection.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../../core/theme/theme_context.dart';
@@ -46,7 +39,8 @@ class HistoryScreen extends ConsumerStatefulWidget {
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+class _HistoryScreenState extends ConsumerState<HistoryScreen>
+    with HistoryRideActions {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   GlobalKey _targetKey = GlobalKey();
@@ -242,6 +236,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         onConfirm: () {
           Navigator.of(context).pop();
           final controller = ref.read(historyControllerProvider);
+          ref.read(historyFilterProvider.notifier).dropRoutes(ids);
           if (batch) {
             controller.deleteRides(ids);
             _exitSelection();
@@ -250,86 +245,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           }
         },
       ),
-    );
-  }
-
-  /// Fetches this ride's trackpoints on demand — the list itself doesn't have
-  /// them (issue #21) — then opens the read-only detail dialog.
-  Future<void> _openDetail(RideEntryItem entry) async {
-    final ride = entry.ride;
-    final tps = await ref
-        .read(trackpointRepositoryProvider)
-        .getForRide(ride.rideId)
-        .first;
-    // Spec 20: a follow links to its original, an original to its group.
-    final originalId = ride.followedRideId;
-    final original = originalId == null
-        ? null
-        : await ref.read(rideRepositoryProvider).findById(originalId);
-    final followCount =
-        ref.read(followCountsProvider).value?[ride.rideId] ?? entry.followCount;
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      // Faster than the Material default (150ms): the dialog opens from a
-      // direct tap on the preview, so it should feel instant.
-      animationStyle: const AnimationStyle(
-        duration: Duration(milliseconds: 90),
-      ),
-      builder: (_) => RideDetailDialog(
-        rwt: RideWithTrackpoints(ride: entry.ride, trackpoints: tps),
-        stats: entry.stats,
-        onDismiss: () => Navigator.of(context).pop(),
-        onFollowRoute: () {
-          Navigator.of(context).pop();
-          _followRoute(entry.ride, tps);
-        },
-        followedFrom: original,
-        onOpenOriginal: original == null
-            ? null
-            : () {
-                Navigator.of(context).pop();
-                _openDetail(
-                  RideEntryItem(
-                    original,
-                    storedRideStats(original) ??
-                        statsWithoutTrackpoints(original),
-                  ),
-                );
-              },
-        followCount: followCount,
-        onOpenGroup: () {
-          Navigator.of(context).pop();
-          _openRouteGroup(entry);
-        },
-      ),
-    );
-  }
-
-  /// The comparison of [entry]'s route group, [entry] selected (Spec 20).
-  Future<void> _openRouteGroup(RideEntryItem entry) => showRouteGroupSheet(
-    context,
-    rootId: entry.ride.routeRootId,
-    highlightRideId: entry.ride.rideId,
-    onOpenRide: _openDetail,
-  );
-
-  /// Loads [ride]'s route and starts "Follow route" for it (Spec 17).
-  Future<void> _followRoute(Ride ride, [List<Trackpoint>? trackpoints]) async {
-    final tps =
-        trackpoints ??
-        await ref
-            .read(trackpointRepositoryProvider)
-            .getForRide(ride.rideId)
-            .first;
-    if (!mounted) return;
-    await launchFollowRoute(
-      context,
-      ref,
-      reference: [for (final tp in tps) (lat: tp.latitude, lng: tp.longitude)],
-      rideTitle: ride.description,
-      // Spec 20: a repeat of a repeat links to the original of the group.
-      sourceRideId: ride.routeRootId,
     );
   }
 
@@ -466,12 +381,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           selected: _selectedIds.contains(rideId),
           highlighted: rideId == _highlightRideId,
           onTap: () => _toggleSelected(rideId),
-          onOpenMap: () => _openDetail(item),
+          onOpenMap: () => openDetail(item),
           onLongPress: () => _toggleSelected(rideId),
           onEdit: () => showEditRideSheet(context, ref, item.ride),
           onDelete: () => _confirmDelete(single: rideId),
-          onFollowRoute: () => _followRoute(item.ride),
-          onOpenRouteGroup: () => _openRouteGroup(item),
+          onFollowRoute: () => followRoute(item.ride),
+          onOpenRouteGroup: () => openRouteGroup(item),
           onToggleFavorite: () =>
               ref.read(historyControllerProvider).toggleFavorite(item.ride),
         );

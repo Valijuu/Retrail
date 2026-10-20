@@ -38,3 +38,11 @@ English is the default and should read naturally (not a literal back-translation
 | Map compass tooltip | Karte nach Norden ausrichten |
 | Apple Maps / Google Maps / Waze | Apple Karten / Google Maps / Waze |
 | Location off (iOS dialog body) | Die Ortungsdienste sind aus. Schalte sie unter Einstellungen → Datenschutz & Sicherheit → Ortungsdienste ein. |
+| Followed / n× followed (chips) | Nachgefahren / n× nachgefahren |
+| Comparison sections | Original / Nachgefahren (n) / Teilstrecken – ohne Bestzeit |
+| Best time | Bestzeit |
+| Followed from (detail) | Nachgefahren von „Titel“ · Datum |
+| Followed routes filter / all / count | Nachgefahrene Strecken / Alle Strecken / n Strecken |
+| Route picker search / no match | Strecke suchen / Keine Strecke gefunden |
+| Route picker rides | n Fahrten · Datum |
+| Apply | Übernehmen |

@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme/app_shapes.dart';
 import '../../domain/activity_type.dart';
+import '../../domain/route_selection.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/activity_type_ui.dart';
 import '../settings/settings_providers.dart';
 import 'history_filter.dart';
 import 'history_providers.dart';
+import 'route_group_providers.dart';
+import 'widgets/route_picker_sheet.dart';
 import 'widgets/pill_dropdown.dart';
 import '../../core/theme/theme_context.dart';
 
@@ -31,6 +35,7 @@ class HistoryFilterSheet extends ConsumerWidget {
     final notifier = ref.read(historyFilterProvider.notifier);
     final availableYears = ref.watch(yearPickerItemsProvider);
     final locale = ref.watch(dateFormatLocaleProvider);
+    final routes = ref.watch(followedRoutesProvider).value ?? const [];
 
     final sorts = <(String, SortOrder)>[
       (l10n.sortNewest, SortOrder.date),
@@ -155,8 +160,71 @@ class HistoryFilterSheet extends ConsumerWidget {
                 ),
               ],
             ),
+            if (routes.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _SectionLabel(l10n.historySectionFollowedRoutes),
+              const SizedBox(height: 8),
+              _RouteFilterRow(
+                titles: selectedRouteTitles(
+                  routes,
+                  filter.routeIds,
+                  locale: locale,
+                ),
+                onTap: () => showRoutePickerSheet(context),
+              ),
+            ],
             const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The followed-route filter's row, styled like the [PillDropdown]s above:
+/// "All routes", up to two route names, or a count — opens the picker.
+class _RouteFilterRow extends StatelessWidget {
+  const _RouteFilterRow({required this.titles, required this.onTap});
+
+  /// The most route names the row spells out before it counts them.
+  static const int _maxNamed = 2;
+
+  final List<String> titles;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.colors;
+    final label = titles.isEmpty
+        ? l10n.historyRoutesAll
+        : titles.length <= _maxNamed
+        ? titles.join(', ')
+        : l10n.historyRoutesCount(titles.length);
+    return Material(
+      color: colors.surfaceContainer,
+      borderRadius: AppShapes.pill,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppShapes.pill,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: colors.onSurface),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: colors.primary),
+            ],
+          ),
         ),
       ),
     );

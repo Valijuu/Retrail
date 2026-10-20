@@ -4,7 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/features/history/filter_sheet.dart';
+import 'package:retrail/data/db/app_database.dart';
+import 'package:retrail/data/db/followed_route.dart';
 import 'package:retrail/features/history/history_providers.dart';
+import 'package:retrail/features/history/route_group_providers.dart';
+import 'package:retrail/features/history/widgets/route_picker_sheet.dart';
 import 'package:retrail/features/history/widgets/pill_dropdown.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 
@@ -20,12 +24,14 @@ void main() {
   Future<void> pump(
     WidgetTester tester, {
     List<int> years = const [2024, 2023],
+    List<FollowedRoute> routes = const [],
   }) async {
     container = ProviderContainer(
       overrides: [
         availableHistoryYearsProvider.overrideWith(
           (ref) => Stream.value(years),
         ),
+        followedRoutesProvider.overrideWith((ref) => Stream.value(routes)),
       ],
     );
     await tester.pumpWidget(
@@ -105,6 +111,7 @@ void main() {
         availableHistoryYearsProvider.overrideWith(
           (ref) => Stream.value(const [2024]),
         ),
+        followedRoutesProvider.overrideWith((ref) => Stream.value(const [])),
       ]);
       await tester.pump();
 
@@ -210,4 +217,56 @@ void main() {
       expect(find.text('August'), findsOneWidget);
     },
   );
+
+  group('followed routes (Spec 20)', () {
+    FollowedRoute route(int id, String title) => FollowedRoute(
+      original: Ride(
+        rideId: id,
+        description: title,
+        date: 1718193600000,
+        isFavorite: false,
+        hasRoute: false,
+      ),
+      rideCount: 2,
+      lastRiddenMs: 1718193600000,
+    );
+    final routes = [
+      route(1, 'Hausrunde'),
+      route(2, 'Rheinufer'),
+      route(3, 'Stadt'),
+    ];
+
+    testWidgets('no followed routes: no section', (tester) async {
+      await pump(tester);
+      expect(find.text('FOLLOWED ROUTES'), findsNothing);
+    });
+
+    testWidgets('unfiltered, the row says all routes', (tester) async {
+      await pump(tester, routes: routes);
+      expect(find.text('FOLLOWED ROUTES'), findsOneWidget);
+      expect(find.text('All routes'), findsOneWidget);
+    });
+
+    testWidgets('up to two chosen routes are named', (tester) async {
+      await pump(tester, routes: routes);
+      container.read(historyFilterProvider.notifier).setRouteIds({1, 2});
+      await tester.pump();
+      expect(find.text('Hausrunde, Rheinufer'), findsOneWidget);
+    });
+
+    testWidgets('more chosen routes are counted', (tester) async {
+      await pump(tester, routes: routes);
+      container.read(historyFilterProvider.notifier).setRouteIds({1, 2, 3});
+      await tester.pump();
+      expect(find.text('3 routes'), findsOneWidget);
+    });
+
+    testWidgets('tapping the row opens the route picker', (tester) async {
+      await pump(tester, routes: routes);
+      await tester.ensureVisible(find.text('All routes'));
+      await tester.tap(find.text('All routes'));
+      await tester.pumpAndSettle();
+      expect(find.byType(RoutePickerSheet), findsOneWidget);
+    });
+  });
 }

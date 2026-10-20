@@ -35,6 +35,22 @@ void main() {
   Future<int> insertRide({String? typ, bool fav = false}) =>
       repo.startRide(activityTypeId: typ, startedAtMs: 1000);
 
+  group('followSource (Spec 20)', () {
+    test('an original is followed itself', () async {
+      final id = await insertRide();
+      final ride = (await repo.findById(id))!;
+      expect((await controller.followSource(ride)).rideId, id);
+    });
+
+    test('a follow is followed along its original', () async {
+      final original = await insertRide();
+      final id = await insertRide();
+      await repo.setFollowedRide(id, originalId: original, coverage: 0.3);
+      final ride = (await repo.findById(id))!;
+      expect((await controller.followSource(ride)).rideId, original);
+    });
+  });
+
   test('deleteRide removes the row and evicts the preview', () async {
     final id = await insertRide();
     await controller.deleteRide(id);

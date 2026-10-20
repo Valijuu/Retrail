@@ -15,6 +15,7 @@ import 'package:retrail/features/active_ride/active_ride_controller.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_providers.dart';
+import 'package:retrail/features/history/route_group_providers.dart';
 import 'package:retrail/features/home/home_providers.dart';
 import 'package:retrail/features/home/recent_ride_ui.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
@@ -221,6 +222,8 @@ homeStreamStubs({
   // The History tab is a PageView neighbor of Home, so any shell-mounting
   // test builds it; keep it off the never-closing Drift `.watch()` stream.
   historyItemsProvider.overrideWith((ref) => Stream.value(history)),
+  // Each History card reads its follow count (Spec 20).
+  followCountsProvider.overrideWith((ref) => Stream.value(const {})),
 ];
 
 class HomeEnv {

@@ -8,7 +8,6 @@ import 'history_controller.dart';
 import 'history_filter.dart';
 import 'history_items.dart';
 import 'history_range.dart';
-import 'route_group_providers.dart';
 
 /// Mutable history filter state. Mirrors the original `RideHistoryViewModel`
 /// filter flows + setters.
@@ -66,11 +65,10 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
   /// empty = all rides.
   void setRouteIds(Set<int> ids) => state = state.copyWith(routeIds: ids);
 
-  /// Drops selected routes that are no longer followed routes ([existing]),
-  /// e.g. after their original was deleted — a stale choice would hide every
-  /// ride.
-  void keepRoutes(Set<int> existing) {
-    final kept = state.routeIds.intersection(existing);
+  /// Forgets deleted rides among the chosen routes: a choice whose
+  /// original is gone would hide every ride (Spec 20).
+  void dropRoutes(Iterable<int> deletedRideIds) {
+    final kept = state.routeIds.difference(deletedRideIds.toSet());
     if (kept.length != state.routeIds.length) {
       state = state.copyWith(routeIds: kept);
     }
@@ -102,18 +100,10 @@ final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
   final filter = ref.watch(historyFilterProvider);
   final locale = ref.watch(dateFormatLocaleProvider);
   final repo = ref.watch(rideRepositoryProvider);
-  final followCounts = ref.watch(followCountsProvider).value ?? const {};
   final (start, end) = effectiveRange(filter);
   return repo
       .getRidesInRange(startMs: start, endMs: end)
-      .map(
-        (rides) => buildHistoryItems(
-          rides,
-          filter,
-          locale: locale,
-          followCounts: followCounts,
-        ),
-      );
+      .map((rides) => buildHistoryItems(rides, filter, locale: locale));
 });
 
 /// Distinct calendar years present in the ride history, descending (newest

@@ -171,6 +171,25 @@ void main() {
     expect(opened!.ride.rideId, 4);
   });
 
+  testWidgets('only partial follows: no empty followed section', (
+    tester,
+  ) async {
+    final entries = [
+      _entry(1, title: 'Hausrunde'),
+      _entry(2, at: _t0 + _day, followed: 1, coverage: 0.3),
+    ];
+    await pump(
+      tester,
+      view: RouteGroupView(
+        buildRouteGroup(_groupRide(entries[0]), [_groupRide(entries[1])]),
+        {for (final e in entries) e.ride.rideId: e},
+      ),
+      highlight: 2,
+    );
+    expect(find.text('FOLLOWED (0)'), findsNothing);
+    expect(find.text('PARTIAL — NO BEST TIME'), findsOneWidget);
+  });
+
   testWidgets('no partial follows: no partial section', (tester) async {
     final entries = [
       _entry(1, title: 'Hausrunde'),

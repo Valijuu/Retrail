@@ -104,8 +104,10 @@ class RouteGroupSheet extends ConsumerWidget {
           ),
           section(l10n.routeGroupOriginal),
           row(group.original),
-          section(l10n.routeGroupFollows(group.complete.length)),
-          for (final r in group.complete) row(r),
+          if (group.complete.isNotEmpty) ...[
+            section(l10n.routeGroupFollows(group.complete.length)),
+            for (final r in group.complete) row(r),
+          ],
           if (group.partial.isNotEmpty) ...[
             section(l10n.routeGroupPartial),
             for (final r in group.partial) row(r),

@@ -7,7 +7,6 @@ import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/db/ride_dao.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
-import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/route_group_providers.dart';
 import 'package:retrail/features/settings/settings_providers.dart';
@@ -71,17 +70,11 @@ void main() {
     return id;
   }
 
-  test('history entries carry their follow count', () async {
+  test('followCountsProvider counts the follows per original', () async {
     final a = await ride();
-    final f = await follow(a);
-    await firstData(c, followCountsProvider);
-
-    final items = await firstData(c, historyItemsProvider);
-    final counts = {
-      for (final i in items.whereType<RideEntryItem>())
-        i.ride.rideId: i.followCount,
-    };
-    expect(counts, {a: 1, f: 0});
+    await follow(a);
+    await follow(a);
+    expect(await firstData(c, followCountsProvider), {a: 2});
   });
 
   test('routeGroupProvider splits the group and marks the best time', () async {
@@ -123,10 +116,10 @@ void main() {
       expect(c.read(historyFilterProvider).routeIds, isEmpty);
     });
 
-    test('keepRoutes drops selected routes that no longer exist', () {
+    test('dropRoutes forgets deleted rides among the chosen routes', () {
       final n = c.read(historyFilterProvider.notifier);
       n.setRouteIds({1, 3});
-      n.keepRoutes({3, 5});
+      n.dropRoutes([1, 7]);
       expect(c.read(historyFilterProvider).routeIds, {3});
     });
 

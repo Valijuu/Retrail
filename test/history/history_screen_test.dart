@@ -199,6 +199,7 @@ void main() {
     Stream<bool>? online,
     Locale? locale,
     RouteGroupView? routeGroup,
+    Map<int, int> followCounts = const {},
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -220,6 +221,7 @@ void main() {
           navigationLauncherProvider.overrideWithValue(navLauncher),
         isOnlineProvider.overrideWith((ref) => online ?? Stream.value(true)),
         rideRepositoryProvider.overrideWithValue(RideRepository(RideDao(db))),
+        followCountsProvider.overrideWith((ref) => Stream.value(followCounts)),
         if (routeGroup != null)
           routeGroupProvider.overrideWith((ref, _) => Stream.value(routeGroup)),
       ],
@@ -938,20 +940,18 @@ void main() {
   });
 
   group('followed rides (Spec 20)', () {
-    RideEntryItem followEntry(int id, {int followCount = 0, int? followed}) =>
-        RideEntryItem(
-          _ride(id, desc: 'Ride $id', followed: followed),
-          const RideStats(
-            durationMs: 600000,
-            distanceMetres: 4200,
-            maxSpeedKmh: 22,
-            avgSpeedKmh: 15,
-          ),
-          followCount: followCount,
-        );
+    RideEntryItem followEntry(int id, {int? followed}) => RideEntryItem(
+      _ride(id, desc: 'Ride $id', followed: followed),
+      const RideStats(
+        durationMs: 600000,
+        distanceMetres: 4200,
+        maxSpeedKmh: 22,
+        avgSpeedKmh: 15,
+      ),
+    );
 
     RouteGroupView view() {
-      final original = followEntry(1, followCount: 1);
+      final original = followEntry(1);
       final follow = followEntry(2, followed: 1);
       RouteGroupRide r(RideEntryItem e) => RouteGroupRide(
         rideId: e.ride.rideId,
@@ -965,19 +965,22 @@ void main() {
       });
     }
 
-    Future<void> pumpFollowed(WidgetTester tester) => pump(tester, [
-      followEntry(1, followCount: 1),
-      followEntry(2, followed: 1),
-    ], routeGroup: view());
+    Future<void> pumpFollowed(WidgetTester tester) => pump(
+      tester,
+      [followEntry(1), followEntry(2, followed: 1)],
+      routeGroup: view(),
+      followCounts: const {1: 1},
+    );
 
     testWidgets('a follow shows "Followed", its original the count', (
       tester,
     ) async {
-      await pump(tester, [
-        followEntry(1, followCount: 2),
-        followEntry(2, followed: 1),
-        followEntry(3),
-      ]);
+      await pump(
+        tester,
+        [followEntry(1), followEntry(2, followed: 1), followEntry(3)],
+        followCounts: const {1: 2},
+      );
+      await tester.pump(); // the counts stream
       expect(find.text('Followed'), findsOneWidget);
       expect(find.text('2× followed'), findsOneWidget);
     });
@@ -1050,6 +1053,21 @@ void main() {
         find.byType(RideDetailDialog),
       );
       expect(dialog.rwt.ride.rideId, originalId);
+    });
+
+    testWidgets('deleting a chosen route\'s original leaves the filter', (
+      tester,
+    ) async {
+      await pump(tester, [followEntry(1)]);
+      container.read(historyFilterProvider.notifier).setRouteIds({1, 99});
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete').last); // confirm
+      await tester.pumpAndSettle();
+      expect(controller.calls, contains('delete:1'));
+      expect(container.read(historyFilterProvider).routeIds, {99});
     });
   });
 }

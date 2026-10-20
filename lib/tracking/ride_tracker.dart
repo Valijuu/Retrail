@@ -183,12 +183,14 @@ class RideTracker {
     _activeRideId = null;
     _isTracking = false;
     _isPaused = false;
+    // Set before the emit, so a listener of the stop (the follow link,
+    // Spec 20) already finds the stopped ride.
+    if (rideId != null) _lastCompletedRideId = rideId;
     _emit();
     // rideId can be null when the begin-insert is still in flight (instant
     // back → discard). The isTracking=false flip above makes [_beginRide]
     // finalize/delete the ride on completion instead of resurrecting it.
     if (rideId != null) {
-      _lastCompletedRideId = rideId;
       unawaited(_rideRepository.updateEndTime(rideId, nowMs()));
     }
   }
@@ -212,27 +214,16 @@ class RideTracker {
     _emit();
   }
 
-  /// Stores the summary's details on the just-stopped ride; a repeat ride
-  /// also links to the [followedRideId] it followed (Spec 20).
   void saveRideDetails(
     String? description,
     String? comment, {
     bool isFavorite = false,
-    int? followedRideId,
-    double? followCoverage,
   }) {
     final rideId = _lastCompletedRideId;
     if (rideId == null) return;
     unawaited(() async {
       await _rideRepository.updateRideDetails(rideId, description, comment);
       await _rideRepository.updateFavorite(rideId, isFavorite);
-      if (followedRideId != null && followCoverage != null) {
-        await _rideRepository.setFollowedRide(
-          rideId,
-          originalId: followedRideId,
-          coverage: followCoverage,
-        );
-      }
     }());
   }
 

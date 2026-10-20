@@ -38,12 +38,7 @@ import 'package:retrail/tracking/tracking_providers.dart';
 
 import '../support/live_map_stub.dart';
 
-typedef SaveArgs = ({
-  String? title,
-  String? comment,
-  bool favorite,
-  FollowLink? followLink,
-});
+typedef SaveArgs = ({String? title, String? comment, bool favorite});
 
 // Minimal seams so a real RideRecordingController can be constructed; the fake
 // overrides start/stop so none are actually exercised.
@@ -137,14 +132,8 @@ class RecordingController extends ActiveRideController {
     String? title,
     String? comment,
     bool favorite = false,
-    FollowLink? followLink,
   }) async {
-    saved = (
-      title: title,
-      comment: comment,
-      favorite: favorite,
-      followLink: followLink,
-    );
+    saved = (title: title, comment: comment, favorite: favorite);
     calls.add('save');
   }
 }
@@ -573,52 +562,7 @@ void main() {
     expect(tester.state(find.byType(LiveMap)), same(before));
   });
 
-  group('saving a recorded follow (Spec 20)', () {
-    Future<void> stopAndSave(WidgetTester tester) async {
-      await tester.tap(find.text('Stop ride'));
-      await tester.pump();
-      await tester.tap(find.text('Stop'));
-      await tester.pump();
-      await tester.ensureVisible(find.text('Save'));
-      await tester.tap(find.text('Save'));
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('links the ride to its original with the coverage', (
-      tester,
-    ) async {
-      await pumpScreen(
-        tester,
-        state: tracking,
-        follow: followState(
-          progress: progress(),
-          sourceRideId: 7,
-          coverage: 0.95,
-        ),
-      );
-      await stopAndSave(tester);
-      expect(controller.saved!.followLink, (originalId: 7, coverage: 0.95));
-    });
-
-    testWidgets('never joined the route: no link', (tester) async {
-      await pumpScreen(
-        tester,
-        state: tracking,
-        follow: followState(
-          progress: progress(joined: false, off: true, offset: 250),
-          sourceRideId: 7,
-        ),
-      );
-      await stopAndSave(tester);
-      expect(controller.saved!.followLink, isNull);
-    });
-
-    testWidgets('without a reference: no link', (tester) async {
-      await pumpScreen(tester, state: tracking, follow: null);
-      await stopAndSave(tester);
-      expect(controller.saved!.followLink, isNull);
-    });
-
+  group('the post-ride summary (Spec 20)', () {
     testWidgets('the summary suggests the original title', (tester) async {
       await pumpScreen(
         tester,

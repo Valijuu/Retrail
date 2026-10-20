@@ -26,10 +26,15 @@ class RidePreviewThumbnail extends ConsumerWidget {
     super.key,
     required this.rideId,
     required this.hasRoute,
+    this.cacheWidth,
   });
 
   final int rideId;
   final bool hasRoute;
+
+  /// The width the preview PNG is decoded at — smaller for a small slot;
+  /// null decodes at the History card's width.
+  final int? cacheWidth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,7 +47,7 @@ class RidePreviewThumbnail extends ConsumerWidget {
               hasRoute: true,
               pointsLoader: () => loadRidePoints(ref, rideId),
               cache: ref.watch(routePreviewCacheProvider),
-              cacheWidth: previewImageCacheWidth,
+              cacheWidth: cacheWidth ?? previewImageCacheWidth,
             )
           : Center(
               child: Text(

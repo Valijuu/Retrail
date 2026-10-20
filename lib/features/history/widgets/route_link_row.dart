@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/theme_context.dart';
 
 /// A tappable line in the ride detail linking to the ride's route group
@@ -16,7 +17,7 @@ class RouteLinkRow extends StatelessWidget {
     final colors = context.colors;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: AppShapes.input,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(

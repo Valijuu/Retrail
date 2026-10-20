@@ -325,7 +325,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                         title: title,
                         comment: comment,
                         favorite: favorite,
-                        followLink: _liveFollowing()?.followLink,
                       );
                       _goHome();
                     },
