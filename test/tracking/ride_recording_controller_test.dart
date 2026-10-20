@@ -438,6 +438,21 @@ void main() {
     },
   );
 
+  test('stop() forgets a "services off" from the ride (#78)', () async {
+    final c = controller(
+      _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.whileInUse,
+      ),
+    );
+    await c.start();
+    source.setService(false);
+    await pumpEventQueue();
+    expect(tracker.state.locationServiceEnabled, isFalse);
+    await c.stop();
+    expect(tracker.state.locationServiceEnabled, isTrue);
+  });
+
   // Issue #77: the service + GPS feed come up while the countdown is on screen
   // (app guaranteed in front); the ride itself begins at 0 without any
   // platform call, so it starts even when the phone was pocketed meanwhile.
@@ -502,6 +517,18 @@ void main() {
       await pumpEventQueue();
       expect(tracker.state.location, isNull);
       expect(await db.rideDao.getAll().first, isEmpty);
+    });
+
+    // #78: with the service subscription gone the flag is no longer known —
+    // a stale "off" must not greet the next countdown after GPS came back on.
+    test('disarm() forgets a "services off" from the armed feed', () async {
+      final c = controller(granted());
+      await c.arm();
+      source.setService(false);
+      await pumpEventQueue();
+      expect(tracker.state.locationServiceEnabled, isFalse);
+      await c.disarm();
+      expect(tracker.state.locationServiceEnabled, isTrue);
     });
 
     test(

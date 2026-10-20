@@ -329,6 +329,9 @@ class RideRecordingController {
     _stateSub = null;
     await _serviceSub?.cancel();
     _serviceSub = null;
+    // Nothing tracks the services any more: forget their last state, or a
+    // ride ended with GPS off greets the next countdown with "off" (#78).
+    _tracker.setLocationServiceEnabled(true);
   }
 
   Future<void> openLocationSettings() => _permissions.openLocationSettings();
