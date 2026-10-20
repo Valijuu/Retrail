@@ -44,6 +44,11 @@ android {
     }
 
     buildTypes {
+        // Its own app next to the Play install, so a device test never
+        // replaces (and wipes) the real app and its rides.
+        debug {
+            applicationIdSuffix = ".debug"
+        }
         release {
             signingConfig = signingConfigs.getByName(
                 if (keystoreProperties.isEmpty) "debug" else "release"

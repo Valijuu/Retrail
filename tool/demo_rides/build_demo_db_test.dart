@@ -5,6 +5,11 @@
 //   flutter test tool/demo_rides/build_demo_db_test.dart
 //   RETRAIL_DEMO_LANG=de flutter test tool/demo_rides/build_demo_db_test.dart
 //
+// RETRAIL_DEMO_FOLLOWS=1 adds followed rides (Spec 20) for device tests:
+// rides linked to an original, with a partial one and one that rode to the
+// route first (its time on the route still wins, #79). Off by default, so
+// the store screenshots stay as they are.
+//
 // Writes build/demo_rides/retrail_<lang>.sqlite with ride titles in that
 // language (en by default). Ride dates are relative to now, so
 // the home screen's week/day totals are filled. Route geometry in
@@ -33,6 +38,9 @@ class DemoRide {
     this.title,
     this.comment,
     this.favorite = false,
+    this.key,
+    this.follows,
+    this.approach = const [],
   });
 
   final int daysAgo;
@@ -44,6 +52,15 @@ class DemoRide {
   final String? title;
   final String? comment;
   final bool favorite;
+
+  /// Names this ride so others can follow it.
+  final String? key;
+
+  /// The [key] of the original this ride was recorded following.
+  final String? follows;
+
+  /// Ridden before [route] (to reach it); not part of the time on the route.
+  final List<LatLng> approach;
 }
 
 void main() {
@@ -70,6 +87,8 @@ void main() {
 
     final lang = Platform.environment['RETRAIL_DEMO_LANG'] ?? 'en';
     final de = lang == 'de';
+    final withFollows = Platform.environment['RETRAIL_DEMO_FOLLOWS'] == '1';
+    String? followOf(String key) => withFollows ? key : null;
     final rides = [
       DemoRide(
         daysAgo: 0,
@@ -83,6 +102,7 @@ void main() {
         route: loop,
         cruiseKmh: 19,
         favorite: true,
+        follows: followOf('loop'),
       ),
       DemoRide(
         daysAgo: 1,
@@ -107,6 +127,7 @@ void main() {
         type: ActivityType.skateboard,
         route: r('middle_path'),
         cruiseKmh: 12,
+        follows: followOf('skate'),
       ),
       DemoRide(
         daysAgo: 5,
@@ -119,6 +140,7 @@ void main() {
         type: ActivityType.longboard,
         route: outAndBack(r('south_runway')),
         cruiseKmh: 21,
+        key: 'cruise',
       ),
       DemoRide(
         daysAgo: 8,
@@ -153,6 +175,7 @@ void main() {
         type: ActivityType.rollerskates,
         route: loop,
         cruiseKmh: 15,
+        follows: followOf('loop'),
       ),
       DemoRide(
         daysAgo: 21,
@@ -178,6 +201,7 @@ void main() {
         type: ActivityType.rollerblades,
         route: loop,
         cruiseKmh: 18,
+        key: 'loop',
       ),
       DemoRide(
         daysAgo: 40,
@@ -188,7 +212,49 @@ void main() {
         type: ActivityType.skateboard,
         route: outAndBack(r('middle_path')),
         cruiseKmh: 11,
+        key: 'skate',
       ),
+      if (withFollows) ...[
+        DemoRide(
+          daysAgo: 2,
+          hour: 17,
+          minute: 45,
+          title: de
+              ? 'Rollbahn-Cruise, zweiter Versuch'
+              : 'Runway cruise again',
+          type: ActivityType.longboard,
+          route: outAndBack(r('south_runway')),
+          cruiseKmh: 23,
+          follows: 'cruise',
+        ),
+        DemoRide(
+          daysAgo: 9,
+          hour: 18,
+          minute: 20,
+          title: de ? 'Runde mit Anfahrt' : 'Loop, riding there first',
+          comment: de
+              ? 'Über den Schotterweg zur Runde, dann Vollgas.'
+              : 'Took the dirt path to the loop, then full speed.',
+          type: ActivityType.longboard,
+          approach: back(r('dirt_path')),
+          route: loop,
+          cruiseKmh: 21,
+          follows: 'loop',
+        ),
+        DemoRide(
+          daysAgo: 11,
+          hour: 12,
+          minute: 30,
+          title: de ? 'Halbe Runde' : 'Half a loop',
+          comment: de
+              ? 'Nach der Südbahn abgebrochen, Regen.'
+              : 'Gave up after the south runway, rain.',
+          type: ActivityType.longboard,
+          route: r('south_runway'),
+          cruiseKmh: 24,
+          follows: 'loop',
+        ),
+      ],
     ];
 
     final file = File('build/demo_rides/retrail_$lang.sqlite');
@@ -199,6 +265,8 @@ void main() {
     final trackRepo = TrackpointRepository(db.trackpointDao);
     final random = math.Random(7);
     final today = DateTime.now();
+    final idsByKey = <String, int>{};
+    final followed = <(int, DemoRide, int)>[];
 
     for (final ride in rides) {
       final day = today.subtract(Duration(days: ride.daysAgo));
@@ -213,7 +281,11 @@ void main() {
         activityTypeId: ride.type.id,
         startedAtMs: start,
       );
-      final fixes = _simulate(ride.route, ride.cruiseKmh, random);
+      final approach = ride.approach.isEmpty
+          ? const <_Fix>[]
+          : _simulate(ride.approach, ride.cruiseKmh, random);
+      final onRoute = _simulate(ride.route, ride.cruiseKmh, random);
+      final fixes = [...approach, ...onRoute];
       await db.transaction(() async {
         for (var i = 0; i < fixes.length; i++) {
           await trackRepo.addTrackpoint(
@@ -230,6 +302,18 @@ void main() {
         await rideRepo.updateRideDetails(id, ride.title, ride.comment);
       }
       if (ride.favorite) await rideRepo.updateFavorite(id, true);
+      if (ride.key != null) idsByKey[ride.key!] = id;
+      if (ride.follows != null) followed.add((id, ride, onRoute.length * 1000));
+    }
+    final originals = {for (final ride in rides) ride.key: ride};
+    for (final (id, ride, routeTimeMs) in followed) {
+      final original = originals[ride.follows]!;
+      await rideRepo.setFollowedRide(
+        id,
+        originalId: idsByKey[ride.follows]!,
+        coverage: math.min(1, _length(ride.route) / _length(original.route)),
+        routeTimeMs: routeTimeMs,
+      );
     }
     await db.close();
   }, timeout: Timeout.none);
@@ -243,6 +327,18 @@ class _Fix {
 }
 
 const double _mPerDegLat = 111320;
+
+/// [route]'s length in metres (flat-earth, fine across a park).
+double _length(List<LatLng> route) {
+  final mPerDegLng = _mPerDegLat * math.cos(route.first[0] * math.pi / 180);
+  var metres = 0.0;
+  for (var i = 1; i < route.length; i++) {
+    final dy = (route[i][0] - route[i - 1][0]) * _mPerDegLat;
+    final dx = (route[i][1] - route[i - 1][1]) * mPerDegLng;
+    metres += math.sqrt(dx * dx + dy * dy);
+  }
+  return metres;
+}
 
 /// One fix per second along [route] at a speed that swells and dips around
 /// [cruiseKmh] (pushes, gentle slopes, slowing for turns), with ~1 m of GPS
