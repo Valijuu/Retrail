@@ -2,10 +2,14 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/repositories/data_providers.dart';
+import '../../tracking/countdown_announcer.dart';
 import '../../tracking/gps_fix_filter.dart';
 import '../../tracking/gps_signal.dart';
 import '../../tracking/ride_tracking_state.dart';
 import '../../tracking/tracking_providers.dart';
+import '../settings/settings_providers.dart';
+import 'countdown_cue_controller.dart';
 
 /// "Now" on the recorder's own clock, so "ready" means exactly "the recorder
 /// would take this fix". Overridden in tests.
@@ -38,4 +42,20 @@ final countdownGpsSignalProvider = Provider.autoDispose<GpsSignal>((ref) {
     ref.onDispose(timer.cancel);
   }
   return signal;
+});
+
+/// The voice + vibration behind the countdown cue (#81). Overridden in tests.
+final countdownAnnouncerProvider = Provider<CountdownAnnouncer>(
+  (ref) => PlatformCountdownAnnouncer(),
+);
+
+/// The countdown's cue: on unless switched off in the settings, spoken in the
+/// app language.
+final countdownCueControllerProvider = Provider<CountdownCueController>((ref) {
+  final prefs = ref.watch(preferencesRepositoryProvider);
+  return CountdownCueController(
+    announcer: ref.watch(countdownAnnouncerProvider),
+    enabled: () => prefs.countdownCueEnabledNow,
+    locale: () => ref.read(effectiveLocaleProvider),
+  );
 });

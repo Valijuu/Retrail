@@ -15,6 +15,7 @@ import 'package:retrail/data/repositories/preferences_repository.dart';
 import 'package:retrail/features/timer/countdown_providers.dart';
 import 'package:retrail/features/timer/countdown_screen.dart';
 import 'package:retrail/l10n/app_localizations.dart';
+import 'package:retrail/tracking/countdown_announcer.dart';
 import 'package:retrail/tracking/gps_signal.dart';
 import 'package:retrail/tracking/ride_recording_controller.dart';
 import 'package:retrail/tracking/tracking_providers.dart';
@@ -23,6 +24,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 class _MockRecording extends Mock implements RideRecordingController {}
 
 late _MockRecording _recording;
+late _FakeAnnouncer _announcer;
+
+class _FakeAnnouncer implements CountdownAnnouncer {
+  final calls = <String>[];
+  @override
+  Future<void> prepare(Locale locale) async => calls.add('prepare');
+  @override
+  Future<void> count(int second) async => calls.add('$second');
+  @override
+  Future<void> go() async => calls.add('go');
+  @override
+  Future<void> stop() async => calls.add('stop');
+}
 
 Future<Widget> _app(
   WidgetTester tester, {
@@ -32,6 +46,7 @@ Future<Widget> _app(
   GpsSignal gps = GpsSignal.ready,
   Locale? locale,
 }) async {
+  _announcer = _FakeAnnouncer();
   _recording = _MockRecording();
   when(() => _recording.arm()).thenAnswer((_) async {});
   when(() => _recording.disarm()).thenAnswer((_) async {});
@@ -64,6 +79,7 @@ Future<Widget> _app(
       preferencesRepositoryProvider.overrideWithValue(repo),
       rideRecordingControllerProvider.overrideWithValue(_recording),
       countdownGpsSignalProvider.overrideWith((ref) => gps),
+      countdownAnnouncerProvider.overrideWithValue(_announcer),
     ],
     child: MaterialApp.router(
       theme: buildTheme(brightness),
@@ -287,4 +303,51 @@ void main() {
       expect(label.text.style?.color, AppColors.light.onPrimary);
     });
   }
+
+  group('countdown cue (#81)', () {
+    testWidgets('running out announces 5…1, then go as the ride begins', (
+      tester,
+    ) async {
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+      await tester.pump();
+      expect(_announcer.calls, ['prepare', '5', '4', '3', '2', '1', 'go']);
+    });
+
+    testWidgets('Start now at 10 says only go', (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      await tester.tap(find.text('Start now'));
+      await tester.pump();
+      expect(_announcer.calls, ['prepare', 'go']);
+    });
+
+    testWidgets('leaving the countdown cuts the voice', (tester) async {
+      await tester.pumpWidget(await _app(tester));
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox());
+      expect(_announcer.calls.last, 'stop');
+    });
+
+    testWidgets('switched off in the settings: silent', (tester) async {
+      await tester.pumpWidget(
+        await _app(
+          tester,
+          prefs: const {
+            'last_activity_type': 'SCOOTER',
+            'countdown_cue_enabled': false,
+          },
+        ),
+      );
+      await tester.pump();
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+      await tester.pump();
+      expect(_announcer.calls, isEmpty);
+    });
+  });
 }

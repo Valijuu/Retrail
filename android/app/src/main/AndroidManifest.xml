@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <!-- Persistent recording notification + its controls (Android 13+). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Countdown cue (#81): a buzz per second, also with the screen off. -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
@@ -67,6 +69,11 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- Countdown cue (#81): flutter_tts binds the system TTS engine,
+             which Android 11+ package visibility hides otherwise. -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

@@ -12,6 +12,8 @@ import '../../tracking/ride_recording_controller.dart';
 import '../../tracking/tracking_providers.dart';
 import '../home/home_providers.dart';
 import '../shell/routes.dart';
+import 'countdown_cue_controller.dart';
+import 'countdown_providers.dart';
 import 'countdown_timer.dart';
 import 'widgets/countdown_chips.dart';
 import 'widgets/countdown_gps_status_row.dart';
@@ -46,11 +48,13 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
   /// leaving must still disarm (Start now, then back at once).
   bool _begun = false;
   late final RideRecordingController _recording;
+  late final CountdownCueController _cue;
 
   @override
   void initState() {
     super.initState();
     _recording = ref.read(rideRecordingControllerProvider);
+    _cue = ref.read(countdownCueControllerProvider)..begin();
     unawaited(_recording.arm());
     _timer.addListener(_onTick);
     _timer.start();
@@ -69,6 +73,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
     setState(() {
       if (_timer.value > _total) _total = _timer.value;
     });
+    _cue.onValue(_timer.value);
     if (_timer.isFinished) _goToRide();
   }
 
@@ -76,6 +81,7 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
     if (_navigated) return;
     _navigated = true;
     _timer.stop();
+    _cue.onStart();
     // Before navigating: in the background no frame builds the ride screen,
     // so the ride must not wait for it. False = a notification Stop
     // cancelled the start meanwhile.
@@ -87,7 +93,10 @@ class _CountdownScreenState extends ConsumerState<CountdownScreen> {
 
   @override
   void dispose() {
-    if (!_begun) unawaited(_recording.disarm());
+    if (!_begun) {
+      unawaited(_recording.disarm());
+      _cue.end();
+    }
     _timer.removeListener(_onTick);
     _timer.dispose();
     super.dispose();

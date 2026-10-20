@@ -49,7 +49,7 @@ jobs:
           cache: true
 
       # Plugins with a Package.swift come via SwiftPM; the rest (currently
-      # flutter_foreground_task) via CocoaPods, which the flutter tool sets up.
+      # flutter_foreground_task, flutter_tts) via CocoaPods, which the flutter tool sets up.
       - name: Enable Swift Package Manager
         run: flutter config --enable-swift-package-manager
 

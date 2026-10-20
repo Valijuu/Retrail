@@ -85,6 +85,8 @@
 	     Declarations only; the extension/stream light them up later. -->
 	<key>UIBackgroundModes</key>
 	<array>
+		<!-- Countdown cue (#81): speak 5…1 + go with the screen locked. -->
+		<string>audio</string>
 		<string>location</string>
 	</array>
 	<!-- Navigate-to-start chooser: third-party maps apps probed with
