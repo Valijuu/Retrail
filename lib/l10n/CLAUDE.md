@@ -31,14 +31,15 @@ English is the default and should read naturally (not a literal back-translation
 | Month range section / from / to | Monatsbereich / Von / Bis |
 | Select all (bulk delete) | Alle auswählen |
 | Today / Yesterday | Heute / Gestern |
-| Great pace / No route | Gutes Tempo / Keine Route |
+| No route | Keine Route |
 | Swipe hint | ← wischen zum Bearbeiten oder Löschen |
 | Edit / Delete | Bearbeiten / Löschen |
 | Navigation-app chooser title | Navigieren mit |
 | Map compass tooltip | Karte nach Norden ausrichten |
 | Apple Maps / Google Maps / Waze | Apple Karten / Google Maps / Waze |
 | Location off (iOS dialog body) | Die Ortungsdienste sind aus. Schalte sie unter Einstellungen → Datenschutz & Sicherheit → Ortungsdienste ein. |
-| Followed / n× followed (chips) | Nachgefahren / n× nachgefahren |
+| Route chips: follow / original | Nachgefahren / Original · n× |
+| n× followed (detail link) | n× nachgefahren |
 | Comparison sections | Original / Nachgefahren (n) / Teilstrecken – ohne Bestzeit |
 | Best time | Bestzeit |
 | Followed from (detail) | Nachgefahren von „Titel“ · Datum |

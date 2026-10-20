@@ -258,7 +258,8 @@ void main() {
     await pump(tester, [_entry(1, desc: 'Morning roll', typ: 'SCOOTER')]);
     expect(find.text('Morning roll'), findsOneWidget);
     expect(find.text('4.2 km'), findsOneWidget);
-    expect(find.text('Great pace'), findsOneWidget); // avg 15 > 10
+    // The "Great pace" chip is gone.
+    expect(find.text('Great pace'), findsNothing);
     // Shown both in the thumbnail overlay and as a chip below it.
     expect(find.text('No route'), findsNWidgets(2)); // empty trackpoints
     expect(find.text('Scooter'), findsOneWidget);
@@ -982,7 +983,11 @@ void main() {
       );
       await tester.pump(); // the counts stream
       expect(find.text('Followed'), findsOneWidget);
-      expect(find.text('2× followed'), findsOneWidget);
+      expect(find.text('Original · 2×'), findsOneWidget);
+      // Told apart by their icon, and marked tappable by a trailing arrow.
+      expect(find.byIcon(Icons.replay), findsOneWidget);
+      expect(find.byIcon(Icons.flag), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsNWidgets(2));
     });
 
     testWidgets('tapping either chip opens the group, the tapped ride '
@@ -998,7 +1003,7 @@ void main() {
       Navigator.of(tester.element(find.byType(RouteGroupSheet))).pop();
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('1× followed'));
+      await tester.tap(find.text('Original · 1×'));
       await tester.pumpAndSettle();
       expect(
         tester

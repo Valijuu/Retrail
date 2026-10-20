@@ -166,8 +166,8 @@ A 14dp rounded `surfaceContainer` card; **2dp primary border** when selected or 
   distance (`%.1f`/`%.0f km`) · **3-dot (⋮) overflow menu** (`PopupMenuButton`) with **Edit** and
   **Delete** (delete tinted `deleteActionText`), hidden in selection mode.
   - **Meta** line: `formatRideTime(date) · formatDuration(durationMs) · Ø {avg} km/h`.
-  - **Chips**: activity chip (icon+label, `chipSecondary`/`chipSecondaryText`); "Great pace"
-    (`chipGreatPace`, avg > 10 km/h, `primaryContainer`); "No route" (`chipNoRoute`).
+  - **Chips**: activity chip (icon+label, `chipSecondary`/`chipSecondaryText`); "No route"
+    (`chipNoRoute`); the route chips of Spec 20. (The original's "Great pace" chip was dropped.)
 
 ---
 
@@ -258,7 +258,6 @@ Mirror the Android `history_*`, `sort_*`, `edit_ride_*`, `detail_*`, `chip_*`,
 | `detailDurationLabel` | `Duration` | `Dauer` |
 | `detailMaxSpeedLabel` | `Top speed` | `Höchstgeschwindigkeit` |
 | `detailAvgSpeedLabel` | `Avg speed` | `Ø Geschwindigkeit` |
-| `chipGreatPace` | `Great pace` | `Gutes Tempo` |
 | `chipNoRoute` | `No route` | `Keine Route` |
 | `actionReset` | `Reset` | `Zurücksetzen` |
 | `actionApply` | `Apply` | `Anwenden` |

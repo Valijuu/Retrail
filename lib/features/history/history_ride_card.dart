@@ -204,7 +204,6 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                     ),
                   ),
                   if (activity != null ||
-                      stats.avgSpeedKmh > 10 ||
                       !hasRoute ||
                       isFollow ||
                       followCount > 0) ...[
@@ -223,12 +222,6 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                             bg: colors.chipSecondary,
                             fg: colors.chipSecondaryText,
                           ),
-                        if (stats.avgSpeedKmh > 10)
-                          _Chip(
-                            label: l10n.chipGreatPace,
-                            bg: colors.primaryContainer,
-                            fg: colors.onPrimaryContainer,
-                          ),
                         if (!hasRoute)
                           _Chip(
                             label: l10n.chipNoRoute,
@@ -236,27 +229,15 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                             fg: colors.onSurfaceVariant,
                           ),
                         if (isFollow)
-                          _Chip(
+                          _RouteChip(
+                            icon: Icons.replay,
                             label: l10n.chipFollowed,
-                            leading: Icon(
-                              Icons.alt_route,
-                              size: 13,
-                              color: colors.onPrimaryContainer,
-                            ),
-                            bg: colors.primaryContainer,
-                            fg: colors.onPrimaryContainer,
                             onTap: openGroup,
                           ),
                         if (followCount > 0)
-                          _Chip(
-                            label: l10n.chipFollowCount(followCount),
-                            leading: Icon(
-                              Icons.alt_route,
-                              size: 13,
-                              color: colors.onPrimaryContainer,
-                            ),
-                            bg: colors.primaryContainer,
-                            fg: colors.onPrimaryContainer,
+                          _RouteChip(
+                            icon: Icons.flag,
+                            label: l10n.chipOriginal(followCount),
                             onTap: openGroup,
                           ),
                       ],
@@ -461,19 +442,15 @@ class _Chip extends StatelessWidget {
     required this.bg,
     required this.fg,
     this.leading,
-    this.onTap,
   });
   final String label;
   final Color bg;
   final Color fg;
   final Widget? leading;
 
-  /// Makes the chip a button of its own, so a tap doesn't reach the card.
-  final VoidCallback? onTap;
-
   @override
   Widget build(BuildContext context) {
-    final chip = Container(
+    return Container(
       decoration: BoxDecoration(color: bg, borderRadius: AppShapes.pill),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: Row(
@@ -490,7 +467,49 @@ class _Chip extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// A ride's place in its route group (Spec 20) — "Original · n×" or
+/// "Followed" — drawn as a button (outline + arrow), unlike the filled info
+/// chips, since it opens the group's comparison. Without [onTap] (selection
+/// mode) it is a plain label and a tap reaches the card.
+class _RouteChip extends StatelessWidget {
+  const _RouteChip({required this.icon, required this.label, this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
     final tap = onTap;
+    final chip = Container(
+      decoration: BoxDecoration(
+        borderRadius: AppShapes.pill,
+        border: Border.all(color: colors.primary),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 2, 6, 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: colors.primary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colors.primary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (tap != null)
+            Icon(Icons.chevron_right, size: 15, color: colors.primary),
+        ],
+      ),
+    );
     if (tap == null) return chip;
     return Semantics(
       button: true,
