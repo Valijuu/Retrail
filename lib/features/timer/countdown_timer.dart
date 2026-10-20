@@ -3,13 +3,18 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 /// Screen-scoped countdown for the pre-ride timer. Ports `TimerViewModel`:
-/// starts at 5, decrements once per second to 0, supports `+time` and `stop`.
+/// starts at [defaultSeconds], decrements once per second to 0, supports
+/// `+time` and `stop`.
 ///
 /// A plain [ChangeNotifier] (no Riverpod) so it's driven by `fake_async` in
 /// unit tests and by `tester.pump(Duration)` in widget tests. The owning screen
 /// creates it in `initState` and disposes it in `dispose`.
 class CountdownTimer extends ChangeNotifier {
-  int _value = 5;
+  /// Seconds a fresh countdown runs. The original used 5 — too short to pocket
+  /// the phone and step on the board.
+  static const defaultSeconds = 10;
+
+  int _value = defaultSeconds;
   Timer? _ticker;
 
   /// Seconds remaining.
@@ -20,7 +25,7 @@ class CountdownTimer extends ChangeNotifier {
 
   /// (Re)starts the countdown from [from], setting the value synchronously
   /// (eager first emission, matching the original) before ticking each second.
-  void start({int from = 5}) {
+  void start({int from = defaultSeconds}) {
     _ticker?.cancel();
     _value = from;
     notifyListeners();

@@ -9,7 +9,7 @@
 
 ## Goal
 
-Port the original **TimerPage + TimerViewModel** verbatim in behavior: a 5→0 second
+Port the original **TimerPage + TimerViewModel** verbatim in behavior (one deliberate change: the countdown runs 10 s, not the original's 5): a 10→0 second
 countdown shown as an animated ring, a read-only chip of the activity type about to be
 recorded, a **+5 sec.** action, a static GPS-signal indicator, and a **Start now** button.
 When the countdown reaches 0 (or the user taps **Start now**), navigate to the active-ride
@@ -28,10 +28,10 @@ A plain, Riverpod-free, fake-async-testable class — same seam as `RideTracker`
 
 ```dart
 class CountdownTimer extends ChangeNotifier {
-  int get value;          // seconds remaining; starts at 5
+  int get value;          // seconds remaining; starts at defaultSeconds (10)
   bool get isFinished;    // value == 0
 
-  void start({int from = 5});  // (re)starts: sets value=from synchronously, then ticks
+  void start({int from = defaultSeconds});  // (re)starts: sets value=from synchronously, then ticks
   void addTime(int seconds);   // restart at current value + seconds
   void stop();                 // cancel ticking, hold current value
   // dispose() cancels the timer.
@@ -137,8 +137,8 @@ No redirect changes. `/ride` stays the placeholder until Spec 12.
 ## Test-first plan (`test/timer/`)
 
 **`countdown_timer_test.dart`** — ports the four `TimerViewModelTest` cases via `fakeAsync`:
-1. `counts down to 0` — `start()`, advance 5 s → `value == 0`, `isFinished`.
-2. `stop freezes the value` — `start()`, advance 1.5 s (→ 4), `stop()`, advance 10 s → still 4.
+1. `counts down to 0` — `start()`, advance 10 s → `value == 0`, `isFinished`.
+2. `stop freezes the value` — `start()`, advance 1.5 s (→ 9), `stop()`, advance 10 s → still 9.
 3. `addTime increases the value immediately` — `start()` (→ 5), `addTime(5)` → `value == 10`.
 4. `addTime keeps counting down` — `start()` + `addTime(5)` (→ 10), advance 11 s → `value == 0`.
    Plus: notifies listeners on each change; `dispose` cancels the ticker.
@@ -148,7 +148,7 @@ No redirect changes. `/ride` stays the placeholder until Spec 12.
   initial digit `5`, the tagline, and the GPS row (`GPS signal` / `ready`).
 - Tapping **+5 sec.** shows `10`.
 - Tapping **Start now** navigates to `/ride` (asserts the placeholder `ride` text).
-- Pumping 5 s with no interaction auto-navigates to `/ride`.
+- Pumping 10 s with no interaction auto-navigates to `/ride`.
 
 ---
 

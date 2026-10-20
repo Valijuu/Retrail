@@ -88,7 +88,7 @@ void main() {
     await tester.pump();
     expect(find.text('GET READY'), findsOneWidget);
     expect(find.text('Scooter'), findsOneWidget);
-    expect(find.text('5'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
     expect(find.textContaining('Stay balanced'), findsOneWidget);
     expect(find.text('GPS signal'), findsOneWidget);
     expect(find.text('ready'), findsOneWidget);
@@ -143,7 +143,7 @@ void main() {
     // 400-wide screen → centre at x≈200. The bug pinned the block to the left
     // (Stack topStart + a shrink-wrapped column), landing the digit near x≈114.
     expect(
-      tester.getCenter(find.text('5')).dx,
+      tester.getCenter(find.text('10')).dx,
       moreOrLessEquals(200, epsilon: 1),
     );
   });
@@ -154,7 +154,7 @@ void main() {
     await tester.tap(find.text('+5 sec.'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400)); // settle switcher
-    expect(find.text('10'), findsOneWidget);
+    expect(find.text('15'), findsOneWidget);
   });
 
   testWidgets('Start now navigates to the ride screen', (tester) async {
@@ -169,7 +169,7 @@ void main() {
   testWidgets('reaching 0 auto-navigates to the ride screen', (tester) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(seconds: 1));
     }
     await tester.pump();
@@ -191,7 +191,7 @@ void main() {
   ) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(seconds: 1));
     }
     verify(() => _recording.beginArmedRide()).called(1);
@@ -263,17 +263,17 @@ void main() {
     await tester.pump();
     expect(ringProgress(tester), moreOrLessEquals(1.0, epsilon: 0.01));
 
-    // Halfway through "5": the ring is on its way from 5/5 to 4/5.
+    // Halfway through "10": the ring is on its way from 10/10 to 9/10.
     await tester.pump(const Duration(milliseconds: 500));
-    expect(ringProgress(tester), moreOrLessEquals(0.9, epsilon: 0.02));
+    expect(ringProgress(tester), moreOrLessEquals(0.95, epsilon: 0.02));
 
-    // Halfway through "1" (4.5 s in): heading from 1/5 to empty. Pumped in
+    // Halfway through "1" (9.5 s in): heading from 1/10 to empty. Pumped in
     // frame-sized steps so each tick's glide starts on time, like on device.
-    for (var i = 0; i < 40; i++) {
+    for (var i = 0; i < 90; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('1'), findsOneWidget);
-    expect(ringProgress(tester), moreOrLessEquals(0.1, epsilon: 0.02));
+    expect(ringProgress(tester), moreOrLessEquals(0.05, epsilon: 0.02));
   });
 
   for (final brightness in Brightness.values) {

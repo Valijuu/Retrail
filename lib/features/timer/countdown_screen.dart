@@ -19,7 +19,7 @@ import '../shell/routes.dart';
 import 'countdown_providers.dart';
 import 'countdown_timer.dart';
 
-/// Pre-ride countdown. Ports `TimerPage`: an animated 5→0 ring, the read-only
+/// Pre-ride countdown. Ports `TimerPage`: an animated 10→0 ring, the read-only
 /// activity chip, a +5 action, a live GPS-signal row (#69) and a Start-now
 /// button.
 /// Reaching 0 (or Start now) begins the ride and navigates to the active-ride
@@ -44,7 +44,7 @@ const _accent = AppColors.light; // arc, digit, labels, chip text
 
 class _CountdownScreenState extends ConsumerState<CountdownScreen> {
   final CountdownTimer _timer = CountdownTimer();
-  int _total = 5;
+  int _total = CountdownTimer.defaultSeconds;
   bool _navigated = false;
 
   /// Set once [RideRecordingController.beginArmedRide] returned — until then
