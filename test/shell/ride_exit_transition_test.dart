@@ -17,6 +17,8 @@ import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/features/active_ride/active_ride_controller.dart';
+import 'package:retrail/features/follow/route_follow_providers.dart'
+    show FollowLink;
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/profile/profile_providers.dart';
 import 'package:retrail/features/shell/routes.dart';
@@ -116,6 +118,7 @@ class _FakeActiveRideController extends ActiveRideController {
     String? title,
     String? comment,
     bool favorite = false,
+    FollowLink? followLink,
   }) async {}
 }
 

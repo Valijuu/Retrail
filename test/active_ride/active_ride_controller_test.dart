@@ -197,4 +197,27 @@ void main() {
     await pumpEventQueue();
     expect(await repo.getById(rideId).first, isNull);
   });
+
+  test('saveRide links a repeat ride to its original (Spec 20)', () async {
+    final repo = RideRepository(RideDao(db));
+    final original = await repo.startRide(startedAtMs: 1);
+    await recordShortRide();
+    final rideId = tracker.lastCompletedRideId!;
+    final controller = ActiveRideController(
+      tracker,
+      RoutePreviewCache(
+        baseDir: Directory.systemTemp,
+        render: (_, _) async => PreviewResult(Uint8List(0), complete: true),
+      ),
+    );
+
+    await controller.saveRide(
+      followLink: (originalId: original, coverage: 0.95),
+    );
+    await pumpEventQueue();
+
+    final ride = await repo.findById(rideId);
+    expect(ride!.followedRideId, original);
+    expect(ride.followCoverage, 0.95);
+  });
 }

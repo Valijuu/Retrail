@@ -212,16 +212,27 @@ class RideTracker {
     _emit();
   }
 
+  /// Stores the summary's details on the just-stopped ride; a repeat ride
+  /// also links to the [followedRideId] it followed (Spec 20).
   void saveRideDetails(
     String? description,
     String? comment, {
     bool isFavorite = false,
+    int? followedRideId,
+    double? followCoverage,
   }) {
     final rideId = _lastCompletedRideId;
     if (rideId == null) return;
     unawaited(() async {
       await _rideRepository.updateRideDetails(rideId, description, comment);
       await _rideRepository.updateFavorite(rideId, isFavorite);
+      if (followedRideId != null && followCoverage != null) {
+        await _rideRepository.setFollowedRide(
+          rideId,
+          originalId: followedRideId,
+          coverage: followCoverage,
+        );
+      }
     }());
   }
 

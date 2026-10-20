@@ -154,10 +154,14 @@ class PostRideSummaryDialog extends StatefulWidget {
     required this.onSkip,
     required this.onSave,
     required this.onDiscard,
+    this.initialTitle,
   });
 
   final VoidCallback onSkip;
   final void Function(String? title, String? comment, bool favorite) onSave;
+
+  /// Pre-fills the title — a repeat ride suggests its original's (Spec 20).
+  final String? initialTitle;
   final VoidCallback onDiscard;
 
   @override
@@ -165,7 +169,9 @@ class PostRideSummaryDialog extends StatefulWidget {
 }
 
 class _PostRideSummaryDialogState extends State<PostRideSummaryDialog> {
-  final _titleController = TextEditingController();
+  late final _titleController = TextEditingController(
+    text: widget.initialTitle,
+  );
   final _commentController = TextEditingController();
   bool _favorite = false;
 

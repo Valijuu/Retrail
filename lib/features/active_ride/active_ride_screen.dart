@@ -312,6 +312,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               if (_showSummary)
                 _modal(
                   PostRideSummaryDialog(
+                    initialTitle: _liveFollowing()?.rideTitle,
                     // _goHome() flips _isLeaving in the same frame the dialog
                     // closes, so the frozen chrome + scrim carry through the exit.
                     onSkip: () {
@@ -324,6 +325,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                         title: title,
                         comment: comment,
                         favorite: favorite,
+                        followLink: _liveFollowing()?.followLink,
                       );
                       _goHome();
                     },

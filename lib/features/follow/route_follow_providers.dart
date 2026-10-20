@@ -27,6 +27,10 @@ const int _trailLength = 30;
 /// rider joined at its finish, or rode it backwards from elsewhere.
 enum FollowReverseNotice { atFinish, detected }
 
+/// What a saved repeat ride links to (Spec 20): the original it followed
+/// and the share of it ridden.
+typedef FollowLink = ({int originalId, double coverage});
+
 /// A reference route being followed (Spec 17), with the rider's progress.
 class RouteFollowState {
   const RouteFollowState({
@@ -68,6 +72,15 @@ class RouteFollowState {
   /// Share of [track] ridden so far, 0–1 ([followCoverage], Spec 20); 0
   /// while undecided.
   final double coverage;
+
+  /// The link a recorded repeat is saved with: only for a reference from a
+  /// saved ride that the rider actually joined (Spec 20).
+  FollowLink? get followLink {
+    final originalId = sourceRideId;
+    if (!recording || originalId == null) return null;
+    if (progress?.hasJoined != true) return null;
+    return (originalId: originalId, coverage: coverage);
+  }
 
   bool get isReversed => direction == FollowDirection.reverse;
 

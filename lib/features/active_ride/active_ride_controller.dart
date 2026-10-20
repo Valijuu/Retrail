@@ -1,6 +1,7 @@
 import 'dart:ui' show Brightness;
 
 import '../../map/route_preview_cache.dart';
+import '../follow/route_follow_providers.dart' show FollowLink;
 import '../../tracking/ride_tracker.dart';
 
 /// Thin, testable seam over [RideTracker] + [RoutePreviewCache] for the
@@ -34,7 +35,8 @@ class ActiveRideController {
   /// to the cache-warm path on first view anyway.
   static const previewDelay = Duration(milliseconds: 450);
 
-  /// Persists ride details, then generates the preview PNGs (active theme
+  /// Persists ride details (and the [followLink] of a repeat ride, Spec 20),
+  /// then generates the preview PNGs (active theme
   /// first, then the other) once for the just-stopped ride (online snapshot or offline flat sketch — the cache's
   /// renderer decides), deferred by [previewDelay] so the render never
   /// competes with the exit transition. No-op preview when there is no
@@ -43,10 +45,17 @@ class ActiveRideController {
     String? title,
     String? comment,
     bool favorite = false,
+    FollowLink? followLink,
   }) async {
     final rideId = _tracker.lastCompletedRideId;
     final points = _tracker.state.trackPoints;
-    _tracker.saveRideDetails(title, comment, isFavorite: favorite);
+    _tracker.saveRideDetails(
+      title,
+      comment,
+      isFavorite: favorite,
+      followedRideId: followLink?.originalId,
+      followCoverage: followLink?.coverage,
+    );
     if (rideId != null && points.isNotEmpty) {
       await Future<void>.delayed(previewDelay);
       final brightness = _currentBrightness();

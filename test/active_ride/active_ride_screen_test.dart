@@ -19,6 +19,8 @@ import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/features/active_ride/active_ride_controller.dart';
+import 'package:retrail/features/follow/route_follow_providers.dart'
+    show FollowLink;
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/active_ride/active_ride_screen.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -129,6 +131,7 @@ class RecordingController extends ActiveRideController {
     String? title,
     String? comment,
     bool favorite = false,
+    FollowLink? followLink,
   }) async {
     saved = (title: title, comment: comment, favorite: favorite);
     calls.add('save');
