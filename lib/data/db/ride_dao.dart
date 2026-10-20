@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'app_database.dart';
+import 'followed_route.dart';
 import 'ride_with_trackpoints.dart';
 import 'tables.dart';
 
@@ -132,6 +133,67 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
           isFavorite: Value(isFavorite),
           favoritedAt: Value(favoritedAt),
         ),
+      );
+
+  /// Links [rideId] to the [originalId] it was recorded following, with the
+  /// share of it ridden (Spec 20).
+  Future<void> updateFollowedRide(
+    int rideId,
+    int originalId,
+    double coverage,
+  ) => (update(rides)..where((r) => r.rideId.equals(rideId))).write(
+    RidesCompanion(
+      followedRideId: Value(originalId),
+      followCoverage: Value(coverage),
+    ),
+  );
+
+  /// How often each original was followed, by its ride id.
+  Stream<Map<int, int>> watchFollowCounts() {
+    final count = rides.rideId.count();
+    final query = selectOnly(rides)
+      ..addColumns([rides.followedRideId, count])
+      ..where(rides.followedRideId.isNotNull())
+      ..groupBy([rides.followedRideId]);
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows)
+          row.read(rides.followedRideId)!: row.read(count)!,
+      },
+    );
+  }
+
+  /// The original [rootId] and every ride that followed it; empty once the
+  /// original is gone (its follows are unlinked then).
+  Stream<List<Ride>> watchRouteGroup(int rootId) =>
+      (select(rides)..where(
+            (r) => r.rideId.equals(rootId) | r.followedRideId.equals(rootId),
+          ))
+          .watch()
+          .map(
+            (group) => group.any((r) => r.rideId == rootId) ? group : const [],
+          );
+
+  /// Every followed original with its group size and last ride, most
+  /// recently ridden first (the History route filter, Spec 20). Times use
+  /// coalesce(date, startTime) like [getRidesInRange].
+  Stream<List<FollowedRoute>> watchFollowedRoutes() =>
+      customSelect(
+        'SELECT o.*, COUNT(*) + 1 AS ride_count, '
+        'MAX(MAX(COALESCE(f.date, f.start_time, 0)), '
+        'COALESCE(o.date, o.start_time, 0)) AS last_ridden_ms '
+        'FROM rides f JOIN rides o ON o.ride_id = f.followed_ride_id '
+        'GROUP BY o.ride_id ORDER BY last_ridden_ms DESC',
+        readsFrom: {rides},
+      ).watch().map(
+        (rows) => [
+          for (final row in rows)
+            FollowedRoute(
+              original: rides.map(row.data),
+              rideCount: row.read<int>('ride_count'),
+              lastRiddenMs: row.read<int>('last_ridden_ms'),
+            ),
+        ],
       );
 
   Future<void> deleteById(int rideId) =>

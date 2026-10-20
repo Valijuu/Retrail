@@ -19,6 +19,7 @@ import 'open_edit_ride_sheet.dart';
 import 'ride_detail_dialog.dart';
 import 'widgets/history_empty_state.dart';
 import '../../data/db/app_database.dart' show Ride, Trackpoint;
+import '../../data/db/followed_route.dart' show RouteRoot;
 import '../../data/db/ride_with_trackpoints.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../map/preview_projection.dart';
@@ -290,6 +291,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ref,
       reference: [for (final tp in tps) (lat: tp.latitude, lng: tp.longitude)],
       rideTitle: ride.description,
+      // Spec 20: a repeat of a repeat links to the original of the group.
+      sourceRideId: ride.routeRootId,
     );
   }
 

@@ -168,6 +168,31 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _followedRideIdMeta = const VerificationMeta(
+    'followedRideId',
+  );
+  @override
+  late final GeneratedColumn<int> followedRideId = GeneratedColumn<int>(
+    'followed_ride_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES rides (ride_id) ON DELETE SET NULL',
+    ),
+  );
+  static const VerificationMeta _followCoverageMeta = const VerificationMeta(
+    'followCoverage',
+  );
+  @override
+  late final GeneratedColumn<double> followCoverage = GeneratedColumn<double>(
+    'follow_coverage',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     rideId,
@@ -184,6 +209,8 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
     avgSpeedKmh,
     maxSpeedKmh,
     hasRoute,
+    followedRideId,
+    followCoverage,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -296,6 +323,24 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         hasRoute.isAcceptableOrUnknown(data['has_route']!, _hasRouteMeta),
       );
     }
+    if (data.containsKey('followed_ride_id')) {
+      context.handle(
+        _followedRideIdMeta,
+        followedRideId.isAcceptableOrUnknown(
+          data['followed_ride_id']!,
+          _followedRideIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('follow_coverage')) {
+      context.handle(
+        _followCoverageMeta,
+        followCoverage.isAcceptableOrUnknown(
+          data['follow_coverage']!,
+          _followCoverageMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -361,6 +406,14 @@ class $RidesTable extends Rides with TableInfo<$RidesTable, Ride> {
         DriftSqlType.bool,
         data['${effectivePrefix}has_route'],
       )!,
+      followedRideId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}followed_ride_id'],
+      ),
+      followCoverage: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}follow_coverage'],
+      ),
     );
   }
 
@@ -385,6 +438,8 @@ class Ride extends DataClass implements Insertable<Ride> {
   final double? avgSpeedKmh;
   final double? maxSpeedKmh;
   final bool hasRoute;
+  final int? followedRideId;
+  final double? followCoverage;
   const Ride({
     required this.rideId,
     this.description,
@@ -400,6 +455,8 @@ class Ride extends DataClass implements Insertable<Ride> {
     this.avgSpeedKmh,
     this.maxSpeedKmh,
     required this.hasRoute,
+    this.followedRideId,
+    this.followCoverage,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -440,6 +497,12 @@ class Ride extends DataClass implements Insertable<Ride> {
       map['max_speed_kmh'] = Variable<double>(maxSpeedKmh);
     }
     map['has_route'] = Variable<bool>(hasRoute);
+    if (!nullToAbsent || followedRideId != null) {
+      map['followed_ride_id'] = Variable<int>(followedRideId);
+    }
+    if (!nullToAbsent || followCoverage != null) {
+      map['follow_coverage'] = Variable<double>(followCoverage);
+    }
     return map;
   }
 
@@ -477,6 +540,12 @@ class Ride extends DataClass implements Insertable<Ride> {
           ? const Value.absent()
           : Value(maxSpeedKmh),
       hasRoute: Value(hasRoute),
+      followedRideId: followedRideId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(followedRideId),
+      followCoverage: followCoverage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(followCoverage),
     );
   }
 
@@ -500,6 +569,8 @@ class Ride extends DataClass implements Insertable<Ride> {
       avgSpeedKmh: serializer.fromJson<double?>(json['avgSpeedKmh']),
       maxSpeedKmh: serializer.fromJson<double?>(json['maxSpeedKmh']),
       hasRoute: serializer.fromJson<bool>(json['hasRoute']),
+      followedRideId: serializer.fromJson<int?>(json['followedRideId']),
+      followCoverage: serializer.fromJson<double?>(json['followCoverage']),
     );
   }
   @override
@@ -520,6 +591,8 @@ class Ride extends DataClass implements Insertable<Ride> {
       'avgSpeedKmh': serializer.toJson<double?>(avgSpeedKmh),
       'maxSpeedKmh': serializer.toJson<double?>(maxSpeedKmh),
       'hasRoute': serializer.toJson<bool>(hasRoute),
+      'followedRideId': serializer.toJson<int?>(followedRideId),
+      'followCoverage': serializer.toJson<double?>(followCoverage),
     };
   }
 
@@ -538,6 +611,8 @@ class Ride extends DataClass implements Insertable<Ride> {
     Value<double?> avgSpeedKmh = const Value.absent(),
     Value<double?> maxSpeedKmh = const Value.absent(),
     bool? hasRoute,
+    Value<int?> followedRideId = const Value.absent(),
+    Value<double?> followCoverage = const Value.absent(),
   }) => Ride(
     rideId: rideId ?? this.rideId,
     description: description.present ? description.value : this.description,
@@ -555,6 +630,12 @@ class Ride extends DataClass implements Insertable<Ride> {
     avgSpeedKmh: avgSpeedKmh.present ? avgSpeedKmh.value : this.avgSpeedKmh,
     maxSpeedKmh: maxSpeedKmh.present ? maxSpeedKmh.value : this.maxSpeedKmh,
     hasRoute: hasRoute ?? this.hasRoute,
+    followedRideId: followedRideId.present
+        ? followedRideId.value
+        : this.followedRideId,
+    followCoverage: followCoverage.present
+        ? followCoverage.value
+        : this.followCoverage,
   );
   Ride copyWithCompanion(RidesCompanion data) {
     return Ride(
@@ -586,6 +667,12 @@ class Ride extends DataClass implements Insertable<Ride> {
           ? data.maxSpeedKmh.value
           : this.maxSpeedKmh,
       hasRoute: data.hasRoute.present ? data.hasRoute.value : this.hasRoute,
+      followedRideId: data.followedRideId.present
+          ? data.followedRideId.value
+          : this.followedRideId,
+      followCoverage: data.followCoverage.present
+          ? data.followCoverage.value
+          : this.followCoverage,
     );
   }
 
@@ -605,7 +692,9 @@ class Ride extends DataClass implements Insertable<Ride> {
           ..write('durationMs: $durationMs, ')
           ..write('avgSpeedKmh: $avgSpeedKmh, ')
           ..write('maxSpeedKmh: $maxSpeedKmh, ')
-          ..write('hasRoute: $hasRoute')
+          ..write('hasRoute: $hasRoute, ')
+          ..write('followedRideId: $followedRideId, ')
+          ..write('followCoverage: $followCoverage')
           ..write(')'))
         .toString();
   }
@@ -626,6 +715,8 @@ class Ride extends DataClass implements Insertable<Ride> {
     avgSpeedKmh,
     maxSpeedKmh,
     hasRoute,
+    followedRideId,
+    followCoverage,
   );
   @override
   bool operator ==(Object other) =>
@@ -644,7 +735,9 @@ class Ride extends DataClass implements Insertable<Ride> {
           other.durationMs == this.durationMs &&
           other.avgSpeedKmh == this.avgSpeedKmh &&
           other.maxSpeedKmh == this.maxSpeedKmh &&
-          other.hasRoute == this.hasRoute);
+          other.hasRoute == this.hasRoute &&
+          other.followedRideId == this.followedRideId &&
+          other.followCoverage == this.followCoverage);
 }
 
 class RidesCompanion extends UpdateCompanion<Ride> {
@@ -662,6 +755,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
   final Value<double?> avgSpeedKmh;
   final Value<double?> maxSpeedKmh;
   final Value<bool> hasRoute;
+  final Value<int?> followedRideId;
+  final Value<double?> followCoverage;
   const RidesCompanion({
     this.rideId = const Value.absent(),
     this.description = const Value.absent(),
@@ -677,6 +772,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.avgSpeedKmh = const Value.absent(),
     this.maxSpeedKmh = const Value.absent(),
     this.hasRoute = const Value.absent(),
+    this.followedRideId = const Value.absent(),
+    this.followCoverage = const Value.absent(),
   });
   RidesCompanion.insert({
     this.rideId = const Value.absent(),
@@ -693,6 +790,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     this.avgSpeedKmh = const Value.absent(),
     this.maxSpeedKmh = const Value.absent(),
     this.hasRoute = const Value.absent(),
+    this.followedRideId = const Value.absent(),
+    this.followCoverage = const Value.absent(),
   });
   static Insertable<Ride> custom({
     Expression<int>? rideId,
@@ -709,6 +808,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Expression<double>? avgSpeedKmh,
     Expression<double>? maxSpeedKmh,
     Expression<bool>? hasRoute,
+    Expression<int>? followedRideId,
+    Expression<double>? followCoverage,
   }) {
     return RawValuesInsertable({
       if (rideId != null) 'ride_id': rideId,
@@ -725,6 +826,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       if (avgSpeedKmh != null) 'avg_speed_kmh': avgSpeedKmh,
       if (maxSpeedKmh != null) 'max_speed_kmh': maxSpeedKmh,
       if (hasRoute != null) 'has_route': hasRoute,
+      if (followedRideId != null) 'followed_ride_id': followedRideId,
+      if (followCoverage != null) 'follow_coverage': followCoverage,
     });
   }
 
@@ -743,6 +846,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     Value<double?>? avgSpeedKmh,
     Value<double?>? maxSpeedKmh,
     Value<bool>? hasRoute,
+    Value<int?>? followedRideId,
+    Value<double?>? followCoverage,
   }) {
     return RidesCompanion(
       rideId: rideId ?? this.rideId,
@@ -759,6 +864,8 @@ class RidesCompanion extends UpdateCompanion<Ride> {
       avgSpeedKmh: avgSpeedKmh ?? this.avgSpeedKmh,
       maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
       hasRoute: hasRoute ?? this.hasRoute,
+      followedRideId: followedRideId ?? this.followedRideId,
+      followCoverage: followCoverage ?? this.followCoverage,
     );
   }
 
@@ -807,6 +914,12 @@ class RidesCompanion extends UpdateCompanion<Ride> {
     if (hasRoute.present) {
       map['has_route'] = Variable<bool>(hasRoute.value);
     }
+    if (followedRideId.present) {
+      map['followed_ride_id'] = Variable<int>(followedRideId.value);
+    }
+    if (followCoverage.present) {
+      map['follow_coverage'] = Variable<double>(followCoverage.value);
+    }
     return map;
   }
 
@@ -826,7 +939,9 @@ class RidesCompanion extends UpdateCompanion<Ride> {
           ..write('durationMs: $durationMs, ')
           ..write('avgSpeedKmh: $avgSpeedKmh, ')
           ..write('maxSpeedKmh: $maxSpeedKmh, ')
-          ..write('hasRoute: $hasRoute')
+          ..write('hasRoute: $hasRoute, ')
+          ..write('followedRideId: $followedRideId, ')
+          ..write('followCoverage: $followCoverage')
           ..write(')'))
         .toString();
   }
@@ -1269,6 +1384,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         'rides',
         limitUpdateKind: UpdateKind.delete,
       ),
+      result: [TableUpdate('rides', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'rides',
+        limitUpdateKind: UpdateKind.delete,
+      ),
       result: [TableUpdate('trackpoints', kind: UpdateKind.delete)],
     ),
   ]);
@@ -1290,6 +1412,8 @@ typedef $$RidesTableCreateCompanionBuilder =
       Value<double?> avgSpeedKmh,
       Value<double?> maxSpeedKmh,
       Value<bool> hasRoute,
+      Value<int?> followedRideId,
+      Value<double?> followCoverage,
     });
 typedef $$RidesTableUpdateCompanionBuilder =
     RidesCompanion Function({
@@ -1307,11 +1431,30 @@ typedef $$RidesTableUpdateCompanionBuilder =
       Value<double?> avgSpeedKmh,
       Value<double?> maxSpeedKmh,
       Value<bool> hasRoute,
+      Value<int?> followedRideId,
+      Value<double?> followCoverage,
     });
 
 final class $$RidesTableReferences
     extends BaseReferences<_$AppDatabase, $RidesTable, Ride> {
   $$RidesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $RidesTable _followedRideIdTable(_$AppDatabase db) =>
+      db.rides.createAlias('rides__followed_ride_id__rides__ride_id');
+
+  $$RidesTableProcessedTableManager? get followedRideId {
+    final $_column = $_itemColumn<int>('followed_ride_id');
+    if ($_column == null) return null;
+    final manager = $$RidesTableTableManager(
+      $_db,
+      $_db.rides,
+    ).filter((f) => f.rideId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_followedRideIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$TrackpointsTable, List<Trackpoint>>
   _trackpointsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
@@ -1409,6 +1552,34 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
     column: $table.hasRoute,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<double> get followCoverage => $composableBuilder(
+    column: $table.followCoverage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RidesTableFilterComposer get followedRideId {
+    final $$RidesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.followedRideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableFilterComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<bool> trackpointsRefs(
     Expression<bool> Function($$TrackpointsTableFilterComposer f) f,
@@ -1514,6 +1685,34 @@ class $$RidesTableOrderingComposer
     column: $table.hasRoute,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get followCoverage => $composableBuilder(
+    column: $table.followCoverage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RidesTableOrderingComposer get followedRideId {
+    final $$RidesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.followedRideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableOrderingComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$RidesTableAnnotationComposer
@@ -1581,6 +1780,34 @@ class $$RidesTableAnnotationComposer
   GeneratedColumn<bool> get hasRoute =>
       $composableBuilder(column: $table.hasRoute, builder: (column) => column);
 
+  GeneratedColumn<double> get followCoverage => $composableBuilder(
+    column: $table.followCoverage,
+    builder: (column) => column,
+  );
+
+  $$RidesTableAnnotationComposer get followedRideId {
+    final $$RidesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.followedRideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> trackpointsRefs<T extends Object>(
     Expression<T> Function($$TrackpointsTableAnnotationComposer a) f,
   ) {
@@ -1620,7 +1847,7 @@ class $$RidesTableTableManager
           $$RidesTableUpdateCompanionBuilder,
           (Ride, $$RidesTableReferences),
           Ride,
-          PrefetchHooks Function({bool trackpointsRefs})
+          PrefetchHooks Function({bool followedRideId, bool trackpointsRefs})
         > {
   $$RidesTableTableManager(_$AppDatabase db, $RidesTable table)
     : super(
@@ -1649,6 +1876,8 @@ class $$RidesTableTableManager
                 Value<double?> avgSpeedKmh = const Value.absent(),
                 Value<double?> maxSpeedKmh = const Value.absent(),
                 Value<bool> hasRoute = const Value.absent(),
+                Value<int?> followedRideId = const Value.absent(),
+                Value<double?> followCoverage = const Value.absent(),
               }) => RidesCompanion(
                 rideId: rideId,
                 description: description,
@@ -1664,6 +1893,8 @@ class $$RidesTableTableManager
                 avgSpeedKmh: avgSpeedKmh,
                 maxSpeedKmh: maxSpeedKmh,
                 hasRoute: hasRoute,
+                followedRideId: followedRideId,
+                followCoverage: followCoverage,
               ),
           createCompanionCallback:
               ({
@@ -1681,6 +1912,8 @@ class $$RidesTableTableManager
                 Value<double?> avgSpeedKmh = const Value.absent(),
                 Value<double?> maxSpeedKmh = const Value.absent(),
                 Value<bool> hasRoute = const Value.absent(),
+                Value<int?> followedRideId = const Value.absent(),
+                Value<double?> followCoverage = const Value.absent(),
               }) => RidesCompanion.insert(
                 rideId: rideId,
                 description: description,
@@ -1696,6 +1929,8 @@ class $$RidesTableTableManager
                 avgSpeedKmh: avgSpeedKmh,
                 maxSpeedKmh: maxSpeedKmh,
                 hasRoute: hasRoute,
+                followedRideId: followedRideId,
+                followCoverage: followCoverage,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -1703,28 +1938,72 @@ class $$RidesTableTableManager
                     (e.readTable(table), $$RidesTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({trackpointsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (trackpointsRefs) db.trackpoints],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (trackpointsRefs)
-                    await $_getPrefetchedData<Ride, $RidesTable, Trackpoint>(
-                      currentTable: table,
-                      referencedTable: $$RidesTableReferences
-                          ._trackpointsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$RidesTableReferences(db, table, p0).trackpointsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.rideId == item.rideId),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({followedRideId = false, trackpointsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (trackpointsRefs) db.trackpoints,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (followedRideId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.followedRideId,
+                                    referencedTable: $$RidesTableReferences
+                                        ._followedRideIdTable(db),
+                                    referencedColumn: $$RidesTableReferences
+                                        ._followedRideIdTable(db)
+                                        .rideId,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (trackpointsRefs)
+                        await $_getPrefetchedData<
+                          Ride,
+                          $RidesTable,
+                          Trackpoint
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RidesTableReferences
+                              ._trackpointsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RidesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).trackpointsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rideId == item.rideId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -1741,7 +2020,7 @@ typedef $$RidesTableProcessedTableManager =
       $$RidesTableUpdateCompanionBuilder,
       (Ride, $$RidesTableReferences),
       Ride,
-      PrefetchHooks Function({bool trackpointsRefs})
+      PrefetchHooks Function({bool followedRideId, bool trackpointsRefs})
     >;
 typedef $$TrackpointsTableCreateCompanionBuilder =
     TrackpointsCompanion Function({

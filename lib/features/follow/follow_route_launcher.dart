@@ -25,6 +25,7 @@ Future<void> launchFollowRoute(
   WidgetRef ref, {
   required List<LatLng> reference,
   String? rideTitle,
+  int? sourceRideId,
 }) async {
   final l10n = AppLocalizations.of(context);
   if (reference.length < 2 || RouteTrack(reference).lengthM <= 0) {
@@ -72,6 +73,7 @@ Future<void> launchFollowRoute(
         beforeCountdown: () => follow.start(
           reference: reference,
           rideTitle: rideTitle,
+          sourceRideId: sourceRideId,
           recording: true,
         ),
       );
@@ -85,6 +87,7 @@ Future<void> launchFollowRoute(
       follow.start(
         reference: reference,
         rideTitle: rideTitle,
+        sourceRideId: sourceRideId,
         recording: false,
       );
       context.go(AppRoutes.follow);

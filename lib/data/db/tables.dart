@@ -32,6 +32,19 @@ class Rides extends Table {
   // in-progress ride (no endTime yet) reads as routeless until finalized.
   BoolColumn get hasRoute =>
       boolean().named('has_route').withDefault(const Constant(false))();
+
+  // Spec 20: the original ride this one was recorded while following (always
+  // the first ride of the route group — a follow of a follow points at its
+  // original). Deleting the original clears it, so its follows stay as
+  // ordinary rides.
+  IntColumn get followedRideId => integer()
+      .named('followed_ride_id')
+      .nullable()
+      .references(Rides, #rideId, onDelete: KeyAction.setNull)();
+
+  // Share of the original ridden (followCoverage, 0–1) when this ride was
+  // saved; null on a ride that followed nothing.
+  RealColumn get followCoverage => real().named('follow_coverage').nullable()();
 }
 
 /// Mirrors the original Room `trackpoints` table (entity `Trackpoint`).

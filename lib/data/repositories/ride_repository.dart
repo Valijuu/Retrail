@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../domain/distance_calculator.dart';
 import '../../domain/ride_stats.dart';
 import '../db/app_database.dart';
+import '../db/followed_route.dart';
 import '../db/ride_dao.dart';
 import '../db/ride_with_trackpoints.dart';
 
@@ -108,6 +109,25 @@ class RideRepository {
       }
     }
   }
+
+  /// Links [rideId] to the original it was recorded following, with the
+  /// share of that route ridden (Spec 20).
+  Future<void> setFollowedRide(
+    int rideId, {
+    required int originalId,
+    required double coverage,
+  }) => _dao.updateFollowedRide(rideId, originalId, coverage);
+
+  /// How often each original was followed, by its ride id.
+  Stream<Map<int, int>> watchFollowCounts() => _dao.watchFollowCounts();
+
+  /// The original [rootId] and its follows; empty once it is gone.
+  Stream<List<Ride>> watchRouteGroup(int rootId) =>
+      _dao.watchRouteGroup(rootId);
+
+  /// Every followed original, most recently ridden first.
+  Stream<List<FollowedRoute>> watchFollowedRoutes() =>
+      _dao.watchFollowedRoutes();
 
   Future<void> deleteById(int rideId) => _dao.deleteById(rideId);
 

@@ -131,6 +131,13 @@ void main() {
     expect(c.read(routeFollowProvider), isNull);
   });
 
+  test('start keeps the followed ride, null without one (Spec 20)', () {
+    notifier().start(reference: _ref, sourceRideId: 7, recording: true);
+    expect(c.read(routeFollowProvider)!.sourceRideId, 7);
+    notifier().start(reference: _ref, recording: true);
+    expect(c.read(routeFollowProvider)!.sourceRideId, isNull);
+  });
+
   test('follow-only: feed fixes update progress, position and trail', () async {
     notifier().start(reference: _ref, recording: false);
     await notifier().resumeFeed();
@@ -438,6 +445,18 @@ void main() {
       final r = state().ridden.single;
       expect(_northM(r.first), closeTo(150, 0.5));
       expect(_northM(r.last), closeTo(250, 0.5));
+    });
+
+    test('coverage is the share of the route ridden (Spec 20)', () {
+      follow(_straight);
+      ride([for (var n = 150.0; n <= 250; n += 20) at(n, 0)]);
+      expect(state().coverage, closeTo(100 / 300, 0.01));
+    });
+
+    test('coverage is 0 while undecided', () {
+      follow(_straight);
+      ride([at(150, 0), at(160, 0)]);
+      expect(state().coverage, 0);
     });
 
     test('a loop ridden across its start/finish greys two segments in map '

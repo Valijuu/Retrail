@@ -40,6 +40,7 @@ void main() {
                 ref2,
                 reference: ref,
                 rideTitle: 'Rhein',
+                sourceRideId: 7,
               ),
               child: const Text('go'),
             ),
@@ -96,6 +97,7 @@ void main() {
     final s = container.read(routeFollowProvider)!;
     expect(s.recording, isTrue);
     expect(s.rideTitle, 'Rhein');
+    expect(s.sourceRideId, 7);
   });
 
   testWidgets('Just follow sets a follow-only reference and opens /follow', (

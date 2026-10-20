@@ -145,4 +145,19 @@ void main() {
       expect((await repo.getById(id).first)!.endTime, 7000);
     });
   });
+
+  test(
+    'setFollowedRide links a ride and the counts follow (Spec 20)',
+    () async {
+      final original = await repo.startRide(startedAtMs: 1);
+      final id = await repo.startRide(startedAtMs: 2);
+      await repo.setFollowedRide(id, originalId: original, coverage: 0.8);
+
+      expect(await repo.watchFollowCounts().first, {original: 1});
+      final group = await repo.watchRouteGroup(original).first;
+      expect(group.map((r) => r.rideId), unorderedEquals([original, id]));
+      final routes = await repo.watchFollowedRoutes().first;
+      expect(routes.single.original.rideId, original);
+    },
+  );
 }

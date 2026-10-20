@@ -20,7 +20,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,6 +48,12 @@ class AppDatabase extends _$AppDatabase {
         // here too on a hypothetical v2 install — same source data, same
         // (idempotent) result.
         await _backfillStatsAndRoute(this);
+      }
+      if (from < 4) {
+        // v4: rides recorded while following another one link to it
+        // (Spec 20). Nullable, so existing rides stay unlinked.
+        await m.addColumn(rides, rides.followedRideId);
+        await m.addColumn(rides, rides.followCoverage);
       }
     },
     beforeOpen: (details) async {

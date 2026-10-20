@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/follow_coverage.dart';
 import '../../domain/follow_direction.dart';
 import '../../domain/follow_tracker.dart';
 import '../../domain/heading.dart' show LatLng;
@@ -32,6 +33,7 @@ class RouteFollowState {
     required this.track,
     required this.recording,
     this.rideTitle,
+    this.sourceRideId,
     this.progress,
     this.lastFix,
     this.trail = const [],
@@ -39,6 +41,7 @@ class RouteFollowState {
     this.direction = FollowDirection.undecided,
     RouteTrack? orientedTrack,
     this.ridden = const [],
+    this.coverage = 0,
     this.reverseNotice,
   }) : orientedTrack = orientedTrack ?? track;
 
@@ -62,6 +65,10 @@ class RouteFollowState {
   /// across its start/finish split in two (Spec 18).
   final List<List<LatLng>> ridden;
 
+  /// Share of [track] ridden so far, 0–1 ([followCoverage], Spec 20); 0
+  /// while undecided.
+  final double coverage;
+
   bool get isReversed => direction == FollowDirection.reverse;
 
   /// [progress] as the remaining text shows it: null while [direction] is
@@ -73,6 +80,10 @@ class RouteFollowState {
   /// false for follow-only (own foreground GPS feed).
   final bool recording;
   final String? rideTitle;
+
+  /// The original ride the reference came from, so a recorded repeat links
+  /// to it (Spec 20); null when it came from elsewhere.
+  final int? sourceRideId;
   final RouteProgress? progress;
   final LocationFix? lastFix;
 
@@ -88,11 +99,13 @@ class RouteFollowState {
     FollowDirection? direction,
     RouteTrack? orientedTrack,
     List<List<LatLng>>? ridden,
+    double? coverage,
     FollowReverseNotice? reverseNotice,
   }) => RouteFollowState(
     track: track,
     recording: recording,
     rideTitle: rideTitle,
+    sourceRideId: sourceRideId,
     progress: progress ?? this.progress,
     lastFix: lastFix ?? this.lastFix,
     trail: trail ?? this.trail,
@@ -101,6 +114,7 @@ class RouteFollowState {
     direction: direction ?? this.direction,
     orientedTrack: orientedTrack ?? this.orientedTrack,
     ridden: ridden ?? this.ridden,
+    coverage: coverage ?? this.coverage,
     reverseNotice: reverseNotice ?? this.reverseNotice,
   );
 }
@@ -145,6 +159,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
   void start({
     required List<LatLng> reference,
     String? rideTitle,
+    int? sourceRideId,
     required bool recording,
   }) {
     _cancelFeed();
@@ -156,6 +171,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
       track: track,
       recording: recording,
       rideTitle: rideTitle,
+      sourceRideId: sourceRideId,
     );
   }
 
@@ -272,6 +288,7 @@ class RouteFollowNotifier extends Notifier<RouteFollowState?> {
       orientedTrack: tracker.orientedTrack,
       progress: tracker.progress,
       ridden: ridden,
+      coverage: followCoverage(intervals, s.track.lengthM),
     );
   }
 
