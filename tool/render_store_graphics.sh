@@ -19,12 +19,17 @@ icon = Image.open(f"{root}/assets/branding/app_icon.png").convert("RGBA")
 icon.resize((512, 512), Image.LANCZOS).save(f"{root}/store/play/icon_512.png", optimize=True)
 PY
 
+# Chrome renders at 2x and the result is scaled down with Lanczos: scaling
+# the raw shots straight to their size in the frame (65 %, 19 % in the
+# feature graphic) leaves text and lines blurry.
+shrink() { python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').resize((int(sys.argv[2]), int(sys.argv[3])), Image.LANCZOS).save(sys.argv[1], optimize=True)" "$@"; }
+
 for lang in en de; do
   png="$out/feature_graphic_$lang.png"
-  google-chrome --headless=new --disable-gpu --hide-scrollbars \
+  google-chrome --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
     --window-size=1024,500 --virtual-time-budget=5000 \
     --screenshot="$png" "file://$out/feature_graphic.html?lang=$lang" 2>/dev/null
-  python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[1], optimize=True)" "$png"
+  shrink "$png" 1024 500
 done
 
 urlencode() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$1"; }
@@ -40,10 +45,10 @@ for lang in en de; do
     url+="&tag=$(urlencode "$tag")&title=$(urlencode "$title")&sub=$(urlencode "$sub")"
     [[ "$raw2" != - ]] && url+="&img2=$(urlencode "screens/raw/${lang}_$raw2.png")"
     [[ "$pop" != - ]] && url+="&pop=$pop"
-    google-chrome --headless=new --disable-gpu --hide-scrollbars \
+    google-chrome --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
       --window-size=1080,1920 --virtual-time-budget=5000 \
       --screenshot="$png" "$url" 2>/dev/null
-    python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[1], optimize=True)" "$png"
+    shrink "$png" 1080 1920
   done < "$out/screenshots.tsv"
 done
 ls -l "$out"/*.png "$out"/screenshots/*/*.png
