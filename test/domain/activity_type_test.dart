@@ -17,6 +17,18 @@ void main() {
     expect(ActivityType.defaultType, ActivityType.longboard);
   });
 
+  test('pickers list the types in riding order', () {
+    expect(ActivityType.values, [
+      ActivityType.longboard,
+      ActivityType.skateboard,
+      ActivityType.mountainboard,
+      ActivityType.rollerblades,
+      ActivityType.rollerskates,
+      ActivityType.scooter,
+      ActivityType.other,
+    ]);
+  });
+
   test('ids are the uppercase enum names', () {
     for (final type in ActivityType.values) {
       expect(type.id, type.name.toUpperCase());

@@ -31,9 +31,9 @@ extension ActivityTypeUi on ActivityType {
   String label(AppLocalizations l10n) => switch (this) {
     ActivityType.longboard => l10n.activityLongboard,
     ActivityType.skateboard => l10n.activitySkateboard,
+    ActivityType.mountainboard => l10n.activityMountainboard,
     ActivityType.rollerblades => l10n.activityRollerblades,
     ActivityType.rollerskates => l10n.activityRollerskates,
-    ActivityType.mountainboard => l10n.activityMountainboard,
     ActivityType.scooter => l10n.activityScooter,
     ActivityType.other => l10n.activityOther,
   };

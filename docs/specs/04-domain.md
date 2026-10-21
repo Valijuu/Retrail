@@ -10,7 +10,7 @@ Port the original app's pure logic — distance, ride stats, stats aggregation, 
 ## Deliverables (all under `lib/domain/` unless noted)
 
 ### 1. `ActivityType` (`lib/domain/activity_type.dart`)
-Dart enum mirroring the 7 types: `longboard, skateboard, rollerblades, rollerskates, mountainboard, scooter, other`. Each carries a stable **`id`** (the uppercase name stored in `Ride.typ`, e.g. `"LONGBOARD"`).
+Dart enum mirroring the 7 types: `longboard, skateboard, mountainboard, rollerblades, rollerskates, scooter, other` (declaration order = order in every picker). Each carries a stable **`id`** (the uppercase name stored in `Ride.typ`, e.g. `"LONGBOARD"`).
 - `static ActivityType? fromId(String? id)` — matches by id, null if none.
 - `static const ActivityType defaultType = ActivityType.longboard`.
 - Label + icon are UI concerns (localized string + asset) wired in the screen phases — **not** here.

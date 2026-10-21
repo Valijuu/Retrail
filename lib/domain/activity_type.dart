@@ -4,9 +4,9 @@
 enum ActivityType {
   longboard('LONGBOARD'),
   skateboard('SKATEBOARD'),
+  mountainboard('MOUNTAINBOARD'),
   rollerblades('ROLLERBLADES'),
   rollerskates('ROLLERSKATES'),
-  mountainboard('MOUNTAINBOARD'),
   scooter('SCOOTER'),
   other('OTHER');
 
