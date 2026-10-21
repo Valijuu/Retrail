@@ -9,15 +9,18 @@ Retrail is a Flutter app for **Android and iOS**.
 <p align="center">
   <img src="store/play/screenshots/en/01_track.png" width="24%" alt="Recording a ride on the live map">
   <img src="store/play/screenshots/en/02_best_time.png" width="24%" alt="Comparing the runs of a followed route">
-  <img src="store/play/screenshots/en/03_follow.png" width="24%" alt="Following a saved route">
   <img src="store/play/screenshots/en/04_history.png" width="24%" alt="Ride history with map previews">
+  <img src="store/play/screenshots/en/07_countdown.png" width="24%" alt="Spoken countdown before the ride">
 </p>
 
 ## Features
 
 ### Record a ride
-- Pick an activity: **Longboard, Skateboard, Inline skates, Roller skates, Mountainboard, Scooter** or
+- Pick an activity: **Longboard, Skateboard, Mountainboard, Inline skates, Roller skates, Scooter** or
   **Other**.
+- A 10-second countdown before you roll. The last five seconds are spoken and the phone vibrates, so
+  it can already be in your pocket. The countdown also shows whether GPS is ready. The cue can be
+  turned off in the settings.
 - A live map with your route, a speedometer-style speed display, distance, duration and top speed.
 - Pause and resume at any time. Recording continues with the screen off, controlled from the
   notification (Android) or a **Live Activity** on the lock screen and in the Dynamic Island (iOS).
@@ -29,9 +32,14 @@ Retrail is a Flutter app for **Android and iOS**.
 - See how far you still have to go, and get a notice when you leave the route.
 - Record the repeat ride, or just follow it.
 
+### Beat your best time
+- A recorded repeat is linked to the ride it followed.
+- Compare every run of a route and see the best time. Only the time on the route counts, not the
+  way there. Partial runs are listed separately.
+
 ### Ride history
 - Each ride has a map preview, distance, duration and speeds.
-- Search, filter by year, month and activity, mark favourites.
+- Search, filter by year, month, activity and followed route, mark favourites.
 - Rename rides, add notes, navigate to a ride's start point.
 - The home screen shows your kilometres for this week, today and this year.
 
@@ -41,7 +49,7 @@ Light and dark theme, in English and German.
 
 Flutter (Material 3) · Riverpod · Drift (SQLite) · MapLibre with [OpenFreeMap](https://openfreemap.org)
 vector tiles · `geolocator` + `flutter_foreground_task` for background GPS · ActivityKit Live Activity
-on iOS
+on iOS · `flutter_tts` + `vibration` for the countdown cue
 
 ## Running it
 
