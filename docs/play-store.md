@@ -295,6 +295,23 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
+### 1.3.1+8 (closed test, 2026-10-21)
+
+```
+<de-DE>
+Verbessert:
+• Neue Reihenfolge der Aktivitäten: Longboard, Skateboard, Mountainboard, Inline-Skates, Rollschuhe, Roller, Andere – überall, wo du eine Aktivität auswählst
+
+Feedback an retrail.app@proton.me
+</de-DE>
+<en-US>
+Improved:
+• New order of the activities: longboard, skateboard, mountainboard, inline skates, roller skates, scooter, other – everywhere you pick one
+
+Feedback to retrail.app@proton.me
+</en-US>
+```
+
 ### 1.3.0+7 (closed test, 2026-10-20)
 
 ```
