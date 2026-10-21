@@ -1,7 +1,7 @@
 The GPS tracker for everything on wheels. Retrail records your longboard, skateboard, inline skate and roller skate rides – route, speed and distance – and keeps them on your phone. No account, no ads.
 
 RECORD YOUR ROUTE
-• Choose your ride: longboard, skateboard, inline skates (rollerblades), roller skates, mountainboard, scooter or other
+• Choose your ride: longboard, skateboard, mountainboard, inline skates (rollerblades), roller skates, scooter or other
 • Live map with your route, speed, distance in km, duration and top speed
 • Pause and resume any time; keeps recording with the screen off
 • Control the ride from the notification (Android) or the Live Activity on the lock screen (iPhone)

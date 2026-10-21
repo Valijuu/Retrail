@@ -115,8 +115,8 @@ Play has no keyword field: it ranks on the **app name** (strongest), the
 **short description**, then the **full description**, and each language
 listing is searched on its own. A new app won't rank for "GPS tracker" against
 Strava, Komoot or Runtastic, so the listing leads with the niche — **the GPS
-tracker for everything on wheels** (longboard, skateboard, inline skates,
-roller skates, mountainboard, scooter) — and only mentions once that it works
+tracker for everything on wheels** (longboard, skateboard, mountainboard,
+inline skates, roller skates, scooter) — and only mentions once that it works
 for any other activity (walks, hikes, bike rides). That is honest: the GPS filter
 (`lib/tracking/gps_fix_filter.dart`) keeps fixes from 1.8 km/h up to
 180 km/h, so walking, hiking and cycling record correctly.
@@ -160,8 +160,8 @@ France, Spain or Brazil would see a German page.
 > and keeps them on your phone. No account, no ads.
 >
 > RECORD YOUR ROUTE
-> • Choose your ride: longboard, skateboard, inline skates (rollerblades),
->   roller skates, mountainboard, scooter or other
+> • Choose your ride: longboard, skateboard, mountainboard, inline skates
+>   (rollerblades), roller skates, scooter or other
 > • Live map with your route, speed, distance in km, duration and top speed
 > • Pause and resume any time; keeps recording with the screen off
 > • Control the ride from the notification (Android) or the Live Activity on
@@ -207,8 +207,8 @@ France, Spain or Brazil would see a German page.
 > Konto, ohne Werbung.
 >
 > STRECKE AUFZEICHNEN
-> • Wähle deine Aktivität: Longboard, Skateboard, Inline-Skates (Inliner),
->   Rollschuhe, Mountainboard, Roller oder Andere
+> • Wähle deine Aktivität: Longboard, Skateboard, Mountainboard,
+>   Inline-Skates (Inliner), Rollschuhe, Roller oder Andere
 > • Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz,
 >   Dauer und Höchstgeschwindigkeit
 > • Jederzeit pausieren und weiterfahren; die Aufzeichnung läuft auch bei
