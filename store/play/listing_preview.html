@@ -1,0 +1,72 @@
+<!doctype html>
+<!-- Local preview of the store listing graphics: how the icon, feature
+     graphic and the 8 screenshots read together, on a phone-sized listing
+     and as the full row. Not uploaded anywhere. ?lang=de|en -->
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=block" rel="stylesheet">
+<style>
+  :root { --bg: #ECE7E3; --card: #FFFFFF; --text: #1F1B16; --muted: #6B625B; --accent: #B45309; }
+  html, body { margin: 0; background: var(--bg); font-family: Roboto, sans-serif; color: var(--text); }
+  body { width: 1900px; padding: 60px; box-sizing: border-box; display: flex; gap: 70px; }
+  .device { flex: none; width: 412px; height: 900px; background: var(--card); border-radius: 44px;
+            border: 12px solid #1C1B1F; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .device .inner { padding: 22px 18px; }
+  .head { display: flex; gap: 16px; align-items: center; }
+  .head img { width: 72px; height: 72px; border-radius: 16px; }
+  .head h2 { margin: 0; font-size: 21px; font-weight: 500; }
+  .head .dev { color: var(--accent); font-size: 14px; margin-top: 4px; }
+  .meta { display: flex; justify-content: space-around; margin: 22px 0; font-size: 13px; color: var(--muted); text-align: center; }
+  .meta b { display: block; color: var(--text); font-size: 15px; }
+  .install { background: var(--accent); color: #fff; text-align: center; border-radius: 20px; padding: 10px; font-weight: 500; }
+  .carousel { display: flex; gap: 8px; margin: 22px -18px 0 0; overflow: hidden; }
+  .carousel img { height: 300px; border-radius: 10px; flex: none; }
+  .about { margin-top: 22px; }
+  .about h3 { margin: 0 0 8px; font-size: 17px; font-weight: 500; }
+  .about p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--muted); }
+  .side { flex: 1; min-width: 0; }
+  .label { font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin: 0 0 14px; }
+  .fg { width: 720px; border-radius: 14px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
+  .row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; margin-top: 50px; }
+  .row img { width: 100%; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.15); display: block; }
+</style>
+</head>
+<body>
+  <div class="device"><div class="inner">
+    <div class="head">
+      <img src="icon_512.png" alt="">
+      <div><h2 id="name"></h2><div class="dev">Valijuu</div></div>
+    </div>
+    <div class="meta"><div><b id="acc"></b><span id="acc2"></span></div><div><b id="free"></b><span id="ads"></span></div></div>
+    <div class="install" id="install"></div>
+    <div class="carousel" id="carousel"></div>
+    <div class="about"><h3 id="abouth"></h3><p id="short"></p></div>
+  </div></div>
+
+  <div class="side">
+    <p class="label" id="l1"></p>
+    <img class="fg" id="fg" alt="">
+    <p class="label" id="l2" style="margin-top:50px"></p>
+    <div class="row" id="row"></div>
+  </div>
+
+  <script>
+    const lang = new URLSearchParams(location.search).get('lang') || 'de';
+    const t = {
+      de: { name: 'Retrail: Skate & Longboard GPS', acc: 'Ohne Konto', acc2: 'Daten bleiben lokal', free: 'Kostenlos', ads: 'Ohne Werbung',
+            install: 'Installieren', abouth: 'Über diese App', l1: 'Feature-Grafik', l2: 'Alle 8 Screenshots',
+            short: 'GPS-Tracker fürs Skaten & Longboarden: Strecke, Tempo und Kilometer aufzeichnen' },
+      en: { name: 'Retrail: Skate & Longboard GPS', acc: 'No account', acc2: 'Data stays local', free: 'Free', ads: 'No ads',
+            install: 'Install', abouth: 'About this app', l1: 'Feature graphic', l2: 'All 8 screenshots',
+            short: 'GPS tracker for skate & longboard rides – track your route, speed and distance' },
+    }[lang];
+    for (const [id, v] of Object.entries(t)) { const el = document.getElementById(id); if (el) el.textContent = v; }
+    const shots = ['01_track', '02_best_time', '03_follow', '04_history', '05_dark', '06_detail', '07_countdown', '08_activities'];
+    document.getElementById('fg').src = `feature_graphic_${lang}.png`;
+    const imgs = shots.map(s => `<img src="screenshots/${lang}/${s}.png" alt="">`).join('');
+    document.getElementById('carousel').innerHTML = imgs;
+    document.getElementById('row').innerHTML = imgs;
+  </script>
+</body>
+</html>

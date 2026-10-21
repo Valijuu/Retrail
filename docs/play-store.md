@@ -260,17 +260,18 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
 | Asset | File | Spec |
 |---|---|---|
 | App icon | `store/play/icon_512.png` | 512 × 512 PNG, 32-bit, ≤ 1 MB — from `assets/branding/app_icon.png` |
-| Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language) |
-
-| Phone screenshots | `store/play/screenshots/<lang>/01_track.png` … `08_welcome.png` (recording, follow, history, detail, home, dark recording, activities, welcome) | 8 per language, 1080 × 1920, captions in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` |
+| Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language, two phones: comparison sheet + dark recording) |
+| Phone screenshots | `store/play/screenshots/<lang>/01_track.png` … `08_activities.png` (recording, best time of a followed route, follow, history, light + dark, detail, countdown, activities) | 8 per language, 1080 × 1920, tag + caption + subline, background and enlarged excerpt per shot in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` (Fredoka headings, cream / peach / dark backgrounds) |
 
 **How the screenshots are made** (no real location data anywhere):
 
-1. `flutter test tool/demo_rides/build_demo_db_test.dart` (and again with
-   `RETRAIL_DEMO_LANG=de`) builds `build/demo_rides/retrail_<lang>.sqlite`:
-   ten rides on Tempelhofer Feld, Berlin (public park; route geometry from
-   OpenStreetMap, ODbL, in `tool/demo_rides/routes.json`) with titles and
-   comments, dates relative to today.
+1. `RETRAIL_DEMO_FOLLOWS=1 flutter test tool/demo_rides/build_demo_db_test.dart`
+   (and again with `RETRAIL_DEMO_LANG=de`) builds
+   `build/demo_rides/retrail_<lang>.sqlite`: rides on Tempelhofer Feld, Berlin
+   (public park; route geometry from OpenStreetMap, ODbL, in
+   `tool/demo_rides/routes.json`) with titles and comments, dates relative to
+   today, including followed rides for the comparison sheet (History → the
+   "Followed" chip on the top card).
 2. On an Android emulator with a debug build (`run-as` needs a debuggable
    app): onboard with the name **Retrailer**, then copy the database into
    `app_flutter/retrail.sqlite` via `adb push` + `run-as … cp`.
@@ -278,7 +279,12 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
    once per second along a route — the speed argument matters, without it
    the stationary filter drops every fix.
 4. Clean status bar: System UI demo mode (`sysui_demo_allowed`, clock 9:41,
-   full battery and wifi, notifications hidden).
+   full battery and wifi, notifications hidden). Language and theme: write
+   `flutter.app_language` (`en`/`de`) and `flutter.theme_mode`
+   (`light`/`dark`) into `shared_prefs/FlutterSharedPreferences.xml` via
+   `run-as`, with `flutter.battery_hint_dismissed` = true so the hint stays
+   out of the countdown shot. The countdown shot is taken about 5.6 s after
+   "Start tracking" (shows "5"); discard the ride afterwards.
 5. Raw shots go to `store/play/screens/raw/<lang>_<theme>_NN_<screen>.png`;
    `tool/render_store_graphics.sh` frames them. Raw shots are 1080 × 2424
    (ratio 2.24), which Play rejects — always upload the framed ones.

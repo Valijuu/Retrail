@@ -1,33 +1,73 @@
 <!doctype html>
-<!-- Frame for the Play phone screenshots (1080 x 1920): caption on top, the
-     raw emulator screenshot below, cut off at the bottom edge. Rendered by
-     tool/render_store_graphics.sh with ?img=…&title=…&theme=light|dark.
-     Colours are the AppColors tokens (lib/core/theme/app_colors.dart). -->
+<!-- Frame for the Play phone screenshots (1080 x 1920): tag, caption and
+     subline on top, the raw emulator screenshot in a phone below, cut off at
+     the bottom edge, and optionally a part of it enlarged on top ("pop").
+     Rendered by tool/render_store_graphics.sh with
+       ?bg=cream|peach|dark&tag=…&title=…&sub=…&img=…[&img2=…][&pop=x,y,w,h,scale,left,top]
+     img2 puts a second phone next to the first (light + dark). pop crops
+     x,y,w,h (raw pixels, 1080 x 2424) out of img and shows it at scale at
+     left,top. Colours are the AppColors tokens (lib/core/theme/app_colors.dart). -->
 <html>
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;800&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Roboto:wght@500&display=block" rel="stylesheet">
 <style>
-  :root { --bg: #FFEDD5; --title: #431407; --accent: #B45309; --shadow: rgba(67,20,7,.22); }
-  :root[data-theme="dark"] { --bg: #2B2118; --title: #F3EDE8; --accent: #F59E42; --shadow: rgba(0,0,0,.55); }
+  :root { --bg: #FFEDD5; --title: #431407; --accent: #B45309; --sub: #431407;
+          --tag-bg: #B45309; --tag: #FFFFFF; --bezel: #1C1B1F; --shadow: rgba(67,20,7,.30); }
+  :root[data-bg="peach"] { --bg: #FFD9AE; }
+  :root[data-bg="dark"] { --bg: #2B2118; --title: #F3EDE8; --accent: #F59E42; --sub: #F3EDE8;
+                          --tag-bg: #F59E42; --tag: #431407; --shadow: rgba(0,0,0,.55); --rim: #5A4A3E; }
   html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
   body { font-family: Roboto, sans-serif; position: relative; }
-  h1 { position: absolute; left: 80px; right: 80px; top: 120px; margin: 0; text-align: center;
-       font-size: 76px; line-height: 1.12; font-weight: 800; letter-spacing: -1px; color: var(--title); }
+  .copy { position: absolute; left: 70px; right: 70px; top: 110px; text-align: center; }
+  .tag { display: inline-block; margin-bottom: 30px; padding: 14px 36px; border-radius: 999px;
+         font: 600 40px Fredoka, sans-serif; background: var(--tag-bg); color: var(--tag); }
+  h1 { margin: 0; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 104px;
+       line-height: 1.02; letter-spacing: -1px; color: var(--title); }
   h1 em { font-style: normal; color: var(--accent); }
-  .shot { position: absolute; left: 110px; top: 400px; width: 860px; border-radius: 56px;
-          box-shadow: 0 30px 80px var(--shadow); overflow: hidden; }
-  .shot img { display: block; width: 100%; }
+  .sub { margin-top: 24px; font-size: 48px; font-weight: 500; line-height: 1.25; color: var(--sub); opacity: .85; }
+  .phone { position: absolute; left: 170px; top: 760px; width: 740px; background: var(--bezel);
+           padding: 18px; border-radius: 110px; box-shadow: 0 0 0 4px var(--rim, transparent), 0 30px 80px var(--shadow); }
+  .phone img { display: block; width: 100%; border-radius: 94px; }
+  .pair .phone { width: 600px; padding: 14px; border-radius: 80px; }
+  .pair .phone img { border-radius: 68px; }
+  .pair #p1 { left: 20px; top: 820px; }
+  .pair #p2 { left: 440px; top: 700px; }
+  .pop { position: absolute; background-repeat: no-repeat; border-radius: 44px;
+         box-shadow: 0 20px 50px var(--shadow); outline: 10px solid rgba(255,255,255,.9); }
 </style>
 </head>
 <body>
-  <h1 id="title"></h1>
-  <div class="shot"><img id="img" alt=""></div>
+  <div class="copy">
+    <div class="tag" id="tag"></div>
+    <h1 id="title"></h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="phone" id="p1"><img id="img" alt=""></div>
+  <div class="phone" id="p2" hidden><img id="img2" alt=""></div>
+  <div class="pop" id="pop" hidden></div>
   <script>
     const q = new URLSearchParams(location.search);
-    document.documentElement.dataset.theme = q.get('theme') || 'light';
+    document.documentElement.dataset.bg = q.get('bg') || 'cream';
+    document.getElementById('tag').textContent = q.get('tag');
     document.getElementById('title').innerHTML = q.get('title');
+    document.getElementById('sub').textContent = q.get('sub');
     document.getElementById('img').src = q.get('img');
+    if (q.get('img2')) {
+      document.body.classList.add('pair');
+      document.getElementById('p2').hidden = false;
+      document.getElementById('img2').src = q.get('img2');
+    }
+    if (q.get('pop')) {
+      const [x, y, w, h, s, left, top] = q.get('pop').split(',').map(Number);
+      const el = document.getElementById('pop');
+      el.hidden = false;
+      Object.assign(el.style, {
+        width: `${w * s}px`, height: `${h * s}px`, left: `${left}px`, top: `${top}px`,
+        backgroundImage: `url("${q.get('img')}")`, backgroundSize: `${1080 * s}px auto`,
+        backgroundPosition: `${-x * s}px ${-y * s}px`,
+      });
+    }
   </script>
 </body>
 </html>

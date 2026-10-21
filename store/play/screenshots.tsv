@@ -1,9 +1,9 @@
-# out-name	raw-screenshot (store/play/screens/raw/<lang>_…)	theme	English caption	German caption
-01_track	light_07_track	light	Speed and distance, <em>live</em>	Tempo und Strecke, <em>live</em>
-02_follow	light_06_ride	light	Ride your routes <em>again</em>	Strecken <em>nachfahren</em>
-03_history	light_04_history	light	Every ride <em>on the map</em>	Jede Fahrt <em>auf der Karte</em>
-04_detail	light_05_detail	light	Every detail of <em>every ride</em>	Alle Details <em>jeder Fahrt</em>
-05_home	light_03_home	light	Your week <em>in numbers</em>	Deine Woche <em>in Zahlen</em>
-06_dark_track	dark_07_track	dark	Light or <em>dark</em>	Hell oder <em>dunkel</em>
-07_activities	light_02_activities	light	For everything <em>on wheels</em>	Für alles, <em>was rollt</em>
-08_welcome	light_01_welcome	light	No account. <em>No ads.</em>	Ohne Konto. <em>Ohne Werbung.</em>
+# out-name	raw (screens/raw/<lang>_…)	raw2 (second phone, or -)	bg (cream|peach|dark)	pop x,y,w,h,scale,left,top (or -)	EN tag	EN caption	EN subline	DE tag	DE caption	DE subline
+01_track	light_07_track	-	cream	42,1680,492,234,1.35,420,1330	Live	Speed &amp; distance, <em>live</em>	Longboard, skate, inline – everything on wheels	Live	Tempo &amp; Strecke, <em>live</em>	Longboard, Skate, Inliner – alles, was rollt
+02_best_time	light_08_compare	-	peach	0,1140,1080,195,0.95,27,1480	Follow	Beat your <em>best time</em>	Ride a route again and compare every run	Nachfahren	Schlag deine <em>Bestzeit</em>	Fahr eine Strecke nochmal und vergleiche jede Runde
+03_follow	light_06_ride	-	cream	0,1556,1080,82,0.95,30,1440	Route	Your routes, <em>again</em>	The way on the map and the distance left	Strecke	Deine Strecken <em>nochmal</em>	Mit Weg auf der Karte und Restdistanz
+04_history	light_04_history	-	peach	36,444,1008,630,0.80,60,1260	History	Every ride <em>on the map</em>	Filter by activity, period and favourites	Verlauf	Jede Fahrt <em>auf der Karte</em>	Filtern nach Aktivität, Zeitraum und Favoriten
+05_dark	light_07_track	dark_07_track	dark	-	Design	Light or <em>dark</em>	Follows your phone, or pick one	Design	Hell oder <em>dunkel</em>	Wie dein Handy oder nach Wahl
+06_detail	light_05_detail	-	cream	90,1612,900,290,1.0,90,1500	Details	Every detail of <em>every ride</em>	Distance, time, top and average speed	Details	Alle Details <em>jeder Fahrt</em>	Strecke, Dauer, Höchst- und Durchschnittstempo
+07_countdown	dark_09_countdown	-	dark	-	Countdown	Pocket it. <em>Roll.</em>	Spoken countdown and a buzz, then recording starts	Countdown	Einstecken. <em>Losrollen.</em>	Ansage und Vibration – dann läuft die Aufnahme
+08_activities	light_02_activities	-	peach	-	No account	For everything <em>on wheels</em>	No ads. Your rides stay on your phone.	Ohne Konto	Für alles, <em>was rollt</em>	Ohne Werbung. Deine Fahrten bleiben auf dem Handy.

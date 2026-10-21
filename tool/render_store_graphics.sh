@@ -30,11 +30,16 @@ done
 urlencode() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$1"; }
 for lang in en de; do
   mkdir -p "$out/screenshots/$lang"
-  while IFS=$'\t' read -r name raw theme en de; do
+  rm -f "$out/screenshots/$lang"/*.png
+  while IFS=$'\t' read -r name raw raw2 bg pop en_tag en_title en_sub de_tag de_title de_sub; do
     [[ -z "$name" || "$name" == \#* ]] && continue
-    title="$en"; [[ "$lang" == de ]] && title="$de"
+    tag="$en_tag" title="$en_title" sub="$en_sub"
+    [[ "$lang" == de ]] && { tag="$de_tag" title="$de_title" sub="$de_sub"; }
     png="$out/screenshots/$lang/$name.png"
-    url="file://$out/screenshot_frame.html?theme=$theme&img=$(urlencode "screens/raw/${lang}_$raw.png")&title=$(urlencode "$title")"
+    url="file://$out/screenshot_frame.html?bg=$bg&img=$(urlencode "screens/raw/${lang}_$raw.png")"
+    url+="&tag=$(urlencode "$tag")&title=$(urlencode "$title")&sub=$(urlencode "$sub")"
+    [[ "$raw2" != - ]] && url+="&img2=$(urlencode "screens/raw/${lang}_$raw2.png")"
+    [[ "$pop" != - ]] && url+="&pop=$pop"
     google-chrome --headless=new --disable-gpu --hide-scrollbars \
       --window-size=1080,1920 --virtual-time-budget=5000 \
       --screenshot="$png" "$url" 2>/dev/null

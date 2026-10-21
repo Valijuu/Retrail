@@ -5,10 +5,10 @@
 //   flutter test tool/demo_rides/build_demo_db_test.dart
 //   RETRAIL_DEMO_LANG=de flutter test tool/demo_rides/build_demo_db_test.dart
 //
-// RETRAIL_DEMO_FOLLOWS=1 adds followed rides (Spec 20) for device tests:
-// rides linked to an original, with a partial one and one that rode to the
-// route first (its time on the route still wins, #79). Off by default, so
-// the store screenshots stay as they are.
+// RETRAIL_DEMO_FOLLOWS=1 adds followed rides (Spec 20) for device tests and
+// the store screenshots (comparison sheet): rides linked to an original, with
+// a partial one and one that rode to the route first (its time on the route
+// still wins, #79).
 //
 // Writes build/demo_rides/retrail_<lang>.sqlite with ride titles in that
 // language (en by default). Ride dates are relative to now, so
