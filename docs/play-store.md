@@ -260,7 +260,7 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
 | Asset | File | Spec |
 |---|---|---|
 | App icon | `store/play/icon_512.png` | 512 × 512 PNG, 32-bit, ≤ 1 MB — from `assets/branding/app_icon.png` |
-| Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language, two phones: comparison sheet + dark recording) |
+| Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language, two phones: light history + dark recording) |
 | Phone screenshots | `store/play/screenshots/<lang>/01_track.png` … `08_activities.png` (recording, best time of a followed route, follow, history, light + dark, detail, countdown, activities) | 8 per language, 1080 × 1920, tag + caption + subline, background and enlarged excerpt per shot in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` (Fredoka headings, cream / peach / dark backgrounds) |
 
 **How the screenshots are made** (no real location data anywhere):
