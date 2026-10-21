@@ -19,9 +19,8 @@ icon = Image.open(f"{root}/assets/branding/app_icon.png").convert("RGBA")
 icon.resize((512, 512), Image.LANCZOS).save(f"{root}/store/play/icon_512.png", optimize=True)
 PY
 
-# Chrome renders at 2x and the result is scaled down with Lanczos: scaling
-# the raw shots straight to their size in the frame (65 %, 19 % in the
-# feature graphic) leaves text and lines blurry.
+# The feature graphic renders at 2x and is scaled down with Lanczos: its
+# phones show the raw shots at 18 %, which blurs at scale 1.
 shrink() { python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').resize((int(sys.argv[2]), int(sys.argv[3])), Image.LANCZOS).save(sys.argv[1], optimize=True)" "$@"; }
 
 for lang in en de; do
@@ -32,6 +31,26 @@ for lang in en de; do
   shrink "$png" 1024 500
 done
 
+# Screenshots: each raw shot is scaled once with Lanczos to its exact size in
+# the frame (phone 740 px wide, 600 px in a light + dark pair) and drawn 1:1
+# at scale 1 — letting Chrome scale the 1080 px raw shot blurs it. A light
+# unsharp mask brings back the edge contrast the 68 % downscale takes away.
+prep="$root/build/store_frames"
+mkdir -p "$prep"
+fit() { python3 -c "
+import sys
+from PIL import Image, ImageFilter
+im = Image.open(sys.argv[1]).convert('RGB')
+w = int(sys.argv[3])
+im = im.resize((w, round(im.height * w / im.width)), Image.LANCZOS)
+im.filter(ImageFilter.UnsharpMask(radius=0.8, percent=70, threshold=2)).save(sys.argv[2])" "$@"; }
+excerpt() { python3 -c "
+import sys
+from PIL import Image
+x, y, w, h, s = map(float, sys.argv[3].split(',')[:5])
+im = Image.open(sys.argv[1]).convert('RGB').crop((int(x), int(y), int(x + w), int(y + h)))
+im.resize((round(w * s), round(h * s)), Image.LANCZOS).save(sys.argv[2])" "$@"; }
+
 urlencode() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$1"; }
 for lang in en de; do
   mkdir -p "$out/screenshots/$lang"
@@ -41,14 +60,22 @@ for lang in en de; do
     tag="$en_tag" title="$en_title" sub="$en_sub"
     [[ "$lang" == de ]] && { tag="$de_tag" title="$de_title" sub="$de_sub"; }
     png="$out/screenshots/$lang/$name.png"
-    url="file://$out/screenshot_frame.html?bg=$bg&img=$(urlencode "screens/raw/${lang}_$raw.png")"
+    width=740; [[ "$raw2" != - ]] && width=600
+    fit "$out/screens/raw/${lang}_$raw.png" "$prep/${lang}_$name.png" "$width"
+    url="file://$out/screenshot_frame.html?bg=$bg&img=$(urlencode "$prep/${lang}_$name.png")"
     url+="&tag=$(urlencode "$tag")&title=$(urlencode "$title")&sub=$(urlencode "$sub")"
-    [[ "$raw2" != - ]] && url+="&img2=$(urlencode "screens/raw/${lang}_$raw2.png")"
-    [[ "$pop" != - ]] && url+="&pop=$pop"
-    google-chrome --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+    if [[ "$raw2" != - ]]; then
+      fit "$out/screens/raw/${lang}_$raw2.png" "$prep/${lang}_${name}_2.png" "$width"
+      url+="&img2=$(urlencode "$prep/${lang}_${name}_2.png")"
+    fi
+    if [[ "$pop" != - ]]; then
+      excerpt "$out/screens/raw/${lang}_$raw.png" "$prep/${lang}_${name}_pop.png" "$pop"
+      url+="&pop=$pop&popimg=$(urlencode "$prep/${lang}_${name}_pop.png")"
+    fi
+    google-chrome --headless=new --disable-gpu --hide-scrollbars \
       --window-size=1080,1920 --virtual-time-budget=5000 \
       --screenshot="$png" "$url" 2>/dev/null
-    shrink "$png" 1080 1920
+    python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[1], optimize=True)" "$png"
   done < "$out/screenshots.tsv"
 done
 ls -l "$out"/*.png "$out"/screenshots/*/*.png

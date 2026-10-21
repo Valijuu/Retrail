@@ -6,7 +6,8 @@
        ?bg=cream|peach|dark&tag=…&title=…&sub=…&img=…[&img2=…][&pop=x,y,w,h,scale,left,top]
      img2 puts a second phone next to the first (light + dark). pop crops
      x,y,w,h (raw pixels, 1080 x 2424) out of img and shows it at scale at
-     left,top. Colours are the AppColors tokens (lib/core/theme/app_colors.dart). -->
+     left,top; popimg, if given, is that excerpt already cropped and scaled
+     (the render script does this, so Chrome draws it 1:1). Colours are the AppColors tokens (lib/core/theme/app_colors.dart). -->
 <html>
 <head>
 <meta charset="utf-8">
@@ -64,8 +65,10 @@
       el.hidden = false;
       Object.assign(el.style, {
         width: `${w * s}px`, height: `${h * s}px`, left: `${left}px`, top: `${top}px`,
-        backgroundImage: `url("${q.get('img')}")`, backgroundSize: `${1080 * s}px auto`,
-        backgroundPosition: `${-x * s}px ${-y * s}px`,
+        ...(q.get('popimg')
+          ? { backgroundImage: `url("${q.get('popimg')}")`, backgroundSize: '100% 100%' }
+          : { backgroundImage: `url("${q.get('img')}")`, backgroundSize: `${1080 * s}px auto`,
+              backgroundPosition: `${-x * s}px ${-y * s}px` }),
       });
     }
   </script>
