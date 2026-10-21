@@ -163,6 +163,10 @@ France, Spain or Brazil would see a German page.
 > • Choose your ride: longboard, skateboard, mountainboard, inline skates
 >   (rollerblades), roller skates, scooter or other
 > • Live map with your route, speed, distance in km, duration and top speed
+> • A 10-second countdown before you roll: the last five seconds are spoken
+>   and you feel a buzz, so the phone can already be in your pocket (can be
+>   turned off in the settings)
+> • The countdown shows whether GPS is ready
 > • Pause and resume any time; keeps recording with the screen off
 > • Control the ride from the notification (Android) or the Live Activity on
 >   the lock screen (iPhone)
@@ -173,6 +177,12 @@ France, Spain or Brazil would see a German page.
 > • Ride it forward or backward – Retrail detects the direction
 > • See how far you have to go and get a notice when you leave the route
 > • Record the repeat ride, or just follow it
+>
+> BEAT YOUR BEST TIME
+> • Recorded repeats are linked to the original ride
+> • Compare every run of a route and see your best time at a glance
+> • Only the time on the route counts – not the way there
+> • Filter your history by followed route
 >
 > YOUR RIDE HISTORY
 > • Every ride with a map preview, distance, time and speeds
@@ -211,6 +221,10 @@ France, Spain or Brazil would see a German page.
 >   Inline-Skates (Inliner), Rollschuhe, Roller oder Andere
 > • Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz,
 >   Dauer und Höchstgeschwindigkeit
+> • 10 Sekunden Countdown vor dem Losfahren: Die letzten fünf Sekunden
+>   werden angesagt und du spürst eine Vibration – so kann das Handy schon in
+>   der Tasche sein (in den Einstellungen abschaltbar)
+> • Der Countdown zeigt, ob das GPS bereit ist
 > • Jederzeit pausieren und weiterfahren; die Aufzeichnung läuft auch bei
 >   ausgeschaltetem Bildschirm weiter
 > • Steuerung über die Benachrichtigung (Android) oder die Live-Aktivität auf
@@ -224,6 +238,13 @@ France, Spain or Brazil would see a German page.
 > • Sieh, wie weit es noch ist, und erhalte einen Hinweis, wenn du die Strecke
 >   verlässt
 > • Die Fahrt aufzeichnen oder einfach nur nachfahren
+>
+> SCHLAG DEINE BESTZEIT
+> • Aufgezeichnete Wiederholungen werden mit der Originalfahrt verknüpft
+> • Vergleiche jede Runde einer Strecke und sieh deine Bestzeit auf einen
+>   Blick
+> • Es zählt nur die Zeit auf der Strecke – nicht der Weg dorthin
+> • Den Verlauf nach nachgefahrenen Strecken filtern
 >
 > DEIN FAHRTENVERLAUF
 > • Jede Fahrt mit Kartenvorschau, Distanz, Zeit und Geschwindigkeiten

@@ -3,6 +3,8 @@ Der GPS-Tracker für alles, was rollt. Retrail zeichnet deine Fahrten mit Longbo
 STRECKE AUFZEICHNEN
 • Wähle deine Aktivität: Longboard, Skateboard, Mountainboard, Inline-Skates (Inliner), Rollschuhe, Roller oder Andere
 • Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz, Dauer und Höchstgeschwindigkeit
+• 10 Sekunden Countdown vor dem Losfahren: Die letzten fünf Sekunden werden angesagt und du spürst eine Vibration – so kann das Handy schon in der Tasche sein (in den Einstellungen abschaltbar)
+• Der Countdown zeigt, ob das GPS bereit ist
 • Jederzeit pausieren und weiterfahren; die Aufzeichnung läuft auch bei ausgeschaltetem Bildschirm weiter
 • Steuerung über die Benachrichtigung (Android) oder die Live-Aktivität auf dem Sperrbildschirm (iPhone)
 • Die Aufzeichnung funktioniert auch ohne mobile Daten
@@ -12,6 +14,12 @@ STRECKEN NACHFAHREN
 • Vorwärts oder rückwärts – Retrail erkennt die Richtung
 • Sieh, wie weit es noch ist, und erhalte einen Hinweis, wenn du die Strecke verlässt
 • Die Fahrt aufzeichnen oder einfach nur nachfahren
+
+SCHLAG DEINE BESTZEIT
+• Aufgezeichnete Wiederholungen werden mit der Originalfahrt verknüpft
+• Vergleiche jede Runde einer Strecke und sieh deine Bestzeit auf einen Blick
+• Es zählt nur die Zeit auf der Strecke – nicht der Weg dorthin
+• Den Verlauf nach nachgefahrenen Strecken filtern
 
 DEIN FAHRTENVERLAUF
 • Jede Fahrt mit Kartenvorschau, Distanz, Zeit und Geschwindigkeiten
