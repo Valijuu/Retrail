@@ -274,7 +274,12 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
    "Followed" chip on the top card).
 2. On an Android emulator with a debug build (`run-as` needs a debuggable
    app): onboard with the name **Retrailer**, then copy the database into
-   `app_flutter/retrail.sqlite` via `adb push` + `run-as … cp`.
+   `app_flutter/retrail.sqlite` via `adb push` + `run-as … cp`. Use an AVD
+   with a **1480 × 3322 px, 576 dpi** display (`Retrail_Store_2x`: same 411 dp
+   layout as a 1080 px phone, twice the phone's 740 px in the frame, so the
+   2x render draws it 1:1) and start it with `-gpu host` — with the default
+   software renderer MapLibre drops the start/finish markers and arrows at
+   that size. `wm size` on a 1080 px AVD shows the same rendering bug.
 3. Live-ride shots: feed GPS with `adb emu geo fix <lng> <lat> 40 12 <knots>`
    once per second along a route — the speed argument matters, without it
    the stationary filter drops every fix.
@@ -286,8 +291,9 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
    out of the countdown shot. The countdown shot is taken about 5.6 s after
    "Start tracking" (shows "5"); discard the ride afterwards.
 5. Raw shots go to `store/play/screens/raw/<lang>_<theme>_NN_<screen>.png`;
-   `tool/render_store_graphics.sh` frames them. Raw shots are 1080 × 2424
-   (ratio 2.24), which Play rejects — always upload the framed ones.
+   `tool/render_store_graphics.sh` frames them (at 2x, then halved). Raw
+   shots are 1480 × 3322 (ratio 2.24), which Play rejects — always upload the
+   framed ones.
 
 ## Release notes
 

@@ -4,6 +4,6 @@
 03_follow	light_06_ride	-	cream	0,1556,1080,82,0.95,30,1440	Route	Your routes, <em>again</em>	The way on the map and the distance left	Strecke	Deine Strecken <em>nochmal</em>	Mit Weg auf der Karte und Restdistanz
 04_history	light_04_history	-	peach	36,444,1008,630,0.80,60,1260	History	Every ride <em>on the map</em>	Filter by activity, period and favourites	Verlauf	Jede Fahrt <em>auf der Karte</em>	Filtern nach Aktivität, Zeitraum und Favoriten
 05_dark	light_07_track	dark_07_track	dark	-	Design	Light or <em>dark</em>	Follows your phone, or pick one	Design	Hell oder <em>dunkel</em>	Wie dein Handy oder nach Wahl
-06_detail	light_05_detail	-	cream	90,1612,900,290,1.0,90,1500	Details	Every detail of <em>every ride</em>	Distance, time, top and average speed	Details	Alle Details <em>jeder Fahrt</em>	Strecke, Dauer, Höchst- und Durchschnittstempo
+06_detail	light_05_detail	-	cream	75,1672,930,330,0.95,80,1520	Details	Every detail of <em>every ride</em>	Distance, time, top and average speed	Details	Alle Details <em>jeder Fahrt</em>	Strecke, Dauer, Höchst- und Durchschnittstempo
 07_countdown	dark_09_countdown	-	dark	-	Countdown	Pocket it. <em>Roll.</em>	Spoken countdown and a buzz, then recording starts	Countdown	Einstecken. <em>Losrollen.</em>	Ansage und Vibration – dann läuft die Aufnahme
 08_activities	light_02_activities	-	peach	-	No account	For everything <em>on wheels</em>	No ads. Your rides stay on your phone.	Ohne Konto	Für alles, <em>was rollt</em>	Ohne Werbung. Deine Fahrten bleiben auf dem Handy.
