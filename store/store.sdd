@@ -1,0 +1,16 @@
+Spec: Store listing
+
+Purpose:
+  Play Store listing texts, screenshots, feature graphics and the foreground-service demo video.
+
+Owns:
+  ./play
+
+References:
+  /docs/play-store.md
+  /tool/tool.sdd
+
+Must:
+  Listing texts stay within Play limits: name `30`, short `80`, full description `4000` characters.
+  Screenshots and feature graphics are rendered by `/tool/render_store_graphics.sh` from raw shots and HTML frames.
+  A visible UI change in a screenshotted screen gets new screenshots before the next production release.

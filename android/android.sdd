@@ -1,0 +1,31 @@
+Spec: Android host
+
+Platform: Kotlin/Gradle
+
+Purpose:
+  Android host app: manifest permissions and service, the audio ringer channel and release signing.
+
+Owns:
+  ./app
+  ./build.gradle.kts
+  ./settings.gradle.kts
+  ./gradle.properties
+  ./gradle
+  ./gradlew
+  ./gradlew.bat
+
+References:
+  /docs/specs/history/05b-gps-platform.md
+  /docs/specs/history/21-countdown-cue.md
+  /docs/android-release.md
+
+Must:
+  `applicationId` is `io.github.valijuu.retrail`; debug builds add `.debug` and the label `Retrail Debug`.
+  The `namespace` and Kotlin package stay `com.retrail.retrail`.
+  Release builds are signed with the upload key from `key.properties`, and with the debug key when it is missing.
+  The recording service is a `location` foreground service on a silent default-importance channel.
+  `retrail/audio` answers `isRingerNormal`.
+  A new permission is declared on Play (Data safety or foreground-service form) before it ships.
+
+Must not:
+  Commit `key.properties` or a keystore.

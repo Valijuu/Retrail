@@ -1,0 +1,19 @@
+Spec: Site
+
+Purpose:
+  Public GitHub Pages site with the privacy policy and the imprint that the store listings link to.
+
+Owns:
+  ./index.html
+  ./style.css
+  ./privacy/index.html
+  ./impressum/index.html
+
+References:
+  /docs/play-store.md
+
+Must:
+  Privacy policy and imprint exist in German and English and link each other.
+  The privacy policy changes in the same change whenever the app starts sending data somewhere new.
+  The imprint names the c/o address of the imprint service, never a home address.
+  `.github/workflows/pages.yml` publishes only this directory.

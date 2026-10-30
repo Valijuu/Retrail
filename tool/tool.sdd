@@ -1,0 +1,26 @@
+Spec: Tools
+
+Purpose:
+  Scripts for building releases, regenerating map styles, fetching iOS builds, demo ride data
+    and store graphics.
+
+Owns:
+  ./build_release.sh
+  ./build_map_styles.dart
+  ./ios_fetch_build.sh
+  ./render_store_graphics.sh
+  ./demo_rides
+
+References:
+  /docs/android-release.md
+  /docs/ios-sideloading.md
+  /docs/specs/history/19-openfreemap.md
+
+Must:
+  `build_release.sh` builds the Play bundle, refuses a bundle not signed by `CN=Valijuu` and stores it as
+    `release/retrail-<version>.aab`.
+  `build_map_styles.dart` regenerates `/assets/map` from OpenFreeMap Liberty and Dark and fails when a
+    layer it recolours no longer exists upstream.
+  `ios_fetch_build.sh` pulls a green CI build to `~/Downloads/retrail-ios/` and can install it on a connected iPhone.
+  `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
+  Demo rides contain invented routes only.

@@ -1,0 +1,44 @@
+Spec: iOS host
+
+Platform: Swift/SwiftUI/ActivityKit/WidgetKit
+
+Purpose:
+  iOS host app: background location, the ride Live Activity on the lock screen and Dynamic Island,
+    and the platform channels.
+
+Structure:
+  ./Runner: Host app, @LiveActivityBridge, scene and app delegates, Info.plist and German InfoPlist strings
+  ./Shared: Swift shared by Runner and the extension: activity attributes and @RideControlIntent
+  ./RideActivityExtension: WidgetKit extension with the lock-screen and Dynamic Island layouts
+
+Owns:
+  ./Runner
+  ./Shared
+  ./RideActivityExtension
+  ./Runner.xcodeproj
+  ./Runner.xcworkspace
+  ./RunnerTests
+  ./Flutter
+
+References:
+  /docs/specs/history/06-live-activity.md
+  /docs/specs/history/05b-gps-platform.md
+  /docs/ios-sideloading.md
+
+Must:
+  Bundle ID is `io.github.valijuu.retrail`; the extension is `io.github.valijuu.retrail.RideActivity`.
+  The `retrail/live_activity` channel offers `isSupported`, `start`, `update` and `end`, and sends
+    `action` with `ride_pause`, `ride_resume`, `ride_stop` or `ride_open` back.
+  Starting ends any existing Retrail activity first; app launch ends leftovers; every push sets a
+    stale date `15` min ahead.
+  All ActivityKit calls run on one serial task chain.
+  A button on an orphaned activity ends it.
+  The extension never links Flutter.
+  In the Runner target, "Embed Foundation Extensions" comes before "Run Script".
+  Background modes include `location` and `audio`.
+
+Must not:
+  Rely on a local Mac; builds run only on GitHub Actions.
+
+Done when:
+  The `ios-build.yml` workflow is green.
