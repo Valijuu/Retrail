@@ -9,9 +9,9 @@ name: iOS build
 
 on:
   push:
-    branches: [main, "phase/**"]
-    # Only when something that ends up in the app changed — docs/specs, Android
-    # and Dart tests don't need a 15-minute macOS build.
+    branches: [main, "feature/**"]
+    # Only when something that ends up in the app changed — docs, SpecDD specs
+    # (*.sdd), notes in lib/ (*.md), Android and Dart tests don't need a 15-minute macOS build.
     paths:
       - "lib/**"
       - "ios/**"
@@ -20,6 +20,8 @@ on:
       - "pubspec.lock"
       - "l10n.yaml"
       - ".github/workflows/ios-build.yml"
+      - "!**/*.sdd"
+      - "!lib/**/*.md"
   workflow_dispatch:
 
 permissions:

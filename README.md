@@ -61,9 +61,10 @@ flutter run
 flutter test
 ```
 
-Architecture, conventions and the development workflow are described in [`CLAUDE.md`](CLAUDE.md).
-The per-feature specs are in [`docs/specs/`](docs/specs), and the release and iOS sideloading guides
-are in [`docs/`](docs).
+The project uses [SpecDD](https://specdd.ai): behaviour and boundaries are `.sdd` specs next to the code,
+starting at [`retrail.sdd`](retrail.sdd); the development workflow is in
+[`.specdd/bootstrap.project.md`](.specdd/bootstrap.project.md). Earlier phase specs are kept as history in
+[`docs/specs/history/`](docs/specs/history), and the release and iOS sideloading guides are in [`docs/`](docs).
 
 ## Privacy
 

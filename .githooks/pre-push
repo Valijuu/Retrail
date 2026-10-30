@@ -13,8 +13,9 @@ fetcher="$root/tool/ios_fetch_build.sh"
 [ -x "$fetcher" ] || exit 0
 command -v gh >/dev/null 2>&1 || exit 0
 
-# Same paths as the workflow's `on.push.paths` (.github/workflows/ios-build.yml).
-app_paths=(lib ios assets pubspec.yaml pubspec.lock l10n.yaml .github/workflows/ios-build.yml)
+# Same paths as the workflow's `on.push.paths` (.github/workflows/ios-build.yml),
+# SpecDD specs (*.sdd) and notes in lib/ (*.md) excluded like there.
+app_paths=(lib ios assets pubspec.yaml pubspec.lock l10n.yaml .github/workflows/ios-build.yml ':(exclude,glob)**/*.sdd' ':(exclude,glob)lib/**/*.md')
 zero="0000000000000000000000000000000000000000"
 builds=false
 

@@ -41,9 +41,26 @@ References:
   /docs/specs/history/01-foundation.md
   /docs/specs/history/15-polish-release.md
 
+Depends on:
+  `flutter_riverpod`: state management, providers written by hand
+  `drift`: SQLite persistence with reactive streams
+  `shared_preferences`: preferences behind @PreferencesRepository
+  `maplibre`: native live map
+  `vector_tile_renderer`: preview tiles drawn in Dart
+  `geolocator`: location and iOS background location
+  `flutter_foreground_task`: Android foreground service and notification
+  `flutter_tts`: countdown voice
+  `vibration`: countdown buzz
+  `image_picker`: profile photo source
+  `image_cropper`: profile photo crop
+  `go_router`: routing
+  `flutter_localizations`: ARB localization with `intl`
+  `mocktail`: test doubles
+
 Must:
   Every behaviour of the original Android app is kept: distances, speeds, filters, formatting,
-    GPS filtering thresholds and offline handling.
+    GPS filtering thresholds and offline handling. The one deliberate improvement is pre-rendered,
+    cached ride previews.
   App ID is `io.github.valijuu.retrail` on Android and iOS; debug builds add `.debug` and are
     labelled `Retrail Debug`.
   The repository stays public with all rights reserved.
