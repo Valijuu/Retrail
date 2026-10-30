@@ -61,6 +61,7 @@ photo never leaves the device, no app activity, no crash logs, no device IDs).
 | Why is this user data collected? | **App functionality** only |
 
 **Privacy policy URL:** https://valijuu.github.io/Retrail/privacy/
+**Imprint:** https://valijuu.github.io/Retrail/impressum/ — c/o address from online-impressum.de (Zustellungsvollmacht § 171 ZPO, scanned mail in their portal; check it every working day). The address is for the imprint only, never for a trade registration.
 
 Resulting store label: "This app may collect these data types: Location ·
 Data is encrypted in transit · No data shared with third parties".
@@ -289,7 +290,7 @@ France, Spain or Brazil would see a German page.
 | Category | Sports (alternative: Health & Fitness) |
 | Tags | Skateboarding, GPS tracker, Sports tracking |
 | Contact email | retrail.app@proton.me (same as the privacy policy; Play shows it publicly) |
-| Website | https://github.com/Valijuu/Retrail (optional) |
+| Website | https://valijuu.github.io/Retrail/ (start page with the imprint and privacy policy, #67) |
 | Privacy policy | https://valijuu.github.io/Retrail/privacy/ |
 
 ### Graphics
