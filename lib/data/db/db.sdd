@@ -1,0 +1,42 @@
+Spec: Database
+
+Purpose:
+  Drift schema mirroring the original Room schema, plus the ride summary and follow-link columns added since.
+
+Owns:
+  ./tables.dart
+  ./app_database.dart
+  ./app_database.g.dart
+  ./database_connection.dart
+  ./ride_dao.dart
+  ./ride_dao.g.dart
+  ./trackpoint_dao.dart
+  ./trackpoint_dao.g.dart
+  ./ride_with_trackpoints.dart
+  ./followed_route.dart
+  /test/data/rides_dao_test.dart
+  /test/data/trackpoints_dao_test.dart
+  /test/data/ride_with_trackpoints_test.dart
+  /test/data/ride_range_query_test.dart
+  /test/data/followed_rides_dao_test.dart
+
+References:
+  /docs/specs/history/03-data-layer.md
+  /docs/specs/history/20-followed-rides.md
+
+Must:
+  Tables are `rides` (@Ride) and `trackpoints` (@Trackpoint); trackpoints are deleted with their ride
+    (`ON DELETE CASCADE`) and foreign keys are switched on before the database opens.
+  `rides.followed_ride_id` is cleared when the original is deleted (`ON DELETE SET NULL`).
+  The schema version is `5`; every older version upgrades in place without losing rides.
+  Every schema change raises the version and adds an upgrade step.
+  Reads are reactive Drift streams; @RideWithTrackpoints is assembled in the DAO.
+  Filtered rides match the search in description or comment; `duration` sorts by duration ascending,
+    everything else by start time descending.
+  Generated files come from `dart run build_runner build`.
+
+Must not:
+  Edit generated `.g.dart` files by hand.
+
+Done when:
+  DAO tests run against an in-memory database (`NativeDatabase.memory()`).

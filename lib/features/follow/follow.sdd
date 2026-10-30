@@ -1,0 +1,33 @@
+Spec: Follow route
+
+Purpose:
+  Riding a saved route again, with or without recording, and linking a recorded follow to its original.
+
+Owns:
+  ./*.dart
+  ./widgets/*.dart
+  /test/follow
+
+References:
+  /docs/specs/history/17-follow-route.md
+  /docs/specs/history/18-follow-reverse.md
+  /docs/specs/history/20-followed-rides.md
+  /lib/domain/follow_tracker.sdd
+
+Must:
+  @routeFollowProvider is process-lifetime and `null` means no reference; then every screen behaves
+    as without the feature.
+  Follow route is offered for rides with a route from the detail dialog and first in the card menu; a route
+    with fewer than two points or no length explains why it cannot be followed.
+  The rider chooses Record (countdown and ride screen) or Just follow (`/follow`, foreground only).
+  Recording follows read the recorder's position; follow-only runs its own GPS feed while the screen is in
+    the foreground.
+  Fixes worse than `30` m and seeds older than `2` min are ignored.
+  The reference clears on Home's normal start, on leaving the ride screen and on End.
+  End and back ask first on the follow screen; before joining it offers Navigate to start.
+  The flip button shows once joined; an automatic reverse explains itself once in a snack bar.
+  A recorded follow that joined the route is linked to its original when recording stops, with coverage
+    and time on the route; following a follow follows its original.
+
+Must not:
+  Change @RideTracker or the recorded track.

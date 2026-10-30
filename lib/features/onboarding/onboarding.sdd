@@ -1,0 +1,19 @@
+Spec: Onboarding
+
+Purpose:
+  First run: name, optional profile photo, default activity.
+
+Owns:
+  ./*.dart
+  /test/onboarding
+
+References:
+  /docs/specs/history/09-onboarding.md
+  /lib/features/profile/profile.sdd
+
+Must:
+  The flow is name, photo, activity, then the main shell.
+  Let's go and Skip both continue; a name is saved only when non-blank, trimmed, at most `30` characters.
+  The photo step never finishes onboarding.
+  Continue on the activity step saves the activity as the last activity type and marks onboarding done.
+  Longboard is preselected.

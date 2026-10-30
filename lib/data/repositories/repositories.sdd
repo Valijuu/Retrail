@@ -1,0 +1,32 @@
+Spec: Repositories
+
+Purpose:
+  The data API features use: rides, trackpoints and app preferences, exposed as Riverpod providers.
+
+Owns:
+  ./ride_repository.dart
+  ./trackpoint_repository.dart
+  ./preferences_repository.dart
+  ./data_providers.dart
+  /test/data/ride_repository_test.dart
+  /test/data/preferences_repository_test.dart
+
+References:
+  /docs/specs/history/03-data-layer.md
+
+Must:
+  @RideRepository and @TrackpointRepository delegate to the DAOs and stay concrete classes.
+  Favouriting stores the injected clock's time; unfavouriting clears it.
+  @PreferencesRepository wraps `shared_preferences` and re-emits a stream value on every write.
+  Preference keys and defaults stay stable across releases.
+
+Example:
+  `user_name`: `Retrailer`
+  `onboarding_done`: `false`
+  `theme_mode`: `system`
+  `app_language`: `system`
+  `last_activity_type`: `LONGBOARD`
+  `home_stats_period`: `week`
+  `battery_hint_dismissed`: `false`
+  `countdown_cue_enabled`: `true`
+  `profile_photos`: at most `5` recent photos

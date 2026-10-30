@@ -1,0 +1,19 @@
+Spec: Localization
+
+Purpose:
+  English and German UI copy from ARB files.
+
+Owns:
+  ./app_en.arb
+  ./app_de.arb
+  ./app_localizations.dart
+  ./app_localizations_en.dart
+  ./app_localizations_de.dart
+  ./glossary_de.md
+
+Must:
+  English is the default and reads naturally; German follows `./glossary_de.md`.
+  Every key exists in both ARB files.
+  Counts use ICU plurals; the home greetings come from `skater_greetings`.
+  A system language without app copy falls back to English.
+  Generated `app_localizations*.dart` files come from `flutter gen-l10n`.

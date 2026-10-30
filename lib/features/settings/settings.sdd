@@ -1,0 +1,20 @@
+Spec: Settings
+
+Purpose:
+  Settings tab: default activity, language, appearance and the countdown cue.
+
+Owns:
+  ./*.dart
+  ./widgets/*.dart
+  /test/settings
+
+References:
+  /docs/specs/history/14-settings-profile.md
+  /docs/specs/history/21-countdown-cue.md
+
+Must:
+  Language is system, English or German, stored as `app_language` and applied in-app at once.
+  Appearance is system, light or dark.
+  The default activity is picked from a grid of activity tiles.
+  Count down out loud is on by default; off means no voice and no vibration.
+  The screen reads the live providers; @SettingsController only writes.

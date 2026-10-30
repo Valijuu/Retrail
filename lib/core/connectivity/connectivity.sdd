@@ -1,0 +1,21 @@
+Spec: Connectivity
+
+Purpose:
+  Whether the device is really online, for the offline banner and preview re-rendering.
+
+Owns:
+  ./connectivity_observer.dart
+  ./connectivity_providers.dart
+  /test/core/connectivity_observer_test.dart
+
+References:
+  /docs/specs/history/05-gps-tracking.md
+
+Must:
+  No network or no internet capability means offline.
+  Otherwise online means an HTTP probe to `https://clients3.google.com/generate_204` answers `200` to `399`
+    within `2.5` s, without redirects or cache.
+  It re-checks on every connectivity change and every `10` s, only while observed, and emits only changes.
+
+Must not:
+  Trust the operating system's validated flag, which some VPNs fake.

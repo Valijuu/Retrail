@@ -1,0 +1,28 @@
+Spec: Active ride
+
+Purpose:
+  The live ride screen: map with route and position, live stats, pause and stop, and the ride dialogs.
+
+Owns:
+  ./*.dart
+  ./widgets/*.dart
+  /test/active_ride
+
+References:
+  /docs/specs/history/12-active-ride.md
+  /docs/specs/history/17-follow-route.md
+  /docs/specs/history/18-follow-reverse.md
+  /lib/tracking/tracking.sdd
+
+Must:
+  The ride starts once per screen session.
+  An external stop (notification, Live Activity, swipe-away) returns home.
+  Back while recording asks to discard first.
+  The stats panel shows speed, distance, duration and top speed with Pause or Resume and Stop.
+  Stop asks first, then the summary offers title (at most `60` characters), comment, favourite, Save, Skip
+    and Discard; the ride is already stored at stop.
+  Save writes the details and renders the preview; Skip keeps the ride as is; Discard deletes it.
+  An offline banner shows while offline.
+  With a followed route the map shows it, a to-go line and off-route or distance-to-route banners sit in
+    the map area, and the stats panel keeps its height.
+  Without a followed route the screen is unchanged.

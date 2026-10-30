@@ -1,0 +1,66 @@
+Spec: Ride tracking
+
+Purpose:
+  Records a ride: the process-lifetime @RideTracker, the GPS fix filter and route recorder,
+    location source and permission gate, the Android foreground service, the iOS Live Activity,
+    platform control relay, battery-optimization hint and the countdown voice cue.
+
+Owns:
+  ./ride_tracker.dart
+  ./ride_tracking_state.dart
+  ./route_recorder.dart
+  ./gps_fix_filter.dart
+  ./gps_signal.dart
+  ./location_fix.dart
+  ./location_source.dart
+  ./location_permission.dart
+  ./geolocator_permission_service.dart
+  ./permission_gate_dialog.dart
+  ./ride_recording_controller.dart
+  ./foreground_task_service.dart
+  ./live_activity_service.dart
+  ./ride_control_relay.dart
+  ./ride_notification.dart
+  ./battery_optimization.dart
+  ./countdown_announcer.dart
+  ./tracking_providers.dart
+  /test/tracking
+
+References:
+  /docs/specs/history/05-gps-tracking.md
+  /docs/specs/history/05b-gps-platform.md
+  /docs/specs/history/06-live-activity.md
+  /docs/specs/history/21-countdown-cue.md
+  /ios/ios.sdd
+  /android/android.sdd
+
+Must:
+  @RideTracker is a process-lifetime singleton that survives screen disposal and works fully offline.
+  @RideTracker owns the ride lifecycle and persistence; @RouteRecorder builds the route from accepted fixes.
+  Tracking and the location stream run in the main isolate; the foreground service only keeps the process
+    alive, shows the notification and relays its buttons.
+  Every fix updates the live location and speed, even while paused.
+  A fix is recorded only when it is fresh (at most `5` s old by its capture time), accurate to `35` m,
+    not stationary (provider speed below `0.8` m/s), not an outlier (above `50` m/s), moved at least
+    the larger of `8` m and both accuracies, and implies at least `0.5` m/s over at most `60` s.
+  More than `60` s after the last recorded point, a fix is held until a rolling run or a fix `10` s later
+    confirms real progress; confirmed held fixes are replayed in order, unconfirmed ones are dropped on
+    start, resume and stop.
+  Resume does not count the paused gap as distance.
+  A trackpoint is timestamped with when the fix was taken.
+  Fix age and elapsed time come from the platform capture timestamp, never from ingestion time.
+  The ride starts only after the permission gate grants location; Android 13+ also asks for notifications,
+    iOS escalates to Always for screen-off recording.
+  Pause, resume, stop and open mean the same from the notification, the Live Activity and the app,
+    through @rideControlRelay.
+  Swiping the app away finalizes the active ride with an end time.
+  The countdown cue never throws into the countdown and never delays a tick; it is silent on Android
+    when the ringer is not normal.
+
+Must not:
+  Move recording logic into the foreground-task isolate.
+  Request the `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission.
+
+Done when:
+  The ported @RideTracker tests and `/test/tracking/stop_recovery_scenarios_test.dart` pass.
+  Recording with the screen off, notification controls and offline recording are checked on a device.

@@ -1,0 +1,22 @@
+Spec: Home
+
+Purpose:
+  Home tab: greeting, distance hero card, recent rides, favourites and the ride start.
+
+Owns:
+  ./*.dart
+  /test/home
+
+References:
+  /docs/specs/history/10-home.md
+
+Must:
+  The hero card shows week, day and year distance and a stat row for the chosen period (stored as
+    `home_stats_period`).
+  Recent rides are the two newest; favourites the two most recently favourited.
+  Ride rows without a map show a navigate-to-start button when the ride has a route; Android hands a `geo:`
+    URI to the system chooser, iOS offers Apple Maps plus installed Google Maps or Waze.
+  Greetings show every entry once per cycle before reshuffling and never repeat across the cycle boundary.
+  Starting while a ride records reopens that ride.
+  Otherwise the start stores the activity, clears a followed route, warns when offline, runs the permission
+    gate and opens the countdown.

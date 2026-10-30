@@ -1,0 +1,19 @@
+Spec: Features
+
+Purpose:
+  One directory per screen area; each holds its screen, its provider set and its widgets.
+
+Structure:
+  ./shell: Routing, splash, tab shell, deep links and the ride-saved notice
+  ./onboarding: First-run name, photo and activity
+  ./home: Home tab with stats, recent rides, favourites and the ride start
+  ./timer: Pre-ride countdown
+  ./active_ride: Live ride screen and its dialogs
+  ./history: History tab, ride detail, edit, filter and route comparison
+  ./settings: Settings tab
+  ./profile: Profile name and photos
+  ./follow: Following a saved route
+
+Must:
+  A feature reaches data only through repositories and providers.
+  Screens with the fixed dark chrome (countdown, ride, follow) keep that palette in both themes.

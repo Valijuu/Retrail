@@ -1,0 +1,19 @@
+Spec: Profile
+
+Purpose:
+  The rider's name and profile photo, shared by onboarding, Home and the profile edit sheet.
+
+Owns:
+  ./*.dart
+  /test/profile
+
+References:
+  /docs/specs/history/09-onboarding.md
+  /docs/specs/history/14-settings-profile.md
+
+Must:
+  The photo is blank by default.
+  The last `5` photos are kept, newest first; adding a sixth deletes the evicted file.
+  Deleting the current photo makes it blank and deletes the file.
+  Photos are picked and cropped square (`512` px, quality `85`) behind @ProfilePhotoPicker and saved to app files.
+  The profile edit sheet hugs its content, saves the name on Save and persists photo changes at once.

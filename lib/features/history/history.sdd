@@ -1,0 +1,30 @@
+Spec: History
+
+Purpose:
+  History tab: a filtered, sorted, day-grouped list of ride cards with cached previews, search, filters,
+    selection and batch delete, ride detail, edit, and the route comparison of followed rides.
+
+Owns:
+  ./*.dart
+  ./widgets/*.dart
+  /test/history
+
+References:
+  /docs/specs/history/13-history.md
+  /docs/specs/history/20-followed-rides.md
+  /lib/map/map.sdd
+
+Must:
+  Sort by date groups by day, newest day first; distance and top speed sort descending; duration ascending.
+  The year, month range, activities, favourites and search filters combine; at All years a month range means
+    those months in every year.
+  The filter badge counts every deviation from the default except the search.
+  Filters apply live; there is no Apply step.
+  Search matches the display title or the comment, trimmed and case-insensitive.
+  Stats come from the values stored with the ride, never from trackpoints at list time.
+  Cards show the cached preview, never a live map.
+  A target ride from Home is scrolled to and highlighted for `1.5` s, resetting filters that hide it.
+  Long-press starts selection; back while selecting clears it.
+  Deleting evicts the preview; deletes confirm with ICU plurals.
+  Route chips open the comparison sheet; the followed-routes filter is shown once a route was followed.
+  An empty filter result says so instead of showing the empty history.

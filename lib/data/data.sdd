@@ -1,0 +1,14 @@
+Spec: Data layer
+
+Purpose:
+  Local persistence: the Drift database with its DAOs and the repositories features depend on.
+
+Structure:
+  ./db: Drift tables, database, DAOs and result types
+  ./repositories: Repositories, preferences and their providers
+
+References:
+  /docs/specs/history/03-data-layer.md
+
+Must:
+  All data stays on the device.

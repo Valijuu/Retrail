@@ -1,0 +1,23 @@
+Spec: Shared widgets
+
+Purpose:
+  Widgets several features share.
+
+Owns:
+  ./app_bottom_sheet.dart
+  ./app_snack_bar.dart
+  ./pill_button.dart
+  ./sheet_input_field.dart
+  ./stacked_dialog_actions.dart
+  ./status_bar_style.dart
+  /test/core/widgets
+
+Must:
+  @showAppScrollableSheet opens forms and filters with a drag handle at `90` % height, closable by dragging
+    from scrolled content.
+  @showAppBottomSheet opens short pickers and forms that hug their content, capped at `90` % and closable by dragging.
+  @appSnackBar shows a leading brand icon and a close icon and auto-dismisses even with an action.
+  @ThemeStatusBar sets status-bar icons from the app theme; @DarkChromeStatusBar forces light icons.
+
+Must not:
+  Build a bare `SnackBar`.

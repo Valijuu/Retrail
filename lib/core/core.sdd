@@ -1,0 +1,9 @@
+Spec: Core
+
+Purpose:
+  Shared app foundations used by several features.
+
+Structure:
+  ./theme: Design tokens and the theme builder
+  ./widgets: Shared widgets such as sheets, snack bars, pills and status-bar styling
+  ./connectivity: VPN-aware online detection
