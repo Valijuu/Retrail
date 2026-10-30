@@ -16,6 +16,7 @@ process: EXACT handoff for `lib/domain`, test disciplines, tasks vs. GitHub issu
 - **Why things are the way they are:** `docs/specs/history/` (old phase specs, plans, map and token notes)
   and `docs/decisions/` (decisions made after the SpecDD migration). These explain decisions; they are
   not requirements. `Spec N` in a code comment refers to `docs/specs/history/NN-*.md`.
+- **SpecDD skills (plugin):** `docs/specdd-skills.md`.
 - **German copy:** `lib/l10n/glossary_de.md`.
 - **Release and store:** `docs/android-release.md`, `docs/play-store.md`, `docs/ios-sideloading.md`.
 
