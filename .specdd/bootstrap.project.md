@@ -14,6 +14,11 @@ live in the `.sdd` files (root: `/retrail.sdd`); this file holds the working pro
 - Before changing or removing a `Must`, `Must not` or `Forbids` entry, read the history files, decision
   notes and GitHub issues (`#N`) it references, so a decision is not undone without knowing its reason.
 - Real ride or GPS data never enters the repository; real traces stay in gitignored fixtures.
+- Tests live under `/test/<area>/`, not next to the code. Each test path is owned by the spec that lists it in
+  `Owns` (for example `/lib/map/map.sdd` owns `/test/map`, `/lib/domain/heading.sdd` owns
+  `/test/domain/heading_test.dart`). To resolve a test file, use the spec of the matching `/lib/<area>/`
+  file or directory; `test/foundation`, `test/support` and `test/e2e` belong to `/lib/lib.sdd`.
+- Rules in `Must` entries that cite an issue (`#N`) protect a fix; read the issue before changing that code.
 
 ## Implementation: who changes what (the `Change` step)
 
@@ -66,6 +71,7 @@ Every change that alters behaviour updates the governing spec in the same commit
   `.githooks/pre-commit` hook rejects unformatted staged Dart files (`git config core.hooksPath .githooks`);
   formatting-only commits go into `.git-blame-ignore-revs`.
 - Commit messages follow Conventional Commits in English: `type(scope): summary`.
+- `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone hides formatting-only commits in blame.
 - Stage only your own files; other tools edit `README.md` and `.claude/`.
 
 ## Verification

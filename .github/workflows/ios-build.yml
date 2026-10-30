@@ -9,7 +9,7 @@ name: iOS build
 
 on:
   push:
-    branches: [main, "feature/**"]
+    branches: [main, "feature/**", "fix/**"]
     # Only when something that ends up in the app changed — docs, SpecDD specs
     # (*.sdd), notes in lib/ (*.md), Android and Dart tests don't need a 15-minute macOS build.
     paths:

@@ -34,6 +34,9 @@ References:
   /ios/ios.sdd
   /android/android.sdd
 
+Exposes:
+  @RideTracker state: location, track points, distance, speed, elapsed time, paused flag, activity type
+
 Must:
   @RideTracker is a process-lifetime singleton that survives screen disposal and works fully offline.
   @RideTracker owns the ride lifecycle and persistence; @RouteRecorder builds the route from accepted fixes.

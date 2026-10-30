@@ -29,7 +29,7 @@ References:
 Must:
   UI is Material 3 (`useMaterial3: true`) and follows Material 3 component conventions.
   Every user-facing string comes from @AppLocalizations with keys in both `app_en.arb` and `app_de.arb`.
-  Every colour, shape and text style comes from the theme tokens (@AppColors, @AppShapes, @AppTypography).
+  Every colour, shape and text style comes from the theme tokens (@AppColors, @AppShapes, @appTextTheme).
   State logic lives in Riverpod providers written by hand; widgets only read state and send intents.
   Each feature has one provider set (`*_providers.dart`) exposing read-only state and intent methods.
   Repositories return Drift streams; providers transform them.

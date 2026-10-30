@@ -38,7 +38,7 @@ Must:
   Background modes include `location` and `audio`.
 
 Must not:
-  Rely on a local Mac; builds run only on GitHub Actions.
+  Rely on a local Mac; builds run only on GitHub Actions and the Xcode project is edited by hand.
 
 Done when:
   The `ios-build.yml` workflow is green.

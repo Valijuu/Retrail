@@ -14,6 +14,6 @@ Owns:
 Must:
   English is the default and reads naturally; German follows `./glossary_de.md`.
   Every key exists in both ARB files.
-  Counts use ICU plurals; the home greetings come from `skater_greetings`.
+  Counts use ICU plurals; the home greetings are the `skaterGreeting1` … keys, collected by @skaterGreetings.
   A system language without app copy falls back to English.
   Generated `app_localizations*.dart` files come from `flutter gen-l10n`.

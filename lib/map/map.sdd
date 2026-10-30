@@ -19,6 +19,7 @@ Owns:
   ./route_sketch.dart
   ./tile_grid.dart
   /test/map
+  /test/fixtures/map
 
 References:
   /docs/specs/history/07-map-system.md
@@ -49,6 +50,13 @@ Must:
     zoom capped at `16`, sending `User-Agent: Retrail (io.github.valijuu.retrail)`.
   The preview cache directory carries a version; bumping it re-renders every preview and purges older versions.
   Projection math stays pure and tested.
+  Every instant camera jump moves first and then zooms at the new centre (#41).
+  A light/dark switch rebuilds the native map and detaches the old one at once, so no update reaches a
+    disposed map (#43).
+  A style load that was overtaken bails out after every await and never adds layers to a dead map (#47).
+  The whole reference line is pushed only when the reference changes; a growing ridden part pushes only
+    `reference-done`.
+  `maplibre` stays at `^0.3.6` or later for the Android disposal-crash fix (#16).
 
 Must not:
   Put a live map into a list item.

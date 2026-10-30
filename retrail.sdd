@@ -29,6 +29,11 @@ Owns:
   ./AGENTS.md
   ./CLAUDE.md
   ./.gitignore
+  ./.metadata
+  ./.mcp.json
+  ./.ignore
+  ./android/.gitignore
+  ./ios/.gitignore
   ./.git-blame-ignore-revs
   ./.githooks/pre-commit
   ./.githooks/pre-push
@@ -64,13 +69,7 @@ Must:
   App ID is `io.github.valijuu.retrail` on Android and iOS; debug builds add `.debug` and are
     labelled `Retrail Debug`.
   The repository stays public with all rights reserved.
-  `main` stays green and linear.
 
 Must not:
-  Commit real ride or GPS data; real traces stay in gitignored fixtures.
-  Commit release bundles, signing keys or `android/key.properties`.
-
-Done when:
-  `flutter analyze` is clean.
-  `flutter test` passes.
-  Every changed Dart file is formatted with `dart format`.
+  Contain real ride or GPS data; real traces stay in gitignored fixtures.
+  Contain release bundles, signing keys or `android/key.properties`.

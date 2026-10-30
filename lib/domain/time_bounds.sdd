@@ -1,7 +1,8 @@
 Spec: Time bounds
 
 Purpose:
-  Local-time bounds of the current day, week and year as epoch-millisecond ranges.
+  Local-time bounds of days, weeks, years and month ranges as epoch-millisecond ranges, and the month test
+    for month filters across years.
 
 Owns:
   ./time_bounds.dart
@@ -13,7 +14,11 @@ References:
 Must:
   A week runs from Monday `00:00:00.000` to Sunday `23:59:59.999` local time.
   A day runs from `00:00:00.000` to `23:59:59.999` local time.
-  A year runs from January 1 `00:00` to the sentinel `9223372036854775807`.
+  A year runs from January 1 `00:00:00.000` to December 31 `23:59:59.999` of the given or current year.
+  @monthRangeBounds runs from the first day of the start month to the last day of the end month within one
+    year; a missing start means January, a missing end December.
+  @monthOfYearInRange tests a timestamp's local month against an inclusive range; an inverted range matches
+    no month and never wraps across the year end.
 
 Scenario: Sunday belongs to the week that started on Monday
   Given now is a Sunday evening

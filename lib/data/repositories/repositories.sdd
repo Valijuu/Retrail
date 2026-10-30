@@ -30,3 +30,5 @@ Example:
   `battery_hint_dismissed`: `false`
   `countdown_cue_enabled`: `true`
   `profile_photos`: at most `5` recent photos
+  `current_profile_photo`: none
+  `pending_ride_details`: none

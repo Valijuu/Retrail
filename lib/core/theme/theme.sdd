@@ -22,6 +22,6 @@ Must:
   The theme mode (system, light, dark) is chosen by the user and persisted.
   Shapes come from @AppShapes: radius `14` hero card and route maps, `12` cards and stat cells, `50` pills,
     chips and the nav indicator, `10` small containers and dialog inputs, `20` dialogs.
-  Text styles map to the Material 3 type scale through @AppTypography.
+  Text styles map to the Material 3 type scale through @appTextTheme.
   Floating map buttons use the app surface with a primary icon, so they follow the theme.
   Snack bars float as cards through `snackBarTheme`.

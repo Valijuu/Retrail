@@ -31,8 +31,6 @@ Must:
   The schema version is `5`; every older version upgrades in place without losing rides.
   Every schema change raises the version and adds an upgrade step.
   Reads are reactive Drift streams; @RideWithTrackpoints is assembled in the DAO.
-  Filtered rides match the search in description or comment; `duration` sorts by duration ascending,
-    everything else by start time descending.
   Generated files come from `dart run build_runner build`.
 
 Must not:

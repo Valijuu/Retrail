@@ -31,7 +31,7 @@ References:
   /docs/specs/history/04-domain.md
 
 Must:
-  Domain code imports only `dart:*`, `intl` and the Drift row types.
+  Domain code imports only `dart:*`, `intl`, `meta` and the row and result types of `/lib/data/db`.
   Time-dependent functions take an injectable `nowMs`.
   Thresholds and limits are named constants.
 
