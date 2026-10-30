@@ -102,7 +102,8 @@ Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.
 | 1.2.0+6 | Closed test (Alpha) | 2026-10-20 | published — followed rides (Spec 20: link, comparison, route filter, #79 time on the route); "Great pace" chip removed. DB migration v3 → v5 on update |
 | 1.3.0+7 | Closed test (Alpha) | 2026-10-20 | uploaded — countdown cue (Spec 21, #81: spoken 5…1 + "Ride started", vibration, settings switch), countdown 10 s, stale "GPS off" in the countdown (#78 point 2). New permission `VIBRATE` (normal, no form) |
 | 1.3.1+8 | Closed test (Alpha) | 2026-10-21 | built, upload pending — new activity order in every picker (mountainboard after skateboard); store texts reordered too. No new permission |
+| 1.3.1+8 | Production | 2026-10-30 | production access granted after the 14-day closed test; promote the closed-test release (no new upload), notes in `docs/play-store.md` |
 
-Next: 12+ testers for 14 days from opt-in; a further update during the test
-(#68; iOS check of #78; retake the ride screenshots for #66), then apply for production access; #67 before the public launch. Releases
+Production access granted 2026-10-30 (closed test passed). Before the first
+production rollout: imprint / trader status (#67). Releases
 follow the global `play-release` skill (`~/.claude/skills/play-release/`).

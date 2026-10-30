@@ -101,6 +101,24 @@ Upload it to YouTube as **unlisted** and paste the link into the declaration.
 
 ---
 
+## Production access application (2026-10-22)
+
+Answered after the 14-day closed test (max. 300 characters per text field).
+Only claim what can be shown: all testers came from PrimeTestLab (no
+friends); the bugs #70 and #77 were found by the developer, not by testers.
+
+| Question | Answer |
+|---|---|
+| Wie hast du Nutzer angeworben? | Über den kostenpflichtigen Testdienst PrimeTestLab, der Tester mit verschiedenen Android-Geräten gestellt und einen QA-Bericht erstellt hat. Ich selbst habe jedes Update auf meinem Pixel bei echten Fahrten getestet. |
+| Wie schwierig war es? | Schwierig |
+| Interaktionen der Tester | Laut Feedback und QA-Bericht nutzten die Tester die Kernfunktionen wie echte Nutzer: Fahrt aufzeichnen, pausieren, über die Benachrichtigung stoppen, speichern oder verwerfen, Verlauf filtern und durchsuchen, Fahrten bearbeiten, Favoriten. Strecke nachfahren habe ich selbst draußen getestet. |
+| Feedback und wie eingeholt | Über einen ausführlichen QA-Bericht des Testdienstes; zudem stand eine Feedback-Adresse in jedem Versionshinweis. Gemeldet: Fahrt verwerfen ohne Nachfrage, leerer Verlauf bei Filter ohne Treffer, Favorit fehlte beim Bearbeiten, keine Bestätigung nach Stopp per Benachrichtigung. Alles behoben. |
+| Zielgruppe | Longboarder, Skateboarder, Mountainboarder, Inline- und Rollschuhfahrer sowie Scooterfahrer ab 13 Jahren, die ihre Fahrten aufzeichnen und Strecke, Tempo und Kilometer verfolgen wollen. Zweitrangig: Spaziergänger, Wanderer und Radfahrer. Start in Englisch und Deutsch. |
+| Mehrwert | Ein GPS-Tracker, der auf Rollsport zugeschnitten ist: Fahrt mit Countdown starten, Strecke, Distanz, Höchst- und Durchschnittstempo aufzeichnen – auch offline. Verlauf mit Kartenvorschau, Strecken nachfahren mit Bestzeit. Kein Konto, keine Werbung, alle Daten bleiben auf dem Gerät. |
+| Installationen im ersten Jahr | 0 bis 10.000 |
+| Änderungen aus dem Test | 8 Updates im Test: alle Punkte aus dem QA-Bericht behoben (Rückfrage vor dem Verwerfen, Hinweis bei Filter ohne Treffer, Favorit beim Bearbeiten, Bestätigung nach Stopp). Aufzeichnung nach langem Stopp und im Hintergrund repariert, Hinweis zur Akkuoptimierung, GPS-Status im Countdown. |
+| Warum produktionsreif | Alle im Test gemeldeten Fehler sind behoben und jeweils als Update an die Tester gegangen. Jedes Update habe ich selbst bei echten Fahrten geprüft, dazu laufen vor jedem Release automatisierte Tests inklusive GPS-Szenarien. Aus den letzten Versionen kamen keine neuen Fehlermeldungen. |
+
 ## Store listing
 
 Limits: app name 30, short description 80, full description 4000 characters.
@@ -327,6 +345,36 @@ retrail.app@proton.me" (no thank-you for testing) — production stays
 shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
+
+### 1.3.1+8 (production, first public release — prepared 2026-10-30)
+
+Same bundle as the closed test, promoted (no new upload). First production
+release, so a short feature summary instead of a changelog.
+
+```
+<de-DE>
+Retrail ist da – der GPS-Tracker für Longboard, Skateboard und mehr.
+
+• Fahrt per Countdown mit Sprachansage starten
+• Strecke, Distanz und Tempo aufzeichnen, auch offline
+• Verlauf mit Kartenvorschau, Filtern und Favoriten
+• Strecken nachfahren und mit deiner Bestzeit vergleichen
+• Kein Konto, keine Werbung – alle Daten bleiben auf deinem Gerät
+
+Fragen oder Ideen? retrail.app@proton.me
+</de-DE>
+<en-US>
+Retrail is here – the GPS tracker for longboard, skateboard and more.
+
+• Start a ride with a spoken countdown
+• Record route, distance and speed, even offline
+• History with map previews, filters and favorites
+• Follow a route again and race your best time
+• No account, no ads – all data stays on your device
+
+Questions or ideas? retrail.app@proton.me
+</en-US>
+```
 
 ### 1.3.1+8 (closed test, 2026-10-21)
 
