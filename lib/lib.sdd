@@ -34,6 +34,7 @@ Must:
   Each feature has one provider set (`*_providers.dart`) exposing read-only state and intent methods.
   Repositories return Drift streams; providers transform them.
   A class stays at or below 400 lines of code and has one responsibility.
+  Magic numbers are intent-named constants, and there is no dead code.
   State classes are immutable with `copyWith`.
   Explicit `abstract interface class` seams exist only where a real alternate or platform implementation exists;
     single-implementation repositories stay concrete; tiny strategy seams such as @NowMs are typedefs.
