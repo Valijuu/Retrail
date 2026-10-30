@@ -1,0 +1,26 @@
+Spec: Ride stats
+
+Purpose:
+  Duration, distance, top speed and average speed of one saved ride, exactly as the original app computed them.
+
+Owns:
+  ./ride_stats.dart
+  /test/domain/ride_stats_test.dart
+
+References:
+  /docs/specs/history/04-domain.md
+
+Must:
+  `durationMs` is `endTime - startTime` when both are set, else `0`.
+  `distanceMetres` is the sum of distances between consecutive trackpoints.
+  `maxSpeedKmh` is the largest non-null trackpoint speed times `3.6`, else `0`.
+  `avgSpeedKmh` is km divided by hours of duration, and `0` without a duration.
+
+Scenario: ride without an end time
+  Given a ride with a start time and no end time
+  When its stats are computed
+  Then duration and average speed are `0`
+
+Example:
+  no trackpoints: distance `0`
+  one trackpoint: distance `0`

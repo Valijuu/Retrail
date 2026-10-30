@@ -1,0 +1,25 @@
+Spec: Route progress
+
+Purpose:
+  Where a position lies on a reference route: distance along, distance left, offset, off-route and finish.
+
+Owns:
+  ./route_progress.dart
+  /test/domain/route_progress_test.dart
+
+References:
+  /docs/specs/history/17-follow-route.md
+  /docs/specs/history/18-follow-reverse.md
+
+Must:
+  Off route means more than `30` m from the route.
+  The finish counts within `30` m of the last point once at least `90` % of the route is behind the rider.
+  The first fix takes the first pass of the route through the position, so a loop start never reads as its finish.
+  While on route only the next `500` m are searched and progress never decreases.
+  After being off route the pass nearest the previous progress is taken; ties go to the pass ahead.
+  A reference with fewer than two points gives no progress.
+
+Scenario: loop start
+  Given a loop whose start and finish are the same place
+  When the first fix is at the start
+  Then the finish is not reached

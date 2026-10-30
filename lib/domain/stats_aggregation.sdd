@@ -1,0 +1,19 @@
+Spec: Stats aggregation
+
+Purpose:
+  Totals for a set of rides, shared by the week, day and year views.
+
+Owns:
+  ./stats_aggregation.dart
+  /test/domain/stats_aggregation_test.dart
+
+References:
+  /docs/specs/history/04-domain.md
+
+Must:
+  `totalKm` is the sum of ride distances in km and `rideCount` the number of rides.
+  `avgSpeedKmh` is total km over the combined duration, and `0` without duration.
+  `totalDurationSeconds` is the combined duration in whole seconds.
+
+Example:
+  no rides: every value `0`

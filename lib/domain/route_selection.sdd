@@ -1,0 +1,15 @@
+Spec: Route selection
+
+Purpose:
+  Search and summary for the followed-routes filter.
+
+Owns:
+  ./route_selection.dart
+  /test/domain/route_selection_test.dart
+
+References:
+  /docs/specs/history/20-followed-rides.md
+
+Must:
+  Search matches the route display title, trimmed and case-insensitive; an empty query keeps every route.
+  The summary lists the titles of the chosen routes in list order and drops ids without a route.

@@ -1,0 +1,43 @@
+Spec: Domain
+
+Purpose:
+  Pure, deterministic logic every screen relies on: distances, ride stats, time bounds, formatters,
+    route progress and route following. Built test-first with EXACT.
+
+Structure:
+  ./activity_type.dart: Activity types and their stored ids
+  ./distance_calculator.dart: Haversine distance seam
+  ./ride_stats.dart: Per-ride duration, distance and speeds
+  ./stats_aggregation.dart: Week, day and year totals
+  ./time_bounds.dart: Local day, week and year bounds
+  ./formatters.dart: Duration, date and distance formatting
+  ./ride_title.dart: Display title of a ride
+  ./max_speed.dart: Live top speed
+  ./fallback_speed.dart: Display speed when GPS reports none
+  ./heading.dart: Heading-up bearing and route-tail split
+  ./live_activity_snapshot.dart: iOS Live Activity content and push timing
+  ./countdown_cue.dart: Seconds the countdown announces
+  ./route_markers.dart: Start, finish or loop endpoint markers
+  ./route_progress.dart: Projection of a position onto a reference route
+  ./follow_tracker.dart: Following a route in either direction, with its helpers in `follow_*.dart`
+  ./route_group.dart: Original plus follows, best time
+  ./route_row_stats.dart: One comparison-sheet row
+  ./route_selection.dart: Followed-routes search and summary
+
+Owns:
+  /test/domain/domain_test_helpers.dart
+
+References:
+  /docs/specs/history/04-domain.md
+
+Must:
+  Domain code imports only `dart:*`, `intl` and the Drift row types.
+  Time-dependent functions take an injectable `nowMs`.
+  Thresholds and limits are named constants.
+
+Forbids:
+  `package:flutter`
+  Riverpod, database access, platform channels and network access
+
+Done when:
+  Every `Scenario` and `Example` of the governing spec has a test.

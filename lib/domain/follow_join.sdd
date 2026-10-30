@@ -1,0 +1,16 @@
+Spec: Follow join
+
+Purpose:
+  The undecided join: one anchor per pass of the road through it, each pass fit and the settling. Part of the follow tracker.
+
+Owns:
+  ./follow_join.dart
+
+References:
+  ./follow_tracker.sdd
+  /docs/specs/history/18-follow-reverse.md
+
+Must:
+  Only `60` m either side of the join passes are searched while undecided.
+  Hits within `4` m, or within `15` m on a pass running the other way, count as the same road.
+  The join settles on the average position while the rider stays within `8` m of it.

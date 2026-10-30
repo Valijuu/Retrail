@@ -1,0 +1,59 @@
+Spec: Retrail
+
+Platform: Flutter/Dart/Material 3/Riverpod/Drift/MapLibre
+
+Purpose:
+  GPS route tracker for longboard, skate and other rolling-sport rides on Android and iOS,
+    migrated from an Android Jetpack Compose app. Records rides offline, keeps a history with
+    pre-rendered map previews, and lets a rider follow a saved route again.
+
+Structure:
+  ./lib: Flutter app code
+  ./test: Unit, widget, provider, DAO, golden and scenario tests
+  ./integration_test: On-device integration tests
+  ./android: Android host app, service notification, platform channels, release signing
+  ./ios: iOS host app, Live Activity extension, platform channels
+  ./assets: Map styles, app icon and activity icons
+  ./tool: Build, release, map-style and store-graphics scripts
+  ./site: GitHub Pages site with privacy policy and imprint
+  ./store: Play Store listing texts, screenshots and graphics
+  ./docs: Release, store and sideloading guides; decision notes; spec history
+
+Owns:
+  ./pubspec.yaml
+  ./pubspec.lock
+  ./analysis_options.yaml
+  ./l10n.yaml
+  ./README.md
+  ./LICENSE
+  ./AGENTS.md
+  ./CLAUDE.md
+  ./.gitignore
+  ./.git-blame-ignore-revs
+  ./.githooks/pre-commit
+  ./.githooks/pre-push
+  ./.github/workflows/ios-build.yml
+  ./.github/workflows/pages.yml
+  ./integration_test
+  ./docs
+
+References:
+  /docs/specs/history/01-foundation.md
+  /docs/specs/history/15-polish-release.md
+
+Must:
+  Every behaviour of the original Android app is kept: distances, speeds, filters, formatting,
+    GPS filtering thresholds and offline handling.
+  App ID is `io.github.valijuu.retrail` on Android and iOS; debug builds add `.debug` and are
+    labelled `Retrail Debug`.
+  The repository stays public with all rights reserved.
+  `main` stays green and linear.
+
+Must not:
+  Commit real ride or GPS data; real traces stay in gitignored fixtures.
+  Commit release bundles, signing keys or `android/key.properties`.
+
+Done when:
+  `flutter analyze` is clean.
+  `flutter test` passes.
+  Every changed Dart file is formatted with `dart format`.

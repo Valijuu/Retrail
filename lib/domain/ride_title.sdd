@@ -1,0 +1,16 @@
+Spec: Ride title
+
+Purpose:
+  The title a ride shows everywhere.
+
+Owns:
+  ./ride_title.dart
+  /test/domain/ride_title_test.dart
+
+References:
+  /docs/specs/history/04-domain.md
+
+Must:
+  A non-blank description is the title.
+  Otherwise the title is the full localized date (`yMMMMEEEEd`) of the ride date, its start time or now.
+  The title is never empty.

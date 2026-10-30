@@ -1,0 +1,53 @@
+Spec: Retrail app code
+
+Purpose:
+  Feature-first Flutter app: providers are the ViewModel layer, repositories own data sources,
+    pure logic lives in the domain layer.
+
+Structure:
+  ./main.dart: Process start, database and preferences wiring
+  ./app.dart: MaterialApp with theme, localization and router
+  ./core: Theme tokens, connectivity and shared widgets
+  ./data: Drift database, DAOs and repositories
+  ./domain: Pure Dart logic without Flutter
+  ./features: One directory per screen area with its providers and widgets
+  ./tracking: Ride recording, GPS pipeline, foreground service, Live Activity, countdown cue
+  ./map: Live MapLibre map and pre-rendered ride previews
+  ./l10n: ARB files and generated localizations
+
+Owns:
+  ./main.dart
+  ./app.dart
+  /test/foundation
+  /test/support
+  /test/e2e
+
+References:
+  /docs/specs/history/01-foundation.md
+  /docs/specs/history/08-navigation-shell.md
+
+Must:
+  UI is Material 3 (`useMaterial3: true`) and follows Material 3 component conventions.
+  Every user-facing string comes from @AppLocalizations with keys in both `app_en.arb` and `app_de.arb`.
+  Every colour, shape and text style comes from the theme tokens (@AppColors, @AppShapes, @AppTypography).
+  State logic lives in Riverpod providers written by hand; widgets only read state and send intents.
+  Each feature has one provider set (`*_providers.dart`) exposing read-only state and intent methods.
+  Repositories return Drift streams; providers transform them.
+  A class stays at or below 400 lines of code and has one responsibility.
+  State classes are immutable with `copyWith`.
+  Explicit `abstract interface class` seams exist only where a real alternate or platform implementation exists;
+    single-implementation repositories stay concrete; tiny strategy seams such as @NowMs are typedefs.
+  Collaborators such as DAOs and clocks are injected through constructors or providers.
+  Bottom sheets open through @showAppScrollableSheet or @showAppBottomSheet; confirmations stay dialogs.
+  Snack bars are built with @appSnackBar.
+  Status-bar icons follow the theme through @ThemeStatusBar; screens with the fixed dark chrome wrap themselves in
+    @DarkChromeStatusBar.
+  File names are `snake_case.dart`, types `UpperCamelCase`, providers `camelCaseProvider`.
+
+Must not:
+  Use code generation for Riverpod providers.
+  Reach globally for singletons instead of injecting them.
+
+Forbids:
+  Direct Drift or @SharedPreferences access from ./features
+  Hex colour literals outside @AppColors

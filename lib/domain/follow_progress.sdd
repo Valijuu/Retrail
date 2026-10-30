@@ -1,0 +1,15 @@
+Spec: Follow progress
+
+Purpose:
+  Progress once the direction is decided. Part of the follow tracker.
+
+Owns:
+  ./follow_progress.dart
+
+References:
+  ./follow_tracker.sdd
+  /docs/specs/history/18-follow-reverse.md
+
+Must:
+  Progress never goes back.
+  Per fix it advances at most the recent pace plus `2` m, then a quarter of the rest.

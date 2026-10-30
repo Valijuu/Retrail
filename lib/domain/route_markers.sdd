@@ -1,0 +1,16 @@
+Spec: Route markers
+
+Purpose:
+  Which endpoint markers a route gets, shared by the preview painter, the offline sketch and the live map.
+
+Owns:
+  ./route_markers.dart
+  /test/domain/route_markers_test.dart
+
+References:
+  /docs/specs/history/07-map-system.md
+
+Must:
+  Endpoints at most 30 m apart, inclusive, get one combined start/finish marker; otherwise separate
+    start and finish markers.
+  Only the first and last point decide.

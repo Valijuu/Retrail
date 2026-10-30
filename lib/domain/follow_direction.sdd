@@ -1,0 +1,17 @@
+Spec: Follow direction
+
+Purpose:
+  Direction values and the join-zone and movement decisions. Part of the follow tracker.
+
+Owns:
+  ./follow_direction.dart
+  /test/domain/follow_direction_test.dart
+
+References:
+  ./follow_tracker.sdd
+  /docs/specs/history/18-follow-reverse.md
+
+Must:
+  A start or finish zone the route also passes mid-route leaves the direction undecided.
+  Forward wins on a short open route whose start and finish zones overlap.
+  Where the route runs both ways along one road, forward is the default.

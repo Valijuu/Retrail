@@ -1,0 +1,16 @@
+Spec: Heading
+
+Purpose:
+  Heading-up bearing for the live map and the split that lets the route line end at the gliding position marker.
+
+Owns:
+  ./heading.dart
+  /test/domain/heading_test.dart
+
+References:
+  /lib/map/map.sdd
+
+Must:
+  Bearings are degrees clockwise from north in `[0, 360)`.
+  The heading is taken from recorded points only, re-measured every 10 m or more,
+    and ignores turns below 10 degrees.

@@ -1,0 +1,21 @@
+Spec: Time bounds
+
+Purpose:
+  Local-time bounds of the current day, week and year as epoch-millisecond ranges.
+
+Owns:
+  ./time_bounds.dart
+  /test/domain/time_bounds_test.dart
+
+References:
+  /docs/specs/history/04-domain.md
+
+Must:
+  A week runs from Monday `00:00:00.000` to Sunday `23:59:59.999` local time.
+  A day runs from `00:00:00.000` to `23:59:59.999` local time.
+  A year runs from January 1 `00:00` to the sentinel `9223372036854775807`.
+
+Scenario: Sunday belongs to the week that started on Monday
+  Given now is a Sunday evening
+  When the week bounds are computed
+  Then the week starts on the preceding Monday at midnight

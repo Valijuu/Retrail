@@ -1,0 +1,17 @@
+Spec: Route row stats
+
+Purpose:
+  What one row of the History comparison sheet shows.
+
+Owns:
+  ./route_row_stats.dart
+  /test/domain/route_row_stats_test.dart
+
+References:
+  /docs/specs/history/20-followed-rides.md
+
+Must:
+  A follow with coverage and route time shows its route part: route length times coverage, capped at the ride
+    distance, its time on the route and the average over those.
+  The rest of the ride shows as an off-route hint from `100` m on.
+  The original, or an older follow without those values, shows the whole ride.

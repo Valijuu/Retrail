@@ -1,0 +1,20 @@
+Spec: Countdown cue
+
+Purpose:
+  Which countdown seconds are announced by voice.
+
+Owns:
+  ./countdown_cue.dart
+  /test/domain/countdown_cue_test.dart
+
+References:
+  /docs/specs/history/21-countdown-cue.md
+
+Must:
+  Seconds `5` down to `1` are announced.
+  Zero and everything above `5` get no cue; the start cue comes from the ride start.
+
+Example:
+  `@countdownCueFor(5)`: `5`
+  `@countdownCueFor(6)`: `null`
+  `@countdownCueFor(0)`: `null`

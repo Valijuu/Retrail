@@ -1,0 +1,43 @@
+Spec: Follow tracker
+
+Purpose:
+  Follows a reference route in either direction: decides the direction, tracks progress and the ridden parts,
+    handles loops, pass jumps and the manual flip.
+
+Owns:
+  ./follow_tracker.dart
+  /test/domain/follow_tracker_test.dart
+  /test/domain/follow_tracker_scenarios_test.dart
+  /test/domain/support/follow_scenarios_baseline.dart
+  /test/domain/support/real_rides.dart
+  /test/domain/support/sim_coverage.dart
+  /test/domain/support/sim_metrics.dart
+  /test/domain/support/sim_noise.dart
+  /test/domain/support/sim_route.dart
+
+References:
+  ./follow_direction.sdd
+  ./follow_join.sdd
+  ./follow_progress.sdd
+  ./follow_lap.sdd
+  ./follow_flip.sdd
+  /docs/specs/history/17-follow-route.md
+  /docs/specs/history/18-follow-reverse.md
+
+Must:
+  A join within `30` m of the first point is forward and within `30` m of the last point is reverse;
+    a loop or a join elsewhere stays undecided until the rider has moved `35` m along the route.
+  Once decided, the direction is never re-detected automatically.
+  While undecided, the route shows unchanged with nothing ridden and its full length to go.
+  Only what was actually ridden since the join is ridden; a shortcut starts a new ridden part.
+  A loop is tracked over two laps; to go is one lap from the join and the finish needs `90` % of the lap
+    and the rider within `30` m of the join.
+  The recorded track is never affected.
+
+Must not:
+  Re-detect the direction after it is decided.
+
+Done when:
+  The seeded scenario suite passes its gate tiers: no failing run without noise, at most `2` % for uniform
+    and correlated noise, at most `5` % for Gaussian sigma 5.
+  The stress tier (Gaussian sigma 8) stays at or below `15` % and the committed baseline plus three runs.

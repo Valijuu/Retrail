@@ -1,0 +1,17 @@
+Spec: Route group
+
+Purpose:
+  An original ride and the rides that followed it, split for the comparison sheet.
+
+Owns:
+  ./route_group.dart
+  /test/domain/route_group_test.dart
+
+References:
+  /docs/specs/history/20-followed-rides.md
+
+Must:
+  A follow is complete at a coverage of `0.9` or more; a missing coverage is partial.
+  The best time is the shortest positive duration among the original and complete follows,
+    shown only when at least two compete; a tie keeps the older ride.
+  A follow competes with its time on the route; the original competes with its whole duration.

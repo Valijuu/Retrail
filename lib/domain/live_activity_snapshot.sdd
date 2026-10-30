@@ -1,0 +1,21 @@
+Spec: Live Activity snapshot
+
+Purpose:
+  What the iOS Live Activity shows for the active ride and when a new snapshot is worth pushing.
+
+Owns:
+  ./live_activity_snapshot.dart
+  /test/domain/live_activity_snapshot_test.dart
+
+References:
+  /docs/specs/history/06-live-activity.md
+
+Must:
+  The content carries title, distance text, paused flag, elapsed seconds and the snapshot epoch.
+  The title is the paused or recording title chosen by the paused flag.
+  The first snapshot is always pushed.
+  A later snapshot is pushed only when the distance text, paused flag or title changes, when the widget's own
+    elapsed count drifts from the ride's by more than one second, or after 10 minutes as a keep-alive.
+
+Must not:
+  Push for ticking elapsed time alone; the widget counts it natively.

@@ -1,0 +1,18 @@
+Spec: Fallback speed
+
+Purpose:
+  Display speed from two fixes when the GPS provider reports none, as iOS does while standing still.
+
+Owns:
+  ./fallback_speed.dart
+  /test/domain/fallback_speed_test.dart
+
+Must:
+  Non-positive elapsed time gives no speed.
+  A fix coarser than the accuracy limit gives no speed.
+  Movement within the larger accuracy radius of the two fixes reads as `0`.
+  An implied speed above the caller's maximum gives no speed.
+  Thresholds come from the caller.
+
+Must not:
+  Feed recorded speeds; it is display only.

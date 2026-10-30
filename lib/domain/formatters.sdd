@@ -1,0 +1,26 @@
+Spec: Formatters
+
+Purpose:
+  Locale-aware text for durations, ride dates, day keys, history day labels and distances.
+
+Owns:
+  ./formatters.dart
+  /test/domain/formatters_test.dart
+  /test/domain/date_label_test.dart
+
+References:
+  /docs/specs/history/04-domain.md
+  /docs/specs/history/17-follow-route.md
+
+Must:
+  Durations show `H:MM:SS` from one hour on, else `MM:SS`.
+  Ride dates show `dd.MM.yyyy  HH:mm` and ride times `HH:mm`; a missing time shows `—`.
+  Day keys are `yyyy-MM-dd`; a missing time gives `0000-00-00`.
+  History day labels read today, yesterday or a localized `yMMMMd` date that always includes the year;
+    an unparsable key falls back to the key itself.
+  The distance to a route shows whole metres below 1 km and `X.XX km` from there on.
+  Localized words such as today and yesterday are passed in by the caller.
+
+Example:
+  `3599` s: `59:59`
+  `3600` s: `1:00:00`

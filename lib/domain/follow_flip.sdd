@@ -1,0 +1,16 @@
+Spec: Follow flip
+
+Purpose:
+  The manual direction flip. Part of the follow tracker.
+
+Owns:
+  ./follow_flip.dart
+
+References:
+  ./follow_tracker.sdd
+  /docs/specs/history/18-follow-reverse.md
+
+Must:
+  While undecided, a flip forces reverse from the join.
+  Once decided, a flip is a correction when the travel since the join runs forward in the new orientation,
+    otherwise a U-turn; a U-turn on a loop starts a fresh lap and keeps the ridden range.

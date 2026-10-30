@@ -1,0 +1,15 @@
+Spec: Follow lap
+
+Purpose:
+  Progress shown, one lap from the join on a loop, and the ridden parts. Part of the follow tracker.
+
+Owns:
+  ./follow_lap.dart
+
+References:
+  ./follow_tracker.sdd
+  /docs/specs/history/18-follow-reverse.md
+
+Must:
+  A finished lap stays latched until a flip.
+  A ridden range only grows while the rider is on the route.

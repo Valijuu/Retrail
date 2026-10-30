@@ -1,0 +1,16 @@
+Spec: Follow coverage
+
+Purpose:
+  Share of a route that a follow covered, stored with a linked ride.
+
+Owns:
+  ./follow_coverage.dart
+  /test/domain/follow_coverage_test.dart
+
+References:
+  /docs/specs/history/20-followed-rides.md
+
+Must:
+  Coverage is the union of the ridden intervals clipped to the route, divided by its length, from `0` to `1`.
+  Parts ridden twice count once.
+  A route without length has coverage `0`.

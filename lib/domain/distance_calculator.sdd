@@ -1,0 +1,18 @@
+Spec: Distance calculator
+
+Purpose:
+  Distance in metres between two coordinates, behind a seam that tests can fake.
+
+Owns:
+  ./distance_calculator.dart
+  /test/domain/distance_calculator_test.dart
+
+References:
+  /docs/specs/history/04-domain.md
+
+Must:
+  @HaversineDistanceCalculator uses the Haversine formula with an Earth radius of `6371000` m.
+  The distance is symmetric and `0` for identical points.
+
+Example:
+  one degree of longitude at the equator: about `111` km

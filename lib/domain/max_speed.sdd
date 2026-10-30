@@ -1,0 +1,12 @@
+Spec: Max speed
+
+Purpose:
+  Live top speed of the current ride, owned by the process-lifetime tracker so it survives screen rebuilds.
+
+Owns:
+  ./max_speed.dart
+  /test/domain/max_speed_test.dart
+
+Must:
+  Top speed resets to `0` when not tracking.
+  While tracking and not paused it only grows.
