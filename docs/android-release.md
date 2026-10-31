@@ -87,6 +87,13 @@ bundle is signed with the upload key above (`CN=Valijuu`), not
 (used for 1.0.1+2; 1.1.0+3 to 1.3.1+8 were built with `tool/build_release.sh`). Upload that file in the Play Console. Bump
 `version:` in `pubspec.yaml` (the `+N` build number) for every upload.
 
+## Orientation
+
+Retrail is portrait-only on purpose (#84). The lock lives in
+`AndroidManifest.xml` (`screenOrientation="portrait"`) and in `lib/main.dart`
+(`setPreferredOrientations`). Android 16+ ignores the lock on tablets and
+foldables; we accept that because the app targets phones.
+
 ## Play Console state
 
 Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.
