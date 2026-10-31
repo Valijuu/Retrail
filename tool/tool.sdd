@@ -9,6 +9,7 @@ Owns:
   ./build_map_styles.dart
   ./ios_fetch_build.sh
   ./render_store_graphics.sh
+  ./check_raw_sql.py
   ./demo_rides
 
 References:
@@ -24,3 +25,6 @@ Must:
   `ios_fetch_build.sh` pulls a green CI build to `~/Downloads/retrail-ios/` and can install it on a connected iPhone.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   Demo rides contain invented routes only.
+  `check_raw_sql.py` fails when a Drift `custom*` call (`customSelect`, `customStatement`, `customUpdate`,
+    `customInsert`, `customWriteReturning`) gets SQL that is not a plain literal (`$`, `+`, a variable).
+    It runs in `.githooks/pre-commit`. An exception needs `// sql-ok: <reason>` on the call line.
