@@ -24,7 +24,7 @@ works in every project. Its skills fire on their own when a request matches; you
 ## Retrail-specific behaviour
 
 - Every skill reads `.specdd/bootstrap.project.md`, so Retrail's project rules apply.
-- For pure logic in `lib/domain/`, implementation and test derivation go through EXACT (`tdd-dart`), not
+- For pure logic in `lib/domain/`, implementation and test derivation go through EXACT (`vaju:tdd-dart`, plugin `vaju`), not
   `specdd-do` or `specdd-test`.
 - Widgets, providers and DAOs follow Red-Green-Refactor. Platform code gets its tests alongside the
   implementation.

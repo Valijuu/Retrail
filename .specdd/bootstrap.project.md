@@ -25,9 +25,9 @@ live in the `.sdd` files (root: `/retrail.sdd`); this file holds the working pro
 Pick the test discipline by the target, before writing code:
 
 - **Pure logic in `/lib/domain/` → EXACT.** Side-effect-free input → output logic with no widget tree,
-  Riverpod wiring, Drift database or network access. `Change` runs the global `tdd-dart` workflow and
-  nothing else: `Skill({ skill: "tdd-dart" })` → `/test-list-dart` → `/red-dart` → `/green-dart` →
-  `refactor` subagent → final Opus review.
+  Riverpod wiring, Drift database or network access. `Change` runs the global `vaju:tdd-dart` workflow (plugin `vaju`) and
+  nothing else: `Skill({ skill: "vaju:tdd-dart" })` → `/vaju:test-list-dart` → `/vaju:red-dart` → `/vaju:green-dart` →
+  `vaju:refactor` subagent → final Opus review.
   - The test list comes from the governing spec: every `Scenario` and every `Example` becomes at least
     one test; `Must` and `Must not` add the boundary cases.
   - Do not use SpecDD's own test-derivation or implement skills for these targets.
@@ -70,6 +70,7 @@ Every change that alters behaviour updates the governing spec in the same commit
 - Run `dart format` on every changed Dart file (default tall style, no formatter config). The
   `.githooks/pre-commit` hook rejects unformatted staged Dart files (`git config core.hooksPath .githooks`);
   formatting-only commits go into `.git-blame-ignore-revs`.
+- The `.githooks/pre-commit` hook also runs `gitleaks git --staged` (this repo's `core.hooksPath` bypasses the global hook); the repository is public, so no secret or real location data may be committed. Install gitleaks via `claude-config/bootstrap`.
 - Commit messages follow Conventional Commits in English: `type(scope): summary`.
 - `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone hides formatting-only commits in blame.
 - Stage only your own files; other tools edit `README.md` and `.claude/`.
@@ -84,7 +85,7 @@ Every change that alters behaviour updates the governing spec in the same commit
 
 ## Debugging
 
-Use the `root-cause-debugging` skill when a bug spans several files, is intermittent, has several plausible
+Use the `superpowers:systematic-debugging` skill when a bug spans several files, is intermittent, has several plausible
 causes or a quick fix already failed; when unsure, use it. Fix trivial single-file bugs directly with a short
 explanation.
 
