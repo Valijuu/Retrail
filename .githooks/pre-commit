@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
-# Refuses a commit whose staged Dart files are not `dart format`ted (#59).
+# Refuses a commit that contains secrets (gitleaks) or staged Dart files that are not `dart format`ted (#59).
 # Checks the staged content, not the working tree. Fix with:
 #   dart format <files>  &&  git add <files>
 # Skip once: git commit --no-verify
+
+# Secret scan (gitleaks): this repo's core.hooksPath bypasses the global hook, so call it here.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --staged --no-banner --redact -v || {
+    echo "pre-commit: gitleaks found possible secrets. Remove them (rotate if real); false positives go into .gitleaksignore." >&2
+    exit 1
+  }
+else
+  echo "pre-commit: gitleaks not installed, secret scan skipped." >&2
+fi
 
 command -v dart >/dev/null 2>&1 || exit 0
 
