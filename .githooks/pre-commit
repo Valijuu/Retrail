@@ -17,6 +17,17 @@ fi
 # Raw SQL must be a fixed literal with Variable arguments (no $-interpolation, no +, no variables).
 command -v python3 >/dev/null 2>&1 && { python3 "$(git rev-parse --show-toplevel)/tool/check_raw_sql.py" || exit 1; }
 
+# Global SQL-injection check for every language (claude-config). This repo's core.hooksPath bypasses the
+# global dispatcher, so call it here as well.
+guard="$HOME/.config/git/sql-guard.py"
+if [ -f "$guard" ] && command -v python3 >/dev/null 2>&1; then
+  mapfile -t staged_all < <(git diff --cached --name-only --diff-filter=ACMR)
+  if [ ${#staged_all[@]} -gt 0 ] && ! python3 "$guard" "${staged_all[@]}"; then
+    echo "pre-commit: possible SQL injection in staged changes." >&2
+    exit 1
+  fi
+fi
+
 command -v dart >/dev/null 2>&1 || exit 0
 
 mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR -- '*.dart')
