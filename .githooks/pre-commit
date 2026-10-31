@@ -1,36 +1,23 @@
 #!/usr/bin/env bash
-# Refuses a commit that contains secrets (gitleaks) or staged Dart files that are not `dart format`ted (#59).
+# Refuses a commit with secrets or SQL injection (claude-config checks), unsafe Drift raw SQL, or staged Dart
+# files that are not `dart format`ted (#59).
 # Checks the staged content, not the working tree. Fix with:
 #   dart format <files>  &&  git add <files>
 # Skip once: git commit --no-verify
 
-# Secret scan (gitleaks): this repo's core.hooksPath bypasses the global hook, so call it here.
-if command -v gitleaks >/dev/null 2>&1; then
-  gitleaks git --staged --no-banner --redact -v || {
-    echo "pre-commit: gitleaks found possible secrets. Remove them (rotate if real); false positives go into .gitleaksignore." >&2
-    exit 1
-  }
-else
-  echo "pre-commit: gitleaks not installed, secret scan skipped." >&2
-fi
+# Security checks from claude-config (gitleaks, sql-guard, semgrep), fail closed. This repo's core.hooksPath
+# bypasses the global dispatcher, so call them here.
+checks="$HOME/.config/git/precommit-checks"
+[ -x "$checks" ] || { echo "pre-commit: $checks is missing (install claude-config/bootstrap). Commit blocked." >&2; exit 1; }
+"$checks" || exit 1
 
-# Raw SQL must be a fixed literal with Variable arguments (no $-interpolation, no +, no variables).
+# Drift raw SQL must be a fixed literal with Variable arguments. Checks the staged Dart files, exported from the index.
 command -v python3 >/dev/null 2>&1 || { echo "pre-commit: python3 missing, raw-SQL check cannot run. Commit blocked." >&2; exit 1; }
-python3 "$(git rev-parse --show-toplevel)/tool/check_raw_sql.py" || exit 1
-
-# Global SQL-injection check for every language (claude-config). This repo's core.hooksPath bypasses the
-# global dispatcher, so call it here as well.
-guard="$HOME/.config/git/sql-guard.py"
-py="$(command -v python3 || command -v python || true)"
-if [ ! -f "$guard" ] || [ -z "$py" ]; then
-  echo "pre-commit: SQL-injection check cannot run (needs python3 and ~/.config/git/sql-guard.py from claude-config). Commit blocked." >&2
-  exit 1
-fi
-mapfile -t staged_all < <(git diff --cached --name-only --diff-filter=ACMR)
-if [ ${#staged_all[@]} -gt 0 ] && ! "$py" "$guard" "${staged_all[@]}"; then
-  echo "pre-commit: possible SQL injection in staged changes." >&2
-  exit 1
-fi
+root="$(git rev-parse --show-toplevel)"
+sql_tmp="$(mktemp -d)"; trap 'rm -rf "$sql_tmp"' EXIT INT TERM
+git diff --cached --name-only -z --diff-filter=ACMR -- '*.dart' | git checkout-index -z --stdin --prefix="$sql_tmp/" \
+  || { echo "pre-commit: could not export staged Dart files for the raw-SQL check. Commit blocked." >&2; exit 1; }
+python3 "$root/tool/check_raw_sql.py" "$sql_tmp" || exit 1
 
 command -v dart >/dev/null 2>&1 || exit 0
 
