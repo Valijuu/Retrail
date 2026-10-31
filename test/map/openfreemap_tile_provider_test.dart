@@ -291,6 +291,15 @@ void main() {
     expect(await p.tile(14, 8675, 5426, ui.Brightness.light), isNull);
   });
 
+  test('a paint failure gives null instead of throwing', () async {
+    final p = OpenFreeMapTileProvider(
+      client: _Server().client,
+      loadAsset: _asset,
+      pixelRatio: 0, // a 0 px picture cannot be rasterised
+    );
+    expect(await p.tile(14, 8675, 5426, ui.Brightness.light), isNull);
+  });
+
   test('a hung request times out to null', () async {
     final p = OpenFreeMapTileProvider(
       client: MockClient(

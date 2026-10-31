@@ -48,7 +48,7 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
       final source = overzoomTile(z, x, y, maxZoom: tileJson.maxZoom);
       final vectorTile = await _vectorTile(tileJson, source);
       final theme = await _theme(brightness);
-      return _paint(vectorTile, theme, source, z);
+      return await _paint(vectorTile, theme, source, z);
     } catch (_) {
       return null;
     }
