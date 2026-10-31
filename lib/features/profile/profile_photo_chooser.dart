@@ -22,42 +22,51 @@ class ProfilePhotoChooser extends ConsumerWidget {
     final recent =
         ref.watch(recentProfilePhotosProvider).asData?.value ?? const [];
 
+    // Centred under the avatar; shrinkWrap keeps a lone upload slot in the
+    // middle instead of pinned to the left edge (#86).
     return SizedBox(
       height: 84,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          // Upload slot.
-          Semantics(
-            button: true,
-            label: l10n.profilePictureUploadCd,
-            child: GestureDetector(
-              onTap: manager.addNewPhoto,
-              child: Container(
-                width: 64,
-                height: 64,
-                margin: const EdgeInsets.only(right: 12, top: 4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surfaceContainer,
-                  border: Border.all(
-                    color: colors.onSurfaceVariant.withValues(alpha: 0.2),
+      child: Center(
+        child: ListView(
+          shrinkWrap: true,
+          scrollDirection: Axis.horizontal,
+          children: [
+            // Upload slot.
+            Semantics(
+              button: true,
+              label: l10n.profilePictureUploadCd,
+              child: GestureDetector(
+                onTap: manager.addNewPhoto,
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  margin: const EdgeInsets.only(right: 12, top: 4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.surfaceContainer,
+                    border: Border.all(
+                      color: colors.onSurfaceVariant.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.add_a_photo,
+                    color: colors.primary,
+                    size: 22,
                   ),
                 ),
-                child: Icon(Icons.add_a_photo, color: colors.primary, size: 22),
               ),
             ),
-          ),
-          for (final path in recent)
-            _RecentPhoto(
-              path: path,
-              selected: path == current,
-              colors: colors,
-              deleteLabel: l10n.profilePictureDeleteCd,
-              onSelect: () => manager.select(path),
-              onDelete: () => manager.delete(path),
-            ),
-        ],
+            for (final path in recent)
+              _RecentPhoto(
+                path: path,
+                selected: path == current,
+                colors: colors,
+                deleteLabel: l10n.profilePictureDeleteCd,
+                onSelect: () => manager.select(path),
+                onDelete: () => manager.delete(path),
+              ),
+          ],
+        ),
       ),
     );
   }
