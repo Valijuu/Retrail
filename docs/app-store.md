@@ -1,0 +1,84 @@
+# Apple App Store: preparation and release plan
+
+Counterpart to `docs/play-store.md`. Android is in production; this file tracks what iOS
+needs. Keep it in sync with `site/privacy/index.html` and the privacy manifest
+(`ios/Runner/PrivacyInfo.xcprivacy`).
+
+## Status
+
+| Done in the repo | Needs the paid Apple account | Needs a person |
+|---|---|---|
+| iPhone only (`TARGETED_DEVICE_FAMILY = 1`, no iPad orientations) | Apple Developer Program (99 USD/year) | iPhone screenshots 6.9" |
+| Privacy manifest (no tracking, coarse location for map tiles) | App ID `io.github.valijuu.retrail` + `…RideActivity` | App Store texts pasted into App Store Connect |
+| `ITSAppUsesNonExemptEncryption = false` | Distribution certificate + App Store profiles (app + extension) | Age rating, privacy label, review notes |
+| Live Activity extension already embedded | App Store Connect API key, then CI signing + upload | Device test of the signed build (TestFlight) |
+
+Until the account exists, `tool/ios_fetch_build.sh` (free Apple ID, 7-day signature) stays the
+only way to run the app on an iPhone. It cannot upload to the App Store.
+
+## Release path without a Mac
+
+There is no Mac, so signing and upload run on the GitHub macOS runner, like the unsigned build.
+
+1. Create the App IDs and a distribution certificate in the Developer portal. The certificate
+   request can be made on Linux with `openssl`.
+2. Create an **App Store Connect API key** (role App Manager). Store key id, issuer id and the
+   `.p8` as repository secrets, never in the repo.
+3. A new workflow (`ios-release.yml`, manual trigger only) builds `flutter build ipa
+   --export-options-plist …`, signs both targets with the stored profiles and uploads to
+   TestFlight (`xcrun altool --upload-app` with the API key).
+4. Test the TestFlight build on the iPhone, then submit it for review in App Store Connect.
+
+The unsigned CI build stays as the compile gate.
+
+## Privacy label (App Store Connect → App Privacy)
+
+Same facts as the Play Data safety form: only map tile requests to OpenFreeMap leave the device,
+and they reveal the viewed area. Rides, GPS points, profile and settings stay on the device.
+
+| Question | Answer |
+|---|---|
+| Data collected | **Coarse Location** only |
+| Linked to the user | No |
+| Used for tracking | No |
+| Purpose | App Functionality |
+
+Privacy policy URL: https://valijuu.github.io/Retrail/privacy/ (the policy must name iOS and
+the Live Activity, check before submitting).
+
+## App Review notes (draft)
+
+> Retrail records skate and longboard rides with GPS. No account or login is needed.
+> Location (While Using, then Always) is used for recording the route while the screen is off;
+> recording only runs after the user starts a ride and shows the system location indicator.
+> The audio background mode is used only to speak the 5-second countdown before a ride starts
+> (text-to-speech, no music or recording). A Live Activity on the lock screen shows the running
+> ride with Pause/Stop buttons. To test without moving: Xcode/Simulator, Features → Location →
+> City Run, then start a ride from Home.
+
+Apple often questions `location` and `audio` background modes. The notes above are the answer.
+
+## Age rating
+
+No objectionable content, no web access beyond the map, no user-generated content shared:
+expected **4+**. Fill the questionnaire in App Store Connect with "None" everywhere.
+
+## Listing
+
+- Name, subtitle (30), promotional text, description, keywords (100 characters, comma
+  separated): derive from the Play texts in `store/play/text/` and shorten. Apple has a keyword
+  field, so the keyword list replaces the Play keyword table.
+- Category: Sports (secondary: Health & Fitness).
+- Screenshots: 6.9" iPhone (1320 × 2868) is required, the rest are scaled from it. German and
+  English sets. Take them from the signed build or the Simulator. Never use real routes (see
+  the repo rule on location data).
+- Support URL and marketing URL: the GitHub Pages site. Support contact: retrail.app@proton.me.
+- Price: free. Paid features later need the Paid Apps agreement and the trader status (#67).
+
+## Open points
+
+- Trader status (DSA) is asked in App Store Connect for EU distribution (#67).
+- Live Activity buttons need iOS 17 and cannot be tested on the iPhone 8 (iOS 16.7); check them
+  on a newer device or the Simulator before submitting.
+- Deployment target of the app is iOS 13, the extension is 16.1. Decide whether to raise the
+  app target to 16.1 (simpler, drops iOS 13–15).

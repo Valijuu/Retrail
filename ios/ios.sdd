@@ -24,6 +24,7 @@ References:
   /docs/specs/history/06-live-activity.md
   /docs/specs/history/05b-gps-platform.md
   /docs/ios-sideloading.md
+  /docs/app-store.md
 
 Must:
   Bundle ID is `io.github.valijuu.retrail`; the extension is `io.github.valijuu.retrail.RideActivity`.
@@ -36,6 +37,9 @@ Must:
   The extension never links Flutter.
   In the Runner target, "Embed Foundation Extensions" comes before "Run Script".
   Background modes include `location` and `audio`.
+  The app targets iPhone only (`TARGETED_DEVICE_FAMILY = 1`).
+  `Runner/PrivacyInfo.xcprivacy` declares no tracking and only coarse location for map tiles, matching
+    the privacy policy and /docs/app-store.md.
 
 Must not:
   Rely on a local Mac; builds run only on GitHub Actions and the Xcode project is edited by hand.

@@ -59,10 +59,6 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
 	<!-- Location: foreground GPS recording now; background recording lit up in
 	     Spec 5B. Default (EN) copy here; DE copy in de.lproj/InfoPlist.strings. -->
 	<key>NSLocationWhenInUseUsageDescription</key>
@@ -111,5 +107,9 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<!-- Only HTTPS via the OS (exempt encryption): answers App Store Connect's
+	     export-compliance question once instead of on every upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
