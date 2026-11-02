@@ -8,6 +8,7 @@ Owns:
   ./build_release.sh
   ./build_map_styles.dart
   ./ios_fetch_build.sh
+  ./ios_screenshots.sh
   ./render_store_graphics.sh
   ./check_raw_sql.py
   ./demo_rides
@@ -15,6 +16,7 @@ Owns:
 References:
   /docs/android-release.md
   /docs/ios-sideloading.md
+  /docs/app-store.md
   /docs/specs/history/19-openfreemap.md
 
 Must:
@@ -23,8 +25,15 @@ Must:
   `build_map_styles.dart` regenerates `/assets/map` from OpenFreeMap Liberty and Dark and fails when a
     layer it recolours no longer exists upstream.
   `ios_fetch_build.sh` pulls a green CI build to `~/Downloads/retrail-ios/` and can install it on a connected iPhone.
+  `ios_screenshots.sh` runs only on a macOS runner (`ios-screenshots.yml`), takes App Store shots in a 6.9" iPhone
+    simulator and fails when a shot is not `1320 x 2868` px.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   Demo rides contain invented routes only.
   `check_raw_sql.py` fails when a Drift `custom*` call (`customSelect`, `customStatement`, `customUpdate`,
     `customInsert`, `customWriteReturning`) gets SQL that is not a plain literal (`$`, `+`, a variable).
     It runs in `.githooks/pre-commit`. An exception needs `// sql-ok: <reason>` on the call line.
+
+Tasks:
+  [ ] #87 Run `ios-screenshots.yml` once and fix what breaks (simulator names, prefs seeding, DB path, map load time).
+  [ ] #87 Capture the other motives with `integration_test/store_screenshots_test.dart`.
+  [ ] #87 Frame the shots for 1320 x 2868 (iOS variant of `store/play/screenshot_frame.html`).

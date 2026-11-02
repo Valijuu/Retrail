@@ -1,0 +1,62 @@
+# App Store screenshots from the iOS Simulator on a macOS runner — there is no
+# Mac (docs/app-store.md). Manual trigger only. The shots show the invented demo
+# rides on Tempelhofer Feld (tool/demo_rides), never real location data, so the
+# artifact needs no encryption (unlike the sideload build in ios-build.yml).
+name: iOS screenshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    # macos-26 for the same Xcode 26 reason as ios-build.yml.
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.3
+          cache: true
+
+      - name: Enable Swift Package Manager
+        run: flutter config --enable-swift-package-manager
+
+      - run: flutter pub get
+
+      # Rides with titles in the shot's language, plus followed rides for the
+      # comparison sheet. Writes build/demo_rides/retrail_<lang>.sqlite.
+      - name: Build demo databases
+        run: |
+          set -euo pipefail
+          RETRAIL_DEMO_FOLLOWS=1 RETRAIL_DEMO_LANG=en flutter test tool/demo_rides/build_demo_db_test.dart
+          RETRAIL_DEMO_FOLLOWS=1 RETRAIL_DEMO_LANG=de flutter test tool/demo_rides/build_demo_db_test.dart
+
+      # Simulator builds are debug only; release is not supported there.
+      - name: Build simulator app
+        run: flutter build ios --simulator --debug
+
+      - name: Take screenshots
+        run: |
+          set -euo pipefail
+          for lang in en de; do
+            for theme in light dark; do
+              tool/ios_screenshots.sh "${lang}" "${theme}" build/ios_screenshots
+            done
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: retrail-ios-screenshots-${{ github.run_number }}
+          path: build/ios_screenshots/*.png
+          retention-days: 7
+          if-no-files-found: error

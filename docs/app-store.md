@@ -100,10 +100,27 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   field, so the keyword list replaces the Play keyword table.
 - Category: Sports (secondary: Health & Fitness).
 - Screenshots: 6.9" iPhone (1320 × 2868) is required, the rest are scaled from it. German and
-  English sets. Take them from the signed build or the Simulator. Never use real routes (see
-  the repo rule on location data).
+  English sets. Never use real routes (see the repo rule on location data).
+  There is no Mac, so the shots come from the iOS Simulator on the GitHub macOS runner:
+  workflow `ios-screenshots.yml` (manual) builds the demo databases and a simulator app and runs
+  `tool/ios_screenshots.sh` (invented Tempelhofer Feld rides, 9:41 status bar, light and dark,
+  `1320 × 2868` checked). The Play shots (1080 × 1920, Android UI) cannot be reused, only their motive
+  list in `store/play/screenshots.tsv` and the framing idea.
+  **Scaffold state:** only the home screen is captured. The simulator cannot tap from the command
+  line, so the other motives need an `integration_test` that navigates and captures (or `idb`), and
+  the Live Activity shot needs a started ride with the lock screen captured. Framing (`screenshot_frame.html`)
+  still has to be adapted to 1320 × 2868.
 - Support URL and marketing URL: the GitHub Pages site. Support contact: retrail.app@proton.me.
 - Price: free. Paid features later need the Paid Apps agreement and the trader status (#67).
+
+## Screenshot automation: where we stopped (2026-11-02)
+
+Tracked in #87, branch `feature/ios-screenshots` (local, not pushed, workflow never run).
+Done: workflow, `tool/ios_screenshots.sh` (home screen only), docs and spec. Next: first run on the
+runner, then the other motives via `integration_test/store_screenshots_test.dart` (in-process
+provider overrides, shot markers on stdout that the script answers with `simctl io screenshot`),
+then the iOS frame at 1320 x 2868. The Live Activity lock-screen shot is not automated. Full plan
+and the unverified assumptions are in the issue.
 
 ## Open points
 
