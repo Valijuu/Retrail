@@ -51,16 +51,21 @@ xcrun simctl launch "${UDID}" "${BUNDLE}" >/dev/null
 sleep 5
 xcrun simctl terminate "${UDID}" "${BUNDLE}"
 
-# Seed: the shared_preferences keys carry the "flutter." prefix on iOS. Written
-# through the simulator's own cfprefsd, with the app not running.
-defaults_write() { xcrun simctl spawn "${UDID}" defaults write "${BUNDLE}" "$@"; }
-defaults_write flutter.user_name -string "Retrailer"
-defaults_write flutter.onboarding_done -bool true
-defaults_write flutter.app_language -string "${LANG_CODE}"
-defaults_write flutter.theme_mode -string "${THEME}"
-defaults_write flutter.battery_hint_dismissed -bool true
 
 DATA="$(xcrun simctl get_app_container "${UDID}" "${BUNDLE}" data)"
+
+# Seed: the shared_preferences keys carry the "flutter." prefix on iOS. They go
+# straight into the app's container plist, with the app not running. A
+# `simctl spawn defaults write` lands in the simulator's own domain instead, and
+# the app then starts in onboarding (run 41615367688, English, no rides).
+PREFS="${DATA}/Library/Preferences/${BUNDLE}"
+mkdir -p "${DATA}/Library/Preferences"
+defaults write "${PREFS}" flutter.user_name -string "Retrailer"
+defaults write "${PREFS}" flutter.onboarding_done -bool true
+defaults write "${PREFS}" flutter.app_language -string "${LANG_CODE}"
+defaults write "${PREFS}" flutter.theme_mode -string "${THEME}"
+defaults write "${PREFS}" flutter.battery_hint_dismissed -bool true
+test "$(defaults read "${PREFS}" flutter.onboarding_done)" = 1 || { echo "prefs not seeded" >&2; exit 1; }
 rm -f "${DATA}/Documents/retrail.sqlite"{,-wal,-shm}
 cp "${DEMO_DB}" "${DATA}/Documents/retrail.sqlite"
 
