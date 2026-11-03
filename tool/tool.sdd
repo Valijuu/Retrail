@@ -10,6 +10,7 @@ Owns:
   ./ios_fetch_build.sh
   ./ios_screenshots.sh
   ./render_store_graphics.sh
+  ./render_ios_store_graphics.sh
   ./check_raw_sql.py
   ./demo_rides
 
@@ -36,4 +37,3 @@ Must:
 Tasks:
   [ ] #87 Run `ios-screenshots.yml` once and fix what breaks (simulator names, prefs seeding, DB path, map load time).
   [ ] #87 Capture the other motives with `integration_test/store_screenshots_test.dart`.
-  [ ] #87 Frame the shots for 1320 x 2868 (iOS variant of `store/play/screenshot_frame.html`).

@@ -108,8 +108,9 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   list in `store/play/screenshots.tsv` and the framing idea.
   **Scaffold state:** only the home screen is captured. The simulator cannot tap from the command
   line, so the other motives need an `integration_test` that navigates and captures (or `idb`), and
-  the Live Activity shot needs a started ride with the lock screen captured. Framing (`screenshot_frame.html`)
-  still has to be adapted to 1320 × 2868.
+  the Live Activity shot needs a started ride with the lock screen captured. Framing is done:
+  `tool/render_ios_store_graphics.sh` and `store/ios/screenshot_frame.html` (1320 × 2868, captions from
+  `store/ios/screenshots.tsv`).
 - Support URL and marketing URL: the GitHub Pages site. Support contact: retrail.app@proton.me.
 - Price: free. Paid features later need the Paid Apps agreement and the trader status (#67).
 

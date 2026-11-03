@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- Frame for the App Store 6.9" iPhone screenshots (1320 x 2868): tag, caption
+     and subline on top, the raw Simulator shot below in a slim phone outline,
+     cut off at the bottom edge. The shot already carries the iOS status bar
+     (9:41) and the Dynamic Island, so there is no drawn bezel.
+     Rendered by tool/render_ios_store_graphics.sh with
+       ?bg=cream|peach|dark&tag=…&title=…&sub=…&img=…
+     Colours are the AppColors tokens (lib/core/theme/app_colors.dart). -->
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Roboto:wght@500&display=block" rel="stylesheet">
+<style>
+  :root { --bg: #FFEDD5; --title: #431407; --accent: #B45309; --sub: #431407;
+          --tag-bg: #B45309; --tag: #FFFFFF; --edge: #1C1B1F; --shadow: rgba(67,20,7,.30); }
+  :root[data-bg="peach"] { --bg: #FFD9AE; }
+  :root[data-bg="dark"] { --bg: #2B2118; --title: #F3EDE8; --accent: #F59E42; --sub: #F3EDE8;
+                          --tag-bg: #F59E42; --tag: #431407; --shadow: rgba(0,0,0,.55); --edge: #5A4A3E; }
+  html, body { margin: 0; width: 1320px; height: 2868px; overflow: hidden; background: var(--bg); }
+  body { font-family: Roboto, sans-serif; position: relative; }
+  .copy { position: absolute; left: 90px; right: 90px; top: 170px; text-align: center; }
+  .tag { display: inline-block; margin-bottom: 38px; padding: 18px 44px; border-radius: 999px;
+         font: 600 49px Fredoka, sans-serif; background: var(--tag-bg); color: var(--tag); }
+  h1 { margin: 0; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 127px;
+       line-height: 1.02; letter-spacing: -1px; color: var(--title); }
+  h1 em { font-style: normal; color: var(--accent); }
+  .sub { margin-top: 30px; font-size: 59px; font-weight: 500; line-height: 1.25; color: var(--sub); opacity: .85; }
+  .phone { position: absolute; left: 190px; top: 960px; width: 940px; }
+  .phone img { display: block; width: 100%; border-radius: 120px 120px 0 0;
+               box-shadow: 0 0 0 10px var(--edge), 0 36px 96px var(--shadow); }
+</style>
+</head>
+<body>
+  <div class="copy">
+    <div class="tag" id="tag"></div>
+    <h1 id="title"></h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="phone"><img id="img" alt=""></div>
+  <script>
+    const q = new URLSearchParams(location.search);
+    document.documentElement.dataset.bg = q.get('bg') || 'cream';
+    document.getElementById('tag').textContent = q.get('tag');
+    document.getElementById('title').innerHTML = q.get('title');
+    document.getElementById('sub').textContent = q.get('sub');
+    document.getElementById('img').src = q.get('img');
+  </script>
+</body>
+</html>
