@@ -36,6 +36,7 @@ Must:
     `simctl io screenshot` and acks with a file in the app's Documents. The script fails when a motive's
     shot is missing, has the wrong size or lacks its expected text in the shot's language.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
+  `render_ios_store_graphics.sh` frames the Simulator shots for the App Store (1320 x 2868) the same way: caption, phone, optional second phone (light + dark) and an enlarged excerpt, listed in `store/ios/screenshots.tsv`.
   Demo rides contain invented routes only.
   `check_raw_sql.py` fails when a Drift `custom*` call (`customSelect`, `customStatement`, `customUpdate`,
     `customInsert`, `customWriteReturning`) gets SQL that is not a plain literal (`$`, `+`, a variable).
