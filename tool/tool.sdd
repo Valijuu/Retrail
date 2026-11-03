@@ -9,6 +9,7 @@ Owns:
   ./build_map_styles.dart
   ./ios_fetch_build.sh
   ./ios_screenshots.sh
+  ./ios_screen_text.swift
   ./render_store_graphics.sh
   ./render_ios_store_graphics.sh
   ./check_raw_sql.py
@@ -27,7 +28,9 @@ Must:
     layer it recolours no longer exists upstream.
   `ios_fetch_build.sh` pulls a green CI build to `~/Downloads/retrail-ios/` and can install it on a connected iPhone.
   `ios_screenshots.sh` runs only on a macOS runner (`ios-screenshots.yml`), takes App Store shots in a 6.9" iPhone
-    simulator and fails when a shot is not `1320 x 2868` px.
+    simulator and fails when a shot is not `1320 x 2868` px. It seeds the app's preferences as a plist file
+    in the app container while the simulator is shut down, and fails when the text in the home shot
+    (`ios_screen_text.swift`, Vision OCR) is not the home screen in the shot's language with rides.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   Demo rides contain invented routes only.
   `check_raw_sql.py` fails when a Drift `custom*` call (`customSelect`, `customStatement`, `customUpdate`,

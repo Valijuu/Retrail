@@ -13,6 +13,8 @@ set -euo pipefail
 LANG_CODE="${1:?language en|de}"
 THEME="${2:?theme light|dark}"
 OUT_DIR="${3:?output directory}"
+case "${LANG_CODE}" in en|de) ;; *) echo "language must be en or de" >&2; exit 1 ;; esac
+case "${THEME}" in light|dark) ;; *) echo "theme must be light or dark" >&2; exit 1 ;; esac
 
 BUNDLE="io.github.valijuu.retrail"
 APP="build/ios/iphonesimulator/Runner.app"
@@ -54,32 +56,45 @@ xcrun simctl privacy "${UDID}" grant location-always "${BUNDLE}"
 xcrun simctl launch "${UDID}" "${BUNDLE}" >/dev/null
 sleep 5
 xcrun simctl terminate "${UDID}" "${BUNDLE}"
-
-
 DATA="$(xcrun simctl get_app_container "${UDID}" "${BUNDLE}" data)"
 
-# Seed: the shared_preferences keys carry the "flutter." prefix on iOS. They go
-# straight into the app's container plist, with the app not running. A
-# `simctl spawn defaults write` lands in the simulator's own domain instead, and
-# the app then starts in onboarding (run 41615367688, English, no rides).
-PREFS="${DATA}/Library/Preferences/${BUNDLE}"
-mkdir -p "${DATA}/Library/Preferences"
-defaults write "${PREFS}" flutter.user_name -string "Retrailer"
-defaults write "${PREFS}" flutter.onboarding_done -bool true
-defaults write "${PREFS}" flutter.app_language -string "${LANG_CODE}"
-defaults write "${PREFS}" flutter.theme_mode -string "${THEME}"
-defaults write "${PREFS}" flutter.battery_hint_dismissed -bool true
-test "$(defaults read "${PREFS}" flutter.onboarding_done)" = 1 || { echo "prefs not seeded" >&2; exit 1; }
-plutil -p "${PREFS}.plist" # shows in the workflow log: what the app will read
-
-# cfprefsd keeps the values of the first launch in memory and can ignore the
-# edited file; a reboot of the simulator makes it read the plist again.
+# Seed with the simulator shut down: then no cfprefsd (neither the simulator's
+# nor the Mac's) holds the app's defaults in memory, and the next boot reads the
+# file. `defaults write` does not work here: `simctl spawn defaults` writes the
+# simulator's own domain, not the app container (run 41615367688), and the
+# host's `defaults write <path>` only reached the Mac's cfprefsd cache, the file
+# was never written (runs 41622554499, 41625884885). shared_preferences on iOS
+# reads NSUserDefaults with the "flutter." key prefix.
 xcrun simctl shutdown "${UDID}"
+PREFS="${DATA}/Library/Preferences/${BUNDLE}.plist"
+mkdir -p "${DATA}/Library/Preferences"
+cat > "${PREFS}" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>flutter.user_name</key><string>Retrailer</string>
+  <key>flutter.onboarding_done</key><true/>
+  <key>flutter.app_language</key><string>${LANG_CODE}</string>
+  <key>flutter.theme_mode</key><string>${THEME}</string>
+  <key>flutter.battery_hint_dismissed</key><true/>
+</dict>
+</plist>
+PLIST
+plutil -convert binary1 "${PREFS}"
+plutil -p "${PREFS}" # shows in the workflow log: what the app will read
+plutil -p "${PREFS}" | grep -qF '"flutter.onboarding_done" => true' \
+  || { echo "prefs not seeded: ${PREFS}" >&2; exit 1; }
+
+# The app opens its Drift database in the documents directory
+# (lib/data/db/database_connection.dart).
+mkdir -p "${DATA}/Documents"
+rm -f "${DATA}/Documents/retrail.sqlite"{,-wal,-shm}
+cp "${DEMO_DB}" "${DATA}/Documents/retrail.sqlite"
+
 xcrun simctl boot "${UDID}"
 xcrun simctl bootstatus "${UDID}" -b
 prepare_sim
-rm -f "${DATA}/Documents/retrail.sqlite"{,-wal,-shm}
-cp "${DEMO_DB}" "${DATA}/Documents/retrail.sqlite"
 
 mkdir -p "${OUT_DIR}"
 shot() { # <name>: screenshot of whatever is on screen now
@@ -94,9 +109,24 @@ shot() { # <name>: screenshot of whatever is on screen now
   fi
 }
 
+# A green run must mean the right content, not only the right size: read the
+# text in the shot and fail on onboarding, the wrong language or no rides.
+SCREEN_TEXT="build/ios_screen_text"
+test -x "${SCREEN_TEXT}" || swiftc -O -o "${SCREEN_TEXT}" tool/ios_screen_text.swift
+expect_home() { # <name>
+  local file="${OUT_DIR}/${LANG_CODE}_${THEME}_$1.png" text want empty
+  text="$("${SCREEN_TEXT}" "${file}")"
+  echo "--- text in ${file}:"; echo "${text}"; echo "---"
+  if [ "${LANG_CODE}" = de ]; then want="Tracking starten"; empty="Noch keine Fahrten"
+  else want="Start tracking"; empty="No rides yet"; fi
+  grep -qiF "${want}" <<<"${text}" || { echo "${file}: no \"${want}\", not the ${LANG_CODE} home screen" >&2; exit 1; }
+  if grep -qiF "${empty}" <<<"${text}"; then echo "${file}: no demo rides" >&2; exit 1; fi
+}
+
 xcrun simctl launch "${UDID}" "${BUNDLE}" >/dev/null
 sleep 10 # map tiles come from OpenFreeMap over the network
 shot "01_home"
+expect_home "01_home"
 
 # TODO (scaffold ends here): the simulator cannot tap from the command line. The
 # other motives of store/play/screenshots.tsv (history, detail, comparison sheet,
