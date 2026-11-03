@@ -31,6 +31,10 @@ Must:
     simulator and fails when a shot is not `1320 x 2868` px. It seeds the app's preferences as a plist file
     in the app container while the simulator is shut down, and fails when the text in the home shot
     (`ios_screen_text.swift`, Vision OCR) is not the home screen in the shot's language with rides.
+    The other motives come from `/integration_test/store_screenshots_test.dart` (provider overrides,
+    replayed demo GPS, no Live Activity): it prints `RETRAIL_SHOT <name>`, the script takes the shot with
+    `simctl io screenshot` and acks with a file in the app's Documents. The script fails when a motive's
+    shot is missing, has the wrong size or lacks its expected text in the shot's language.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   Demo rides contain invented routes only.
   `check_raw_sql.py` fails when a Drift `custom*` call (`customSelect`, `customStatement`, `customUpdate`,
@@ -39,4 +43,5 @@ Must:
 
 Tasks:
   [ ] #87 Run `ios-screenshots.yml` once and fix what breaks (simulator names, prefs seeding, DB path, map load time).
-  [ ] #87 Capture the other motives with `integration_test/store_screenshots_test.dart`.
+  [ ] #87 Capture the other motives with `integration_test/store_screenshots_test.dart` (flow checked on an
+    Android emulator; iOS run pending).

@@ -20,7 +20,8 @@ jobs:
   screenshots:
     # macos-26 for the same Xcode 26 reason as ios-build.yml.
     runs-on: macos-26
-    timeout-minutes: 60
+    # Four runs of the screenshot integration test, each with its own build.
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
 

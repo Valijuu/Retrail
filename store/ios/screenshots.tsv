@@ -1,2 +1,9 @@
 # out-name	raw (build/ios_screenshots/<lang>_<theme>_<raw>.png)	theme (light|dark)	bg (cream|peach|dark)	EN tag	EN caption	EN subline	DE tag	DE caption	DE subline
-01_home	01_home	light	peach	History	Every ride <em>on the map</em>	Filter by activity, period and favourites	Verlauf	Jede Fahrt <em>auf der Karte</em>	Filtern nach Aktivität, Zeitraum und Favoriten
+01_track	07_track	light	cream	Live	Speed &amp; distance, <em>live</em>	Longboard, skate, inline – everything on wheels	Live	Tempo &amp; Strecke, <em>live</em>	Longboard, Skate, Inliner – alles, was rollt
+02_best_time	04_best_time	light	peach	Follow	Beat your <em>best time</em>	Ride a route again and compare every run	Nachfahren	Schlag deine <em>Bestzeit</em>	Fahr eine Strecke nochmal und vergleiche jede Runde
+03_follow	05_follow	light	cream	Route	Your routes, <em>again</em>	The way on the map and the distance left	Strecke	Deine Strecken <em>nochmal</em>	Mit Weg auf der Karte und Restdistanz
+04_history	02_history	light	peach	History	Every ride <em>on the map</em>	Filter by activity, period and favourites	Verlauf	Jede Fahrt <em>auf der Karte</em>	Filtern nach Aktivität, Zeitraum und Favoriten
+05_dark	07_track	dark	dark	Design	Light or <em>dark</em>	Follows your phone, or pick one	Design	Hell oder <em>dunkel</em>	Wie dein Handy oder nach Wahl
+06_detail	03_detail	light	cream	Details	Every detail of <em>every ride</em>	Distance, time, top and average speed	Details	Alle Details <em>jeder Fahrt</em>	Strecke, Dauer, Höchst- und Durchschnittstempo
+07_countdown	06_countdown	light	dark	Countdown	Pocket it. <em>Roll.</em>	Spoken countdown and a buzz, then recording starts	Countdown	Einstecken. <em>Losrollen.</em>	Ansage und Vibration – dann läuft die Aufnahme
+08_activities	08_activities	light	peach	No account	For everything <em>on wheels</em>	No ads. Your rides stay on your phone.	Ohne Konto	Für alles, <em>was rollt</em>	Ohne Werbung. Deine Fahrten bleiben auf dem Handy.

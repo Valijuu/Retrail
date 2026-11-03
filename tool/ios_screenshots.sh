@@ -7,7 +7,9 @@
 # Expects build/ios/iphonesimulator/Runner.app (flutter build ios --simulator
 # --debug) and build/demo_rides/retrail_<lang>.sqlite (tool/demo_rides, invented
 # routes on Tempelhofer Feld). Writes <out_dir>/<lang>_<theme>_NN_<screen>.png at
-# 1320 x 2868 px (6.9" iPhone), the size App Store Connect requires.
+# 1320 x 2868 px (6.9" iPhone), the size App Store Connect requires: the home
+# screen from a plain launch, the other motives through
+# integration_test/store_screenshots_test.dart (all in light, the ride in dark).
 set -euo pipefail
 
 LANG_CODE="${1:?language en|de}"
@@ -105,7 +107,7 @@ shot() { # <name>: screenshot of whatever is on screen now
   h="$(sips -g pixelHeight "${file}" | awk '/pixelHeight/ {print $2}')"
   if [ "${w}" != "${WIDTH}" ] || [ "${h}" != "${HEIGHT}" ]; then
     echo "${file} is ${w}x${h}, App Store Connect needs ${WIDTH}x${HEIGHT}" >&2
-    exit 1
+    return 1
   fi
 }
 
@@ -128,8 +130,95 @@ sleep 10 # map tiles come from OpenFreeMap over the network
 shot "01_home"
 expect_home "01_home"
 
-# TODO (scaffold ends here): the simulator cannot tap from the command line. The
-# other motives of store/play/screenshots.tsv (history, detail, comparison sheet,
-# countdown, running ride) need either an integration_test that navigates and
-# captures, or idb (Facebook's iOS debug bridge) for taps; the Live Activity shot
-# needs a ride started in the app and the lock screen captured.
+xcrun simctl terminate "${UDID}" "${BUNDLE}" 2>/dev/null || true
+
+# The other motives: integration_test/store_screenshots_test.dart drives the
+# app (taps, routes, replayed demo GPS) and prints "RETRAIL_SHOT <name>"; this
+# loop takes the shot and answers with an ack file in the app's Documents,
+# because the simulator cannot tap from the command line and the test's own
+# screenshot misses the map (a native view). The dark set needs only the ride
+# (05_dark); the countdown has its own dark palette in either theme.
+if [ "${THEME}" = light ]; then
+  SHOTS="02_history,03_detail,04_best_time,05_follow,06_countdown,07_track,08_activities"
+else
+  SHOTS="07_track"
+fi
+
+# Text that must be in a motive's shot: the screen and the shot's language.
+expected_text() { # <name>
+  case "$1:${LANG_CODE}" in
+    02_history:en) echo "Followed" ;;
+    02_history:de) echo "Nachgefahren" ;;
+    03_detail:en) echo "Avg speed" ;;
+    03_detail:de) echo "Geschwindigkeit" ;;
+    04_best_time:en) printf '%s\n' "Original" "Followed (" ;;
+    04_best_time:de) printf '%s\n' "Original" "Nachgefahren (" ;;
+    05_follow:en) echo "to go" ;;
+    05_follow:de) echo "noch " ;;
+    06_countdown:en) echo "GET READY" ;;
+    06_countdown:de) echo "FERTIG MACHEN" ;;
+    07_track:en) printf '%s\n' "Distance" "Pause" ;;
+    07_track:de) printf '%s\n' "Strecke" "Pause" ;;
+    08_activities:en) echo "How do you roll" ;;
+    08_activities:de) echo "Wie fährst du" ;;
+  esac
+}
+check_text() { # <name>: fails when an expected text is not in the shot
+  local file="${OUT_DIR}/${LANG_CODE}_${THEME}_$1.png" text want ok=0
+  text="$("${SCREEN_TEXT}" "${file}")"
+  echo "--- text in ${file}:"; echo "${text}"; echo "---"
+  while IFS= read -r want; do
+    [ -z "${want}" ] && continue
+    grep -qiF "${want}" <<<"${text}" || { echo "${file}: no \"${want}\"" >&2; ok=1; }
+  done <<<"$(expected_text "$1")"
+  return "${ok}"
+}
+ack() { # <name>: tells the test the shot is taken
+  local data
+  data="$(xcrun simctl get_app_container "${UDID}" "${BUNDLE}" data)"
+  mkdir -p "${data}/Documents/shot_ack"
+  touch "${data}/Documents/shot_ack/$1"
+}
+
+FAILED=""
+TAKEN=","
+TEST_STATUS=1
+while IFS= read -r line; do
+  printf '%s\n' "${line}"
+  case "${line}" in
+    *RETRAIL_SETUP*)
+      # The test build is installed now: give it the demo rides.
+      data="$(xcrun simctl get_app_container "${UDID}" "${BUNDLE}" data </dev/null)"
+      rm -rf "${data}/Documents/shot_ack"
+      mkdir -p "${data}/Documents"
+      cp "${DEMO_DB}" "${data}/Documents/store_demo.sqlite"
+      ack setup </dev/null
+      ;;
+    *"RETRAIL_SHOT "*)
+      name="$(sed -E 's/.*RETRAIL_SHOT ([A-Za-z0-9_]+).*/\1/' <<<"${line}")"
+      case "${TAKEN}" in *",${name},"*) continue ;; esac # a repeated log line
+      TAKEN="${TAKEN}${name},"
+      # </dev/null: nothing in here may eat the test output this loop reads.
+      shot "${name}" </dev/null || FAILED="${FAILED} ${name}(size)"
+      ack "${name}" </dev/null
+      check_text "${name}" </dev/null || FAILED="${FAILED} ${name}(text)"
+      ;;
+    RETRAIL_EXIT*) TEST_STATUS="${line#RETRAIL_EXIT }" ;;
+  esac
+done < <(
+  flutter test integration_test/store_screenshots_test.dart -d "${UDID}" \
+    --reporter expanded \
+    --dart-define=RETRAIL_SHOT_LANG="${LANG_CODE}" \
+    --dart-define=RETRAIL_SHOT_THEME="${THEME}" \
+    --dart-define=RETRAIL_SHOTS="${SHOTS}" 2>&1
+  echo "RETRAIL_EXIT $?"
+)
+
+for name in ${SHOTS//,/ }; do
+  test -f "${OUT_DIR}/${LANG_CODE}_${THEME}_${name}.png" || FAILED="${FAILED} ${name}(missing)"
+done
+[ "${TEST_STATUS}" = 0 ] || echo "warning: the screenshot test exited with ${TEST_STATUS}" >&2
+if [ -n "${FAILED}" ]; then
+  echo "${LANG_CODE} ${THEME}: failed shots:${FAILED}" >&2
+  exit 1
+fi
