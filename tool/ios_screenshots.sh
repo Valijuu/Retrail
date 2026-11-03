@@ -19,7 +19,14 @@ case "${LANG_CODE}" in en|de) ;; *) echo "language must be en or de" >&2; exit 1
 case "${THEME}" in light|dark) ;; *) echo "theme must be light or dark" >&2; exit 1 ;; esac
 
 BUNDLE="io.github.valijuu.retrail"
-APP="build/ios/iphonesimulator/Runner.app"
+# flutter test (below) overwrites build/ios/iphonesimulator/Runner.app with the
+# test build, which shows a white screen when launched alone: the home shot of
+# every later variant was blank (run 41638376581). Keep the plain app aside.
+APP="build/ios_screenshots_app/Runner.app"
+if [ ! -d "${APP}" ] && [ -d build/ios/iphonesimulator/Runner.app ]; then
+  mkdir -p "$(dirname "${APP}")"
+  cp -R build/ios/iphonesimulator/Runner.app "${APP}"
+fi
 DEMO_DB="build/demo_rides/retrail_${LANG_CODE}.sqlite"
 WIDTH=1320
 HEIGHT=2868

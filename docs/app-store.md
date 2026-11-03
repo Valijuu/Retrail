@@ -123,14 +123,13 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
 - Support URL and marketing URL: the GitHub Pages site. Support contact: retrail.app@proton.me.
 - Price: free. Paid features later need the Paid Apps agreement and the trader status (#67).
 
-## Screenshot automation: where we stopped (2026-11-02)
+## Screenshot automation: where we stopped (2026-11-03)
 
-Tracked in #87, branch `feature/ios-screenshots` (local, not pushed, workflow never run).
-Done: workflow, `tool/ios_screenshots.sh` (home screen only), docs and spec. Next: first run on the
-runner, then the other motives via `integration_test/store_screenshots_test.dart` (in-process
-provider overrides, shot markers on stdout that the script answers with `simctl io screenshot`),
-then the iOS frame at 1320 x 2868. The Live Activity lock-screen shot is not automated. Full plan
-and the unverified assumptions are in the issue.
+Tracked in #87, branch `feature/ios-screenshots`. The workflow captures all 8 Play motives in
+German and English (run 41638376581, every shot checked by eye): history, detail, comparison sheet,
+follow route ("km to go"), countdown, live ride, activity picker, and the ride in dark. Not
+automated: the Live Activity on the lock screen. Before the merge: remove the temporary push
+trigger from `ios-screenshots.yml`, then frame the shots with `tool/render_ios_store_graphics.sh`.
 
 ## Open points
 

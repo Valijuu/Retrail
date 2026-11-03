@@ -42,6 +42,5 @@ Must:
     It runs in `.githooks/pre-commit`. An exception needs `// sql-ok: <reason>` on the call line.
 
 Tasks:
-  [ ] #87 Run `ios-screenshots.yml` once and fix what breaks (simulator names, prefs seeding, DB path, map load time).
-  [ ] #87 Capture the other motives with `integration_test/store_screenshots_test.dart` (flow checked on an
-    Android emulator; iOS run pending).
+  [x] #87 Run `ios-screenshots.yml` once and fix what breaks (simulator names, prefs seeding, DB path, map load time).
+  [x] #87 Capture the other motives with `integration_test/store_screenshots_test.dart`.
