@@ -126,7 +126,7 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
 ## Screenshot automation: where we stopped (2026-11-03)
 
 Tracked in #87, branch `feature/ios-screenshots`. The workflow captures all 8 Play motives in
-German and English (run 41638376581, every shot checked by eye): history, detail, comparison sheet,
+German and English (run 41644431764, every shot checked by eye; a broken route preview on one card is #88): history, detail, comparison sheet,
 follow route ("km to go"), countdown, live ride, activity picker, and the ride in dark. Not
 automated: the Live Activity on the lock screen. Before the merge: remove the temporary push
 trigger from `ios-screenshots.yml`, then frame the shots with `tool/render_ios_store_graphics.sh`.
