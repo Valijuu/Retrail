@@ -62,8 +62,12 @@ On Linux: `base64 -w0 file` gives the base64 value. The certificate request is m
 
 ## Privacy label (App Store Connect → App Privacy)
 
-Same facts as the Play Data safety form: only map tile requests to OpenFreeMap leave the device,
-and they reveal the viewed area. Rides, GPS points, profile and settings stay on the device.
+Same facts as the Play Data safety form: map tile requests to OpenFreeMap leave the device,
+and they reveal the viewed area. The only other request is the connectivity probe
+(`https://clients3.google.com/generate_204`, no payload, named in the privacy policy); it carries
+no data type of Apple's list. Rides, GPS points, profile photo and settings stay on the device.
+"Navigate to start" hands a coordinate to a maps app the user picks; that is not collection by
+Retrail. Checked against the code on 2026-11-03.
 
 | Question | Answer |
 |---|---|
@@ -72,8 +76,8 @@ and they reveal the viewed area. Rides, GPS points, profile and settings stay on
 | Used for tracking | No |
 | Purpose | App Functionality |
 
-Privacy policy URL: https://valijuu.github.io/Retrail/privacy/ (the policy must name iOS and
-the Live Activity, check before submitting).
+Privacy policy URL: https://valijuu.github.io/Retrail/privacy/ (names iOS, Apple, the Live Activity
+and the connectivity probe; checked 2026-11-03).
 
 ## App Review notes (draft)
 
