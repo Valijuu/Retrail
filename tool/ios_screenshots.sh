@@ -37,11 +37,15 @@ test -n "${UDID}" || { echo "no 6.9\" iPhone simulator available" >&2; exit 1; }
 xcrun simctl boot "${UDID}" 2>/dev/null || true
 xcrun simctl bootstatus "${UDID}" -b
 
-# Same status bar as the Play shots: 9:41, full battery and signal.
-xcrun simctl status_bar "${UDID}" override --time "9:41" --batteryState charged \
-  --batteryLevel 100 --wifiBars 3 --cellularBars 4 --operatorName ""
-xcrun simctl ui "${UDID}" appearance "${THEME}"
-xcrun simctl location "${UDID}" set "${LAT},${LNG}"
+# Same status bar as the Play shots: 9:41, full battery and signal. Status bar
+# overrides do not survive a reboot, so this runs again after the one below.
+prepare_sim() {
+  xcrun simctl status_bar "${UDID}" override --time "9:41" --batteryState charged \
+    --batteryLevel 100 --wifiBars 3 --cellularBars 4 --operatorName ""
+  xcrun simctl ui "${UDID}" appearance "${THEME}"
+  xcrun simctl location "${UDID}" set "${LAT},${LNG}"
+}
+prepare_sim
 
 # Clean install, then one launch so iOS creates the data container.
 xcrun simctl uninstall "${UDID}" "${BUNDLE}" 2>/dev/null || true
@@ -66,6 +70,14 @@ defaults write "${PREFS}" flutter.app_language -string "${LANG_CODE}"
 defaults write "${PREFS}" flutter.theme_mode -string "${THEME}"
 defaults write "${PREFS}" flutter.battery_hint_dismissed -bool true
 test "$(defaults read "${PREFS}" flutter.onboarding_done)" = 1 || { echo "prefs not seeded" >&2; exit 1; }
+plutil -p "${PREFS}.plist" # shows in the workflow log: what the app will read
+
+# cfprefsd keeps the values of the first launch in memory and can ignore the
+# edited file; a reboot of the simulator makes it read the plist again.
+xcrun simctl shutdown "${UDID}"
+xcrun simctl boot "${UDID}"
+xcrun simctl bootstatus "${UDID}" -b
+prepare_sim
 rm -f "${DATA}/Documents/retrail.sqlite"{,-wal,-shm}
 cp "${DEMO_DB}" "${DATA}/Documents/retrail.sqlite"
 
