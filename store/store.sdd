@@ -13,6 +13,7 @@ References:
 
 Must:
   Listing texts stay within Play limits: name `30`, short `80`, full description `4000` characters.
+  App Store texts (`./ios/text`) stay within Apple limits: name `30`, subtitle `30`, keywords `100` (comma separated, no words from the name), promotional text `170`, description `4000` characters.
   Screenshots and feature graphics are rendered by `/tool/render_store_graphics.sh` from raw shots and HTML frames.
   App Store screenshots (`./ios`, 1320 x 2868) are rendered by `/tool/render_ios_store_graphics.sh` from the Simulator shots of `/tool/ios_screenshots.sh`.
   A visible UI change in a screenshotted screen gets new screenshots before the next production release.
