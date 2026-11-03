@@ -55,6 +55,23 @@ void main() {
     expect(dbFile.existsSync(), isTrue);
   });
 
+  test(
+    'writes the preview atomically: full bytes, no temp file left (#88)',
+    () async {
+      final cache = RoutePreviewCache(
+        baseDir: tempDir,
+        render: (_, _) async => _png([1, 2, 3]),
+      );
+      final file = await cache.ensurePreview(
+        9,
+        points,
+        brightness: Brightness.light,
+      );
+      expect(await file.readAsBytes(), [1, 2, 3]);
+      expect(File('${file.path}.tmp').existsSync(), isFalse);
+    },
+  );
+
   test('generates the file once per brightness and reuses it', () async {
     var renders = 0;
     final cache = RoutePreviewCache(

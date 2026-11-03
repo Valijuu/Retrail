@@ -142,7 +142,7 @@ class RoutePreviewCache {
       final result = await render(points, brightness);
       await file.parent.create(recursive: true);
       if (result.complete) {
-        await file.writeAsBytes(result.bytes, flush: true);
+        await _writeAtomic(file, result.bytes);
         final wasStale = await marker.exists();
         if (wasStale) await marker.delete();
         _resolved[key] = file;
@@ -151,12 +151,21 @@ class RoutePreviewCache {
         // Still degraded: keep already-written bytes (same sketch — no churn),
         // only write when there is nothing to show yet; stays marked stale.
         if (!await file.exists()) {
-          await file.writeAsBytes(result.bytes, flush: true);
+          await _writeAtomic(file, result.bytes);
         }
         await marker.create();
       }
       return file;
     });
+  }
+
+  /// Writes through a temp file and renames it, so a reader (or a crash)
+  /// never sees a half-written PNG, which `Image.file` shows as a broken
+  /// image (#88).
+  Future<void> _writeAtomic(File file, List<int> bytes) async {
+    final tmp = File('${file.path}.tmp');
+    await tmp.writeAsBytes(bytes, flush: true);
+    await tmp.rename(file.path);
   }
 
   /// Chains [task] onto one render lane (round-robin), bounding concurrency

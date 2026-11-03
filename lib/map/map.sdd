@@ -46,6 +46,7 @@ Must:
   Ride previews are rendered once when a ride is saved, in both light and dark, cached as PNG keyed by ride id
     and brightness, and shown with `Image.file`.
   A preview saved offline is a flat sketch, marked stale and re-rendered when back online; edit and delete evict it.
+  A preview PNG is written through a temp file and renamed, and an unreadable one shows the flat sketch, never a broken-image icon (#88).
   Preview tiles are OpenFreeMap vector tiles drawn with `vector_tile_renderer` in the same bundled styles,
     zoom capped at `16`, sending `User-Agent: Retrail (io.github.valijuu.retrail)`.
   The preview cache directory carries a version; bumping it re-renders every preview and purges older versions.

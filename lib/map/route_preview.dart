@@ -128,6 +128,9 @@ class _RoutePreviewState extends State<RoutePreview> {
     fit: BoxFit.cover,
     cacheWidth: widget.cacheWidth,
     gaplessPlayback: true,
+    // An unreadable PNG falls back to the flat sketch, never a broken-image
+    // icon (#88).
+    errorBuilder: (_, _, _) => const RouteSketch(points: []),
   );
 
   @override
