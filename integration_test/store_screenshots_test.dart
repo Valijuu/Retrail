@@ -255,7 +255,8 @@ Future<void> _shot(
   await _handshake(
     'RETRAIL_SHOT $name',
     name,
-    const Duration(seconds: 30),
+    // Generous: the simulator host is slow while the map renders.
+    const Duration(minutes: 3),
     tester: tester,
   );
 }

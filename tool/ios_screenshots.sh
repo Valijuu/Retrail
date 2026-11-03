@@ -121,14 +121,17 @@ expect_home() { # <name>
   echo "--- text in ${file}:"; echo "${text}"; echo "---"
   if [ "${LANG_CODE}" = de ]; then want="Tracking starten"; empty="Noch keine Fahrten"
   else want="Start tracking"; empty="No rides yet"; fi
-  grep -qiF "${want}" <<<"${text}" || { echo "${file}: no \"${want}\", not the ${LANG_CODE} home screen" >&2; exit 1; }
-  if grep -qiF "${empty}" <<<"${text}"; then echo "${file}: no demo rides" >&2; exit 1; fi
+  grep -qiF "${want}" <<<"${text}" || { echo "${file}: no \"${want}\", not the ${LANG_CODE} home screen" >&2; return 1; }
+  if grep -qiF "${empty}" <<<"${text}"; then echo "${file}: no demo rides" >&2; return 1; fi
 }
 
 xcrun simctl launch "${UDID}" "${BUNDLE}" >/dev/null
 sleep 10 # map tiles come from OpenFreeMap over the network
-shot "01_home"
-expect_home "01_home"
+# A failed shot is collected in FAILED, not fatal: the other motives still run,
+# and the script fails at the end.
+FAILED=""
+if shot "01_home"; then expect_home "01_home" || FAILED="${FAILED} 01_home(text)"
+else FAILED="${FAILED} 01_home(size)"; fi
 
 xcrun simctl terminate "${UDID}" "${BUNDLE}" 2>/dev/null || true
 
@@ -173,14 +176,21 @@ check_text() { # <name>: fails when an expected text is not in the shot
   done <<<"$(expected_text "$1")"
   return "${ok}"
 }
+app_data() { # the app's data container; fails when the app is not installed
+  xcrun simctl get_app_container "${UDID}" "${BUNDLE}" data 2>/dev/null \
+    || { echo "app ${BUNDLE} is not installed any more: the test ended (or the app died) before this step" >&2; return 1; }
+}
 ack() { # <name>: tells the test the shot is taken
   local data
-  data="$(xcrun simctl get_app_container "${UDID}" "${BUNDLE}" data)"
+  data="$(app_data)" || return 1
   mkdir -p "${data}/Documents/shot_ack"
   touch "${data}/Documents/shot_ack/$1"
 }
 
-FAILED=""
+# The loop must answer fast: the test waits for each ack, and the simulator
+# host is slow while the map renders (an OCR pass took 2 min in run
+# 41634306589, the test gave up and the next shot caught the home screen
+# after the app was uninstalled). So the text checks run after the test.
 TAKEN=","
 TEST_STATUS=1
 while IFS= read -r line; do
@@ -188,21 +198,29 @@ while IFS= read -r line; do
   case "${line}" in
     *RETRAIL_SETUP*)
       # The test build is installed now: give it the demo rides.
-      data="$(xcrun simctl get_app_container "${UDID}" "${BUNDLE}" data </dev/null)"
-      rm -rf "${data}/Documents/shot_ack"
-      mkdir -p "${data}/Documents"
-      cp "${DEMO_DB}" "${data}/Documents/store_demo.sqlite"
-      ack setup </dev/null
+      if data="$(app_data </dev/null)"; then
+        rm -rf "${data}/Documents/shot_ack"
+        mkdir -p "${data}/Documents"
+        cp "${DEMO_DB}" "${data}/Documents/store_demo.sqlite"
+        ack setup </dev/null || true
+      else
+        FAILED="${FAILED} setup"
+      fi
       ;;
     *"RETRAIL_SHOT "*)
       name="$(sed -E 's/.*RETRAIL_SHOT ([A-Za-z0-9_]+).*/\1/' <<<"${line}")"
       case "${TAKEN}" in *",${name},"*) continue ;; esac # a repeated log line
       TAKEN="${TAKEN}${name},"
       # </dev/null: nothing in here may eat the test output this loop reads.
-      shot "${name}" </dev/null || FAILED="${FAILED} ${name}(size)"
-      ack "${name}" </dev/null
-      check_text "${name}" </dev/null || FAILED="${FAILED} ${name}(text)"
+      # The app must still be there, else the shot shows the home screen.
+      if app_data </dev/null >/dev/null; then
+        shot "${name}" </dev/null || FAILED="${FAILED} ${name}(size)"
+        ack "${name}" </dev/null || FAILED="${FAILED} ${name}(ack)"
+      else
+        FAILED="${FAILED} ${name}(app gone)"
+      fi
       ;;
+    *RETRAIL_NO_ACK*) FAILED="${FAILED} ${line##*RETRAIL_NO_ACK }(no ack, shot may be late)" ;;
     RETRAIL_EXIT*) TEST_STATUS="${line#RETRAIL_EXIT }" ;;
   esac
 done < <(
@@ -215,7 +233,11 @@ done < <(
 )
 
 for name in ${SHOTS//,/ }; do
-  test -f "${OUT_DIR}/${LANG_CODE}_${THEME}_${name}.png" || FAILED="${FAILED} ${name}(missing)"
+  if [ ! -f "${OUT_DIR}/${LANG_CODE}_${THEME}_${name}.png" ]; then
+    FAILED="${FAILED} ${name}(missing)"
+  elif [ "${TAKEN}" != "${TAKEN/,${name},/}" ]; then
+    check_text "${name}" || FAILED="${FAILED} ${name}(text)"
+  fi
 done
 [ "${TEST_STATUS}" = 0 ] || echo "warning: the screenshot test exited with ${TEST_STATUS}" >&2
 if [ -n "${FAILED}" ]; then

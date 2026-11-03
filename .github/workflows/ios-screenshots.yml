@@ -50,12 +50,16 @@ jobs:
 
       - name: Take screenshots
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          # Every variant runs even when one fails; the step fails at the end.
+          failed=""
           for lang in en de; do
             for theme in light dark; do
-              tool/ios_screenshots.sh "${lang}" "${theme}" build/ios_screenshots
+              tool/ios_screenshots.sh "${lang}" "${theme}" build/ios_screenshots \
+                || failed="${failed} ${lang}_${theme}"
             done
           done
+          if [ -n "${failed}" ]; then echo "failed variants:${failed}" >&2; exit 1; fi
 
       # Also on failure: the shots show what went wrong.
       - uses: actions/upload-artifact@v4
