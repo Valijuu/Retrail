@@ -47,6 +47,10 @@ class _RoutePreviewState extends State<RoutePreview> {
   Brightness? _brightness;
   StreamSubscription<int>? _upgradeSub;
 
+  /// Set once a failed render or an unreadable PNG was retried, so a preview
+  /// that keeps failing shows the sketch instead of looping (#88).
+  bool _retried = false;
+
   @override
   void initState() {
     super.initState();
@@ -99,7 +103,27 @@ class _RoutePreviewState extends State<RoutePreview> {
   void didUpdateWidget(RoutePreview oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.cache != widget.cache) _listenForUpgrades();
-    if (oldWidget.rideId != widget.rideId) _maybeGenerate();
+    if (oldWidget.rideId != widget.rideId) {
+      _retried = false;
+      _maybeGenerate();
+    }
+  }
+
+  /// Retries once after a failed render or an unreadable PNG: the bad file is
+  /// evicted and rendered again, so the card does not stay blank (#88).
+  void _retryOnce(File? bad) {
+    if (_retried) return;
+    _retried = true;
+    Future.microtask(() async {
+      if (bad != null) {
+        FileImage(bad).evict();
+        if (widget.cacheWidth != null) {
+          ResizeImage(FileImage(bad), width: widget.cacheWidth).evict();
+        }
+        await widget.cache.evict(widget.rideId);
+      }
+      if (mounted) setState(_maybeGenerate);
+    });
   }
 
   void _maybeGenerate() {
@@ -129,8 +153,11 @@ class _RoutePreviewState extends State<RoutePreview> {
     cacheWidth: widget.cacheWidth,
     gaplessPlayback: true,
     // An unreadable PNG falls back to the flat sketch, never a broken-image
-    // icon (#88).
-    errorBuilder: (_, _, _) => const RouteSketch(points: []),
+    // icon (#88), and is rendered again once.
+    errorBuilder: (_, _, _) {
+      _retryOnce(file);
+      return const RouteSketch(points: []);
+    },
   );
 
   @override
@@ -142,6 +169,7 @@ class _RoutePreviewState extends State<RoutePreview> {
       future: _file,
       builder: (context, snapshot) {
         if (snapshot.hasData) return _image(snapshot.data!);
+        if (snapshot.hasError) _retryOnce(null);
         // Loading (points not fetched yet) or mid-render — same flat
         // fallback either way; the real shape only exists once points load.
         return const RouteSketch(points: []);

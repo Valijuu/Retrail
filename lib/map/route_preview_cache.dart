@@ -60,6 +60,10 @@ class RoutePreviewCache {
   /// `exists()` round-trips, no sketch-then-image pop-in.
   final Map<String, File> _resolved = {};
 
+  /// Renders still running, by key, so concurrent requests share one (#88).
+  final Map<String, Future<File>> _inFlight = {};
+  int _tmpSeq = 0;
+
   /// How many renders may run at once. Bounded (not unlimited) so a fast
   /// scroll over many un-rendered rides doesn't fan out unboundedly many
   /// concurrent tile fetches + decodes + PNG encodes on the UI isolate
@@ -126,6 +130,24 @@ class RoutePreviewCache {
     final resolved = _resolved[key];
     if (resolved != null) return resolved;
 
+    // A render for this preview is already running (e.g. the History warm-up
+    // and the card ask at once): share it. Two parallel writers raced on the
+    // temp file and one card stayed blank (#88).
+    final inFlight = _inFlight[key];
+    if (inFlight != null) return inFlight;
+    final run = _ensure(key, rideId, points, brightness);
+    _inFlight[key] = run;
+    return run.whenComplete(() {
+      if (identical(_inFlight[key], run)) _inFlight.remove(key);
+    });
+  }
+
+  Future<File> _ensure(
+    String key,
+    int rideId,
+    List<RoutePoint> points,
+    Brightness brightness,
+  ) async {
     final file = fileFor(rideId, brightness: brightness);
     final marker = staleMarkerFor(rideId, brightness: brightness);
     if (await file.exists() && !await marker.exists()) {
@@ -163,7 +185,8 @@ class RoutePreviewCache {
   /// never sees a half-written PNG, which `Image.file` shows as a broken
   /// image (#88).
   Future<void> _writeAtomic(File file, List<int> bytes) async {
-    final tmp = File('${file.path}.tmp');
+    // Unique per write, so no two writers ever share one temp file.
+    final tmp = File('${file.path}.${_tmpSeq++}.tmp');
     await tmp.writeAsBytes(bytes, flush: true);
     await tmp.rename(file.path);
   }

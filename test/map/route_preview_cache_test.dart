@@ -72,6 +72,31 @@ void main() {
     },
   );
 
+  test('concurrent requests for one preview share one render: full bytes, '
+      'no error, no temp file left (#88)', () async {
+    var renders = 0;
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async {
+        renders++;
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        return _png([1, 2, 3]);
+      },
+    );
+    // The History warm-up and the card both ask for the same preview at once.
+    final files = await Future.wait([
+      cache.ensurePreview(2, points, brightness: Brightness.light),
+      cache.ensurePreview(2, points, brightness: Brightness.light),
+    ]);
+    expect(renders, 1);
+    expect(await files[0].readAsBytes(), [1, 2, 3]);
+    expect(files[1].path, files[0].path);
+    final leftovers = files[0].parent.listSync().where(
+      (e) => e.path.endsWith('.tmp'),
+    );
+    expect(leftovers, isEmpty);
+  });
+
   test('generates the file once per brightness and reuses it', () async {
     var renders = 0;
     final cache = RoutePreviewCache(
