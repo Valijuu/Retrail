@@ -1,0 +1,157 @@
+# Signed App Store build on a macOS runner, uploaded to TestFlight — there is no
+# Mac (docs/app-store.md). Manual trigger only. Needs the Apple Developer account:
+# the secrets below are created once by hand (docs/app-store.md → "CI secrets");
+# without them the job stops in its first step.
+#
+# The unsigned `ios-build.yml` stays the compile gate; this workflow only signs
+# and ships. It never uploads a build artifact: the repo is public and workflow
+# artifacts are downloadable by any signed-in GitHub user.
+name: iOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Upload the signed build to TestFlight (off = sign and verify only)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # macos-26 for the same Xcode 26 reason as ios-build.yml.
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+      IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+      IOS_PROFILE_APP_BASE64: ${{ secrets.IOS_PROFILE_APP_BASE64 }}
+      IOS_PROFILE_EXT_BASE64: ${{ secrets.IOS_PROFILE_EXT_BASE64 }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+      KEYCHAIN: ${{ runner.temp }}/retrail-release.keychain-db
+    steps:
+      - name: Check the secrets
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in APPLE_TEAM_ID IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD \
+                      IOS_PROFILE_APP_BASE64 IOS_PROFILE_EXT_BASE64 \
+                      ASC_KEY_ID ASC_ISSUER_ID ASC_API_KEY_P8; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret ${name} is missing (docs/app-store.md → CI secrets)."
+              missing=1
+            fi
+          done
+          exit "${missing}"
+
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.3
+          cache: true
+
+      - name: Enable Swift Package Manager
+        run: flutter config --enable-swift-package-manager
+
+      - run: flutter pub get
+
+      # The certificate lives in a throwaway keychain that is deleted at the end.
+      - name: Import the distribution certificate
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          echo "${IOS_DIST_CERT_P12_BASE64}" | base64 --decode > "${RUNNER_TEMP}/dist.p12"
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN}"
+          security set-keychain-settings -lut 3600 "${KEYCHAIN}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN}"
+          security import "${RUNNER_TEMP}/dist.p12" -k "${KEYCHAIN}" \
+            -P "${IOS_DIST_CERT_PASSWORD}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s \
+            -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN}" >/dev/null
+          security list-keychains -d user -s "${KEYCHAIN}" login.keychain-db
+          rm -f "${RUNNER_TEMP}/dist.p12"
+
+      # The profile names are read from the profiles, so no name secret is needed.
+      - name: Install the provisioning profiles
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/Library/MobileDevice/Provisioning Profiles"
+          install_profile() {
+            local b64="$1" out="$2"
+            echo "${b64}" | base64 --decode > "${RUNNER_TEMP}/${out}.mobileprovision"
+            security cms -D -i "${RUNNER_TEMP}/${out}.mobileprovision" > "${RUNNER_TEMP}/${out}.plist"
+            local uuid name
+            uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "${RUNNER_TEMP}/${out}.plist")"
+            name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "${RUNNER_TEMP}/${out}.plist")"
+            cp "${RUNNER_TEMP}/${out}.mobileprovision" \
+              "${HOME}/Library/MobileDevice/Provisioning Profiles/${uuid}.mobileprovision"
+            echo "${name}"
+          }
+          APP_PROFILE="$(install_profile "${IOS_PROFILE_APP_BASE64}" app)"
+          EXT_PROFILE="$(install_profile "${IOS_PROFILE_EXT_BASE64}" ext)"
+          echo "APP_PROFILE=${APP_PROFILE}" >> "${GITHUB_ENV}"
+          echo "EXT_PROFILE=${EXT_PROFILE}" >> "${GITHUB_ENV}"
+
+      # Manual signing for the two Release configurations, on the runner only.
+      - name: Switch the project to manual signing
+        run: python3 tool/ios_release_signing.py "${APPLE_TEAM_ID}" "${APP_PROFILE}" "${EXT_PROFILE}"
+
+      - name: Write the export options
+        run: |
+          cat > ios/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>uploadSymbols</key><true/>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>io.github.valijuu.retrail</key><string>${APP_PROFILE}</string>
+              <key>io.github.valijuu.retrail.RideActivity</key><string>${EXT_PROFILE}</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Build the signed .ipa
+        run: flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
+
+      - name: Check the .ipa
+        run: |
+          set -euo pipefail
+          IPA="$(ls build/ios/ipa/*.ipa)"
+          unzip -l "${IPA}" | grep -q 'RideActivityExtension.appex/' \
+            || { echo "::error::Live Activity extension is not in the .ipa."; exit 1; }
+          echo "IPA=${IPA}" >> "${GITHUB_ENV}"
+
+      # altool reads the key from ~/.appstoreconnect/private_keys.
+      - name: Upload to TestFlight
+        if: ${{ inputs.upload }}
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.appstoreconnect/private_keys"
+          printf '%s' "${ASC_API_KEY_P8}" > "${HOME}/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          xcrun altool --upload-app --type ios --file "${IPA}" \
+            --apiKey "${ASC_KEY_ID}" --apiIssuer "${ASC_ISSUER_ID}"
+
+      - name: Clean up
+        if: always()
+        run: |
+          security delete-keychain "${KEYCHAIN}" 2>/dev/null || true
+          rm -rf "${HOME}/.appstoreconnect/private_keys" ios/ExportOptions.plist \
+            "${HOME}/Library/MobileDevice/Provisioning Profiles"

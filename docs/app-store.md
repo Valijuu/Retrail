@@ -31,6 +31,35 @@ There is no Mac, so signing and upload run on the GitHub macOS runner, like the 
 
 The unsigned CI build stays as the compile gate.
 
+Workflow: `.github/workflows/ios-release.yml` (manual; the input `upload` off signs and checks the
+.ipa without uploading). It signs the app and the Live Activity extension with manual signing:
+`tool/ios_release_signing.py` switches only the two Release configurations on the runner, the
+committed project keeps automatic signing. The build number comes from `pubspec.yaml`
+(`version: x.y.z+N`); TestFlight rejects a build number it has seen, so bump N before each run.
+Not run yet: the first run needs the account setup below, and `altool` and the export options
+are unverified until then.
+
+### CI secrets (repository secrets, set once by hand)
+
+Create them in a real terminal (`gh secret set NAME < file`), never through the chat or into the repo.
+
+| Secret | What it is |
+|---|---|
+| `APPLE_TEAM_ID` | Team ID (Developer portal → Membership details) |
+| `IOS_DIST_CERT_P12_BASE64` | Apple Distribution certificate with its private key as `.p12`, base64 |
+| `IOS_DIST_CERT_PASSWORD` | the password chosen for that `.p12` |
+| `IOS_PROFILE_APP_BASE64` | App Store profile for `io.github.valijuu.retrail`, base64 |
+| `IOS_PROFILE_EXT_BASE64` | App Store profile for `io.github.valijuu.retrail.RideActivity`, base64 |
+| `ASC_KEY_ID`, `ASC_ISSUER_ID` | App Store Connect API key id and issuer id |
+| `ASC_API_KEY_P8` | content of the downloaded `AuthKey_<id>.p8` |
+
+On Linux: `base64 -w0 file` gives the base64 value. The certificate request is made with
+`openssl req -new -newkey rsa:2048 -nodes -keyout retrail_dist.key -out retrail_dist.csr -subj
+"/CN=Retrail Distribution/emailAddress=…"`. After downloading the `.cer`:
+`openssl x509 -inform DER -in distribution.cer -out dist.pem`, then
+`openssl pkcs12 -export -inkey retrail_dist.key -in dist.pem -out dist.p12 -certpbe PBE-SHA1-3DES
+-keypbe PBE-SHA1-3DES -macalg sha1` (the old algorithms keep macOS `security import` able to read it).
+
 ## Privacy label (App Store Connect → App Privacy)
 
 Same facts as the Play Data safety form: only map tile requests to OpenFreeMap leave the device,
