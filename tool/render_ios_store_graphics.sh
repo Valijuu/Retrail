@@ -19,7 +19,7 @@ urlencode() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys
 # scale 1, text and the scaled raw shot come out blurry.
 shrink() { python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').resize((int(sys.argv[2]), int(sys.argv[3])), Image.LANCZOS).save(sys.argv[1], optimize=True)" "$@"; }
 
-# The phone draws the raw shot at 940 px (780 px in a pair), the page renders at
+# The phone draws the raw shot at 904 px (733 in a pair), the page renders at
 # 2x: the shot is resized once with Lanczos to twice that so Chrome draws it 1:1.
 fit() { python3 -c "
 import sys
