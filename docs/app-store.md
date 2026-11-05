@@ -109,5 +109,5 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
 - Trader status (DSA) is asked in App Store Connect for EU distribution (#67).
 - Live Activity buttons need iOS 17 and cannot be tested on the iPhone 8 (iOS 16.7); check them
   on a newer device or the Simulator before submitting.
-- Deployment target of the app is iOS 13, the extension is 16.1. Decide whether to raise the
-  app target to 16.1 (simpler, drops iOS 13–15).
+- Deployment target: the app is iOS 15.0 (Apple requires 15.0+ for uploads from April 2027,
+  ITMS-90068), the extension is 16.1.
