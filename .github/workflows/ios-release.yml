@@ -37,7 +37,6 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
-      KEYCHAIN: ${{ runner.temp }}/retrail-release.keychain-db
     steps:
       - name: Check the secrets
         run: |
@@ -70,6 +69,7 @@ jobs:
       - name: Import the distribution certificate
         run: |
           set -euo pipefail
+          KEYCHAIN="${RUNNER_TEMP}/retrail-release.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
           echo "${IOS_DIST_CERT_P12_BASE64}" | base64 --decode > "${RUNNER_TEMP}/dist.p12"
           security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN}"
@@ -152,6 +152,7 @@ jobs:
       - name: Clean up
         if: always()
         run: |
+          KEYCHAIN="${RUNNER_TEMP}/retrail-release.keychain-db"
           security delete-keychain "${KEYCHAIN}" 2>/dev/null || true
           rm -rf "${HOME}/.appstoreconnect/private_keys" ios/ExportOptions.plist \
             "${HOME}/Library/MobileDevice/Provisioning Profiles"
