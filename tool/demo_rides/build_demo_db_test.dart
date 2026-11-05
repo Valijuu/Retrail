@@ -341,7 +341,7 @@ double _length(List<LatLng> route) {
 }
 
 /// One fix per second along [route] at a speed that swells and dips around
-/// [cruiseKmh] (pushes, gentle slopes, slowing for turns), with ~1 m of GPS
+/// [cruiseKmh] (pushes, gentle slopes, slowing for turns), with ~0.15 m of GPS
 /// scatter across the line.
 List<_Fix> _simulate(List<LatLng> route, double cruiseKmh, math.Random random) {
   final mPerDegLng = _mPerDegLat * math.cos(route.first[0] * math.pi / 180);
@@ -364,7 +364,7 @@ List<_Fix> _simulate(List<LatLng> route, double cruiseKmh, math.Random random) {
     final f = segLen == 0 ? 0.0 : (along - cumulative[seg]) / segLen;
     final a = route[seg];
     final b = route[seg + 1];
-    final jitter = (random.nextDouble() - 0.5) * 2.0;
+    final jitter = (random.nextDouble() - 0.5) * 0.3;
     final lat = a[0] + (b[0] - a[0]) * f + jitter / _mPerDegLat;
     final lng = a[1] + (b[1] - a[1]) * f + jitter / mPerDegLng;
     final kmh = math.max(
