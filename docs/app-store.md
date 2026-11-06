@@ -95,7 +95,8 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
 ## Listing
 
 - Name, subtitle (30), promotional text, description, keywords (100 characters, comma
-  separated): derive from the Play texts in `store/play/text/` and shorten. Apple has a keyword
+  separated): derive from the Play texts in `store/play/text/` and shorten. Keep the note that the
+  countdown voice is synthetic (Microsoft Azure); Microsoft's TTS terms ask for that disclosure (#90). Apple has a keyword
   field, so the keyword list replaces the Play keyword table.
 - Category: Sports (secondary: Health & Fitness).
 - Screenshots: 6.9" iPhone (1320 × 2868) is required, the rest are scaled from it. German and

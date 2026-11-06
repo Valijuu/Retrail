@@ -182,8 +182,8 @@ France, Spain or Brazil would see a German page.
 > • Choose your ride: longboard, skateboard, mountainboard, inline skates
 >   (rollerblades), roller skates, scooter or other
 > • Live map with your route, speed, distance in km, duration and top speed
-> • A 10-second countdown before you roll: the last five seconds are spoken
->   and you feel a buzz, so the phone can already be in your pocket (can be
+> • A 10-second countdown before you roll: a synthetic voice (Microsoft Azure)
+>   counts down the last five seconds and you feel a buzz, so the phone can already be in your pocket (can be
 >   turned off in the settings)
 > • The countdown shows whether GPS is ready
 > • Pause and resume any time; keeps recording with the screen off
@@ -240,8 +240,8 @@ France, Spain or Brazil would see a German page.
 >   Inline-Skates (Inliner), Rollschuhe, Roller oder Andere
 > • Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz,
 >   Dauer und Höchstgeschwindigkeit
-> • 10 Sekunden Countdown vor dem Losfahren: Die letzten fünf Sekunden
->   werden angesagt und du spürst eine Vibration – so kann das Handy schon in
+> • 10 Sekunden Countdown vor dem Losfahren: Die letzten fünf Sekunden sagt
+>   eine künstlich erzeugte Stimme (Microsoft Azure) an und du spürst eine Vibration – so kann das Handy schon in
 >   der Tasche sein (in den Einstellungen abschaltbar)
 > • Der Countdown zeigt, ob das GPS bereit ist
 > • Jederzeit pausieren und weiterfahren; die Aufzeichnung läuft auch bei

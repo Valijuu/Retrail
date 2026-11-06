@@ -3,7 +3,7 @@ The GPS tracker for everything on wheels. Retrail records your longboard, skateb
 RECORD YOUR ROUTE
 • Choose your ride: longboard, skateboard, mountainboard, inline skates (rollerblades), roller skates, scooter or other
 • Live map with your route, speed, distance in km, duration and top speed
-• A 10-second countdown before you roll: the last five seconds are spoken and you feel a buzz, so the phone can already be in your pocket (can be turned off in the settings)
+• A 10-second countdown before you roll: a synthetic voice (Microsoft Azure) counts down the last five seconds and you feel a buzz, so the phone can already be in your pocket (can be turned off in the settings)
 • The countdown shows whether GPS is ready
 • Pause and resume any time; keeps recording with the screen off
 • Control the ride from the notification (Android) or the Live Activity on the lock screen (iPhone)
