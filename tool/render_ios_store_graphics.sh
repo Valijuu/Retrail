@@ -19,12 +19,30 @@ urlencode() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys
 # scale 1, text and the scaled raw shot come out blurry.
 shrink() { python3 -c "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').resize((int(sys.argv[2]), int(sys.argv[3])), Image.LANCZOS).save(sys.argv[1], optimize=True)" "$@"; }
 
-# The phone draws the raw shot at 904 px (733 in a pair), the page renders at
+# The phone draws the raw shot at 830 px (733 in a pair), the page renders at
 # 2x: the shot is resized once with Lanczos to twice that so Chrome draws it 1:1.
+# The bottom 102 raw px (34 pt) are the home indicator area of a real iPhone.
+# On the ride and follow screens the Simulator leaves it near-black under the
+# light action bar; there it is filled with the bar colour, as an edge-to-edge
+# bar looks on the device. Every shot then gets the home indicator pill (the
+# Simulator screenshot leaves it out): dark on a light bottom, light on a dark one.
 fit() { python3 -c "
 import sys
-from PIL import Image
+from PIL import Image, ImageDraw, ImageStat
 im = Image.open(sys.argv[1]).convert('RGB')
+band = 102
+H = im.height
+above = im.crop((0, H - band - 6, im.width, H - band - 5))
+below = im.crop((0, H - band, im.width, H))
+lum = lambda r: sum(ImageStat.Stat(r.convert('L')).mean)
+if abs(lum(above) - lum(below)) > 60 and max(ImageStat.Stat(below.convert('L')).stddev) < 2:
+    im.paste(above.resize((im.width, band)), (0, H - band))
+dark_bottom = lum(im.crop((0, H - band, im.width, H))) < 128
+d = ImageDraw.Draw(im)
+pw, ph, gap = 402, 15, 24
+x0 = (im.width - pw) // 2
+d.rounded_rectangle((x0, H - gap - ph, x0 + pw, H - gap), radius=ph // 2,
+                    fill=(255, 255, 255) if dark_bottom else (0, 0, 0))
 w = int(sys.argv[3])
 if im.width != w: im = im.resize((w, round(im.height * w / im.width)), Image.LANCZOS)
 im.save(sys.argv[2])" "$@"; }
@@ -42,14 +60,16 @@ mkdir -p "$prep"
 for lang in en de; do
   mkdir -p "$out/screenshots/$lang"
   rm -f "$out/screenshots/$lang"/*.png
-  while IFS=$'\t' read -r name raw raw2 bg pop en_tag en_title en_sub de_tag de_title de_sub; do
+  while IFS=$'\t' read -r name raw raw2 bg pop en_tag en_title en_sub de_tag de_title de_sub de_pop; do
     [[ -z "$name" || "$name" == \#* ]] && continue
     tag="$en_tag" title="$en_title" sub="$en_sub"
     [[ "$lang" == de ]] && { tag="$de_tag" title="$de_title" sub="$de_sub"; }
+    # Optional last column: the German raw shot can lay out differently.
+    [[ "$lang" == de && -n "${de_pop:-}" && "$de_pop" != - ]] && pop="$de_pop"
     shot="$raw_dir/${lang}_$raw.png"
     [[ -f "$shot" ]] || { echo "missing raw shot $shot" >&2; exit 1; }
     png="$out/screenshots/$lang/$name.png"
-    fitw=1880; [[ "$raw2" != - ]] && fitw=1560
+    fitw=1660; [[ "$raw2" != - ]] && fitw=1560
     fit "$shot" "$prep/${lang}_$name.png" "$fitw"
     url="file://$out/screenshot_frame.html?bg=$bg&img=$(urlencode "$prep/${lang}_$name.png")"
     url+="&tag=$(urlencode "$tag")&title=$(urlencode "$title")&sub=$(urlencode "$sub")"

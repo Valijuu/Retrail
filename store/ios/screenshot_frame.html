@@ -1,7 +1,12 @@
 <!doctype html>
 <!-- Frame for the App Store 6.9" iPhone screenshots (1320 x 2868): tag, caption
      and subline on top, the raw Simulator shot below in a slim phone outline,
-     cut off at the bottom edge. The shot already carries the iOS status bar
+     whole, with the home indicator the render script draws in and the
+     rounded display corners of a real iPhone (top 760 px, 830 px wide, so
+     about 300 px stay free under it; excerpt positions in screenshots.tsv are
+     canvas px and move with the phone; in a pair the higher, right phone sits
+     at 760 px).
+     The shot already carries the iOS status bar
      (9:41) and the Dynamic Island, so there is no drawn bezel.
      Rendered by tool/render_ios_store_graphics.sh with
        ?bg=cream|peach|dark&tag=…&title=…&sub=…&img=…[&img2=…][&pop=x,y,w,h,scale,left,top&popimg=…]
@@ -21,20 +26,20 @@
                           --tag-bg: #F59E42; --tag: #431407; --shadow: rgba(0,0,0,.55); --edge: #5A4A3E; }
   html, body { margin: 0; width: 1320px; height: 2868px; overflow: hidden; background: var(--bg); }
   body { font-family: Roboto, sans-serif; position: relative; }
-  .copy { position: absolute; left: 86px; right: 86px; top: 164px; text-align: center; }
+  .copy { position: absolute; left: 86px; right: 86px; top: 124px; text-align: center; }
   .tag { display: inline-block; margin-bottom: 38px; padding: 18px 44px; border-radius: 999px;
          font: 600 49px Fredoka, sans-serif; background: var(--tag-bg); color: var(--tag); }
   h1 { margin: 0; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 127px;
        line-height: 1.02; letter-spacing: -1px; color: var(--title); }
   h1 em { font-style: normal; color: var(--accent); }
   .sub { margin-top: 30px; font-size: 59px; font-weight: 500; line-height: 1.25; color: var(--sub); opacity: .85; }
-  .phone { position: absolute; left: 208px; top: 1040px; width: 904px; }
-  .phone img { display: block; width: 100%; border-radius: 110px;
+  .phone { position: absolute; left: 245px; top: 760px; width: 830px; }
+  .phone img { display: block; width: 100%; border-radius: 106px;
                box-shadow: 0 0 0 10px var(--edge), 0 36px 96px var(--shadow); }
   .pair .phone { width: 733px; }
   .pair .phone img { border-radius: 92px; }
-  .pair #p1 { left: 24px; top: 1130px; }
-  .pair #p2 { left: 538px; top: 951px; }
+  .pair #p1 { left: 24px; top: 939px; }
+  .pair #p2 { left: 538px; top: 760px; }
   .pop { position: absolute; background-repeat: no-repeat; border-radius: 54px;
          box-shadow: 0 24px 60px var(--shadow); outline: 12px solid rgba(255,255,255,.9); }
 </style>
