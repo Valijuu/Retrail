@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
@@ -136,5 +138,17 @@ void main() {
     verifyNever(() => player.stop());
     await a.count(3);
     expect(playedClip(), 'audio/countdown/en/3.mp3'); // at full volume again
+  });
+
+  test('every language has a clip for 5 to 1 and the start', () {
+    for (final lang in ['de', 'en']) {
+      for (final clip in ['5', '4', '3', '2', '1', 'go']) {
+        expect(
+          File('assets/audio/countdown/$lang/$clip.mp3').existsSync(),
+          isTrue,
+          reason: '$lang/$clip.mp3',
+        );
+      }
+    }
   });
 }
