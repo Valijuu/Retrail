@@ -62,6 +62,7 @@ Pick the test discipline by the target, before writing code:
    branch and close the issue.
 
 Every change that alters behaviour updates the governing spec in the same commit.
+A user-visible change also adds a line under **Unreleased** in `/CHANGELOG.md` in the same commit.
 
 ## Git
 
@@ -94,3 +95,5 @@ explanation.
 Android releases follow the global `play-release` skill and `docs/android-release.md`; store texts and form
 answers live in `docs/play-store.md`. The privacy policy and imprint in `/site` change in the same change
 whenever the app starts sending data somewhere new.
+At release, the **Unreleased** section of `/CHANGELOG.md` gets the version and date and is the source for
+the store release notes; a new empty **Unreleased** section follows.
