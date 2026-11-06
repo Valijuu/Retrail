@@ -18,7 +18,7 @@ Must:
   At zero, or on Start now, it opens the ride screen once.
   The ring is proportional to the highest value seen in this run.
   The GPS row shows the live signal: ready, searching or switched off.
-  The voice cue counts `5` to `1` and says the start when the ride starts; leaving cuts a phrase still spoken.
+  The voice cue plays the bundled clips for `5` to `1` and the start clip when the ride starts; leaving cuts a clip still playing.
   The screen uses a fixed dark palette built from existing tokens.
 
 Must not:

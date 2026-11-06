@@ -52,7 +52,6 @@
   "timerTagline": "Ride starts soon.\nStay balanced.",
   "timerStartNow": "Start now",
   "timerAddFiveSec": "+5 sec.",
-  "timerCueRideStarted": "Ride started",
   "gpsStatusLabel": "GPS signal",
   "gpsStatusReady": "ready",
   "gpsStatusSearching": "searching…",

@@ -1,32 +1,25 @@
-import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:retrail/tracking/countdown_announcer.dart';
 
-class _MockTts extends Mock implements FlutterTts {}
+class _MockPlayer extends Mock implements AudioPlayer {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late _MockTts tts;
+  late _MockPlayer player;
   late List<int> buzzes;
   bool? ringerNormal;
 
   setUp(() {
-    tts = _MockTts();
+    player = _MockPlayer();
     buzzes = [];
     ringerNormal = true;
-    when(
-      () => tts.speak(any(), focus: any(named: 'focus')),
-    ).thenAnswer((_) async => 1);
-    when(() => tts.setLanguage(any())).thenAnswer((_) async => 1);
-    when(() => tts.setSharedInstance(any())).thenAnswer((_) async => 1);
-    when(
-      () => tts.setIosAudioCategory(any(), any(), any()),
-    ).thenAnswer((_) async => 1);
-    when(() => tts.stop()).thenAnswer((_) async => 1);
+    when(() => player.play(any())).thenAnswer((_) async {});
+    when(() => player.setAudioContext(any())).thenAnswer((_) async {});
+    when(() => player.stop()).thenAnswer((_) async {});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(audioChannel, (call) async {
           if (call.method == 'isRingerNormal') return ringerNormal;
@@ -35,9 +28,8 @@ void main() {
   });
 
   setUpAll(() {
-    registerFallbackValue(IosTextToSpeechAudioCategory.playback);
-    registerFallbackValue(IosTextToSpeechAudioMode.voicePrompt);
-    registerFallbackValue(<IosTextToSpeechAudioCategoryOptions>[]);
+    registerFallbackValue(AssetSource('audio/countdown/en/1.mp3'));
+    registerFallbackValue(AudioContext());
   });
 
   tearDown(() {
@@ -47,66 +39,75 @@ void main() {
 
   PlatformCountdownAnnouncer announcer({bool isIos = false}) =>
       PlatformCountdownAnnouncer(
-        tts: tts,
+        player: player,
         vibrate: (ms) async => buzzes.add(ms),
         isIos: isIos,
       );
 
-  test('count: a short buzz and the number', () async {
+  String playedClip() {
+    final captured = verify(() => player.play(captureAny())).captured;
+    return (captured.last as AssetSource).path;
+  }
+
+  test('count: a short buzz and the clip for the number', () async {
     final a = announcer();
     await a.prepare(const Locale('en'));
     await a.count(3);
     expect(buzzes, hasLength(1));
-    verify(() => tts.speak('3', focus: true)).called(1);
+    expect(playedClip(), 'audio/countdown/en/3.mp3');
   });
 
-  test('go: a longer buzz and the localized phrase', () async {
+  test('go: a longer buzz and the start clip', () async {
     final a = announcer();
     await a.prepare(const Locale('de'));
     await a.count(1);
     await a.go();
     expect(buzzes.last, greaterThan(buzzes.first));
-    verify(() => tts.speak('Fahrt gestartet', focus: true)).called(1);
+    expect(playedClip(), 'audio/countdown/de/go.mp3');
   });
 
-  test('prepare picks a regional voice for a bare language', () async {
-    await announcer().prepare(const Locale('de'));
-    verify(() => tts.setLanguage('de-DE')).called(1);
-    await announcer().prepare(const Locale('en', 'GB'));
-    verify(() => tts.setLanguage('en-GB')).called(1);
+  test(
+    'clip set follows the app language: de stays de, anything else is en',
+    () async {
+      await announcer().prepare(const Locale('de'));
+      final a = announcer();
+      await a.prepare(const Locale('de', 'AT'));
+      await a.count(5);
+      expect(playedClip(), 'audio/countdown/de/5.mp3');
+
+      final b = announcer();
+      await b.prepare(const Locale('fr'));
+      await b.count(4);
+      expect(playedClip(), 'audio/countdown/en/4.mp3');
+    },
+  );
+
+  test('prepare sets the ducking audio context once', () async {
+    await announcer().prepare(const Locale('en'));
+    verify(() => player.setAudioContext(any())).called(1);
   });
 
-  test('Android silent / vibrate ringer: buzz only, no voice', () async {
+  test('Android silent / vibrate ringer: buzz only, no clip', () async {
     ringerNormal = false;
     final a = announcer();
     await a.prepare(const Locale('en'));
     await a.count(5);
     await a.go();
     expect(buzzes, hasLength(2));
-    verifyNever(() => tts.speak(any(), focus: any(named: 'focus')));
+    verifyNever(() => player.play(any()));
   });
 
-  test('iOS speaks without asking the ringer, in the playback category '
-      'that ducks music', () async {
+  test('iOS plays without asking the ringer', () async {
     ringerNormal = false; // ignored on iOS
     final a = announcer(isIos: true);
     await a.prepare(const Locale('en'));
     await a.count(2);
-    verify(
-      () => tts.setIosAudioCategory(
-        IosTextToSpeechAudioCategory.playback,
-        any(that: contains(IosTextToSpeechAudioCategoryOptions.duckOthers)),
-        IosTextToSpeechAudioMode.voicePrompt,
-      ),
-    ).called(1);
-    verify(() => tts.speak('2', focus: true)).called(1);
+    expect(playedClip(), 'audio/countdown/en/2.mp3');
   });
 
-  test('a failing voice never throws into the countdown', () async {
-    when(
-      () => tts.speak(any(), focus: any(named: 'focus')),
-    ).thenThrow(PlatformException(code: 'tts'));
-    when(() => tts.setLanguage(any())).thenThrow(PlatformException(code: 'x'));
+  test('a failing player never throws into the countdown', () async {
+    when(() => player.play(any())).thenThrow(Exception('audio'));
+    when(() => player.setAudioContext(any())).thenThrow(Exception('ctx'));
     final a = announcer();
     await a.prepare(const Locale('en'));
     await a.count(4);
@@ -115,32 +116,8 @@ void main() {
     expect(buzzes, hasLength(2));
   });
 
-  test('stop cuts the voice', () async {
+  test('stop cuts the clip', () async {
     await announcer().stop();
-    verify(() => tts.stop()).called(1);
-  });
-
-  test('iOS: no session activated up front, so music keeps playing until '
-      'the first cue', () async {
-    await announcer(isIos: true).prepare(const Locale('en'));
-    verifyNever(() => tts.setSharedInstance(true));
-  });
-
-  test(
-    'iOS stop releases the audio session so ducked music comes back',
-    () async {
-      await announcer(isIos: true).stop();
-      verify(() => tts.stop()).called(1);
-      verify(() => tts.setSharedInstance(false)).called(1);
-    },
-  );
-
-  test('an app language without its own copy (fr) falls back to English, '
-      'voice included', () async {
-    final a = announcer();
-    await a.prepare(const Locale('fr', 'FR'));
-    await a.go();
-    verify(() => tts.setLanguage('en-US')).called(1);
-    verify(() => tts.speak('Ride started', focus: true)).called(1);
+    verify(() => player.stop()).called(1);
   });
 }

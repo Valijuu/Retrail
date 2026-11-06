@@ -57,8 +57,8 @@ Must:
   Pause, resume, stop and open mean the same from the notification, the Live Activity and the app,
     through @rideControlRelay.
   Swiping the app away finalizes the active ride with an end time.
-  The countdown cue never throws into the countdown and never delays a tick; it is silent on Android
-    when the ringer is not normal.
+  The countdown cue never throws into the countdown and never delays a tick; it plays bundled clips
+    (`/assets/audio/countdown`, de or en) and is silent on Android when the ringer is not normal.
 
 Must not:
   Move recording logic into the foreground-task isolate.

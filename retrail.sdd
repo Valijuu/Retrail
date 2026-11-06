@@ -54,7 +54,7 @@ Depends on:
   `vector_tile_renderer`: preview tiles drawn in Dart
   `geolocator`: location and iOS background location
   `flutter_foreground_task`: Android foreground service and notification
-  `flutter_tts`: countdown voice
+  `audioplayers`: countdown clips (bundled audio, no system voice)
   `vibration`: countdown buzz
   `image_picker`: profile photo source
   `image_cropper`: profile photo crop

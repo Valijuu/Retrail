@@ -51,7 +51,6 @@
   "timerTagline": "Fahrt beginnt gleich.\nBleib in Balance.",
   "timerStartNow": "Jetzt starten",
   "timerAddFiveSec": "+5 Sek.",
-  "timerCueRideStarted": "Fahrt gestartet",
   "gpsStatusLabel": "GPS-Signal",
   "gpsStatusReady": "bereit",
   "gpsStatusSearching": "wird gesucht…",
