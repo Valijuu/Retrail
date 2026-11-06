@@ -108,7 +108,9 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   countdown voice is synthetic (Microsoft Azure); Microsoft's TTS terms ask for that disclosure (#90). Apple has a keyword
   field, so the keyword list replaces the Play keyword table.
 - Category: Sports (secondary: Health & Fitness).
-- Screenshots: 6.9" iPhone (1320 × 2868) is required, the rest are scaled from it. German and
+- Screenshots: 6.9" iPhone (1320 × 2868) is required, the rest are scaled from it. The App Store Connect upload field of
+  the version page may accept only the 6.1"/6.3" size (1206 × 2622): `store/ios/screenshots_6_3/` holds the same 16 images
+  resized for that field (checked 2026-11-06: 1320 × 2868 was rejected there as "invalid dimensions"). German and
   English sets. Never use real routes (see the repo rule on location data).
   There is no Mac, so the shots come from the iOS Simulator on the GitHub macOS runner:
   workflow `ios-screenshots.yml` (manual) builds the demo databases and a simulator app and runs
