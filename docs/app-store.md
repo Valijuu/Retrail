@@ -84,12 +84,17 @@ and the connectivity probe; checked 2026-11-03).
 > Retrail records skate and longboard rides with GPS. No account or login is needed.
 > Location (While Using, then Always) is used for recording the route while the screen is off;
 > recording only runs after the user starts a ride and shows the system location indicator.
-> The audio background mode is used only to speak the 5-second countdown before a ride starts
-> (text-to-speech, no music or recording). A Live Activity on the lock screen shows the running
-> ride with Pause/Stop buttons. To test without moving: Xcode/Simulator, Features → Location →
+> The audio background mode is used only to play the 5-second countdown before a ride starts:
+> short bundled voice clips ("five" to "one" and "ride started"), so the rider can lock the phone
+> and put it away. The app plays no music, streams no audio and records no audio. The voice is
+> synthetic (Microsoft Azure, recorded in advance). A Live Activity on the lock screen shows the
+> running ride; its Pause/Stop buttons need iOS 17. Camera and photo library are used only to
+> choose an optional profile photo. To test without moving: Simulator, Features → Location →
 > City Run, then start a ride from Home.
 
 Apple often questions `location` and `audio` background modes. The notes above are the answer.
+Checked against the code on 2026-11-06: the audio mode plays only the bundled countdown clips
+(`assets/audio/countdown`), no text-to-speech any more (#81).
 
 ## Age rating
 

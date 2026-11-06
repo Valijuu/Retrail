@@ -81,7 +81,7 @@
 	     Declarations only; the extension/stream light them up later. -->
 	<key>UIBackgroundModes</key>
 	<array>
-		<!-- Countdown cue (#81): speak 5…1 + go with the screen locked. -->
+		<!-- Countdown cue (#81): play the bundled 5…1 + start clips with the screen locked. -->
 		<string>audio</string>
 		<string>location</string>
 	</array>
