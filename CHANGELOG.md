@@ -16,7 +16,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 
 ### Fixed
 - Profile: the photo chooser is centred under the avatar again.
-- Ride previews: a map tile that fails to draw no longer breaks the preview.
+- Ride previews: a map tile that fails to draw no longer breaks the preview, and a ride card no longer
+  shows a broken image when its preview is requested twice at once (#88).
 
 ### Added
 - iOS: the app is prepared for the App Store (signing, privacy manifest, iOS 15 minimum).
