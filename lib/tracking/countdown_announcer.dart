@@ -59,6 +59,12 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
   Future<void> prepare(Locale locale) async {
     _language = locale.languageCode == 'de' ? 'de' : 'en';
     await _quietly(() => _player.setAudioContext(_audioContext));
+    // Copies the clips out of the bundle now, so the first cue isn't late.
+    await _quietly(
+      () => _player.audioCache.loadAll([
+        for (final clip in _clips) _clipPath(clip),
+      ]),
+    );
   }
 
   @override
@@ -67,16 +73,22 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
   @override
   Future<void> go() => _cue('go', _goBuzzMs);
 
+  /// iOS releases the ducking audio session only when a clip plays to its
+  /// end (audioplayers_darwin `onSoundComplete`); a stopped clip would keep
+  /// the rider's music ducked. So iOS mutes the clip and lets it run out.
   @override
-  Future<void> stop() => _quietly(_player.stop);
+  Future<void> stop() =>
+      _quietly(() => _isIos ? _player.setVolume(0) : _player.stop());
 
   Future<void> _cue(String clip, int buzzMs) async {
     await _quietly(() => _vibrate(buzzMs));
     if (!await _maySpeak()) return;
-    await _quietly(
-      () => _player.play(AssetSource('$_clipFolder/$_language/$clip.mp3')),
-    );
+    await _quietly(() => _player.play(AssetSource(_clipPath(clip)), volume: 1));
   }
+
+  String _clipPath(String clip) => '$_clipFolder/$_language/$clip.mp3';
+
+  static const _clips = ['5', '4', '3', '2', '1', 'go'];
 
   Future<bool> _maySpeak() async {
     if (_isIos) return true;
@@ -87,20 +99,19 @@ class PlatformCountdownAnnouncer implements CountdownAnnouncer {
     }
   }
 
-  /// Ducks other audio (music) while a clip plays, on both platforms.
-  /// The `playback` category keeps the clip audible with the mute switch on
-  /// and the screen locked (`audio` background mode, see iOS).
+  /// Ducks other audio (music, podcasts) while a clip plays, on both
+  /// platforms; nothing is paused, so nothing has to resume. The `playback`
+  /// category keeps the clip audible with the mute switch on and the screen
+  /// locked (`audio` background mode, see iOS). Android plays on the media
+  /// stream, so the clip follows the volume the rider uses for music.
   static final _audioContext = AudioContext(
     iOS: AudioContextIOS(
       category: AVAudioSessionCategory.playback,
-      options: const {
-        AVAudioSessionOptions.duckOthers,
-        AVAudioSessionOptions.interruptSpokenAudioAndMixWithOthers,
-      },
+      options: const {AVAudioSessionOptions.duckOthers},
     ),
     android: const AudioContextAndroid(
-      contentType: AndroidContentType.sonification,
-      usageType: AndroidUsageType.assistanceSonification,
+      contentType: AndroidContentType.speech,
+      usageType: AndroidUsageType.media,
       audioFocus: AndroidAudioFocus.gainTransientMayDuck,
     ),
   );

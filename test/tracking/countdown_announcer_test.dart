@@ -17,7 +17,10 @@ void main() {
     player = _MockPlayer();
     buzzes = [];
     ringerNormal = true;
-    when(() => player.play(any())).thenAnswer((_) async {});
+    when(
+      () => player.play(any(), volume: any(named: 'volume')),
+    ).thenAnswer((_) async {});
+    when(() => player.setVolume(any())).thenAnswer((_) async {});
     when(() => player.setAudioContext(any())).thenAnswer((_) async {});
     when(() => player.stop()).thenAnswer((_) async {});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -45,7 +48,9 @@ void main() {
       );
 
   String playedClip() {
-    final captured = verify(() => player.play(captureAny())).captured;
+    final captured = verify(
+      () => player.play(captureAny(), volume: 1),
+    ).captured;
     return (captured.last as AssetSource).path;
   }
 
@@ -69,7 +74,6 @@ void main() {
   test(
     'clip set follows the app language: de stays de, anything else is en',
     () async {
-      await announcer().prepare(const Locale('de'));
       final a = announcer();
       await a.prepare(const Locale('de', 'AT'));
       await a.count(5);
@@ -94,7 +98,7 @@ void main() {
     await a.count(5);
     await a.go();
     expect(buzzes, hasLength(2));
-    verifyNever(() => player.play(any()));
+    verifyNever(() => player.play(any(), volume: any(named: 'volume')));
   });
 
   test('iOS plays without asking the ringer', () async {
@@ -106,7 +110,9 @@ void main() {
   });
 
   test('a failing player never throws into the countdown', () async {
-    when(() => player.play(any())).thenThrow(Exception('audio'));
+    when(
+      () => player.play(any(), volume: any(named: 'volume')),
+    ).thenThrow(Exception('audio'));
     when(() => player.setAudioContext(any())).thenThrow(Exception('ctx'));
     final a = announcer();
     await a.prepare(const Locale('en'));
@@ -116,8 +122,19 @@ void main() {
     expect(buzzes, hasLength(2));
   });
 
-  test('stop cuts the clip', () async {
+  test('Android: stop cuts the clip', () async {
     await announcer().stop();
     verify(() => player.stop()).called(1);
+  });
+
+  test('iOS: stop mutes the clip and lets it run out, so the ducking '
+      'session is released', () async {
+    final a = announcer(isIos: true);
+    await a.prepare(const Locale('en'));
+    await a.stop();
+    verify(() => player.setVolume(0)).called(1);
+    verifyNever(() => player.stop());
+    await a.count(3);
+    expect(playedClip(), 'audio/countdown/en/3.mp3'); // at full volume again
   });
 }

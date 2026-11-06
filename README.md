@@ -49,7 +49,7 @@ Light and dark theme, in English and German.
 
 Flutter (Material 3) · Riverpod · Drift (SQLite) · MapLibre with [OpenFreeMap](https://openfreemap.org)
 vector tiles · `geolocator` + `flutter_foreground_task` for background GPS · ActivityKit Live Activity
-on iOS · `flutter_tts` + `vibration` for the countdown cue
+on iOS · bundled voice clips (`audioplayers`) + `vibration` for the countdown cue
 
 ## Running it
 

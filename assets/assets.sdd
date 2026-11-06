@@ -1,7 +1,7 @@
 Spec: Assets
 
 Purpose:
-  Bundled map styles, app icon and activity icons.
+  Bundled map styles, app icon, activity icons and the countdown voice clips.
 
 Owns:
   ./map/retrail_light.json
