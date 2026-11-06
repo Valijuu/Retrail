@@ -6,8 +6,6 @@ name: iOS screenshots
 
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/ios-screenshots] # TEMP until the workflow is on main (#87)
 
 permissions:
   contents: read
