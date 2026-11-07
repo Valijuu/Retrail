@@ -82,7 +82,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/branding/app_icon.png"
-  adaptive_icon_background: "#FFF8F5"   # Surface token (not a new hex)
+  adaptive_icon_background: "assets/branding/app_icon_background.png"  # dark gradient behind the mark
   adaptive_icon_foreground: "assets/branding/app_icon_foreground.png"
   remove_alpha_ios: true
 

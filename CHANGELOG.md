@@ -10,6 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 ## Unreleased
 
 ### Changed
+- Retrail has a new app icon, on Android and iPhone.
 - The countdown voice is now a fixed, natural recorded voice in German and English instead of the
   phone's system voice. It sounds the same on every phone, starts without delay and no longer reads
   odd text on iPhones (#81).
