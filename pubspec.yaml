@@ -75,9 +75,9 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
 
 # App launcher icons (Android adaptive + iOS), generated from the Retrail mark.
-# The vector sources are assets/branding/app_icon{,_foreground}.svg — render them
-# to the 1024px PNGs below (and the Android 12+ splash_icon.png set) first.
-# Regenerate with: dart run flutter_launcher_icons
+# Sources are the 1024px PNGs below: app_icon.png (full-bleed square, no alpha),
+# app_icon_foreground.png (the mark, transparent) and app_icon_background.png
+# (the dark gradient behind it). Regenerate with: dart run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: true
@@ -111,6 +111,7 @@ flutter:
 
   assets:
     - assets/icons/activity/
+    - assets/branding/app_icon.png
     - assets/branding/app_icon_foreground.png
     - assets/map/
     - assets/audio/countdown/de/
