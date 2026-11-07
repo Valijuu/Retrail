@@ -132,15 +132,20 @@ void main() {
       await _wait(tester, const Duration(seconds: 3));
       await tester.tap(find.text(_l10n.homeStartTracking));
       if (_wanted('06_countdown')) {
-        // 10 s countdown: the shot lands on about 5. The host takes the shot
-        // after an unknown delay, so it must not hit a digit change (the
-        // 320 ms roll shows two digits, "3" over half a "2"): "+5 sec." restarts
-        // the one-second ticker, so the next change is a full second away, and
-        // the roll that tap causes is over after 340 ms.
+        // The host takes the shot 1 to 15 s after the marker (run
+        // 42366838171), while the countdown keeps ticking: a shot during the
+        // 320 ms digit roll shows two digits. "+5 sec." restarts the ticker,
+        // so right after its roll the digit stands for a moment; the shot
+        // freezes that frame until the host has taken it.
         await _wait(tester, const Duration(milliseconds: 4200));
         await tester.tap(find.text(_l10n.timerAddFiveSec));
-        await _wait(tester, const Duration(milliseconds: 340));
-        await _shot(tester, '06_countdown', settle: Duration.zero);
+        await _wait(tester, const Duration(milliseconds: 400));
+        await _shot(
+          tester,
+          '06_countdown',
+          settle: Duration.zero,
+          freeze: true,
+        );
       } else {
         await _wait(tester, const Duration(seconds: 2));
         await tester.tap(find.text(_l10n.timerStartNow));
@@ -251,20 +256,36 @@ Future<void> _wait(WidgetTester tester, Duration d) async {
 }
 
 /// Lets the screen settle, then asks the script for a screenshot.
+///
+/// With [freeze], no frame is drawn until the host has taken the shot (frame
+/// policy onlyPumps, and no pump while waiting): the screen keeps the last
+/// frame however long the host takes, while timers keep running behind it.
+/// For motives that change on their own, such as the countdown digit.
 Future<void> _shot(
   WidgetTester tester,
   String name, {
   Duration settle = const Duration(seconds: 2),
+  bool freeze = false,
 }) async {
   if (!_wanted(name)) return;
   await _wait(tester, settle);
-  await _handshake(
-    'RETRAIL_SHOT $name',
-    name,
-    // Generous: the simulator host is slow while the map renders.
-    const Duration(minutes: 3),
-    tester: tester,
-  );
+  final binding = IntegrationTestWidgetsFlutterBinding.instance;
+  if (freeze) {
+    await tester.pump();
+    binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.onlyPumps;
+  }
+  try {
+    await _handshake(
+      'RETRAIL_SHOT $name',
+      name,
+      // Generous: the simulator host is slow while the map renders.
+      const Duration(minutes: 3),
+      // A pump draws a frame, so a frozen shot waits without pumping.
+      tester: freeze ? null : tester,
+    );
+  } finally {
+    binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
+  }
 }
 
 /// Prints [marker] and waits (pumping frames) until the script wrote the ack
