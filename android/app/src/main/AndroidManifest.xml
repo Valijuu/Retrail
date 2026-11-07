@@ -16,6 +16,11 @@
         android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Status bar icon of the recording notification (white glyph, read by
+             flutter_foreground_task via NotificationIcon in foreground_task_service.dart). -->
+        <meta-data
+            android:name="io.github.valijuu.retrail.NOTIFICATION_ICON"
+            android:resource="@drawable/ic_stat_retrail" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

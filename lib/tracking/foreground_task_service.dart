@@ -69,6 +69,9 @@ class ForegroundTaskService implements RideForegroundService {
 
   static const _channelId = 'ride_tracking_v2';
 
+  /// Manifest meta-data that points at the notification small icon.
+  static const _iconMetaData = 'io.github.valijuu.retrail.NOTIFICATION_ICON';
+
   /// One-time init of the notification channel + task options. Channel is
   /// `DEFAULT` importance but silent — a LOW channel hides the control in the
   /// silent shade (the original's hard-won lesson).
@@ -109,6 +112,10 @@ class ForegroundTaskService implements RideForegroundService {
       serviceId: 1,
       serviceTypes: const [ForegroundServiceTypes.location],
       notificationTitle: c.recordingTitle,
+      // White R glyph (drawable ic_stat_retrail). Without it Android uses the
+      // full-colour launcher icon, which the status bar shows as a blank blob.
+      // Updates keep the icon, so only the start sets it.
+      notificationIcon: const NotificationIcon(metaDataName: _iconMetaData),
       notificationText: notificationBody(
         elapsedSeconds: 0,
         distanceMetres: 0,

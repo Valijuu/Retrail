@@ -56,6 +56,8 @@ Must:
     iOS escalates to Always for screen-off recording.
   Pause, resume, stop and open mean the same from the notification, the Live Activity and the app,
     through @rideControlRelay.
+  The Android recording notification shows the white Retrail glyph (`ic_stat_retrail`) as its status-bar icon,
+    not the full-colour launcher icon.
   Swiping the app away finalizes the active ride with an end time.
   The countdown cue never throws into the countdown and never delays a tick; it plays bundled clips
     (`/assets/audio/countdown`, de or en) and is silent on Android when the ringer is not normal.

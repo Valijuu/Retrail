@@ -18,6 +18,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
   odd text on iPhones (#81).
 
 ### Fixed
+- Android: while recording, the status bar shows a white Retrail R instead of a blank blob.
 - Profile: the photo chooser is centred under the avatar again.
 - Ride previews: a map tile that fails to draw no longer breaks the preview, and a ride card no longer
   shows a broken image when its preview is requested twice at once (#88).
