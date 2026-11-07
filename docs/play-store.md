@@ -347,6 +347,34 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
+### 1.3.2+12 (production, prepared 2026-11-07)
+
+Derived from `CHANGELOG.md` (Unreleased, iOS entry left out). Replaces the never
+uploaded 1.3.2+9.
+
+```
+<de-DE>
+Neu:
+• Der Countdown spricht jetzt mit einer festen, natürlichen Stimme – auf jedem Handy gleich und ohne Verzögerung
+
+Behoben:
+• Die Kartenvorschau einer Fahrt bricht nicht mehr ab, wenn eine Kartenkachel nicht lädt
+• Die Profilfoto-Auswahl sitzt wieder mittig unter dem Avatar
+
+Fragen oder Ideen? retrail.app@proton.me
+</de-DE>
+<en-US>
+New:
+• The countdown now uses a fixed, natural voice – the same on every phone and without delay
+
+Fixed:
+• A ride's map preview no longer breaks when a map tile fails to load
+• The profile photo chooser is centred under the avatar again
+
+Questions or ideas? retrail.app@proton.me
+</en-US>
+```
+
 ### 1.3.1+8 (production, first public release — prepared 2026-10-30)
 
 Same bundle as the closed test, promoted (no new upload). First production
