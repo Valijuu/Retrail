@@ -132,8 +132,14 @@ void main() {
       await _wait(tester, const Duration(seconds: 3));
       await tester.tap(find.text(_l10n.homeStartTracking));
       if (_wanted('06_countdown')) {
-        // 10 s countdown: the shot lands on about 5.
+        // 10 s countdown: the shot lands on about 5. The host takes the shot
+        // after an unknown delay, so it must not hit a digit change (the
+        // 320 ms roll shows two digits, "3" over half a "2"): "+5 sec." restarts
+        // the one-second ticker, so the next change is a full second away, and
+        // the roll that tap causes is over after 340 ms.
         await _wait(tester, const Duration(milliseconds: 4200));
+        await tester.tap(find.text(_l10n.timerAddFiveSec));
+        await _wait(tester, const Duration(milliseconds: 340));
         await _shot(tester, '06_countdown', settle: Duration.zero);
       } else {
         await _wait(tester, const Duration(seconds: 2));
