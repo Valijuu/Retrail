@@ -76,14 +76,18 @@ dev_dependencies:
 
 # App launcher icons (Android adaptive + iOS), generated from the Retrail mark.
 # Sources are the 1024px PNGs below: app_icon.png (full-bleed square, no alpha),
-# app_icon_foreground.png (the mark, transparent) and app_icon_background.png
-# (the dark gradient behind it). Regenerate with: dart run flutter_launcher_icons
+# app_icon_foreground.png (the mark, transparent, sized to the 66dp safe zone of
+# the 108dp canvas, so no extra inset), app_icon_background.png (the dark
+# gradient behind it) and app_icon_monochrome.png (Android 13+ themed icon).
+# Regenerate with: dart run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/branding/app_icon.png"
   adaptive_icon_background: "assets/branding/app_icon_background.png"  # dark gradient behind the mark
   adaptive_icon_foreground: "assets/branding/app_icon_foreground.png"
+  adaptive_icon_foreground_inset: 0  # the mark already sits inside the safe zone
+  adaptive_icon_monochrome: "assets/branding/app_icon_monochrome.png"
   remove_alpha_ios: true
 
 # maplibre_ios 0.3.6's generated FFI bindings hard-assert `objective_c ^9.5.0`
@@ -111,8 +115,7 @@ flutter:
 
   assets:
     - assets/icons/activity/
-    - assets/branding/app_icon.png
-    - assets/branding/app_icon_foreground.png
+    - assets/branding/retrail_mark.png
     - assets/map/
     - assets/audio/countdown/de/
     - assets/audio/countdown/en/

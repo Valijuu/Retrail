@@ -33,16 +33,14 @@ class InitScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              // The app icon as a dark rounded tile, the same as on the launcher
-              // (the mark is designed for a dark ground) — branding the welcome
-              // step for every activity, not just boarders.
-              ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: Image.asset(
-                  'assets/branding/app_icon.png',
-                  width: 132,
-                  height: 132,
-                ),
+              // The Retrail mark (the app icon without its tile) — branding the
+              // welcome step for every activity, not just boarders. Its white
+              // route line sits inside the orange R, so the same image reads on
+              // the light and the dark surface.
+              Image.asset(
+                'assets/branding/retrail_mark.png',
+                width: 132,
+                height: 132,
               ),
               const SizedBox(height: 24),
               Text(
