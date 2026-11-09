@@ -14,7 +14,7 @@
 // language (en by default). Ride dates are relative to now, so
 // the home screen's week/day totals are filled. Route geometry in
 // routes.json is from OpenStreetMap (© OpenStreetMap contributors, ODbL): the
-// Tempelhofer Feld paths and two Kitzbühel pistes (Fleck, Kaser) for the winter
+// Tempelhofer Feld paths and two Kitzbühel pistes (Schroll, Kaser) for the winter
 // rides; no ride is a real person's track.
 import 'dart:convert';
 import 'dart:io';
@@ -122,12 +122,12 @@ void main() {
         daysAgo: 1,
         hour: 9,
         minute: 20,
-        title: de ? 'Fleck-Abfahrt' : 'Fleck run',
+        title: de ? 'Schroll-Abfahrt' : 'Schroll run',
         comment: de
             ? 'Griffige Piste am Vormittag, kaum los.'
             : 'Grippy snow in the morning, hardly anyone about.',
         type: ActivityType.ski,
-        route: _smooth(r('fleck_piste')),
+        route: _smooth(r('schroll_piste')),
         cruiseKmh: 38,
       ),
       DemoRide(
