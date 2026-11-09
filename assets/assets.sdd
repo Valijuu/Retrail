@@ -21,5 +21,8 @@ Must:
   `branding/app_icon.png` (full-bleed square, no alpha), `app_icon_foreground.png` and
     `app_icon_monochrome.png` (the mark inside the `66` dp safe zone of the `108` dp canvas, no inset)
     are the launcher sources; `dart run flutter_launcher_icons` regenerates the platform icons from them.
+  All branding PNGs, the Android splash icon and status-bar glyph and the iOS Live Activity mark are generated
+    by `/tool/build_app_icons.py` from `branding/source/retrail_logo_tile.png` (the R on its dark tile);
+    they are never edited by hand.
   `branding/retrail_mark.png` is the only branding image the app bundles; it works on the light and the
     dark surface.

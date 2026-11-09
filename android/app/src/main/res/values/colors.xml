@@ -2,5 +2,5 @@
 <resources>
     <!-- Circle behind the Android 12+ splash icon (values-v31 styles): the centre
          of the launcher icon's dark gradient (assets/branding/app_icon_background.png). -->
-    <color name="ic_launcher_background">#271A10</color>
+    <color name="ic_launcher_background">#2B160A</color>
 </resources>

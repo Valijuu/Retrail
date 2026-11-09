@@ -347,6 +347,32 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
+### 1.3.3+14 (production, prepared 2026-11-09)
+
+Derived from `CHANGELOG.md` (1.3.3+14 section, iOS entry left out). Replaces 1.3.2+13 in the
+store. Only the Android-visible changes since 1.3.2+13: the new app icon and the status-bar R.
+
+```
+<de-DE>
+Neu:
+• Retrail hat ein neues App-Symbol: das R mit Routenpin auf dunklem Grund
+
+Behoben:
+• Während der Aufnahme zeigt die Statusleiste ein weißes Retrail-R statt eines leeren Kästchens
+
+Fragen oder Ideen? retrail.app@proton.me
+</de-DE>
+<en-US>
+New:
+• Retrail has a new app icon: the R with the route pin on a dark background
+
+Fixed:
+• While recording, the status bar shows a white Retrail R instead of a blank box
+
+Questions or ideas? retrail.app@proton.me
+</en-US>
+```
+
 ### 1.3.2+12 (production, prepared 2026-11-07)
 
 Derived from `CHANGELOG.md` (Unreleased, iOS entry left out). Replaces the never

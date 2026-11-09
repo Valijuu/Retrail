@@ -11,6 +11,7 @@ Owns:
   ./ios_screenshots.sh
   ./ios_screen_text.swift
   ./render_store_graphics.sh
+  ./build_app_icons.py
   ./render_ios_store_graphics.sh
   ./check_raw_sql.py
   ./demo_rides
@@ -35,6 +36,8 @@ Must:
     replayed demo GPS, no Live Activity): it prints `RETRAIL_SHOT <name>`, the script takes the shot with
     `simctl io screenshot` and acks with a file in the app's Documents. The script fails when a motive's
     shot is missing, has the wrong size or lacks its expected text in the shot's language.
+  `build_app_icons.py` lifts the R off the dark tile of the logo source and writes the branding PNGs, the Android splash icon and
+    status-bar glyph and the iOS Live Activity mark; `dart run flutter_launcher_icons` then writes the launcher icons.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   `render_ios_store_graphics.sh` frames the Simulator shots for the App Store (1320 x 2868) the same way: caption, phone, optional second phone (light + dark) and an enlarged excerpt, listed in `store/ios/screenshots.tsv`.
   Demo rides contain invented routes only.
