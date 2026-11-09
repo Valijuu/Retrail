@@ -13,7 +13,9 @@
 // Writes build/demo_rides/retrail_<lang>.sqlite with ride titles in that
 // language (en by default). Ride dates are relative to now, so
 // the home screen's week/day totals are filled. Route geometry in
-// routes.json is from OpenStreetMap (© OpenStreetMap contributors, ODbL).
+// routes.json is from OpenStreetMap (© OpenStreetMap contributors, ODbL): the
+// Tempelhofer Feld paths and two Kitzbühel pistes (Fleck, Kaser) for the winter
+// rides; no ride is a real person's track.
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -115,6 +117,30 @@ void main() {
         type: ActivityType.rollerblades,
         route: outAndBack(r('north_runway')),
         cruiseKmh: 17,
+      ),
+      DemoRide(
+        daysAgo: 1,
+        hour: 9,
+        minute: 20,
+        title: de ? 'Fleck-Abfahrt' : 'Fleck run',
+        comment: de
+            ? 'Griffige Piste am Vormittag, kaum los.'
+            : 'Grippy snow in the morning, hardly anyone about.',
+        type: ActivityType.ski,
+        route: _smooth(r('fleck_piste')),
+        cruiseKmh: 38,
+      ),
+      DemoRide(
+        daysAgo: 3,
+        hour: 11,
+        minute: 5,
+        title: de ? 'Kaser-Carving' : 'Kaser carving',
+        comment: de
+            ? 'Lange Schwünge bis ins Tal.'
+            : 'Long turns all the way down.',
+        type: ActivityType.snowboard,
+        route: _smooth(r('kaser_piste')),
+        cruiseKmh: 32,
       ),
       DemoRide(
         daysAgo: 3,
@@ -338,6 +364,26 @@ double _length(List<LatLng> route) {
     metres += math.sqrt(dx * dx + dy * dy);
   }
   return metres;
+}
+
+/// Corner-cutting smoothing (Chaikin): OpenStreetMap pistes are drawn with
+/// sparse, slightly kinked nodes that show as angles at the follow screen's
+/// zoom. Each pass replaces every corner by two points at 1/4 and 3/4 of its
+/// segments; the ends stay.
+List<LatLng> _smooth(List<LatLng> route, {int passes = 2}) {
+  var line = route;
+  for (var i = 0; i < passes; i++) {
+    final next = <LatLng>[line.first];
+    for (var j = 0; j < line.length - 1; j++) {
+      final a = line[j];
+      final b = line[j + 1];
+      next.add([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25]);
+      next.add([a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+    }
+    next.add(line.last);
+    line = next;
+  }
+  return line;
 }
 
 /// One fix per second along [route] at a speed that swells and dips around
