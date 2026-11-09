@@ -1,6 +1,7 @@
 /// The kind of tracked ride. The [id] is the stable uppercase string persisted
-/// in `Ride.typ` (e.g. "LONGBOARD"). Label + icon are UI concerns wired in the
-/// screen phases, not here.
+/// in `Ride.typ` (e.g. "LONGBOARD") and never renamed. Declaration order is the
+/// order of every picker. Labels and icons are UI concerns and live outside the
+/// domain.
 enum ActivityType {
   longboard('LONGBOARD'),
   skateboard('SKATEBOARD'),
@@ -8,6 +9,8 @@ enum ActivityType {
   rollerblades('ROLLERBLADES'),
   rollerskates('ROLLERSKATES'),
   scooter('SCOOTER'),
+  snowboard('SNOWBOARD'),
+  ski('SKI'),
   other('OTHER');
 
   const ActivityType(this.id);
@@ -16,11 +19,7 @@ enum ActivityType {
 
   /// Maps a stored type string (`Ride.typ`) back to the enum, or null if none.
   static ActivityType? fromId(String? id) {
-    if (id == null) return null;
-    for (final type in values) {
-      if (type.id == id) return type;
-    }
-    return null;
+    return values.where((type) => type.id == id).firstOrNull;
   }
 
   /// Preselection for the first ride, before any "last used" exists.

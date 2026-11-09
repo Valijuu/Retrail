@@ -29,6 +29,8 @@
   "activityRollerskates": "Roller skates",
   "activityMountainboard": "Mountainboard",
   "activityScooter": "Scooter",
+  "activitySnowboard": "Snowboard",
+  "activitySki": "Ski",
   "activityOther": "Other",
 
   "homeDefaultName": "Rider",

@@ -35,6 +35,8 @@ extension ActivityTypeUi on ActivityType {
     ActivityType.rollerblades => l10n.activityRollerblades,
     ActivityType.rollerskates => l10n.activityRollerskates,
     ActivityType.scooter => l10n.activityScooter,
+    ActivityType.snowboard => l10n.activitySnowboard,
+    ActivityType.ski => l10n.activitySki,
     ActivityType.other => l10n.activityOther,
   };
 }
