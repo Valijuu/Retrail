@@ -18,6 +18,7 @@ import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
 import 'package:retrail/data/repositories/trackpoint_repository.dart';
 import 'package:retrail/domain/activity_type.dart';
+import 'package:retrail/features/onboarding/activity_type_ui.dart';
 import 'package:retrail/domain/ride_stats.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_controller.dart';
@@ -289,6 +290,16 @@ void main() {
       );
     },
   );
+
+  testWidgets('a ride card shows the label of every activity type (#94)', (
+    tester,
+  ) async {
+    final l10n = lookupAppLocalizations(const Locale('en'));
+    for (final type in ActivityType.values) {
+      await pump(tester, [_entry(1, desc: 'Ride', typ: type.id)]);
+      expect(find.text(type.label(l10n)), findsOneWidget, reason: type.id);
+    }
+  });
 
   testWidgets('empty state when there are no rides', (tester) async {
     await pump(tester, const []);

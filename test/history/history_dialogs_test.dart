@@ -11,6 +11,7 @@ import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/ride_stats.dart';
 import 'package:retrail/features/history/edit_ride_sheet.dart';
 import 'package:retrail/features/history/ride_detail_dialog.dart';
+import 'package:retrail/features/onboarding/activity_type_ui.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/map_attribution.dart';
@@ -136,6 +137,70 @@ void main() {
         expect(chips.every((c) => c.showCheckmark == false), isTrue);
       },
     );
+  });
+
+  group('every activity type (#94)', () {
+    testWidgets('the detail dialog shows its label', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      for (final type in ActivityType.values) {
+        await tester.pumpWidget(
+          _host(
+            RideDetailDialog(
+              rwt: RideWithTrackpoints(
+                ride: _ride().copyWith(typ: Value(type.id)),
+                trackpoints: const [],
+              ),
+              stats: const RideStats(
+                durationMs: 600000,
+                distanceMetres: 4200,
+                maxSpeedKmh: 22,
+                avgSpeedKmh: 15,
+              ),
+              onDismiss: () {},
+            ),
+          ),
+        );
+        expect(find.text(type.label(l10n)), findsOneWidget, reason: type.id);
+      }
+    });
+
+    testWidgets('the edit sheet preselects it', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      for (final type in ActivityType.values) {
+        await tester.pumpWidget(
+          _host(
+            // A new key per type: the sheet reads initialType only once.
+            EditRideSheet(
+              key: ValueKey(type),
+              initialType: type,
+              onDismiss: () {},
+              onSave: (_, _, _, _) {},
+            ),
+          ),
+        );
+        final selected = tester
+            .widgetList<FilterChip>(find.byType(FilterChip))
+            .where((chip) => chip.selected)
+            .toList();
+        expect(selected, hasLength(1), reason: type.id);
+        expect(
+          find.descendant(
+            of: find.byWidget(selected.single),
+            matching: find.text(type.label(l10n)),
+          ),
+          findsOneWidget,
+          reason: type.id,
+        );
+      }
+    });
   });
 
   group('RideDetailDialog', () {
