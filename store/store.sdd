@@ -12,6 +12,11 @@ References:
   /tool/tool.sdd
 
 Must:
+  The store name is `Retrail: Skate & Snow GPS` in both languages. The slogan is `Hinterlass deine Spur.` /
+    `Leave your trail.`; the positioning line is "Skaten im Sommer, Boarden im Winter. Eine App für beides." /
+    "Skate in summer, board in winter. One app for both." Skate stays first in every text, snow second.
+  Snow words (snowboard, ski, Schnee, winter) enter the store texts only in a release that ships the
+    snowboard and ski types in the app.
   Listing texts stay within Play limits: name `30`, short `80`, full description `4000` characters.
   App Store texts (`./ios/text`) stay within Apple limits: name `30`, subtitle `30`, keywords `100` (comma separated, no words from the name), promotional text `170`, description `4000` characters.
   Screenshots and feature graphics are rendered by `/tool/render_store_graphics.sh` from raw shots and HTML frames.

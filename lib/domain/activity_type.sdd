@@ -1,7 +1,7 @@
 Spec: Activity type
 
 Purpose:
-  The seven rolling-sport activities a ride can have and their stored ids.
+  The rolling and sliding activities a ride can have and their stored ids.
 
 Owns:
   ./activity_type.dart
@@ -11,9 +11,11 @@ References:
   /docs/specs/history/04-domain.md
 
 Must:
-  The types are longboard, skateboard, mountainboard, rollerblades, rollerskates, scooter and other;
-    declaration order is the order of every picker.
-  Each type has a stable uppercase id stored in `Ride.typ`, such as `LONGBOARD`.
+  The types are longboard, skateboard, mountainboard, rollerblades, rollerskates, scooter, snowboard,
+    ski and other; declaration order is the order of every picker. Skate types come first, snow
+    types after them, `other` last.
+  Each type has a stable uppercase id stored in `Ride.typ`, such as `LONGBOARD`, `SNOWBOARD` and `SKI`.
+    Ids are never renamed: rides already stored keep resolving to their type.
   @ActivityType.fromId returns `null` for an unknown or missing id.
   @ActivityType.defaultType is longboard.
 
@@ -22,4 +24,5 @@ Must not:
 
 Example:
   `@ActivityType.fromId('LONGBOARD')`: longboard
+  `@ActivityType.fromId('SNOWBOARD')`: snowboard
   `@ActivityType.fromId('SURF')`: `null`

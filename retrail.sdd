@@ -3,9 +3,10 @@ Spec: Retrail
 Platform: Flutter/Dart/Material 3/Riverpod/Drift/MapLibre
 
 Purpose:
-  GPS route tracker for longboard, skate and other rolling-sport rides on Android and iOS,
-    migrated from an Android Jetpack Compose app. Records rides offline, keeps a history with
-    pre-rendered map previews, and lets a rider follow a saved route again.
+  GPS route tracker for skate and snow rides on Android and iOS: skate in summer (skateboard,
+    longboard and the other wheel sports), snow in winter (snowboard and ski), and any other board
+    or wheel sport. Migrated from an Android Jetpack Compose app. Records rides offline, keeps a
+    history with pre-rendered map previews, and lets a rider follow a saved route again.
 
 Structure:
   ./lib: Flutter app code
