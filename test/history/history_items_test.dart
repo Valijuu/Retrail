@@ -67,6 +67,20 @@ void main() {
       expect(_rideIds(items), [1]);
     });
 
+    test(
+      'every activity type filters its own rides, snow types included (#94)',
+      () {
+        final rides = [
+          for (final (i, type) in ActivityType.values.indexed)
+            _ride(i + 1, typ: type.id),
+        ];
+        for (final (i, type) in ActivityType.values.indexed) {
+          final items = _build(rides, HistoryFilter(activities: {type}));
+          expect(_rideIds(items), [i + 1], reason: type.id);
+        }
+      },
+    );
+
     test('multiple activities combine as any-of', () {
       final items = _build(
         [

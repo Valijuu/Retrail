@@ -34,6 +34,17 @@ void main() {
     expect(await prefs.lastActivityType.first, 'SCOOTER');
   });
 
+  test(
+    'every activity type round-trips as the default activity (#94)',
+    () async {
+      for (final type in ActivityType.values) {
+        await controller.setDefaultActivity(type);
+        final stored = await prefs.lastActivityType.first;
+        expect(ActivityType.fromId(stored), type, reason: type.id);
+      }
+    },
+  );
+
   test('setCountdownCue persists the switch (#81)', () async {
     await controller.setCountdownCue(false);
     expect(await prefs.countdownCueEnabled.first, isFalse);
