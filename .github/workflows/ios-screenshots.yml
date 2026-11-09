@@ -6,6 +6,10 @@ name: iOS screenshots
 
 on:
   workflow_dispatch:
+    inputs:
+      variants:
+        description: "Language_theme variants to take, space separated (all four by default)"
+        default: "en_light en_dark de_light de_dark"
 
 permissions:
   contents: read
@@ -51,11 +55,12 @@ jobs:
           set -uo pipefail
           # Every variant runs even when one fails; the step fails at the end.
           failed=""
-          for lang in en de; do
-            for theme in light dark; do
-              tool/ios_screenshots.sh "${lang}" "${theme}" build/ios_screenshots \
-                || failed="${failed} ${lang}_${theme}"
-            done
+          # One variant hung in simctl for 75 minutes (run 42645130114) and took
+          # the whole 100-minute job with it: each variant gets 30 minutes.
+          for variant in ${{ inputs.variants || 'en_light en_dark de_light de_dark' }}; do
+            lang="${variant%_*}" theme="${variant#*_}"
+            perl -e 'alarm 1800; exec @ARGV' tool/ios_screenshots.sh "${lang}" "${theme}" build/ios_screenshots \
+              || failed="${failed} ${variant}"
           done
           if [ -n "${failed}" ]; then echo "failed variants:${failed}" >&2; exit 1; fi
 
