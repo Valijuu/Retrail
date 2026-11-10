@@ -32,5 +32,7 @@ Must:
   Deleting evicts the preview; deletes confirm with ICU plurals.
   Route chips open the comparison sheet; the followed-routes filter is shown once a route was followed.
   An empty filter result says so instead of showing the empty history.
+  With an area set, a ride stays hidden until its outline says it is inside; the outlines come from the in-memory
+    outline store, loaded on demand (#96).
   A Liste/Karte switch at the top changes between this list and the map view of @HistoryMap; the filters
     are shared and the choice is stored (#96).
