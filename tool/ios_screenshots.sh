@@ -149,7 +149,7 @@ xcrun simctl terminate "${UDID}" "${BUNDLE}" 2>/dev/null || true
 # screenshot misses the map (a native view). The dark set needs only the ride
 # (05_dark); the countdown has its own dark palette in either theme.
 if [ "${THEME}" = light ]; then
-  SHOTS="02_history,03_detail,04_best_time,05_follow,06_countdown,07_track,08_activities"
+  SHOTS="02_history,02_history_winter,03_detail,04_best_time,05_follow,06_countdown,07_track,08_activities"
 else
   SHOTS="07_track"
 fi
@@ -159,6 +159,7 @@ expected_text() { # <name>
   case "$1:${LANG_CODE}" in
     02_history:en) echo "Followed" ;;
     02_history:de) echo "Nachgefahren" ;;
+    02_history_winter:en|02_history_winter:de) echo "Ski" ;;
     03_detail:en) echo "Avg speed" ;;
     03_detail:de) echo "Geschwindigkeit" ;;
     04_best_time:en) printf '%s\n' "Original" "Followed (" ;;

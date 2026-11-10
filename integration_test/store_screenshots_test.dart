@@ -81,6 +81,18 @@ void main() {
       // Route previews render from map tiles over the network.
       await _wait(tester, const Duration(seconds: 15));
       await _shot(tester, '02_history');
+      // Scrolled to the winter rides (the Schroll ski run) for the store shot.
+      await tester.drag(
+        find.byType(RidePreviewThumbnail).first,
+        const Offset(0, -420),
+      );
+      await _wait(tester, const Duration(seconds: 6));
+      await _shot(tester, '02_history_winter');
+      await tester.drag(
+        find.byType(RidePreviewThumbnail).first,
+        const Offset(0, 420),
+      );
+      await _wait(tester, const Duration(seconds: 2));
 
       await tester.tap(find.byType(RidePreviewThumbnail).first);
       await _wait(tester, const Duration(seconds: 6));
@@ -95,6 +107,7 @@ void main() {
     },
     skip:
         !_wanted('02_history') &&
+        !_wanted('02_history_winter') &&
         !_wanted('03_detail') &&
         !_wanted('04_best_time'),
   );
