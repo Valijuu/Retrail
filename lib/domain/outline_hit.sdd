@@ -19,6 +19,8 @@ Must:
     of the nearest segment.
   Hits are sorted by distance, then newest ride first; every ride appears once.
   An outline with fewer than two points never hits.
+  @OutlineHit.find takes @OutlineCandidate entries (ride id, timestamp, bounds, lazily decoded outline); an outline is
+    decoded only when the tap lies near its bounds.
   A hit is marked best when its ride is the best of its @RouteGroup; the hit function takes the best ride
     ids as input and never computes a best time.
 

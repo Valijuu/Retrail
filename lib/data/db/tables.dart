@@ -75,3 +75,20 @@ class Trackpoints extends Table {
   // Recorded altitude in metres (#97); null when the platform gave no valid one.
   RealColumn get altitude => real().nullable()();
 }
+
+/// The simplified route of one ride for the History map overview (#96,
+/// ADR 0001): an encoded polyline and its bounding box. A separate table, so
+/// ride list queries never load the polyline text. Deleted with its ride.
+@DataClassName('RideOutlineRow')
+class RideOutlines extends Table {
+  IntColumn get rideId =>
+      integer().references(Rides, #rideId, onDelete: KeyAction.cascade)();
+  TextColumn get polyline => text()();
+  RealColumn get south => real()();
+  RealColumn get west => real()();
+  RealColumn get north => real()();
+  RealColumn get east => real()();
+
+  @override
+  Set<Column> get primaryKey => {rideId};
+}

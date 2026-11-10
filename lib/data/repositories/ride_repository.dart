@@ -7,6 +7,7 @@ import '../db/app_database.dart';
 import '../db/followed_route.dart';
 import '../db/ride_dao.dart';
 import '../db/ride_with_trackpoints.dart';
+import 'outline_repository.dart';
 
 /// Returns "now" in epoch milliseconds. Injectable so the favorite timestamp is
 /// deterministic in tests (the original used `System.currentTimeMillis()`).
@@ -16,11 +17,16 @@ int _systemNow() => DateTime.now().millisecondsSinceEpoch;
 
 /// Thin wrapper over [RideDao], mirroring the original Kotlin `RideRepository`.
 class RideRepository {
-  RideRepository(this._dao, {NowMs? now, DistanceCalculator? calc})
-    : _now = now ?? _systemNow,
-      _calc = calc ?? const HaversineDistanceCalculator();
+  RideRepository(
+    this._dao, {
+    NowMs? now,
+    DistanceCalculator? calc,
+    this._outlines,
+  }) : _now = now ?? _systemNow,
+       _calc = calc ?? const HaversineDistanceCalculator();
 
   final RideDao _dao;
+  final OutlineRepository? _outlines;
   final NowMs _now;
   final DistanceCalculator _calc;
 
@@ -77,6 +83,9 @@ class RideRepository {
       ascentM: elevation?.ascent,
       descentM: elevation?.descent,
     );
+    await _outlines?.save(rideId, [
+      for (final tp in rwt.trackpoints) (lat: tp.latitude, lng: tp.longitude),
+    ]);
   }
 
   Future<void> updateRideDetails(

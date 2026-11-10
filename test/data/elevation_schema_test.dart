@@ -4,10 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
 
 void main() {
-  test('schema version is 6', () async {
+  test('schema version is 7', () async {
     final db = AppDatabase.memory();
     addTearDown(db.close);
-    expect(db.schemaVersion, 6);
+    expect(db.schemaVersion, 7);
   });
 
   test('a trackpoint round-trips its altitude, or none', () async {

@@ -3,6 +3,7 @@ import 'package:drift/native.dart';
 
 import '../../domain/distance_calculator.dart';
 import '../../domain/ride_stats.dart';
+import 'outline_dao.dart';
 import 'ride_dao.dart';
 import 'tables.dart';
 import 'trackpoint_dao.dart';
@@ -12,7 +13,10 @@ part 'app_database.g.dart';
 /// Retrail's local SQLite database (Drift). Clean install — schema version 1;
 /// the original Room 3→4→5 migrations don't apply (no data migration), so
 /// `is_favorite` / `favorited_at` exist from the start.
-@DriftDatabase(tables: [Rides, Trackpoints], daos: [RideDao, TrackpointDao])
+@DriftDatabase(
+  tables: [Rides, Trackpoints, RideOutlines],
+  daos: [RideDao, TrackpointDao, OutlineDao],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -20,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -65,6 +69,11 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(trackpoints, trackpoints.altitude);
         await m.addColumn(rides, rides.ascentM);
         await m.addColumn(rides, rides.descentM);
+      }
+      if (from < 7) {
+        // v7: simplified ride geometry for the History map (#96). Filled in
+        // the background for rides recorded before (RideRepository).
+        await m.createTable(rideOutlines);
       }
     },
     beforeOpen: (details) async {
