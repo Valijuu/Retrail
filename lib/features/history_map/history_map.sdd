@@ -126,13 +126,13 @@ Example:
   `history_map_mode`: `lines` by default, then `heat`
 
 Tasks:
-  [ ] #96 Performance and deletion: in-memory outline cache, isolate work, debounce, cascade and atomic batch delete, tests for both scenarios.
-  [ ] #96 Schema version with `ride_outlines`: `7` once #97 (elevation, version `6`) is on `main`, else `6`; the upgrade steps stay in order.
-  [ ] #96 `ride_outlines` upgrade step, outline at save, background fill for old rides.
-  [ ] #96 Domain: @RideOutline, @OutlineHit, @HeatPoints, @AreaFilter (EXACT).
-  [ ] #96 Overview map widget in `/lib/map` with lines, heat and position layers.
-  [ ] #96 History switch, legend, preview card pager, pin and radius slider, preferences.
-  [ ] #96 `CHANGELOG.md` and l10n (de, en); no privacy-policy change, there is no new data flow.
+  [x] #96 Performance and deletion: in-memory outline cache, isolate work, debounce, cascade and atomic batch delete, tests for both scenarios.
+  [x] #96 Schema version `7` with `ride_outlines`, upgrade step, outline at save, background fill for old rides.
+  [x] #96 Domain: @RideOutline, @OutlineHit, @HeatPoints, @AreaFilter (EXACT).
+  [x] #96 Overview map widget in `/lib/map` with lines, heat and position layers.
+  [x] #96 History switch, legend, preview card, pin and radius slider, preferences.
+  [x] #96 `CHANGELOG.md` and l10n (de, en); no privacy-policy change, there is no new data flow.
+  [!] #96 Device check: many rides and performance, position button and pin (dragging, and panning the map without changing the tab), tap pager and best-time badge, deleting a ride whose card is open (Android and iOS).
 
 Done when:
   `flutter analyze` is clean, `flutter test` passes and `specdd lint` passes.

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/outline_repository.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
+import 'package:retrail/domain/heading.dart' show LatLng;
 import 'package:retrail/domain/ride_outline.dart';
 
 /// Ten fixes in a straight line eastwards, 1 m apart.
@@ -16,6 +17,15 @@ Future<void> _addLine(AppDatabase db, int rideId) async {
       ),
     );
   }
+}
+
+/// An outline repository whose save always fails.
+class _FailingOutlines extends OutlineRepository {
+  _FailingOutlines(AppDatabase db) : super(db.outlineDao, db.trackpointDao);
+
+  @override
+  Future<void> save(int rideId, List<LatLng> points) =>
+      Future.error(StateError('isolate gone'));
 }
 
 void main() {
@@ -92,5 +102,15 @@ void main() {
       (lat: 1.1, lng: 2.1),
     ]);
     expect(await db.select(db.rideOutlines).get(), isEmpty);
+  });
+
+  test('a failing outline save does not fail saving the ride', () async {
+    final failing = RideRepository(db.rideDao, outlines: _FailingOutlines(db));
+    final id = await failing.startRide(startedAtMs: 0);
+    await _addLine(db, id);
+    await failing.updateEndTime(id, 10);
+    expect((await failing.findById(id))!.endTime, 10);
+    // The outline is derived data: the background fill picks the ride up.
+    expect(await db.outlineDao.rideIdsWithoutOutline(), [id]);
   });
 }
