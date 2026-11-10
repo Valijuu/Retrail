@@ -13,12 +13,14 @@ Owns:
 
 References:
   /docs/specs/history/03-data-layer.md
+  /docs/decisions/0001-ride-outlines.md
 
 Must:
   @RideRepository and @TrackpointRepository delegate to the DAOs and stay concrete classes.
   Favouriting stores the injected clock's time; unfavouriting clears it.
   @PreferencesRepository wraps `shared_preferences` and re-emits a stream value on every write.
   Preference keys and defaults stay stable across releases.
+  Saving a ride stores its @RideOutline; rides without one get it filled in on request, one at a time (#96).
 
 Example:
   `user_name`: `Retrailer`
@@ -32,3 +34,5 @@ Example:
   `profile_photos`: at most `5` recent photos
   `current_profile_photo`: none
   `pending_ride_details`: none
+  `history_view`: `list`
+  `history_map_mode`: `lines`

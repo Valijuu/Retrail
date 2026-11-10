@@ -14,6 +14,7 @@ References:
   /docs/specs/history/20-followed-rides.md
   /lib/map/map.sdd
   /docs/decisions/0002-elevation-from-gps.md
+  /lib/features/history_map/history_map.sdd
 
 Must:
   Sort by date groups by day, newest day first; distance and top speed sort descending; duration ascending.
@@ -31,3 +32,5 @@ Must:
   Deleting evicts the preview; deletes confirm with ICU plurals.
   Route chips open the comparison sheet; the followed-routes filter is shown once a route was followed.
   An empty filter result says so instead of showing the empty history.
+  A Liste/Karte switch at the top changes between this list and the map view of @HistoryMap; the filters
+    are shared and the choice is stored (#96).

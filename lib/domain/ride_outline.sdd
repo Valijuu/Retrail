@@ -1,0 +1,39 @@
+Spec: Ride outline
+
+Purpose:
+  The small stored geometry of one ride: its points simplified, encoded as a polyline and boxed.
+
+Owns:
+  ./ride_outline.dart
+  /test/domain/ride_outline_test.dart
+
+References:
+  /docs/decisions/0001-ride-outlines.md
+  /lib/features/history_map/history_map.sdd
+
+Must:
+  @RideOutline.simplify keeps the first and last point and drops every point that lies within `5` m of the
+    line between its kept neighbours (Douglas-Peucker); the result never has more points than the input.
+  Fewer than two input points give an empty outline; two or more points that are all identical give two points.
+  The encoded polyline uses the standard format with `5` decimal places; @RideOutline.decode of an encoded
+    outline returns every point within `1` m of the original.
+  @RideOutline.bounds is the box around all points as south, west, north and east.
+  Distances use the shared @DistanceCalculator seam.
+
+Must not:
+  Read trackpoints, the database or the clock.
+
+Scenario: straight line with a dense middle
+  Given points that lie on a straight line
+  When they are simplified
+  Then only the first and last point remain
+
+Scenario: a corner larger than the tolerance
+  Given points that turn by `30` m at one point
+  When they are simplified
+  Then that corner stays
+
+Example:
+  no points: empty outline
+  one point: empty outline
+  encode then decode: each point within `1` m

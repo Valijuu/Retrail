@@ -1,0 +1,40 @@
+Spec: Outline hit
+
+Purpose:
+  Which rides lie under a tap on the overview map, nearest first.
+
+Owns:
+  ./outline_hit.dart
+  /test/domain/outline_hit_test.dart
+
+References:
+  /docs/decisions/0001-ride-outlines.md
+  /lib/domain/ride_outline.sdd
+  /lib/domain/route_group.sdd
+
+Must:
+  The tap tolerance is `24` logical pixels, turned into metres by the map's zoom and the tap latitude with
+    `78271.517 * cos(latitude) / 2^zoom` metres per pixel (MapLibre's 512 px tiles).
+  A ride is a hit when the tap lies within the tolerance of any segment of its outline; the distance is that
+    of the nearest segment.
+  Hits are sorted by distance, then newest ride first; every ride appears once.
+  An outline with fewer than two points never hits.
+  A hit is marked best when its ride is the best of its @RouteGroup; the hit function takes the best ride
+    ids as input and never computes a best time.
+
+Must not:
+  Know the map package, pixels on screen beyond the tolerance, or the database.
+
+Scenario: tap on a shared stretch
+  Given two rides whose outlines cross the tapped point
+  When the map is tapped there
+  Then both are hits, the closer one first
+
+Scenario: tap beside a line
+  Given a ride whose line is `40` px from the tap at zoom `14`
+  When the map is tapped
+  Then there is no hit
+
+Example:
+  zoom `14`, latitude `0`: `24` px are about `114.6` m
+  zoom `16`, latitude `60`: `24` px are about `14.3` m
