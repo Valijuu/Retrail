@@ -1,7 +1,13 @@
-The GPS tracker for everything on wheels. Retrail records your longboard, skateboard, inline skate and roller skate rides – route, speed and distance – and keeps them on your phone. No account, no ads.
+Leave your trail. Skate in summer, board in winter – one app for both. Retrail records your longboard, skateboard, inline skate and roller skate rides, and your snowboard and ski rides – route, speed and distance – and keeps them on your phone. No account, no ads.
+
+SKATE IN SUMMER, SNOW IN WINTER
+• Snowboard and ski as activities, with their own icons
+• Record the route, speed and top speed of your runs – just like your skate rides
+• Follow your favourite run again and compare every lap
+• Filter your history by activity: summer and winter rides stay apart
 
 RECORD YOUR ROUTE
-• Choose your ride: longboard, skateboard, mountainboard, inline skates (rollerblades), roller skates, scooter or other
+• Choose your ride: longboard, skateboard, mountainboard, inline skates (rollerblades), roller skates, scooter, snowboard, ski or other
 • Live map with your route, speed, distance in km, duration and top speed
 • A 10-second countdown before you roll: a synthetic voice (Microsoft Azure) counts down the last five seconds and you feel a buzz, so the phone can already be in your pocket (can be turned off in the settings)
 • The countdown shows whether GPS is ready
@@ -32,6 +38,6 @@ PRIVATE BY DESIGN
 • Your rides, routes and profile stay on your device
 • The map comes from OpenFreeMap (OpenStreetMap data)
 
-Not on wheels today? Retrail also tracks any other activity – a walk, a hike or a bike ride.
+Not on wheels or snow today? Retrail also tracks any other activity – a walk, a hike or a bike ride.
 
 Light and dark theme. In English and German – switch the language any time in the settings.

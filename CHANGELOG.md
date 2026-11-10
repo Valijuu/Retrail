@@ -9,6 +9,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 
 ## Unreleased
 
+## 1.4.0+15 — 2026-11-10
+
 ### Added
 - Snowboard and ski are new activities, with their own icons, for rides in winter (#94).
 

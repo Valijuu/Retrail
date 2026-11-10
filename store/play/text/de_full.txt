@@ -1,7 +1,13 @@
-Der GPS-Tracker für alles, was rollt. Retrail zeichnet deine Fahrten mit Longboard, Skateboard, Inline-Skates und Rollschuhen auf – Strecke, Geschwindigkeit und Kilometer – und speichert sie auf deinem Handy. Ohne Konto, ohne Werbung.
+Hinterlass deine Spur. Skaten im Sommer, Boarden im Winter – eine App für beides. Retrail zeichnet deine Fahrten mit Longboard, Skateboard, Inline-Skates und Rollschuhen, mit Snowboard und Ski auf – Strecke, Geschwindigkeit und Kilometer – und speichert sie auf deinem Handy. Ohne Konto, ohne Werbung.
+
+SKATE IM SOMMER, SNOW IM WINTER
+• Snowboard und Ski als Aktivitäten, mit eigenen Symbolen
+• Zeichne Piste, Tempo und Höchstgeschwindigkeit deiner Abfahrten auf – genau wie deine Skate-Fahrten
+• Fahre deine Lieblingsabfahrt nach und vergleiche jede Runde
+• Im Verlauf nach Aktivität filtern: Sommer- und Winterfahrten bleiben getrennt
 
 STRECKE AUFZEICHNEN
-• Wähle deine Aktivität: Longboard, Skateboard, Mountainboard, Inline-Skates (Inliner), Rollschuhe, Roller oder Andere
+• Wähle deine Aktivität: Longboard, Skateboard, Mountainboard, Inline-Skates (Inliner), Rollschuhe, Roller, Snowboard, Ski oder Andere
 • Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz, Dauer und Höchstgeschwindigkeit
 • 10 Sekunden Countdown vor dem Losfahren: Die letzten fünf Sekunden sagt eine künstlich erzeugte Stimme (Microsoft Azure) an und du spürst eine Vibration – so kann das Handy schon in der Tasche sein (in den Einstellungen abschaltbar)
 • Der Countdown zeigt, ob das GPS bereit ist
@@ -32,6 +38,6 @@ PRIVATSPHÄRE
 • Deine Fahrten, Strecken und dein Profil bleiben auf deinem Gerät
 • Die Karte kommt von OpenFreeMap (Daten von OpenStreetMap)
 
-Heute nicht auf Rollen unterwegs? Retrail zeichnet auch jede andere Aktivität auf – einen Spaziergang, eine Wanderung oder eine Radtour.
+Heute weder auf Rollen noch auf Schnee unterwegs? Retrail zeichnet auch jede andere Aktivität auf – einen Spaziergang, eine Wanderung oder eine Radtour.
 
 Helles und dunkles Design. Auf Deutsch und Englisch – die Sprache lässt sich jederzeit in den Einstellungen umstellen.

@@ -1,1 +1,1 @@
-skateboard,inline,skates,rollerblade,roller,tracker,route,speed,ride,km,distance,cruise,offline
+snowboard,ski,skateboard,longboard,inline,rollerblade,tracker,route,speed,ride,winter,offline,slope

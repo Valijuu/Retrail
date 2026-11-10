@@ -1,1 +1,1 @@
-skateboard,inliner,rollschuhe,skaten,tracker,strecke,tempo,tacho,fahrt,km,distanz,cruisen,offline
+snowboard,ski,skateboard,longboard,inliner,rollschuhe,tracker,strecke,tempo,tacho,winter,offline
