@@ -17,6 +17,7 @@ Owns:
   ./route_preview_cache.dart
   ./route_preview.dart
   ./route_sketch.dart
+  ./overview_map.dart
   ./tile_grid.dart
   /test/map
   /test/fixtures/map
@@ -28,6 +29,7 @@ References:
   /docs/specs/history/map-notes.md
   /lib/domain/route_markers.sdd
   /lib/domain/heading.sdd
+  /lib/features/history_map/history_map.sdd
 
 Must:
   The live map is native MapLibre with the bundled Retrail Light or Retrail Dark style, handed over as an
@@ -58,6 +60,10 @@ Must:
   The whole reference line is pushed only when the reference changes; a growing ridden part pushes only
     `reference-done`.
   `maplibre` stays at `^0.3.6` or later for the Android disposal-crash fix (#16).
+
+  The overview map of the History map view draws ride outlines as one GeoJSON source and line layer per activity
+    type, or one heatmap layer, plus the user position; it follows the same style-load, disposal and
+    light/dark rules as the live map (#43, #47) and shows the attribution.
 
 Must not:
   Put a live map into a list item.

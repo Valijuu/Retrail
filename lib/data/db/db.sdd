@@ -25,13 +25,16 @@ References:
   /docs/specs/history/03-data-layer.md
   /docs/specs/history/20-followed-rides.md
   /docs/decisions/0002-elevation-from-gps.md
+  /docs/decisions/0001-ride-outlines.md
 
 Must:
-  Tables are `rides` (@Ride) and `trackpoints` (@Trackpoint); trackpoints are deleted with their ride
+  Tables are `rides` (@Ride), `trackpoints` (@Trackpoint) and `ride_outlines`; trackpoints are deleted with their ride
     (`ON DELETE CASCADE`) and foreign keys are switched on before the database opens.
   `rides.followed_ride_id` is cleared when the original is deleted (`ON DELETE SET NULL`).
   `trackpoints.altitude` is the recorded altitude in metres or none. `rides.ascent_m` and `rides.descent_m`
     are the totals stored at save, or none for a ride without altitude data; older rides stay none.
+  `ride_outlines` holds one row per ride: encoded polyline and bounding box; it is deleted with its ride
+    (`ON DELETE CASCADE`) and kept when the ride is edited.
   The schema version is `6`; every older version upgrades in place without losing rides.
   Every schema change raises the version and adds an upgrade step.
   Reads are reactive Drift streams; @RideWithTrackpoints is assembled in the DAO.

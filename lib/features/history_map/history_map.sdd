@@ -1,0 +1,92 @@
+Spec: History map
+
+Purpose:
+  The map view of the History tab: every saved ride as a line coloured by activity type, an optional
+    heatmap, and the preview of the tapped ride with its route's best time.
+
+Owns:
+  ./*.dart
+  ./widgets/*.dart
+  /test/history_map
+
+References:
+  /docs/decisions/0001-ride-outlines.md
+  /lib/features/history/history.sdd
+  /lib/map/map.sdd
+  /lib/domain/ride_outline.sdd
+  /lib/domain/outline_hit.sdd
+  /lib/domain/heat_points.sdd
+  /lib/domain/route_group.sdd
+  /lib/domain/activity_type.sdd
+
+Can modify:
+  /lib/features/history/history_screen.dart
+
+Must:
+  The History tab has a Liste/Karte switch; List is the default. The choice (`history_view`) and the map mode
+    Lines or Heat (`history_map_mode`) are stored in preferences and come back after the app was closed
+    and reopened or returned to from the background.
+  The map view uses the History filters (activities, year, months, favourites, followed routes, search)
+    through the same provider; changing a filter changes list and map alike. Sort and selection stay list-only.
+  Only rides with a route are drawn. A ride without an outline gets one in the background, one at a time, and
+    appears when it is ready.
+  Lines mode draws one line per ride, thin and semi-transparent, in its activity type's colour, so a
+    route ridden often looks denser. The nine types have nine distinct colours that stay readable on the light
+    and the dark style; colour is never the only cue.
+  The legend lists the types that occur, each with its icon and colour. Tapping a type shows or hides it
+    by changing the shared activity filter.
+  Heat mode draws the @HeatPoints of the visible rides as one heatmap layer in the app's primary colour;
+    the filters and legend apply as in Lines mode.
+  The camera starts framing all visible rides north-up. When the filters change it frames the new set once;
+    a user gesture is never overridden afterwards.
+  Tapping the map finds the rides under the tap with @OutlineHit. The nearest ride is highlighted and its
+    preview card shows at the bottom: the cached preview, title, distance, duration, average speed and type,
+    as on the History card. Several hits can be swiped; the card shows `n/m`.
+  A ride that is the best of its route group shows a best-time badge and, when its group has more rides,
+    "n rides on this route"; a swipe through the group's rides shows each one's time. Rides outside a group
+    have no badge.
+  Tapping the card opens the ride detail as History does. Tapping empty map or the close control hides the card.
+  The my-location button asks for location while the app is in use, never for Always and never for
+    notifications. Granted: it shows the position and moves the camera there at zoom `15`, north-up.
+    Denied: it shows a hint; denied for good: the hint offers the app settings. The position stream runs only
+    while the map view is visible and the app is in the foreground.
+  Without tiles (offline, style not loaded) the lines still show over a plain background, and the attribution
+    stays visible.
+  An empty history says so and offers no map; a filter with no result says so over the map.
+  The map follows the live map rules of the map spec for the style load, disposal and light/dark switch.
+  No new network request is made; the map reads only data already on the device.
+
+Must not:
+  Read trackpoints for the overview, draw one map layer per ride, or show a live map inside a list item.
+  Recompute a best time; it comes from @RouteGroup.
+  Keep a second copy of the filters.
+
+Scenario: return to the app
+  Given the map view was open
+  When the app is closed and opened again
+  Then the History tab shows the map view in the same mode
+
+Scenario: tap on an overlapping stretch
+  Given three rides pass the tapped point and two belong to one followed route
+  When the map is tapped there
+  Then the nearest ride is highlighted, the card shows `1/3`, and the best ride of its group has the badge
+
+Scenario: hiding a type
+  Given the map shows longboard and ski rides
+  When the ski type is turned off in the legend
+  Then the ski lines disappear and the list shows only longboard rides too
+
+Example:
+  `history_view`: `list` by default, then `map`
+  `history_map_mode`: `lines` by default, then `heat`
+
+Tasks:
+  [ ] #96 Schema version `6` with `ride_outlines`, outline at save, background fill for old rides.
+  [ ] #96 Domain: @RideOutline, @OutlineHit, @HeatPoints (EXACT).
+  [ ] #96 Overview map widget in `/lib/map` with lines, heat and position layers.
+  [ ] #96 History switch, legend, preview card pager, preferences.
+  [ ] #96 `CHANGELOG.md` and l10n (de, en); no privacy-policy change, there is no new data flow.
+
+Done when:
+  `flutter analyze` is clean, `flutter test` passes and `specdd lint` passes.
+  The overview with many rides, the position button and the tap pager are checked on an Android and an iOS device.

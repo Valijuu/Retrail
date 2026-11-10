@@ -24,6 +24,9 @@ Structure:
   ./route_row_stats.dart: One comparison-sheet row
   ./route_selection.dart: Followed-routes search and summary
   ./elevation.dart: Ascent and descent from recorded altitudes
+  ./ride_outline.dart: Simplified, encoded geometry of one ride
+  ./outline_hit.dart: Rides under a tap on the overview map
+  ./heat_points.dart: Heatmap points along ride outlines
 
 Owns:
   /test/domain/domain_test_helpers.dart

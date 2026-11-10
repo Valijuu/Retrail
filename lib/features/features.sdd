@@ -10,6 +10,7 @@ Structure:
   ./timer: Pre-ride countdown
   ./active_ride: Live ride screen and its dialogs
   ./history: History tab, ride detail, edit, filter and route comparison
+  ./history_map: Map view of the History tab
   ./settings: Settings tab
   ./profile: Profile name and photos
   ./follow: Following a saved route

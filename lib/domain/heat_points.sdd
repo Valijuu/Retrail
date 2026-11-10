@@ -1,0 +1,25 @@
+Spec: Heat points
+
+Purpose:
+  The weighted points the overview heatmap draws, taken along ride outlines.
+
+Owns:
+  ./heat_points.dart
+  /test/domain/heat_points_test.dart
+
+References:
+  /docs/decisions/0001-ride-outlines.md
+  /lib/domain/ride_outline.sdd
+
+Must:
+  @HeatPoints.along places points at equal arc length of `30` m along an outline, starting at its first point
+    and ending on its last, so a longer ride gets more points.
+  An outline shorter than `30` m gives its first and last point.
+  An outline with fewer than two points gives none.
+  Points keep the ride order and carry no weight other than `1`.
+
+Must not:
+  Round to a grid or merge points of different rides; the map layer adds overlapping heat.
+
+Example:
+  a straight `100` m outline: points at `0`, `30`, `60`, `90` and `100` m
