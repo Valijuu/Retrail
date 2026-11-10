@@ -58,21 +58,26 @@ void main() {
           lineFragment: cachedLine,
         );
 
-    test('groups lines per type and counts rides per type', () {
+    test('groups lines per type', () {
       final result = buildOverviewData([
         ride(1, ActivityType.longboard),
         ride(2, ActivityType.longboard),
         ride(3, ActivityType.ski),
       ]);
       expect(result.linesByType.keys, {'LONGBOARD', 'SKI'});
-      expect(result.countByType, {'LONGBOARD': 2, 'SKI': 1});
+      expect(
+        jsonDecode(
+          result.linesByType['LONGBOARD']!,
+        )['features'][0]['geometry']['coordinates'],
+        hasLength(2),
+      );
     });
 
-    test('a ride without a type counts as other', () {
+    test('a ride without a type is drawn as other', () {
       final result = buildOverviewData([
         OverviewRide(rideId: 1, typeId: null, polyline: line),
       ]);
-      expect(result.countByType, {'OTHER': 1});
+      expect(result.linesByType.keys, ['OTHER']);
     });
 
     test('returns the new fragments and reuses the cached ones', () {

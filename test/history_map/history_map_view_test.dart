@@ -292,4 +292,32 @@ void main() {
       await finish(tester);
     });
   });
+
+  group('camera memory', () {
+    OverviewMap map(WidgetTester tester) =>
+        tester.widget<OverviewMap>(find.byType(OverviewMap));
+
+    testWidgets('leaving the map and coming back restores the camera', (
+      tester,
+    ) async {
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db);
+      await pump(tester, view: 'map');
+      await settle(tester);
+      expect(map(tester).restoreCamera, isNull);
+
+      map(tester).onCameraIdle!((lat: 48.5, lng: 11.7), 12.5);
+      await tester.tap(find.text('List'));
+      await settle(tester);
+      expect(find.byType(OverviewMap), findsNothing);
+
+      await tester.tap(find.text('Map'));
+      await settle(tester);
+      expect(map(tester).restoreCamera, (
+        center: (lat: 48.5, lng: 11.7),
+        zoom: 12.5,
+      ));
+      await finish(tester);
+    });
+  });
 }

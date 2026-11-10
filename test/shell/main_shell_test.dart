@@ -17,6 +17,7 @@ import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_ride_card.dart';
 import 'package:retrail/features/home/top_header.dart';
+import 'package:retrail/features/history_map/outline_fill.dart';
 import 'package:retrail/features/shell/main_shell.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,6 +57,26 @@ Future<Widget> _app(
 }
 
 void main() {
+  testWidgets('the tabs swipe, except while the history map is on screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(await _app(tester));
+    await tester.pump();
+    PageView pages() => tester.widget<PageView>(find.byType(PageView));
+    expect(pages().physics, isNull);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MainShell)),
+    );
+    container.read(mapVisibleProvider.notifier).set(true);
+    await tester.pump();
+    expect(pages().physics, isA<NeverScrollableScrollPhysics>());
+
+    container.read(mapVisibleProvider.notifier).set(false);
+    await tester.pump();
+    expect(pages().physics, isNull);
+  });
+
   testWidgets('renders three tabs', (tester) async {
     await tester.pumpWidget(await _app(tester));
     await tester.pump();

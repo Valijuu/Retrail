@@ -20,17 +20,19 @@ class MapModeSwitch extends StatelessWidget {
     return SegmentedButton<HistoryMapMode>(
       showSelectedIcon: false,
       style: SegmentedButton.styleFrom(
-        backgroundColor: colors.surface.withValues(alpha: 0.92),
+        backgroundColor: colors.surface.withValues(alpha: _panelAlpha),
         visualDensity: VisualDensity.compact,
       ),
       segments: [
         ButtonSegment(
           value: HistoryMapMode.lines,
-          label: Text(l10n.historyMapModeLines),
+          icon: const Icon(Icons.timeline),
+          tooltip: l10n.historyMapModeLines,
         ),
         ButtonSegment(
           value: HistoryMapMode.heat,
-          label: Text(l10n.historyMapModeHeat),
+          icon: const Icon(Icons.local_fire_department),
+          tooltip: l10n.historyMapModeHeat,
         ),
       ],
       selected: {mode},
@@ -63,7 +65,7 @@ class MyLocationButton extends StatelessWidget {
 }
 
 /// Radius slider (`1` to `50` km) and the remove-pin control of the area
-/// filter; without a pin it shows the long-press hint instead.
+/// filter, shown only while a pin is set.
 class AreaPanel extends StatelessWidget {
   const AreaPanel({
     super.key,
@@ -72,7 +74,7 @@ class AreaPanel extends StatelessWidget {
     required this.onRemove,
   });
 
-  final AreaFilter? area;
+  final AreaFilter area;
   final ValueChanged<double> onRadius;
   final VoidCallback onRemove;
 
@@ -81,49 +83,40 @@ class AreaPanel extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
-    final area = this.area;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surface.withValues(alpha: 0.92),
+        color: colors.surface.withValues(alpha: _panelAlpha),
         borderRadius: AppShapes.card,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: area == null
-            ? Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  l10n.historyMapPinHint,
-                  style: text.labelMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              )
-            : Row(
-                children: [
-                  Text(
-                    l10n.historyMapRadius(area.radiusKm.round()),
-                    style: text.labelMedium?.copyWith(color: colors.onSurface),
-                  ),
-                  Expanded(
-                    child: Slider(
-                      min: AreaFilter.minRadiusKm,
-                      max: AreaFilter.maxRadiusKm,
-                      divisions:
-                          (AreaFilter.maxRadiusKm - AreaFilter.minRadiusKm)
-                              .round(),
-                      value: area.radiusKm,
-                      onChanged: onRadius,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: onRemove,
-                    tooltip: l10n.historyMapRemovePin,
-                    icon: Icon(Icons.location_off, color: colors.primary),
-                  ),
-                ],
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            Text(
+              l10n.historyMapRadius(area.radiusKm.round()),
+              style: text.labelMedium?.copyWith(color: colors.onSurface),
+            ),
+            Expanded(
+              child: Slider(
+                min: AreaFilter.minRadiusKm,
+                max: AreaFilter.maxRadiusKm,
+                divisions: (AreaFilter.maxRadiusKm - AreaFilter.minRadiusKm)
+                    .round(),
+                value: area.radiusKm,
+                onChanged: onRadius,
               ),
+            ),
+            IconButton(
+              onPressed: onRemove,
+              tooltip: l10n.historyMapRemovePin,
+              icon: Icon(Icons.location_off, color: colors.primary),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+/// Opacity of the panels laid over the map, enough to read over busy tiles.
+const double _panelAlpha = 0.92;

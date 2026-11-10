@@ -49,7 +49,10 @@ Must:
   Heat mode draws the @HeatPoints of the visible rides as one heatmap layer in the app's primary colour;
     the filters and legend apply as in Lines mode.
   The camera starts framing all visible rides north-up. When the filters change it frames the new set once;
-    a user gesture is never overridden afterwards.
+    a user gesture is never overridden afterwards. Leaving the map view and coming back shows the same camera.
+  Setting the pin or changing the radius zooms the camera to show the whole circle.
+  The controls are compact: the mode switch is two icons and the legend one scrolling row of small chips beside it,
+    without counts; the radius panel shows only while a pin is set.
   Tapping the map finds the rides under the tap with @OutlineHit. The nearest ride is highlighted and its
     preview card shows at the bottom: the cached preview, title, distance, duration, average speed and type,
     as on the History card, including the stored ascent or descent of #97 when the ride has one and nothing
@@ -64,7 +67,7 @@ Must:
     while the map view is visible and the app is in the foreground.
   Without tiles (offline, style not loaded) the lines still show over a plain background, and the attribution
     stays visible.
-  An empty history says so and offers no map or switch; a filter with no result says so over the map.
+  An empty history says so and offers no map or switch; a filter with no result shows the empty map without text.
   A jump to a ride from Home shows the list, whichever view was stored.
   Location problems (not allowed, blocked, services off, no fix) show a hint instead of a position.
   The map follows the live map rules of the map spec for the style load, disposal and light/dark switch.
