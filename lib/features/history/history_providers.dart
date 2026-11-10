@@ -6,6 +6,7 @@ import '../../domain/heading.dart' show LatLng;
 import '../../data/repositories/data_providers.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../settings/settings_providers.dart';
+import 'area_providers.dart';
 import 'history_controller.dart';
 import 'history_filter.dart';
 import 'history_items.dart';
@@ -118,9 +119,21 @@ final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
   final locale = ref.watch(dateFormatLocaleProvider);
   final repo = ref.watch(rideRepositoryProvider);
   final (start, end) = effectiveRange(filter);
+  // With an area set, rides stay hidden until their outline says they are
+  // inside it (#96).
+  final areaRideIds = filter.area == null
+      ? null
+      : ref.watch(areaRideIdsProvider).value ?? const <int>{};
   return repo
       .getRidesInRange(startMs: start, endMs: end)
-      .map((rides) => buildHistoryItems(rides, filter, locale: locale));
+      .map(
+        (rides) => buildHistoryItems(
+          rides,
+          filter,
+          locale: locale,
+          areaRideIds: areaRideIds,
+        ),
+      );
 });
 
 /// Distinct calendar years present in the ride history, descending (newest

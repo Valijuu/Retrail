@@ -48,6 +48,15 @@ final routeGroupProvider = StreamProvider.autoDispose
           .map((rides) => _view(rootId, rides)),
     );
 
+/// [e] as a competitor of its route group: a follow competes with its time
+/// on the route (#79); the original's ride is the route.
+RouteGroupRide routeGroupRideOf(RideEntryItem e) => RouteGroupRide(
+  rideId: e.ride.rideId,
+  timestampMs: e.ride.date ?? e.ride.startTime ?? 0,
+  durationMs: e.ride.followRouteMs ?? e.stats.durationMs,
+  coverage: e.ride.followCoverage,
+);
+
 RouteGroupView? _view(int rootId, List<Ride> rides) {
   if (rides.isEmpty) return null;
   final entries = {
@@ -57,17 +66,9 @@ RouteGroupView? _view(int rootId, List<Ride> rides) {
         storedRideStats(ride) ?? statsWithoutTrackpoints(ride),
       ),
   };
-  RouteGroupRide groupRide(RideEntryItem e) => RouteGroupRide(
-    rideId: e.ride.rideId,
-    timestampMs: e.ride.date ?? e.ride.startTime ?? 0,
-    // A follow competes with its time on the route (#79); the original's
-    // ride is the route.
-    durationMs: e.ride.followRouteMs ?? e.stats.durationMs,
-    coverage: e.ride.followCoverage,
-  );
-  final group = buildRouteGroup(groupRide(entries[rootId]!), [
+  final group = buildRouteGroup(routeGroupRideOf(entries[rootId]!), [
     for (final e in entries.values)
-      if (e.ride.rideId != rootId) groupRide(e),
+      if (e.ride.rideId != rootId) routeGroupRideOf(e),
   ]);
   return RouteGroupView(group, entries);
 }

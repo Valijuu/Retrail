@@ -114,4 +114,33 @@ void main() {
     await db.rideDao.insert(RidesCompanion.insert(startTime: const Value(1)));
     expect(await db.outlineDao.rideIdsWithoutOutline(), isEmpty);
   });
+
+  test('getByRideIds loads only the outlines asked for', () async {
+    final a = await _ride(db);
+    final b = await _ride(db);
+    final c = await _ride(db);
+    for (final id in [a, b, c]) {
+      await db.outlineDao.upsert(_outline(id));
+    }
+    final rows = await db.outlineDao.getByRideIds([a, c, 999]);
+    expect(rows.map((o) => o.rideId), unorderedEquals([a, c]));
+    expect(await db.outlineDao.getByRideIds(const []), isEmpty);
+  });
+
+  test('watchOutlinedRideIds follows added and removed outlines', () async {
+    final a = await _ride(db);
+    final emissions = <Set<int>>[];
+    final sub = db.outlineDao.watchOutlinedRideIds().listen(emissions.add);
+    addTearDown(sub.cancel);
+    await pumpEventQueue();
+    await db.outlineDao.upsert(_outline(a));
+    await pumpEventQueue();
+    await db.rideDao.deleteById(a);
+    await pumpEventQueue();
+    expect(emissions, [
+      <int>{},
+      {a},
+      <int>{},
+    ]);
+  });
 }
