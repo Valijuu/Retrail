@@ -49,3 +49,10 @@ English is the default and should read naturally (not a literal back-translation
 | Route picker search / no match | Strecke suchen / Keine Strecke gefunden |
 | Route picker rides | n Fahrten · Datum |
 | Apply | Übernehmen |
+| History list / map switch | Liste / Karte |
+| Map mode lines / heat | Linien / Heatmap |
+| My location (map button) | Mein Standort |
+| Area filter radius / remove pin | Umkreis: n km / Pin entfernen |
+| Map pin hint | Karte lange drücken, um Fahrten rund um einen Ort zu sehen |
+| n rides on this route | n Fahrten auf dieser Strecke |
+| Preparing routes | Strecken werden vorbereitet … |

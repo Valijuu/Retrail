@@ -157,3 +157,18 @@ OutlineBounds? _union(List<OutlineBounds> boxes) {
 final routeBadgesProvider = StreamProvider<RouteBadges>(
   (ref) => ref.watch(rideRepositoryProvider).getAllRides().map(routeBadges),
 );
+
+/// The activity types the history has rides with a route for: what the map
+/// legend lists, whatever the activity filter hides.
+final legendTypesProvider = StreamProvider<Set<ActivityType>>(
+  (ref) => ref
+      .watch(rideRepositoryProvider)
+      .getAllRides()
+      .map(
+        (rides) => {
+          for (final ride in rides)
+            if (ride.hasRoute)
+              ActivityType.fromId(ride.typ) ?? ActivityType.other,
+        },
+      ),
+);

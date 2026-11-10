@@ -36,6 +36,10 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
     state = state.copyWith(activities: s);
   }
 
+  /// Replaces the selected activity types (the map legend, #96).
+  void setActivities(Set<ActivityType> types) =>
+      state = state.copyWith(activities: types);
+
   /// The "All" activity chip: clears the selection (= every activity).
   void clearActivities() => state = state.copyWith(activities: const {});
 
