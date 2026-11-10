@@ -1,4 +1,5 @@
 import '../domain/activity_type.dart';
+import '../domain/elevation.dart';
 import 'location_fix.dart';
 
 /// A point on the live route (latitude, longitude).
@@ -18,6 +19,7 @@ class RideTrackingState {
     this.isPaused = false,
     this.activityType,
     this.locationServiceEnabled = true,
+    this.elevation,
   });
 
   final LocationFix? location;
@@ -37,4 +39,8 @@ class RideTrackingState {
   /// False while the device's location services (GPS) are switched off — no
   /// fixes arrive, so nothing is recorded; the ride screen warns (issue #33).
   final bool locationServiceEnabled;
+
+  /// Ascent and descent so far, or null while the ride has no altitude data
+  /// (#97).
+  final ElevationGain? elevation;
 }

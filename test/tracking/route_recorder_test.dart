@@ -13,13 +13,20 @@ class _LineCalc implements DistanceCalculator {
 
 const _second = 1000000000;
 
-LocationFix _at(double metres, int seconds, {double? speed}) => LocationFix(
+LocationFix _at(
+  double metres,
+  int seconds, {
+  double? speed,
+  double? altitude,
+}) => LocationFix(
   latitude: metres,
   longitude: 0,
   accuracy: 5,
   hasSpeed: speed != null,
   speed: speed ?? 0,
   elapsedRealtimeNanos: seconds * _second,
+  altitude: altitude,
+  altitudeAccuracy: 3,
 );
 
 void main() {
@@ -85,5 +92,43 @@ void main() {
     expect(route.distanceMetres, 0);
     route.add(_at(500, 3));
     expect(route.distanceMetres, 0); // first point of the new route
+  });
+
+  group('elevation (#97)', () {
+    test('is none until two recorded fixes carry an altitude', () {
+      route.add(_at(0, 0));
+      route.add(_at(20, 2));
+      expect(route.elevation, isNull);
+    });
+
+    test('follows the altitudes of recorded fixes', () {
+      route.add(_at(0, 0, altitude: 100));
+      route.add(_at(20, 2, altitude: 110));
+      route.add(_at(40, 4, altitude: 100));
+      expect(route.elevation!.ascent, 10);
+      expect(route.elevation!.descent, 10);
+    });
+
+    test('ignores the altitude of a fix the filter does not record', () {
+      route.add(_at(0, 0, altitude: 100));
+      route.add(_at(20, 2, altitude: 100));
+      // Stationary by provider speed: not recorded, so its altitude is not used.
+      expect(route.add(_at(21, 3, speed: 0.1, altitude: 500)), isEmpty);
+      expect(route.elevation!.ascent, 0);
+    });
+
+    test('clear starts a new elevation', () {
+      route.add(_at(0, 0, altitude: 100));
+      route.add(_at(20, 2, altitude: 110));
+      route.clear();
+      expect(route.elevation, isNull);
+    });
+
+    test('a segment break keeps the elevation of the ride', () {
+      route.add(_at(0, 0, altitude: 100));
+      route.add(_at(20, 2, altitude: 110));
+      route.breakSegment();
+      expect(route.elevation, isNotNull);
+    });
   });
 }

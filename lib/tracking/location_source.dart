@@ -36,6 +36,8 @@ LocationFix fixFromPosition(Position p) => LocationFix(
   hasSpeed: p.speed >= 0 && p.speedAccuracy > 0,
   speed: p.speed,
   elapsedRealtimeNanos: p.timestamp.microsecondsSinceEpoch * 1000,
+  altitude: p.altitude,
+  altitudeAccuracy: p.altitudeAccuracy,
 );
 
 /// Production [LocationSource] over `geolocator`.

@@ -53,7 +53,8 @@ Must:
   Resume does not count the paused gap as distance.
   A trackpoint is timestamped with when the fix was taken.
   A recorded fix keeps its altitude when the platform reports a valid one: a vertical accuracy worse than `25` m
-    or an invalid altitude is stored as none, an unknown accuracy is accepted. Altitude never decides whether
+    or an invalid altitude (not finite, or exactly `0` with unknown accuracy, the placeholder Android
+    reports without altitude) is stored as none, an unknown accuracy is accepted. Altitude never decides whether
     a fix is recorded (#97).
   The live ascent and descent come from @ElevationAccumulator over the recorded fixes; at stop the ride stores
     the totals of @ElevationGain.

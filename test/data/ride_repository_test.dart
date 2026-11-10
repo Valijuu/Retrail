@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/ride_repository.dart';
@@ -160,4 +161,41 @@ void main() {
       expect(routes.single.original.rideId, original);
     },
   );
+
+  group('elevation at finalization (#97)', () {
+    Future<int> rideWithAltitudes(List<double?> altitudes) async {
+      final id = await repo.startRide(startedAtMs: 0);
+      for (var i = 0; i < altitudes.length; i++) {
+        await db.trackpointDao.insert(
+          TrackpointsCompanion.insert(
+            rideId: id,
+            latitude: 0,
+            longitude: 0,
+            timestamp: i,
+            altitude: Value(altitudes[i]),
+          ),
+        );
+      }
+      return id;
+    }
+
+    test(
+      'updateEndTime stores ascent and descent from the altitudes',
+      () async {
+        final id = await rideWithAltitudes([100, 110, 100]);
+        await repo.updateEndTime(id, 10);
+        final r = (await repo.getById(id).first)!;
+        expect(r.ascentM, 10);
+        expect(r.descentM, 10);
+      },
+    );
+
+    test('a ride without altitudes stores none, not zero', () async {
+      final id = await rideWithAltitudes([null, null, null]);
+      await repo.updateEndTime(id, 10);
+      final r = (await repo.getById(id).first)!;
+      expect(r.ascentM, isNull);
+      expect(r.descentM, isNull);
+    });
+  });
 }

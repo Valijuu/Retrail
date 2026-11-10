@@ -1,4 +1,5 @@
 import '../domain/distance_calculator.dart';
+import '../domain/elevation.dart';
 import 'gps_fix_filter.dart';
 import 'location_fix.dart';
 import 'ride_tracking_state.dart';
@@ -18,12 +19,17 @@ class RouteRecorder {
   List<LocationFix> _pending = const [];
   List<RoutePoint> _points = const [];
   double _distanceMetres = 0.0;
+  ElevationAccumulator _elevation = ElevationAccumulator();
 
   /// The recorded route, oldest first.
   List<RoutePoint> get points => _points;
 
   /// Total recorded distance.
   double get distanceMetres => _distanceMetres;
+
+  /// Ascent and descent so far from the recorded fixes' altitudes, or null
+  /// while fewer than two of them have one (#97).
+  ElevationGain? get elevation => _elevation.gain;
 
   /// Feeds [fix] through the filter and returns the fixes it records, in
   /// order: usually none or [fix]; after a long stop also the held fixes.
@@ -40,6 +46,9 @@ class RouteRecorder {
     final recorded = [for (final r in decision.recorded) r.fix];
     for (final r in decision.recorded) {
       _distanceMetres += r.distanceMetres;
+    }
+    for (final f in recorded) {
+      _elevation.add(f.recordedAltitude);
     }
     _last = recorded.last;
     _points = [
@@ -61,5 +70,6 @@ class RouteRecorder {
     breakSegment();
     _points = const [];
     _distanceMetres = 0.0;
+    _elevation = ElevationAccumulator();
   }
 }

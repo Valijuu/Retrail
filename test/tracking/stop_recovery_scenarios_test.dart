@@ -59,6 +59,7 @@ _Result _record(List<_Fix> fixes) {
       longitude: any(named: 'longitude'),
       timestampMs: any(named: 'timestampMs'),
       speedMs: any(named: 'speedMs'),
+      altitudeM: any(named: 'altitudeM'),
     ),
   ).thenAnswer((_) async {});
 

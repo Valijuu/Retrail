@@ -15,13 +15,15 @@ class TrackpointRepository {
 
   /// Appends one recorded point to a ride. Takes plain values so callers (the
   /// tracker) never touch Drift's companion types. [speedMs] is the provider's
-  /// speed in m/s, or null when the fix carried none.
+  /// speed in m/s, or null when the fix carried none; [altitudeM] is the
+  /// recorded altitude in metres, or null.
   Future<void> addTrackpoint({
     required int rideId,
     required double latitude,
     required double longitude,
     required int timestampMs,
     double? speedMs,
+    double? altitudeM,
   }) => _dao.insert(
     TrackpointsCompanion.insert(
       rideId: rideId,
@@ -29,6 +31,7 @@ class TrackpointRepository {
       longitude: longitude,
       timestamp: timestampMs,
       speed: Value(speedMs),
+      altitude: Value(altitudeM),
     ),
   );
 }

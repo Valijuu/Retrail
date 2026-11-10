@@ -29,6 +29,7 @@ LocationFix fix(
   bool hasSpeed = false,
   double speed = 0,
   int nanos = 0,
+  double? altitude,
 }) => LocationFix(
   latitude: lat,
   longitude: lng,
@@ -36,6 +37,8 @@ LocationFix fix(
   hasSpeed: hasSpeed,
   speed: speed,
   elapsedRealtimeNanos: nanos,
+  altitude: altitude,
+  altitudeAccuracy: 3,
 );
 
 void main() {
@@ -64,6 +67,7 @@ void main() {
         longitude: any(named: 'longitude'),
         timestampMs: any(named: 'timestampMs'),
         speedMs: any(named: 'speedMs'),
+        altitudeM: any(named: 'altitudeM'),
       ),
     ).thenAnswer((_) async {});
   });
@@ -112,6 +116,59 @@ void main() {
     });
   });
 
+  // ─── Elevation (#97) ─────────────────────────────────────────────────────
+  group('elevation', () {
+    test('a recorded fix persists its altitude', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, altitude: 123));
+        verify(
+          () => tpRepo.addTrackpoint(
+            rideId: 1,
+            latitude: 52,
+            longitude: 13,
+            timestampMs: any(named: 'timestampMs'),
+            speedMs: any(named: 'speedMs'),
+            altitudeM: 123,
+          ),
+        ).called(1);
+      });
+    });
+
+    test('there is no live elevation without altitude data', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13));
+        expect(t.state.elevation, isNull);
+      });
+    });
+
+    test('the live elevation grows with the recorded altitudes', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, altitude: 100));
+        t.onLocationReceived(fix(52.001, 13, altitude: 110));
+        expect(t.state.elevation!.ascent, 10);
+      });
+    });
+
+    test('a new ride starts without the last ride\'s elevation', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        t.onLocationReceived(fix(52, 13, altitude: 100));
+        t.onLocationReceived(fix(52.001, 13, altitude: 110));
+        t.stopTracking();
+        t.startTracking();
+        fa.flushMicrotasks();
+        expect(t.state.elevation, isNull);
+      });
+    });
+  });
+
   // ─── Ride lifecycle ──────────────────────────────────────────────────────
   group('lifecycle', () {
     test('startTracking creates a ride and sets tracking', () {
@@ -141,6 +198,7 @@ void main() {
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
             speedMs: any(named: 'speedMs'),
+            altitudeM: any(named: 'altitudeM'),
           ),
         ).called(1);
         expect(t.state.location, location);
@@ -157,6 +215,7 @@ void main() {
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
             speedMs: any(named: 'speedMs'),
+            altitudeM: any(named: 'altitudeM'),
           ),
         );
       });
@@ -186,6 +245,7 @@ void main() {
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
             speedMs: any(named: 'speedMs'),
+            altitudeM: any(named: 'altitudeM'),
           ),
         );
       });
@@ -605,6 +665,7 @@ void main() {
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
             speedMs: any(named: 'speedMs'),
+            altitudeM: any(named: 'altitudeM'),
           ),
         );
       });
@@ -689,6 +750,7 @@ void main() {
             longitude: any(named: 'longitude'),
             timestampMs: any(named: 'timestampMs'),
             speedMs: any(named: 'speedMs'),
+            altitudeM: any(named: 'altitudeM'),
           ),
         );
       });
@@ -765,6 +827,7 @@ void main() {
               longitude: any(named: 'longitude'),
               timestampMs: any(named: 'timestampMs'),
               speedMs: any(named: 'speedMs'),
+              altitudeM: any(named: 'altitudeM'),
             ),
           ).called(1);
         });
@@ -815,6 +878,7 @@ void main() {
             longitude: any(named: 'longitude'),
             timestampMs: captureAny(named: 'timestampMs'),
             speedMs: any(named: 'speedMs'),
+            altitudeM: any(named: 'altitudeM'),
           ),
         ).captured;
         expect(stamps, [5000000, 5900000, 5905000]);

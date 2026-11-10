@@ -51,6 +51,12 @@ class Rides extends Table {
   // ride that followed nothing.
   IntColumn get followRouteMs =>
       integer().named('follow_route_ms').nullable()();
+
+  // Total climb and drop in metres (ElevationGain, #97), written once at
+  // finalization like the stats above. Null on a ride without altitude data
+  // and on every ride recorded before schema v6.
+  RealColumn get ascentM => real().named('ascent_m').nullable()();
+  RealColumn get descentM => real().named('descent_m').nullable()();
 }
 
 /// Mirrors the original Room `trackpoints` table (entity `Trackpoint`).
@@ -65,4 +71,7 @@ class Trackpoints extends Table {
   RealColumn get longitude => real()();
   IntColumn get timestamp => integer()();
   RealColumn get speed => real().nullable()();
+
+  // Recorded altitude in metres (#97); null when the platform gave no valid one.
+  RealColumn get altitude => real().nullable()();
 }

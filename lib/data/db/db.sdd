@@ -19,6 +19,7 @@ Owns:
   /test/data/ride_with_trackpoints_test.dart
   /test/data/ride_range_query_test.dart
   /test/data/followed_rides_dao_test.dart
+  /test/data/elevation_schema_test.dart
 
 References:
   /docs/specs/history/03-data-layer.md

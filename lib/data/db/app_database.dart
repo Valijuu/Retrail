@@ -20,7 +20,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -58,6 +58,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         // v5: the time on the followed route, for a fair best time (#79).
         await m.addColumn(rides, rides.followRouteMs);
+      }
+      if (from < 6) {
+        // v6: altitude per trackpoint and ascent/descent per ride (#97).
+        // Older rides stay null: there is no source for their altitude.
+        await m.addColumn(trackpoints, trackpoints.altitude);
+        await m.addColumn(rides, rides.ascentM);
+        await m.addColumn(rides, rides.descentM);
       }
     },
     beforeOpen: (details) async {

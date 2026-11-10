@@ -91,6 +91,7 @@ class RideTracker {
     isPaused: _isPaused,
     activityType: _activityType,
     locationServiceEnabled: _locationServiceEnabled,
+    elevation: _route.elevation,
   );
 
   /// Emits on every state change (for the UI / Riverpod). Broadcast and does NOT
@@ -326,6 +327,7 @@ class RideTracker {
         timestampMs:
             nowMs() - (nowNanos() - fix.elapsedRealtimeNanos) ~/ 1000000,
         speedMs: fix.hasSpeed ? fix.speed : null,
+        altitudeM: fix.recordedAltitude,
       ),
     );
   }

@@ -100,6 +100,8 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
     required double avgSpeedKmh,
     required double maxSpeedKmh,
     required bool hasRoute,
+    double? ascentM,
+    double? descentM,
   }) => (update(rides)..where((r) => r.rideId.equals(rideId))).write(
     RidesCompanion(
       distanceMetres: Value(distanceMetres),
@@ -107,6 +109,8 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
       avgSpeedKmh: Value(avgSpeedKmh),
       maxSpeedKmh: Value(maxSpeedKmh),
       hasRoute: Value(hasRoute),
+      ascentM: Value(ascentM),
+      descentM: Value(descentM),
     ),
   );
 

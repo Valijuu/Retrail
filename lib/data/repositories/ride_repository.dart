@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 
 import '../../domain/distance_calculator.dart';
+import '../../domain/elevation.dart';
 import '../../domain/ride_stats.dart';
 import '../db/app_database.dart';
 import '../db/followed_route.dart';
@@ -55,12 +56,17 @@ class RideRepository {
   /// straight off the row instead of recomputing a full Haversine sum (and
   /// joining every trackpoint) on every list rebuild. A ride with no
   /// trackpoints yet (the finalize-race edge case in RideTracker) still gets
-  /// a zeroed stats row rather than staying null forever.
+  /// a zeroed stats row rather than staying null forever. The ascent and
+  /// descent come from the trackpoint altitudes ([ElevationGain.of]) and stay
+  /// null for a ride without altitude data (#97).
   Future<void> updateEndTime(int rideId, int endTime) async {
     await _dao.updateEndTime(rideId, endTime);
     final rwt = await _dao.getRideWithTrackpointsById(rideId).first;
     if (rwt == null) return;
     final stats = computeRideStats(rwt, _calc);
+    final elevation = ElevationGain.of(
+      rwt.trackpoints.map((tp) => tp.altitude),
+    );
     await _dao.updateStats(
       rideId,
       distanceMetres: stats.distanceMetres,
@@ -68,6 +74,8 @@ class RideRepository {
       avgSpeedKmh: stats.avgSpeedKmh,
       maxSpeedKmh: stats.maxSpeedKmh,
       hasRoute: rwt.trackpoints.isNotEmpty,
+      ascentM: elevation?.ascent,
+      descentM: elevation?.descent,
     );
   }
 
