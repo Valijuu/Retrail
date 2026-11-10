@@ -1,0 +1,4 @@
+New:
+• Snowboard and ski: two new activities for your rides in winter
+• New app icon: the R with the route pin on a dark background
+• The R also shows on the welcome step and in the Live Activity on the lock screen
