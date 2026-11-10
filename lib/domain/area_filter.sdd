@@ -1,0 +1,41 @@
+Spec: Area filter
+
+Purpose:
+  Whether a ride's outline comes within a radius of a pinned point; the "rides around here" filter.
+
+Owns:
+  ./area_filter.dart
+  /test/domain/area_filter_test.dart
+
+References:
+  /docs/decisions/0001-ride-outlines.md
+  /lib/domain/ride_outline.sdd
+  /lib/features/history_map/history_map.sdd
+
+Must:
+  @AreaFilter holds a pin (latitude, longitude) and a radius in km from `1` to `50` in steps of `1`;
+    a radius outside that range is clamped. The default radius is `5` km.
+  @AreaFilter.matches is true when any segment of the outline passes within the radius of the pin, so a ride
+    that only touches the circle counts; the distance is that of the nearest segment.
+  The outline's bounds, grown by the radius, reject far rides before any segment is measured.
+  An outline with fewer than two points never matches.
+  Distances are metres on the sphere used by the shared @DistanceCalculator and stay within `1` % of it for
+    radii up to `50` km.
+
+Must not:
+  Read trackpoints, the database, the map package or the clock.
+
+Scenario: ride crosses the circle
+  Given a pin and a radius of `5` km
+  When an outline passes `3` km from the pin
+  Then it matches
+
+Scenario: ride stays outside
+  Given a pin and a radius of `5` km
+  When every point of an outline is more than `5` km away but a segment passes `8` km from the pin
+  Then it does not match
+
+Example:
+  radius `0` or below: clamped to `1`
+  radius `80`: clamped to `50`
+  an outline that ends exactly `5` km from the pin at radius `5`: matches

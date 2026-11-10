@@ -27,6 +27,7 @@ Structure:
   ./ride_outline.dart: Simplified, encoded geometry of one ride
   ./outline_hit.dart: Rides under a tap on the overview map
   ./heat_points.dart: Heatmap points along ride outlines
+  ./area_filter.dart: Rides within a radius of a pinned point
 
 Owns:
   /test/domain/domain_test_helpers.dart
