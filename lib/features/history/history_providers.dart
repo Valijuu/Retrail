@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/activity_type.dart';
+import '../../domain/area_filter.dart';
+import '../../domain/heading.dart' show LatLng;
 import '../../data/repositories/data_providers.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../settings/settings_providers.dart';
@@ -73,6 +75,21 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
       state = state.copyWith(routeIds: kept);
     }
   }
+
+  /// Pins the area at [pin]; a radius chosen before stays (#96).
+  void setAreaPin(LatLng pin) => state = state.copyWith(
+    area: state.area?.copyWith(pin: pin) ?? AreaFilter(pin: pin),
+  );
+
+  /// Sets the area radius in km (clamped); does nothing without a pin.
+  void setAreaRadius(double radiusKm) {
+    final area = state.area;
+    if (area != null) {
+      state = state.copyWith(area: area.copyWith(radiusKm: radiusKm));
+    }
+  }
+
+  void clearArea() => state = state.copyWith(clearArea: true);
 
   void reset() => state = _defaultFilter();
 }

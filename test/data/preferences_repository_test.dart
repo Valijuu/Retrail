@@ -53,6 +53,16 @@ void main() {
     },
   );
 
+  test('history view and map mode default and persist a choice', () async {
+    final prefs = await build();
+    expect(await prefs.historyView.first, 'list');
+    expect(await prefs.historyMapMode.first, 'lines');
+    await prefs.setHistoryView('map');
+    await prefs.setHistoryMapMode('heat');
+    expect(await prefs.historyView.first, 'map');
+    expect(await prefs.historyMapMode.first, 'heat');
+  });
+
   // Issue #75: a ride stopped from the notification waits here for the
   // in-app "Ride saved" hint — across a process restart.
   test('pending ride details persist until cleared', () async {
