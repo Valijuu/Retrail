@@ -12,7 +12,7 @@ offline and survives a light/dark switch.
 ## Decision
 
 Each ride gets one stored outline: its trackpoints simplified to a tolerance of `5` m, written as an
-encoded polyline with its bounding box, in a new table `ride_outlines` (schema version `6`).
+encoded polyline with its bounding box, in a new table `ride_outlines` (schema version `7` after #97, which takes `6`).
 
 - The table is separate from `rides`, so list queries never load the polyline text.
 - The outline is built when a ride is saved. Rides saved before this version get theirs in the background,

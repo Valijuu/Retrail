@@ -49,7 +49,8 @@ Must:
     a user gesture is never overridden afterwards.
   Tapping the map finds the rides under the tap with @OutlineHit. The nearest ride is highlighted and its
     preview card shows at the bottom: the cached preview, title, distance, duration, average speed and type,
-    as on the History card. Several hits can be swiped; the card shows `n/m`.
+    as on the History card, including the stored ascent or descent of #97 when the ride has one and nothing
+    when it has none; the card is the History card, not a copy of it. Several hits can be swiped; the card shows `n/m`.
   A ride that is the best of its route group shows a best-time badge and, when its group has more rides,
     "n rides on this route"; a swipe through the group's rides shows each one's time. Rides outside a group
     have no badge.
@@ -121,7 +122,8 @@ Example:
 
 Tasks:
   [ ] #96 Performance and deletion: in-memory outline cache, isolate work, debounce, cascade and atomic batch delete, tests for both scenarios.
-  [ ] #96 Schema version `6` with `ride_outlines`, outline at save, background fill for old rides.
+  [ ] #96 Schema version with `ride_outlines`: `7` once #97 (elevation, version `6`) is on `main`, else `6`; the upgrade steps stay in order.
+  [ ] #96 `ride_outlines` upgrade step, outline at save, background fill for old rides.
   [ ] #96 Domain: @RideOutline, @OutlineHit, @HeatPoints, @AreaFilter (EXACT).
   [ ] #96 Overview map widget in `/lib/map` with lines, heat and position layers.
   [ ] #96 History switch, legend, preview card pager, pin and radius slider, preferences.
