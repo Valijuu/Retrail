@@ -166,122 +166,24 @@ France, Spain or Brazil would see a German page.
 
 ### English (en-US, default)
 
-**App name:** `Retrail: Skate & Longboard GPS`
+**App name:** `Retrail: Skate & Snow GPS`
 
 **Short description:**
 
-> GPS tracker for skate & longboard rides – track your route, speed and distance
+> GPS tracker for skate & snow rides – track your route, speed and distance
 
-**Full description:**
+**Full description:** `store/play/text/en_full.txt` (the file is the source, no copy here).
 
-> The GPS tracker for everything on wheels. Retrail records your longboard,
-> skateboard, inline skate and roller skate rides – route, speed and distance –
-> and keeps them on your phone. No account, no ads.
->
-> RECORD YOUR ROUTE
-> • Choose your ride: longboard, skateboard, mountainboard, inline skates
->   (rollerblades), roller skates, scooter or other
-> • Live map with your route, speed, distance in km, duration and top speed
-> • A 10-second countdown before you roll: a synthetic voice (Microsoft Azure)
->   counts down the last five seconds and you feel a buzz, so the phone can already be in your pocket (can be
->   turned off in the settings)
-> • The countdown shows whether GPS is ready
-> • Pause and resume any time; keeps recording with the screen off
-> • Control the ride from the notification (Android) or the Live Activity on
->   the lock screen (iPhone)
-> • Recording works without cellular data
->
-> FOLLOW A ROUTE AGAIN
-> • Open a saved ride and follow it on the map with your live position
-> • Ride it forward or backward – Retrail detects the direction
-> • See how far you have to go and get a notice when you leave the route
-> • Record the repeat ride, or just follow it
->
-> BEAT YOUR BEST TIME
-> • Recorded repeats are linked to the original ride
-> • Compare every run of a route and see your best time at a glance
-> • Only the time on the route counts – not the way there
-> • Filter your history by followed route
->
-> YOUR RIDE HISTORY
-> • Every ride with a map preview, distance, time and speeds
-> • Your kilometers this week, today and this year on the home screen
-> • Search, filter by year, month and activity, mark favorites
-> • Rename rides, add notes, navigate to a ride's start point
->
-> PRIVATE BY DESIGN
-> • No account, no sign-in, no ads, no tracking
-> • Your rides, routes and profile stay on your device
-> • The map comes from OpenFreeMap (OpenStreetMap data)
->
-> Not on wheels today? Retrail also tracks any other activity – a walk, a
-> hike or a bike ride.
->
-> Light and dark theme. In English and German – switch the language any time
-> in the settings.
 
 ### German (de-DE)
 
-**App-Name:** `Retrail: Skate & Longboard GPS`
+**App-Name:** `Retrail: Skate & Snow GPS`
 
 **Kurzbeschreibung:**
 
-> GPS-Tracker fürs Skaten & Longboarden: Strecke, Tempo und Kilometer aufzeichnen
+> GPS-Tracker für Skate & Snow: Strecke, Tempo und Kilometer aufzeichnen
 
-**Vollständige Beschreibung:**
-
-> Der GPS-Tracker für alles, was rollt. Retrail zeichnet deine Fahrten mit
-> Longboard, Skateboard, Inline-Skates und Rollschuhen auf – Strecke,
-> Geschwindigkeit und Kilometer – und speichert sie auf deinem Handy. Ohne
-> Konto, ohne Werbung.
->
-> STRECKE AUFZEICHNEN
-> • Wähle deine Aktivität: Longboard, Skateboard, Mountainboard,
->   Inline-Skates (Inliner), Rollschuhe, Roller oder Andere
-> • Live-Karte mit deiner Strecke, Geschwindigkeit wie ein Tacho, Distanz,
->   Dauer und Höchstgeschwindigkeit
-> • 10 Sekunden Countdown vor dem Losfahren: Die letzten fünf Sekunden sagt
->   eine künstlich erzeugte Stimme (Microsoft Azure) an und du spürst eine Vibration – so kann das Handy schon in
->   der Tasche sein (in den Einstellungen abschaltbar)
-> • Der Countdown zeigt, ob das GPS bereit ist
-> • Jederzeit pausieren und weiterfahren; die Aufzeichnung läuft auch bei
->   ausgeschaltetem Bildschirm weiter
-> • Steuerung über die Benachrichtigung (Android) oder die Live-Aktivität auf
->   dem Sperrbildschirm (iPhone)
-> • Die Aufzeichnung funktioniert auch ohne mobile Daten
->
-> STRECKEN NACHFAHREN
-> • Öffne eine gespeicherte Fahrt und fahre die Route mit deiner Live-Position
->   auf der Karte nach
-> • Vorwärts oder rückwärts – Retrail erkennt die Richtung
-> • Sieh, wie weit es noch ist, und erhalte einen Hinweis, wenn du die Strecke
->   verlässt
-> • Die Fahrt aufzeichnen oder einfach nur nachfahren
->
-> SCHLAG DEINE BESTZEIT
-> • Aufgezeichnete Wiederholungen werden mit der Originalfahrt verknüpft
-> • Vergleiche jede Runde einer Strecke und sieh deine Bestzeit auf einen
->   Blick
-> • Es zählt nur die Zeit auf der Strecke – nicht der Weg dorthin
-> • Den Verlauf nach nachgefahrenen Strecken filtern
->
-> DEIN FAHRTENVERLAUF
-> • Jede Fahrt mit Kartenvorschau, Distanz, Zeit und Geschwindigkeiten
-> • Deine Kilometer dieser Woche, von heute und des Jahres auf dem
->   Startbildschirm
-> • Suchen, nach Jahr, Monat und Aktivität filtern, Favoriten markieren
-> • Fahrten umbenennen, Notizen ergänzen, zum Startpunkt navigieren
->
-> PRIVATSPHÄRE
-> • Kein Konto, keine Anmeldung, keine Werbung, kein Tracking
-> • Deine Fahrten, Strecken und dein Profil bleiben auf deinem Gerät
-> • Die Karte kommt von OpenFreeMap (Daten von OpenStreetMap)
->
-> Heute nicht auf Rollen unterwegs? Retrail zeichnet auch jede andere
-> Aktivität auf – einen Spaziergang, eine Wanderung oder eine Radtour.
->
-> Helles und dunkles Design. Auf Deutsch und Englisch – die Sprache lässt
-> sich jederzeit in den Einstellungen umstellen.
+**Vollständige Beschreibung:** `store/play/text/de_full.txt` (die Datei ist die Quelle, hier steht keine Kopie).
 
 ### Other listing fields
 
@@ -346,6 +248,21 @@ retrail.app@proton.me" (no thank-you for testing) — production stays
 shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
+
+### 1.4.0+15 (production, prepared 2026-11-10)
+
+Source: `store/release-notes/1.4.0+15.md` (derived from `CHANGELOG.md`).
+
+```
+<de-DE>
+Neu:
+• Snowboard und Ski als Aktivitäten für deine Fahrten im Winter
+</de-DE>
+<en-US>
+New:
+• Snowboard and ski as activities for your rides in winter
+</en-US>
+```
 
 ### 1.3.3+14 (production, prepared 2026-11-09)
 
