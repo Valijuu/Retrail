@@ -23,6 +23,7 @@ References:
 Can modify:
   /lib/features/history/history_screen.dart
   /lib/features/history/history_providers.dart
+  /lib/core/theme/app_colors.dart
   /lib/features/history/route_group_providers.dart
 
 Must:

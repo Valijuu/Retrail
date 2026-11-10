@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../domain/activity_type.dart';
 
 /// Retrail's semantic color tokens, carried over verbatim from the original
 /// Android app's `Color.kt`. Access via `context.colors` (see
@@ -234,4 +235,37 @@ class AppColors extends ThemeExtension<AppColors> {
       onMap: Color.lerp(onMap, other.onMap, t)!,
     );
   }
+}
+
+/// Line colours of the nine activity types on the History map (#96). One hue
+/// per type, a deeper tone on the light map style and a lighter one on the
+/// dark style; the legend adds the icon, so colour is never the only cue.
+abstract final class ActivityMapColors {
+  static const Map<ActivityType, Color> light = {
+    ActivityType.longboard: Color(0xFF2563EB),
+    ActivityType.skateboard: Color(0xFFDC2626),
+    ActivityType.mountainboard: Color(0xFF16A34A),
+    ActivityType.rollerblades: Color(0xFF9333EA),
+    ActivityType.rollerskates: Color(0xFFDB2777),
+    ActivityType.scooter: Color(0xFF0891B2),
+    ActivityType.snowboard: Color(0xFFEA580C),
+    ActivityType.ski: Color(0xFFCA8A04),
+    ActivityType.other: Color(0xFF475569),
+  };
+
+  static const Map<ActivityType, Color> dark = {
+    ActivityType.longboard: Color(0xFF60A5FA),
+    ActivityType.skateboard: Color(0xFFF87171),
+    ActivityType.mountainboard: Color(0xFF4ADE80),
+    ActivityType.rollerblades: Color(0xFFC084FC),
+    ActivityType.rollerskates: Color(0xFFF472B6),
+    ActivityType.scooter: Color(0xFF22D3EE),
+    ActivityType.snowboard: Color(0xFFFB923C),
+    ActivityType.ski: Color(0xFFFACC15),
+    ActivityType.other: Color(0xFFCBD5E1),
+  };
+
+  /// The colour of [type] on a map of the given [brightness].
+  static Color of(ActivityType type, Brightness brightness) =>
+      (brightness == Brightness.dark ? dark : light)[type]!;
 }

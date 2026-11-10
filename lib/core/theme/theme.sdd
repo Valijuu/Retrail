@@ -18,6 +18,8 @@ References:
 Must:
   Colours are tokens in the @AppColors `ThemeExtension`, read with `context.colors`; code without a
     `BuildContext` reads @AppColors.light or @AppColors.dark.
+  @ActivityMapColors gives each of the nine activity types a distinct line colour for the light and for the dark
+    map style (#96).
   Dynamic colour is off; both themes use the brand colours.
   The theme mode (system, light, dark) is chosen by the user and persisted.
   Shapes come from @AppShapes: radius `14` hero card and route maps, `12` cards and stat cells, `50` pills,
