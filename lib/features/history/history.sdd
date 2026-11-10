@@ -20,7 +20,7 @@ Must:
   Sort by date groups by day, newest day first; distance and top speed sort descending; duration ascending.
   The year, month range, activities, favourites and search filters combine; at All years a month range means
     those months in every year.
-  The filter badge counts every deviation from the default except the search.
+  The filter badge counts every deviation from the default except the search; a set map area counts as one.
   Filters apply live; there is no Apply step.
   Search matches the display title or the comment, trimmed and case-insensitive.
   Stats come from the values stored with the ride, never from trackpoints at list time.
