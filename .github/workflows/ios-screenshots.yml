@@ -51,13 +51,18 @@ jobs:
         run: flutter build ios --simulator --debug
 
       - name: Take screenshots
+        env:
+          RETRAIL_VARIANTS: ${{ inputs.variants }}
         run: |
           set -uo pipefail
           # Every variant runs even when one fails; the step fails at the end.
           failed=""
           # One variant hung in simctl for 75 minutes (run 42645130114) and took
           # the whole 100-minute job with it: each variant gets 30 minutes.
-          for variant in ${{ inputs.variants || 'en_light en_dark de_light de_dark' }}; do
+          # Variants come from an input: pass them through the environment and
+          # accept only the four known names, never raw text in the script.
+          for variant in ${RETRAIL_VARIANTS:-en_light en_dark de_light de_dark}; do
+            case "${variant}" in en_light|en_dark|de_light|de_dark) ;; *) echo "unknown variant: ${variant}" >&2; exit 1 ;; esac
             lang="${variant%_*}" theme="${variant#*_}"
             perl -e 'alarm 1800; exec @ARGV' tool/ios_screenshots.sh "${lang}" "${theme}" build/ios_screenshots \
               || failed="${failed} ${variant}"
