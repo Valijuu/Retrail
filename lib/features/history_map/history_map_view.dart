@@ -99,8 +99,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     AsyncValue<OverviewState> next,
   ) {
     final state = next.value;
-    // A reload still carries the old rides: wait for the new ones.
+    // A reload still carries the old rides: wait for the new ones. While old
+    // rides are still being given their outline the set is not complete yet.
     if (next.isLoading || state == null || state.bounds == null) return;
+    if (ref.read(outlineFillProvider)) return;
     final sameSet = _framedIds != null && _sameIds(_framedIds!, state.rideIds);
     if (!_framePending || sameSet) return;
     setState(() {
@@ -156,6 +158,11 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   Widget build(BuildContext context) {
     ref.listen<HistoryFilter>(historyFilterProvider, _onFilterChanged);
     ref.listen(overviewProvider, _onOverview);
+    ref.listen(outlineFillProvider, (was, filling) {
+      if (was == true && !filling) {
+        _onOverview(null, ref.read(overviewProvider));
+      }
+    });
     ref.watch(positionFeedProvider);
     final filling = ref.watch(outlineFillProvider);
 
