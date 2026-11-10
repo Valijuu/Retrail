@@ -83,9 +83,15 @@ class RideRepository {
       ascentM: elevation?.ascent,
       descentM: elevation?.descent,
     );
-    await _outlines?.save(rideId, [
-      for (final tp in rwt.trackpoints) (lat: tp.latitude, lng: tp.longitude),
-    ]);
+    // The outline is derived data: if it cannot be stored now, the background
+    // fill (OutlineRepository.fillNext) makes it later, the ride is saved.
+    try {
+      await _outlines?.save(rideId, [
+        for (final tp in rwt.trackpoints) (lat: tp.latitude, lng: tp.longitude),
+      ]);
+    } on Object {
+      // Left to the background fill.
+    }
   }
 
   Future<void> updateRideDetails(
