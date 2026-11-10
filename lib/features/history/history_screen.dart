@@ -8,6 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
+import '../history_map/history_map_providers.dart';
+import '../history_map/history_map_view.dart';
+import '../history_map/widgets/history_view_switch.dart';
+import '../history_map/widgets/map_preview_card.dart';
 import '../shell/main_shell.dart';
 import 'confirm_delete_dialog.dart';
 import 'filter_sheet.dart';
@@ -268,6 +272,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     final colors = context.colors;
     final items = ref.watch(historyItemsProvider).asData?.value ?? const [];
     final hasRides = items.any((i) => i is RideEntryItem);
+    final showMap =
+        (ref.watch(historyViewProvider).value ?? HistoryView.list) ==
+            HistoryView.map &&
+        !_selectionMode &&
+        (hasRides || ref.watch(historyNarrowsRidesProvider));
 
     // The listen above only fires on *changes* — when the tab mounts with data
     // already loaded, warm the previews once from here (post-frame, so the
@@ -311,8 +320,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                     ref.read(historyFilterProvider.notifier).setQuery(q),
                 onOpenFilters: _openFilters,
               ),
+            if (!_selectionMode) const HistoryViewSwitch(),
             Expanded(
-              child: hasRides
+              child: showMap
+                  ? HistoryMapView(actions: _mapCardActions())
+                  : hasRides
                   ? ListView.separated(
                       controller: _scrollController,
                       // Build ~4-5 cards ahead of the viewport so preview
@@ -335,6 +347,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
       ),
     );
   }
+
+  /// What the map's preview card does: the same as the list's card.
+  MapCardActions _mapCardActions() => MapCardActions(
+    onOpenDetail: (r) => openDetail(r.entry),
+    onEdit: (r) => showEditRideSheet(context, ref, r.entry.ride),
+    onDelete: (r) => _confirmDelete(single: r.entry.ride.rideId),
+    onFollowRoute: (r) => followRoute(r.entry.ride),
+    onOpenRouteGroup: (r) => openRouteGroup(r.entry),
+    onToggleFavorite: (r) =>
+        ref.read(historyControllerProvider).toggleFavorite(r.entry.ride),
+  );
 
   Widget _buildItem(HistoryItem item) {
     switch (item) {

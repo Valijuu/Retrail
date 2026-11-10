@@ -36,7 +36,7 @@ class OverviewMap extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.onPinMoved,
-    this.attributionInset = 0,
+    this.showAttribution = true,
   });
 
   /// Line GeoJSON per activity type; a missing type draws nothing.
@@ -67,8 +67,9 @@ class OverviewMap extends StatefulWidget {
   final ValueChanged<LatLng>? onLongPress;
   final ValueChanged<LatLng>? onPinMoved;
 
-  /// Lifts the attribution above content stacked at the bottom.
-  final double attributionInset;
+  /// Whether the map draws its own attribution. A screen that stacks content
+  /// at the bottom turns it off and shows the credit with that content.
+  final bool showAttribution;
 
   /// Test seam: when set, every [OverviewMap] renders this instead of the
   /// native map, which throws under `flutter test`.
@@ -269,11 +270,12 @@ class _OverviewMapState extends State<OverviewMap> {
                 child: ColoredBox(color: colors.mapTerrain),
               ),
             ),
-            Positioned(
-              left: kMapAttributionInset,
-              bottom: kMapAttributionInset + widget.attributionInset,
-              child: MapAttribution(onOpen: openMapCopyright),
-            ),
+            if (widget.showAttribution)
+              Positioned(
+                left: kMapAttributionInset,
+                bottom: kMapAttributionInset,
+                child: MapAttribution(onOpen: openMapCopyright),
+              ),
           ],
         );
       },

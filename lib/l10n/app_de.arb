@@ -239,5 +239,22 @@
   "followEndAction": "Beenden",
   "followEndConfirmTitle": "Folgen beenden?",
   "followEndConfirmBody": "Deine Position wird dann nicht mehr auf der Strecke angezeigt.",
-  "followReverseDirection": "Richtung umkehren"
+  "followReverseDirection": "Richtung umkehren",
+  "historyViewList": "Liste",
+  "historyViewMap": "Karte",
+  "historyMapModeLines": "Linien",
+  "historyMapModeHeat": "Heatmap",
+  "historyMapMyLocation": "Mein Standort",
+  "historyMapRemovePin": "Pin entfernen",
+  "historyMapRadius": "Umkreis: {km} km",
+  "historyMapPinHint": "Karte lange drücken, um Fahrten rund um einen Ort zu sehen",
+  "historyMapBestTime": "Bestzeit",
+  "historyMapRidesOnRoute": "{count, plural, =1{1 Fahrt auf dieser Strecke} other{{count} Fahrten auf dieser Strecke}}",
+  "historyMapCardCounter": "{index}/{count}",
+  "historyMapCloseCard": "Schließen",
+  "historyMapLocationDenied": "Standort nicht erlaubt. Erlaube ihn, um zu sehen, wo du bist.",
+  "historyMapLocationBlocked": "Der Standort ist für Retrail gesperrt.",
+  "historyMapOpenSettings": "Einstellungen",
+  "historyMapLocationOff": "Die Ortungsdienste sind aus.",
+  "historyMapPreparing": "Strecken werden vorbereitet …"
 }
