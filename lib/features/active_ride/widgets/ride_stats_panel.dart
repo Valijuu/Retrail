@@ -27,6 +27,44 @@ class RideStatsPanel extends StatelessWidget {
     final speed = state.speedKmh;
     final elevation = state.elevation;
     final locale = Localizations.localeOf(context).toString();
+    final speedCell = _StatCell(
+      label: l10n.mapStatSpeed,
+      value: formatSpeedKmh(speed, locale: locale),
+      valueColor: (speed ?? 0) > 0 ? colors.primary : colors.onSurface,
+    );
+    final distanceCell = _StatCell(
+      label: l10n.mapStatDistance,
+      value: formatDistanceKm(state.distanceMetres, locale: locale),
+    );
+    final durationCell = _StatCell(
+      label: l10n.mapStatDuration,
+      value: formatElapsed(state.elapsedSeconds),
+    );
+    final maxSpeedCell = _StatCell(
+      label: l10n.mapStatMaxSpeed,
+      value: formatSpeedKmh(state.maxSpeedKmh, locale: locale),
+    );
+    // With altitude data the grid is 3 x 2, so both rows read alike and the
+    // panel keeps its height; without it, 2 x 2 (#97).
+    final rows = elevation == null
+        ? [
+            [speedCell, distanceCell],
+            [durationCell, maxSpeedCell],
+          ]
+        : [
+            [speedCell, distanceCell, durationCell],
+            [
+              maxSpeedCell,
+              _StatCell(
+                label: l10n.mapStatAscent,
+                value: formatElevationM(elevation.ascent, locale: locale),
+              ),
+              _StatCell(
+                label: l10n.mapStatDescent,
+                value: formatElevationM(elevation.descent, locale: locale),
+              ),
+            ],
+          ];
     return Container(
       width: double.infinity,
       color: colors.surface,
@@ -42,60 +80,19 @@ class RideStatsPanel extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatSpeed,
-                    value: formatSpeedKmh(speed, locale: locale),
-                    valueColor: (speed ?? 0) > 0
-                        ? colors.primary
-                        : colors.onSurface,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatDistance,
-                    value: formatDistanceKm(
-                      state.distanceMetres,
-                      locale: locale,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 5),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatDuration,
-                    value: formatElapsed(state.elapsedSeconds),
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: _StatCell(
-                    label: l10n.mapStatMaxSpeed,
-                    value: formatSpeedKmh(state.maxSpeedKmh, locale: locale),
-                  ),
-                ),
-                if (elevation != null) ...[
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: _StatCell(
-                      label: l10n.mapStatAscent,
-                      value: formatElevationM(elevation.ascent, locale: locale),
-                    ),
-                  ),
+          for (final (i, row) in rows.indexed) ...[
+            if (i > 0) const SizedBox(height: 5),
+            Expanded(
+              child: Row(
+                children: [
+                  for (final (j, cell) in row.indexed) ...[
+                    if (j > 0) const SizedBox(width: 5),
+                    Expanded(child: cell),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -152,12 +149,15 @@ class _StatCell extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant),
           ),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: text.titleMedium?.copyWith(
-              color: valueColor ?? colors.onSurface,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: text.titleMedium?.copyWith(
+                color: valueColor ?? colors.onSurface,
+              ),
             ),
           ),
         ],

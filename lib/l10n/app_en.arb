@@ -67,6 +67,7 @@
   "mapStatDuration": "Duration",
   "mapStatMaxSpeed": "Top speed",
   "mapStatAscent": "Ascent",
+  "mapStatDescent": "Descent",
   "mapStopRide": "Stop ride",
   "mapPauseRide": "Pause",
   "mapResumeRide": "Resume",

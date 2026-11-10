@@ -93,6 +93,36 @@ void main() {
       );
       expect(find.text('Ascent'), findsOneWidget);
       expect(find.text('42 m'), findsOneWidget);
+      expect(find.text('Descent'), findsOneWidget);
+      expect(find.text('10 m'), findsOneWidget);
+    });
+
+    testWidgets('both rows have three equally wide cells with data', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const RideTrackingState(
+            isTracking: true,
+            elevation: ElevationGain(ascent: 5, descent: 3),
+          ),
+          Brightness.light,
+        ),
+      );
+      final widths = [
+        for (final label in ['Speed', 'Top speed', 'Ascent', 'Descent'])
+          tester
+              .getSize(
+                find
+                    .ancestor(
+                      of: find.text(label),
+                      matching: find.byType(Container),
+                    )
+                    .first,
+              )
+              .width,
+      ];
+      expect(widths.toSet(), hasLength(1));
     });
 
     testWidgets('shows nothing without altitude data, never 0 m', (
@@ -102,6 +132,7 @@ void main() {
         _host(const RideTrackingState(isTracking: true), Brightness.light),
       );
       expect(find.text('Ascent'), findsNothing);
+      expect(find.text('Descent'), findsNothing);
       expect(find.text('0 m'), findsNothing);
     });
 
