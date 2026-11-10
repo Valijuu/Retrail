@@ -177,6 +177,11 @@ String formatDistanceToRoute(double metres, {String? locale}) {
       : formatDistanceKm(metres, locale: locale);
 }
 
-/// Ascent or descent in whole metres (`123 m`, #97), never switching to km.
-String formatElevationM(double metres, {String? locale}) =>
-    '${formatDecimal(metres, _wholeMetreDecimalPlaces, locale: locale)} $_metresUnit';
+/// Ascent or descent in whole metres (`123 m`, #97), never switching to km, or
+/// `-- m` when [metres] is null (no altitude data, never `0 m`).
+String formatElevationM(double? metres, {String? locale}) {
+  final value = metres == null
+      ? _speedPlaceholder
+      : formatDecimal(metres, _wholeMetreDecimalPlaces, locale: locale);
+  return '$value $_metresUnit';
+}

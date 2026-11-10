@@ -44,27 +44,22 @@ class RideStatsPanel extends StatelessWidget {
       label: l10n.mapStatMaxSpeed,
       value: formatSpeedKmh(state.maxSpeedKmh, locale: locale),
     );
-    // With altitude data the grid is 3 x 2, so both rows read alike and the
-    // panel keeps its height; without it, 2 x 2 (#97).
-    final rows = elevation == null
-        ? [
-            [speedCell, distanceCell],
-            [durationCell, maxSpeedCell],
-          ]
-        : [
-            [speedCell, distanceCell, durationCell],
-            [
-              maxSpeedCell,
-              _StatCell(
-                label: l10n.mapStatAscent,
-                value: formatElevationM(elevation.ascent, locale: locale),
-              ),
-              _StatCell(
-                label: l10n.mapStatDescent,
-                value: formatElevationM(elevation.descent, locale: locale),
-              ),
-            ],
-          ];
+    // Always a 3 x 2 grid: both rows read alike and nothing jumps when the first
+    // altitude arrives. Without altitude data the cells read `-- m` (#97).
+    final rows = [
+      [speedCell, distanceCell, durationCell],
+      [
+        maxSpeedCell,
+        _StatCell(
+          label: l10n.mapStatAscent,
+          value: formatElevationM(elevation?.ascent, locale: locale),
+        ),
+        _StatCell(
+          label: l10n.mapStatDescent,
+          value: formatElevationM(elevation?.descent, locale: locale),
+        ),
+      ],
+    ];
     return Container(
       width: double.infinity,
       color: colors.surface,

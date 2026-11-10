@@ -19,7 +19,8 @@ Must:
   History day labels read today, yesterday or a localized `yMMMMd` date that always includes the year;
     an unparsable key falls back to the key itself.
   The distance to a route shows whole metres below 1 km and `X.XX km` from there on.
-  An elevation shows whole metres with the unit, `123 m`, and never switches to km (#97).
+  An elevation shows whole metres with the unit, `123 m`, never switches to km, and reads `-- m` without a
+    value (#97).
   Localized words such as today and yesterday are passed in by the caller.
 
 Example:

@@ -19,8 +19,8 @@ Must:
   An external stop (notification, Live Activity, swipe-away) returns home.
   Back while recording asks to discard first.
   The stats panel shows speed, distance, duration and top speed with Pause or Resume and Stop; the running
-    ascent and descent show as two further values once the ride has altitude data (the grid is then three
-    columns by two rows), and the panel keeps its height (#97).
+    ascent and descent are two further values, so the grid is three columns by two rows; without altitude
+    data they read `-- m`, never `0 m` (#97).
   Stop asks first, then the summary offers title (at most `60` characters), comment, favourite, Save, Skip
     and Discard; the ride is already stored at stop.
   Save writes the details and renders the preview; Skip keeps the ride as is; Discard deletes it.

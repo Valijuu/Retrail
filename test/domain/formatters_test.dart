@@ -173,6 +173,9 @@ void main() {
     test('stays in metres above 1000', () {
       expect(formatElevationM(1500), '1500 m');
     });
+    test('no value reads -- m, never 0 m', () {
+      expect(formatElevationM(null), '-- m');
+    });
     test('zero reads 0 m', () {
       expect(formatElevationM(0), '0 m');
     });

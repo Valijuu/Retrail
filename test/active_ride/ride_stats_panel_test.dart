@@ -125,14 +125,15 @@ void main() {
       expect(widths.toSet(), hasLength(1));
     });
 
-    testWidgets('shows nothing without altitude data, never 0 m', (
+    testWidgets('without altitude data the cells read -- m, never 0 m', (
       tester,
     ) async {
       await tester.pumpWidget(
         _host(const RideTrackingState(isTracking: true), Brightness.light),
       );
-      expect(find.text('Ascent'), findsNothing);
-      expect(find.text('Descent'), findsNothing);
+      expect(find.text('Ascent'), findsOneWidget);
+      expect(find.text('Descent'), findsOneWidget);
+      expect(find.text('-- m'), findsNWidgets(2));
       expect(find.text('0 m'), findsNothing);
     });
 
