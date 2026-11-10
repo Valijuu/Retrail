@@ -13,6 +13,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 - Rides now record the height: the ride screen shows the running ascent and descent, the history card shows the
   ascent (or the descent for snowboard and ski), and the ride detail shows both. Older rides and rides
   without height data show nothing (#97).
+- The History tab has a Map view next to the list: all your rides at once as lines in the colour of their
+  activity, or as a heatmap, with a legend you can tap to hide an activity. Tap a line to see the ride, swipe
+  through rides that overlap, and see which one holds the best time of its route. Press and hold the map (or use
+  the location button) to set a pin and show only the rides within 1 to 50 km of it (#96).
 
 ## 1.4.0+15 — 2026-11-10
 
