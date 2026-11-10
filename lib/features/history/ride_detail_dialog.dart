@@ -106,6 +106,25 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
     ];
   }
 
+  /// Ascent and descent rows (#97); only built for a ride with elevation.
+  List<Widget> _elevationRows(
+    AppLocalizations l10n,
+    String locale,
+    Ride ride,
+  ) => [
+    for (final (label, metres) in [
+      (l10n.detailAscentLabel, ride.ascentM),
+      (l10n.detailDescentLabel, ride.descentM),
+    ])
+      if (metres != null) ...[
+        const SizedBox(height: 10),
+        _DetailRow(
+          label: label,
+          value: formatElevationM(metres, locale: locale),
+        ),
+      ],
+  ];
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -289,6 +308,8 @@ class _RideDetailDialogState extends State<RideDetailDialog> {
                           locale: locale,
                         ),
                       ),
+                      if (ride.ascentM != null)
+                        ..._elevationRows(l10n, locale, ride),
                     ],
                   ),
                 ),

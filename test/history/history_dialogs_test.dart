@@ -203,6 +203,60 @@ void main() {
     });
   });
 
+  group('RideDetailDialog elevation (#97)', () {
+    Future<void> pumpDetail(WidgetTester tester, Ride ride) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        _host(
+          RideDetailDialog(
+            rwt: RideWithTrackpoints(ride: ride, trackpoints: const []),
+            stats: const RideStats(
+              durationMs: 600000,
+              distanceMetres: 4200,
+              maxSpeedKmh: 22,
+              avgSpeedKmh: 15,
+            ),
+            onDismiss: () {},
+          ),
+        ),
+      );
+    }
+
+    testWidgets('shows both totals', (tester) async {
+      await pumpDetail(
+        tester,
+        _ride().copyWith(
+          ascentM: const Value(123.4),
+          descentM: const Value(98),
+        ),
+      );
+      expect(find.text('Ascent'), findsOneWidget);
+      expect(find.text('123 m'), findsOneWidget);
+      expect(find.text('Descent'), findsOneWidget);
+      expect(find.text('98 m'), findsOneWidget);
+    });
+
+    testWidgets('a ride without elevation shows neither, never 0 m', (
+      tester,
+    ) async {
+      await pumpDetail(tester, _ride());
+      expect(find.text('Ascent'), findsNothing);
+      expect(find.text('Descent'), findsNothing);
+      expect(find.text('0 m'), findsNothing);
+    });
+
+    testWidgets('a flat ride with data shows 0 m for both', (tester) async {
+      await pumpDetail(
+        tester,
+        _ride().copyWith(ascentM: const Value(0), descentM: const Value(0)),
+      );
+      expect(find.text('0 m'), findsNWidgets(2));
+    });
+  });
+
   group('RideDetailDialog', () {
     testWidgets('shows stats and the no-route placeholder when empty', (
       tester,

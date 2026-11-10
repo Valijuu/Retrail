@@ -145,6 +145,8 @@ Ride _ride(
   bool fav = false,
   bool hasRoute = false,
   int? followed,
+  double? ascentM,
+  double? descentM,
 }) => Ride(
   rideId: id,
   description: desc,
@@ -157,6 +159,8 @@ Ride _ride(
   favoritedAt: null,
   hasRoute: hasRoute,
   followedRideId: followed,
+  ascentM: ascentM,
+  descentM: descentM,
 );
 
 RideEntryItem _entry(int id, {String? desc, String? typ, bool fav = false}) =>
@@ -299,6 +303,47 @@ void main() {
       await pump(tester, [_entry(1, desc: 'Ride', typ: type.id)]);
       expect(find.text(type.label(l10n)), findsOneWidget, reason: type.id);
     }
+  });
+
+  group('elevation on the card (#97)', () {
+    RideEntryItem entry(String? typ, {double? up, double? down}) =>
+        RideEntryItem(
+          _ride(1, desc: 'Ride', typ: typ, ascentM: up, descentM: down),
+          const RideStats(
+            durationMs: 600000,
+            distanceMetres: 4200,
+            maxSpeedKmh: 22,
+            avgSpeedKmh: 15,
+          ),
+        );
+
+    testWidgets('a skate type shows the ascent', (tester) async {
+      await pump(tester, [entry('LONGBOARD', up: 120.2, down: 80)]);
+      expect(find.text('↑ 120 m'), findsOneWidget);
+      expect(find.textContaining('80 m'), findsNothing);
+    });
+
+    testWidgets('snowboard and ski show the descent', (tester) async {
+      for (final id in ['SNOWBOARD', 'SKI']) {
+        await pump(tester, [entry(id, up: 120, down: 480.4)]);
+        expect(find.text('↓ 480 m'), findsOneWidget, reason: id);
+        expect(find.textContaining('120 m'), findsNothing, reason: id);
+      }
+    });
+
+    testWidgets('a ride without elevation shows neither, never 0 m', (
+      tester,
+    ) async {
+      await pump(tester, [entry('LONGBOARD')]);
+      expect(find.textContaining('↑'), findsNothing);
+      expect(find.textContaining('↓'), findsNothing);
+      expect(find.textContaining('0 m'), findsNothing);
+    });
+
+    testWidgets('a ride without a type shows the ascent', (tester) async {
+      await pump(tester, [entry(null, up: 30, down: 5)]);
+      expect(find.text('↑ 30 m'), findsOneWidget);
+    });
   });
 
   testWidgets('empty state when there are no rides', (tester) async {

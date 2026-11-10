@@ -12,6 +12,7 @@ import '../home/navigation_chooser.dart';
 import '../home/navigation_launcher.dart';
 import '../onboarding/activity_type_ui.dart';
 import 'history_items.dart';
+import 'ride_elevation.dart';
 import 'route_group_providers.dart';
 import 'widgets/ride_preview_thumbnail.dart';
 import '../../core/theme/theme_context.dart';
@@ -108,6 +109,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
         '${formatRideTime(ride.date, locale: locale)} · '
         '${formatDuration(stats.durationMs)} · '
         'Ø ${stats.avgSpeedKmh.round()} km/h';
+    final elevation = cardElevation(ride);
     final activity = ActivityType.fromId(ride.typ);
     final isFollow = ride.followedRideId != null;
     // Read per card, so a count change doesn't rebuild the whole list.
@@ -195,13 +197,23 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    meta,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.labelSmall?.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          meta,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.labelSmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      if (elevation != null) ...[
+                        const SizedBox(width: 8),
+                        _ElevationLabel(elevation, locale: locale),
+                      ],
+                    ],
                   ),
                   if (activity != null ||
                       !hasRoute ||
@@ -249,6 +261,32 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The card's ascent or descent, e.g. `↑ 120 m`, read out in words.
+class _ElevationLabel extends StatelessWidget {
+  const _ElevationLabel(this.elevation, {required this.locale});
+
+  final CardElevation elevation;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final value = formatElevationM(elevation.metres, locale: locale);
+    final name = elevation.isDescent
+        ? l10n.detailDescentLabel
+        : l10n.detailAscentLabel;
+    return Text(
+      '${elevation.isDescent ? '↓' : '↑'} $value',
+      semanticsLabel: '$name $value',
+      maxLines: 1,
+      softWrap: false,
+      style: Theme.of(
+        context,
+      ).textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant),
     );
   }
 }

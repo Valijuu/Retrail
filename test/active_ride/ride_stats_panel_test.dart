@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_colors.dart';
 import 'package:retrail/core/theme/app_theme.dart';
+import 'package:retrail/domain/elevation.dart';
 import 'package:retrail/features/active_ride/widgets/ride_stats_panel.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/tracking/ride_tracking_state.dart';
@@ -75,5 +76,75 @@ void main() {
     );
     expect(find.text('12,3 km/h'), findsWidgets);
     expect(find.text('1,23 km'), findsOneWidget);
+  });
+
+  group('ascent (#97)', () {
+    testWidgets('shows the running ascent once the ride has altitude data', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const RideTrackingState(
+            isTracking: true,
+            elevation: ElevationGain(ascent: 42.4, descent: 10),
+          ),
+          Brightness.light,
+        ),
+      );
+      expect(find.text('Ascent'), findsOneWidget);
+      expect(find.text('42 m'), findsOneWidget);
+    });
+
+    testWidgets('shows nothing without altitude data, never 0 m', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(const RideTrackingState(isTracking: true), Brightness.light),
+      );
+      expect(find.text('Ascent'), findsNothing);
+      expect(find.text('0 m'), findsNothing);
+    });
+
+    testWidgets('keeps the panel height with and without the value', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(const RideTrackingState(isTracking: true), Brightness.light),
+      );
+      final without = tester.getSize(find.byType(RideStatsPanel));
+      await tester.pumpWidget(
+        _host(
+          const RideTrackingState(
+            isTracking: true,
+            elevation: ElevationGain(ascent: 5, descent: 0),
+          ),
+          Brightness.light,
+        ),
+      );
+      expect(tester.getSize(find.byType(RideStatsPanel)), without);
+    });
+
+    testWidgets('fits a narrow phone in German without overflow', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        _host(
+          const RideTrackingState(
+            isTracking: true,
+            elapsedSeconds: 3725,
+            maxSpeedKmh: 33.3,
+            elevation: ElevationGain(ascent: 1234, descent: 0),
+          ),
+          Brightness.light,
+          locale: const Locale('de'),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('Aufstieg'), findsOneWidget);
+    });
   });
 }

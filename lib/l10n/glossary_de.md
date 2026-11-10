@@ -22,6 +22,7 @@ English is the default and should read naturally (not a literal back-translation
 | Active ride title | Longboard-Fahrt |
 | Live badge | Live |
 | Stats | Tempo / Strecke / Dauer / Höchstgeschw. |
+| Ascent / descent (live, detail) | Aufstieg / Abstieg (in Metern, z. B. 123 m) |
 | Stop ride | Fahrt beenden |
 | End dialog title / subtitle | Wie war die Fahrt? / Füge eine Notiz hinzu. |
 | Title / Comment inputs | Titel / Kommentar |

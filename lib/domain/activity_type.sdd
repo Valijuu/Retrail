@@ -16,6 +16,7 @@ Must:
     types after them, `other` last.
   Each type has a stable uppercase id stored in `Ride.typ`, such as `LONGBOARD`, `SNOWBOARD` and `SKI`.
     Ids are never renamed: rides already stored keep resolving to their type.
+  @ActivityType.isSnow is true for snowboard and ski only (#97).
   @ActivityType.fromId returns `null` for an unknown or missing id.
   @ActivityType.defaultType is longboard.
 

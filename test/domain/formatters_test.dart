@@ -164,4 +164,17 @@ void main() {
       expect(formatDistanceToRoute(1500, locale: 'de'), '1,50 km');
     });
   });
+
+  group('formatElevationM (#97)', () {
+    test('rounds to whole metres with the unit', () {
+      expect(formatElevationM(123.4), '123 m');
+      expect(formatElevationM(123.6), '124 m');
+    });
+    test('stays in metres above 1000', () {
+      expect(formatElevationM(1500), '1500 m');
+    });
+    test('zero reads 0 m', () {
+      expect(formatElevationM(0), '0 m');
+    });
+  });
 }

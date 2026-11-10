@@ -17,6 +17,9 @@ enum ActivityType {
 
   final String id;
 
+  /// True for the winter types, where the descent is the figure riders compare.
+  bool get isSnow => this == snowboard || this == ski;
+
   /// Maps a stored type string (`Ride.typ`) back to the enum, or null if none.
   static ActivityType? fromId(String? id) {
     return values.where((type) => type.id == id).firstOrNull;

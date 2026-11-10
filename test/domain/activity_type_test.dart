@@ -51,4 +51,11 @@ void main() {
       ]);
     });
   });
+
+  test('only snowboard and ski are snow types (#97)', () {
+    expect(ActivityType.values.where((t) => t.isSnow), [
+      ActivityType.snowboard,
+      ActivityType.ski,
+    ]);
+  });
 }

@@ -25,6 +25,7 @@ class RideStatsPanel extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final speed = state.speedKmh;
+    final elevation = state.elevation;
     final locale = Localizations.localeOf(context).toString();
     return Container(
       width: double.infinity,
@@ -83,6 +84,15 @@ class RideStatsPanel extends StatelessWidget {
                     value: formatSpeedKmh(state.maxSpeedKmh, locale: locale),
                   ),
                 ),
+                if (elevation != null) ...[
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: _StatCell(
+                      label: l10n.mapStatAscent,
+                      value: formatElevationM(elevation.ascent, locale: locale),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -138,10 +148,14 @@ class _StatCell extends StatelessWidget {
         children: [
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: text.labelSmall?.copyWith(color: colors.onSurfaceVariant),
           ),
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: text.titleMedium?.copyWith(
               color: valueColor ?? colors.onSurface,
             ),
