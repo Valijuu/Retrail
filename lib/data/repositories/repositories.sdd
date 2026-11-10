@@ -8,8 +8,10 @@ Owns:
   ./trackpoint_repository.dart
   ./preferences_repository.dart
   ./data_providers.dart
+  ./outline_repository.dart
   /test/data/ride_repository_test.dart
   /test/data/preferences_repository_test.dart
+  /test/data/outline_repository_test.dart
 
 References:
   /docs/specs/history/03-data-layer.md
@@ -22,6 +24,9 @@ Must:
   Preference keys and defaults stay stable across releases.
   Writing an outline for a ride that no longer exists is ignored without an error.
   Saving a ride stores its @RideOutline; rides without one get it filled in on request, one at a time (#96).
+  @OutlineRepository simplifies off the UI thread. A route that yields no outline (fewer than two points) is stored
+    as an empty polyline, so the fill does not pick it again; readers skip empty outlines.
+  @OutlineRepository.fillNext reads one ride's trackpoints in one query and reports whether more rides wait.
 
 Example:
   `user_name`: `Retrailer`

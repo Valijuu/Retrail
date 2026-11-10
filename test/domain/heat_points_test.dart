@@ -1,0 +1,90 @@
+import 'dart:math' as math;
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/domain/distance_calculator.dart';
+import 'package:retrail/domain/heading.dart' show LatLng;
+import 'package:retrail/domain/heat_points.dart';
+import 'package:retrail/domain/ride_outline.dart';
+
+const _calc = HaversineDistanceCalculator();
+
+/// One degree of latitude in metres on the Haversine sphere (radius 6371 km).
+const _metresPerDegree = 6371000 * math.pi / 180;
+
+/// How far a heat point may lie from its expected place, in metres.
+const _toleranceM = 0.01;
+
+/// A point [north] / [east] metres from the origin (0, 0).
+LatLng _at(double north, double east) =>
+    (lat: north / _metresPerDegree, lng: east / _metresPerDegree);
+
+/// Distance in metres from the origin eastwards along the equator.
+double _eastM(LatLng p) => _calc.distanceBetween(0, 0, p.lat, p.lng);
+
+void main() {
+  group('HeatPoints.along', () {
+    test('an empty outline gives no points', () {
+      expect(HeatPoints.along(const RideOutline([]), distance: _calc), isEmpty);
+    });
+
+    test('a one-point outline gives no points', () {
+      final outline = RideOutline([_at(0, 0)]);
+      expect(HeatPoints.along(outline, distance: _calc), isEmpty);
+    });
+
+    test('an outline shorter than 30 m gives its first and last point', () {
+      final outline = RideOutline([_at(0, 0), _at(0, 10), _at(0, 20)]);
+      expect(HeatPoints.along(outline, distance: _calc), [
+        _at(0, 0),
+        _at(0, 20),
+      ]);
+    });
+
+    test('a straight 100 m outline: points at 0, 30, 60, 90 and 100 m', () {
+      final outline = RideOutline([_at(0, 0), _at(0, 100)]);
+      final points = HeatPoints.along(outline, distance: _calc);
+      expect(points.map(_eastM).toList(), [
+        closeTo(0, _toleranceM),
+        closeTo(30, _toleranceM),
+        closeTo(60, _toleranceM),
+        closeTo(90, _toleranceM),
+        closeTo(100, _toleranceM),
+      ]);
+    });
+
+    test(
+      'an outline of exactly 60 m: points at 0, 30 and 60 m, the end once',
+      () {
+        final outline = RideOutline([_at(0, 0), _at(0, 60)]);
+        final points = HeatPoints.along(outline, distance: _calc);
+        expect(points.map(_eastM).toList(), [
+          closeTo(0, _toleranceM),
+          closeTo(30, _toleranceM),
+          closeTo(60, _toleranceM),
+        ]);
+      },
+    );
+
+    test('points follow the outline across its corners in ride order', () {
+      // 50 m east, then 50 m north: 100 m of arc length with a corner at 50.
+      final outline = RideOutline([_at(0, 0), _at(0, 50), _at(50, 50)]);
+      final points = HeatPoints.along(outline, distance: _calc);
+      expect(points.length, 5);
+      expect(_eastM(points[1]), closeTo(30, _toleranceM));
+      // 60 m along: 10 m up the northern leg, at the corner's easting.
+      expect(points[2].lng, closeTo(_at(0, 50).lng, 1e-9));
+      expect(points[2].lat * _metresPerDegree, closeTo(10, _toleranceM));
+      expect(points[3].lat * _metresPerDegree, closeTo(40, _toleranceM));
+      expect(points.last, _at(50, 50));
+    });
+
+    test('a longer ride gets more points', () {
+      final short = RideOutline([_at(0, 0), _at(0, 300)]);
+      final long = RideOutline([_at(0, 0), _at(0, 3000)]);
+      expect(
+        HeatPoints.along(long, distance: _calc).length,
+        greaterThan(HeatPoints.along(short, distance: _calc).length),
+      );
+    });
+  });
+}

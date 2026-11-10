@@ -13,6 +13,8 @@ Owns:
   ./trackpoint_dao.dart
   ./trackpoint_dao.g.dart
   ./ride_with_trackpoints.dart
+  ./outline_dao.dart
+  ./outline_dao.g.dart
   ./followed_route.dart
   /test/data/rides_dao_test.dart
   /test/data/trackpoints_dao_test.dart
@@ -20,6 +22,7 @@ Owns:
   /test/data/ride_range_query_test.dart
   /test/data/followed_rides_dao_test.dart
   /test/data/elevation_schema_test.dart
+  /test/data/ride_outlines_dao_test.dart
 
 References:
   /docs/specs/history/03-data-layer.md
@@ -35,6 +38,8 @@ Must:
     are the totals stored at save, or none for a ride without altitude data; older rides stay none.
   `ride_outlines` holds one row per ride: encoded polyline and bounding box; it is deleted with its ride
     (`ON DELETE CASCADE`, single and batch delete, each in one transaction) and kept when the ride is edited.
+  @OutlineDao.upsert writes an outline only while its ride exists, check and write in one transaction.
+  @OutlineDao.rideIdsWithoutOutline lists the rides with a route and no outline row, oldest first.
   The schema version is `7`; every older version upgrades in place without losing rides.
   Every schema change raises the version and adds an upgrade step.
   Reads are reactive Drift streams; @RideWithTrackpoints is assembled in the DAO.

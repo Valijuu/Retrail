@@ -1566,17 +1566,412 @@ class TrackpointsCompanion extends UpdateCompanion<Trackpoint> {
   }
 }
 
+class $RideOutlinesTable extends RideOutlines
+    with TableInfo<$RideOutlinesTable, RideOutlineRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RideOutlinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _rideIdMeta = const VerificationMeta('rideId');
+  @override
+  late final GeneratedColumn<int> rideId = GeneratedColumn<int>(
+    'ride_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES rides (ride_id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _polylineMeta = const VerificationMeta(
+    'polyline',
+  );
+  @override
+  late final GeneratedColumn<String> polyline = GeneratedColumn<String>(
+    'polyline',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _southMeta = const VerificationMeta('south');
+  @override
+  late final GeneratedColumn<double> south = GeneratedColumn<double>(
+    'south',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _westMeta = const VerificationMeta('west');
+  @override
+  late final GeneratedColumn<double> west = GeneratedColumn<double>(
+    'west',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _northMeta = const VerificationMeta('north');
+  @override
+  late final GeneratedColumn<double> north = GeneratedColumn<double>(
+    'north',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eastMeta = const VerificationMeta('east');
+  @override
+  late final GeneratedColumn<double> east = GeneratedColumn<double>(
+    'east',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    rideId,
+    polyline,
+    south,
+    west,
+    north,
+    east,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ride_outlines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RideOutlineRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('ride_id')) {
+      context.handle(
+        _rideIdMeta,
+        rideId.isAcceptableOrUnknown(data['ride_id']!, _rideIdMeta),
+      );
+    }
+    if (data.containsKey('polyline')) {
+      context.handle(
+        _polylineMeta,
+        polyline.isAcceptableOrUnknown(data['polyline']!, _polylineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_polylineMeta);
+    }
+    if (data.containsKey('south')) {
+      context.handle(
+        _southMeta,
+        south.isAcceptableOrUnknown(data['south']!, _southMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_southMeta);
+    }
+    if (data.containsKey('west')) {
+      context.handle(
+        _westMeta,
+        west.isAcceptableOrUnknown(data['west']!, _westMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_westMeta);
+    }
+    if (data.containsKey('north')) {
+      context.handle(
+        _northMeta,
+        north.isAcceptableOrUnknown(data['north']!, _northMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_northMeta);
+    }
+    if (data.containsKey('east')) {
+      context.handle(
+        _eastMeta,
+        east.isAcceptableOrUnknown(data['east']!, _eastMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eastMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {rideId};
+  @override
+  RideOutlineRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RideOutlineRow(
+      rideId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ride_id'],
+      )!,
+      polyline: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}polyline'],
+      )!,
+      south: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}south'],
+      )!,
+      west: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}west'],
+      )!,
+      north: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}north'],
+      )!,
+      east: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}east'],
+      )!,
+    );
+  }
+
+  @override
+  $RideOutlinesTable createAlias(String alias) {
+    return $RideOutlinesTable(attachedDatabase, alias);
+  }
+}
+
+class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
+  final int rideId;
+  final String polyline;
+  final double south;
+  final double west;
+  final double north;
+  final double east;
+  const RideOutlineRow({
+    required this.rideId,
+    required this.polyline,
+    required this.south,
+    required this.west,
+    required this.north,
+    required this.east,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['ride_id'] = Variable<int>(rideId);
+    map['polyline'] = Variable<String>(polyline);
+    map['south'] = Variable<double>(south);
+    map['west'] = Variable<double>(west);
+    map['north'] = Variable<double>(north);
+    map['east'] = Variable<double>(east);
+    return map;
+  }
+
+  RideOutlinesCompanion toCompanion(bool nullToAbsent) {
+    return RideOutlinesCompanion(
+      rideId: Value(rideId),
+      polyline: Value(polyline),
+      south: Value(south),
+      west: Value(west),
+      north: Value(north),
+      east: Value(east),
+    );
+  }
+
+  factory RideOutlineRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RideOutlineRow(
+      rideId: serializer.fromJson<int>(json['rideId']),
+      polyline: serializer.fromJson<String>(json['polyline']),
+      south: serializer.fromJson<double>(json['south']),
+      west: serializer.fromJson<double>(json['west']),
+      north: serializer.fromJson<double>(json['north']),
+      east: serializer.fromJson<double>(json['east']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'rideId': serializer.toJson<int>(rideId),
+      'polyline': serializer.toJson<String>(polyline),
+      'south': serializer.toJson<double>(south),
+      'west': serializer.toJson<double>(west),
+      'north': serializer.toJson<double>(north),
+      'east': serializer.toJson<double>(east),
+    };
+  }
+
+  RideOutlineRow copyWith({
+    int? rideId,
+    String? polyline,
+    double? south,
+    double? west,
+    double? north,
+    double? east,
+  }) => RideOutlineRow(
+    rideId: rideId ?? this.rideId,
+    polyline: polyline ?? this.polyline,
+    south: south ?? this.south,
+    west: west ?? this.west,
+    north: north ?? this.north,
+    east: east ?? this.east,
+  );
+  RideOutlineRow copyWithCompanion(RideOutlinesCompanion data) {
+    return RideOutlineRow(
+      rideId: data.rideId.present ? data.rideId.value : this.rideId,
+      polyline: data.polyline.present ? data.polyline.value : this.polyline,
+      south: data.south.present ? data.south.value : this.south,
+      west: data.west.present ? data.west.value : this.west,
+      north: data.north.present ? data.north.value : this.north,
+      east: data.east.present ? data.east.value : this.east,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RideOutlineRow(')
+          ..write('rideId: $rideId, ')
+          ..write('polyline: $polyline, ')
+          ..write('south: $south, ')
+          ..write('west: $west, ')
+          ..write('north: $north, ')
+          ..write('east: $east')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(rideId, polyline, south, west, north, east);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RideOutlineRow &&
+          other.rideId == this.rideId &&
+          other.polyline == this.polyline &&
+          other.south == this.south &&
+          other.west == this.west &&
+          other.north == this.north &&
+          other.east == this.east);
+}
+
+class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
+  final Value<int> rideId;
+  final Value<String> polyline;
+  final Value<double> south;
+  final Value<double> west;
+  final Value<double> north;
+  final Value<double> east;
+  const RideOutlinesCompanion({
+    this.rideId = const Value.absent(),
+    this.polyline = const Value.absent(),
+    this.south = const Value.absent(),
+    this.west = const Value.absent(),
+    this.north = const Value.absent(),
+    this.east = const Value.absent(),
+  });
+  RideOutlinesCompanion.insert({
+    this.rideId = const Value.absent(),
+    required String polyline,
+    required double south,
+    required double west,
+    required double north,
+    required double east,
+  }) : polyline = Value(polyline),
+       south = Value(south),
+       west = Value(west),
+       north = Value(north),
+       east = Value(east);
+  static Insertable<RideOutlineRow> custom({
+    Expression<int>? rideId,
+    Expression<String>? polyline,
+    Expression<double>? south,
+    Expression<double>? west,
+    Expression<double>? north,
+    Expression<double>? east,
+  }) {
+    return RawValuesInsertable({
+      if (rideId != null) 'ride_id': rideId,
+      if (polyline != null) 'polyline': polyline,
+      if (south != null) 'south': south,
+      if (west != null) 'west': west,
+      if (north != null) 'north': north,
+      if (east != null) 'east': east,
+    });
+  }
+
+  RideOutlinesCompanion copyWith({
+    Value<int>? rideId,
+    Value<String>? polyline,
+    Value<double>? south,
+    Value<double>? west,
+    Value<double>? north,
+    Value<double>? east,
+  }) {
+    return RideOutlinesCompanion(
+      rideId: rideId ?? this.rideId,
+      polyline: polyline ?? this.polyline,
+      south: south ?? this.south,
+      west: west ?? this.west,
+      north: north ?? this.north,
+      east: east ?? this.east,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (rideId.present) {
+      map['ride_id'] = Variable<int>(rideId.value);
+    }
+    if (polyline.present) {
+      map['polyline'] = Variable<String>(polyline.value);
+    }
+    if (south.present) {
+      map['south'] = Variable<double>(south.value);
+    }
+    if (west.present) {
+      map['west'] = Variable<double>(west.value);
+    }
+    if (north.present) {
+      map['north'] = Variable<double>(north.value);
+    }
+    if (east.present) {
+      map['east'] = Variable<double>(east.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RideOutlinesCompanion(')
+          ..write('rideId: $rideId, ')
+          ..write('polyline: $polyline, ')
+          ..write('south: $south, ')
+          ..write('west: $west, ')
+          ..write('north: $north, ')
+          ..write('east: $east')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $RidesTable rides = $RidesTable(this);
   late final $TrackpointsTable trackpoints = $TrackpointsTable(this);
+  late final $RideOutlinesTable rideOutlines = $RideOutlinesTable(this);
   late final Index trackpointsRideId = Index(
     'trackpoints_ride_id',
     'CREATE INDEX trackpoints_ride_id ON trackpoints (ride_id)',
   );
   late final RideDao rideDao = RideDao(this as AppDatabase);
   late final TrackpointDao trackpointDao = TrackpointDao(this as AppDatabase);
+  late final OutlineDao outlineDao = OutlineDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1584,6 +1979,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     rides,
     trackpoints,
+    rideOutlines,
     trackpointsRideId,
   ];
   @override
@@ -1601,6 +1997,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('trackpoints', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'rides',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('ride_outlines', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -1684,6 +2087,24 @@ final class $$RidesTableReferences
     ).filter((f) => f.rideId.rideId.sqlEquals($_itemColumn<int>('ride_id')!));
 
     final cache = $_typedResult.readTableOrNull(_trackpointsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RideOutlinesTable, List<RideOutlineRow>>
+  _rideOutlinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.rideOutlines,
+    aliasName: 'rides__ride_id__ride_outlines__ride_id',
+  );
+
+  $$RideOutlinesTableProcessedTableManager get rideOutlinesRefs {
+    final manager = $$RideOutlinesTableTableManager(
+      $_db,
+      $_db.rideOutlines,
+    ).filter((f) => f.rideId.rideId.sqlEquals($_itemColumn<int>('ride_id')!));
+
+    final cache = $_typedResult.readTableOrNull(_rideOutlinesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -1827,6 +2248,31 @@ class $$RidesTableFilterComposer extends Composer<_$AppDatabase, $RidesTable> {
           }) => $$TrackpointsTableFilterComposer(
             $db: $db,
             $table: $db.trackpoints,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> rideOutlinesRefs(
+    Expression<bool> Function($$RideOutlinesTableFilterComposer f) f,
+  ) {
+    final $$RideOutlinesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rideOutlines,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RideOutlinesTableFilterComposer(
+            $db: $db,
+            $table: $db.rideOutlines,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2088,6 +2534,31 @@ class $$RidesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> rideOutlinesRefs<T extends Object>(
+    Expression<T> Function($$RideOutlinesTableAnnotationComposer a) f,
+  ) {
+    final $$RideOutlinesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rideOutlines,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RideOutlinesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rideOutlines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RidesTableTableManager
@@ -2103,7 +2574,11 @@ class $$RidesTableTableManager
           $$RidesTableUpdateCompanionBuilder,
           (Ride, $$RidesTableReferences),
           Ride,
-          PrefetchHooks Function({bool followedRideId, bool trackpointsRefs})
+          PrefetchHooks Function({
+            bool followedRideId,
+            bool trackpointsRefs,
+            bool rideOutlinesRefs,
+          })
         > {
   $$RidesTableTableManager(_$AppDatabase db, $RidesTable table)
     : super(
@@ -2207,11 +2682,16 @@ class $$RidesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({followedRideId = false, trackpointsRefs = false}) {
+              ({
+                followedRideId = false,
+                trackpointsRefs = false,
+                rideOutlinesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (trackpointsRefs) db.trackpoints,
+                    if (rideOutlinesRefs) db.rideOutlines,
                   ],
                   addJoins:
                       <
@@ -2268,6 +2748,27 @@ class $$RidesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (rideOutlinesRefs)
+                        await $_getPrefetchedData<
+                          Ride,
+                          $RidesTable,
+                          RideOutlineRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RidesTableReferences
+                              ._rideOutlinesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RidesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).rideOutlinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rideId == item.rideId,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -2288,7 +2789,11 @@ typedef $$RidesTableProcessedTableManager =
       $$RidesTableUpdateCompanionBuilder,
       (Ride, $$RidesTableReferences),
       Ride,
-      PrefetchHooks Function({bool followedRideId, bool trackpointsRefs})
+      PrefetchHooks Function({
+        bool followedRideId,
+        bool trackpointsRefs,
+        bool rideOutlinesRefs,
+      })
     >;
 typedef $$TrackpointsTableCreateCompanionBuilder =
     TrackpointsCompanion Function({
@@ -2641,6 +3146,336 @@ typedef $$TrackpointsTableProcessedTableManager =
       Trackpoint,
       PrefetchHooks Function({bool rideId})
     >;
+typedef $$RideOutlinesTableCreateCompanionBuilder =
+    RideOutlinesCompanion Function({
+      Value<int> rideId,
+      required String polyline,
+      required double south,
+      required double west,
+      required double north,
+      required double east,
+    });
+typedef $$RideOutlinesTableUpdateCompanionBuilder =
+    RideOutlinesCompanion Function({
+      Value<int> rideId,
+      Value<String> polyline,
+      Value<double> south,
+      Value<double> west,
+      Value<double> north,
+      Value<double> east,
+    });
+
+final class $$RideOutlinesTableReferences
+    extends BaseReferences<_$AppDatabase, $RideOutlinesTable, RideOutlineRow> {
+  $$RideOutlinesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $RidesTable _rideIdTable(_$AppDatabase db) =>
+      db.rides.createAlias('ride_outlines__ride_id__rides__ride_id');
+
+  $$RidesTableProcessedTableManager get rideId {
+    final $_column = $_itemColumn<int>('ride_id')!;
+
+    final manager = $$RidesTableTableManager(
+      $_db,
+      $_db.rides,
+    ).filter((f) => f.rideId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_rideIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RideOutlinesTableFilterComposer
+    extends Composer<_$AppDatabase, $RideOutlinesTable> {
+  $$RideOutlinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get polyline => $composableBuilder(
+    column: $table.polyline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get south => $composableBuilder(
+    column: $table.south,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get west => $composableBuilder(
+    column: $table.west,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get north => $composableBuilder(
+    column: $table.north,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get east => $composableBuilder(
+    column: $table.east,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RidesTableFilterComposer get rideId {
+    final $$RidesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableFilterComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RideOutlinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RideOutlinesTable> {
+  $$RideOutlinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get polyline => $composableBuilder(
+    column: $table.polyline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get south => $composableBuilder(
+    column: $table.south,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get west => $composableBuilder(
+    column: $table.west,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get north => $composableBuilder(
+    column: $table.north,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get east => $composableBuilder(
+    column: $table.east,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RidesTableOrderingComposer get rideId {
+    final $$RidesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableOrderingComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RideOutlinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RideOutlinesTable> {
+  $$RideOutlinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get polyline =>
+      $composableBuilder(column: $table.polyline, builder: (column) => column);
+
+  GeneratedColumn<double> get south =>
+      $composableBuilder(column: $table.south, builder: (column) => column);
+
+  GeneratedColumn<double> get west =>
+      $composableBuilder(column: $table.west, builder: (column) => column);
+
+  GeneratedColumn<double> get north =>
+      $composableBuilder(column: $table.north, builder: (column) => column);
+
+  GeneratedColumn<double> get east =>
+      $composableBuilder(column: $table.east, builder: (column) => column);
+
+  $$RidesTableAnnotationComposer get rideId {
+    final $$RidesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rideId,
+      referencedTable: $db.rides,
+      getReferencedColumn: (t) => t.rideId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RidesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rides,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RideOutlinesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RideOutlinesTable,
+          RideOutlineRow,
+          $$RideOutlinesTableFilterComposer,
+          $$RideOutlinesTableOrderingComposer,
+          $$RideOutlinesTableAnnotationComposer,
+          $$RideOutlinesTableCreateCompanionBuilder,
+          $$RideOutlinesTableUpdateCompanionBuilder,
+          (RideOutlineRow, $$RideOutlinesTableReferences),
+          RideOutlineRow,
+          PrefetchHooks Function({bool rideId})
+        > {
+  $$RideOutlinesTableTableManager(_$AppDatabase db, $RideOutlinesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RideOutlinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RideOutlinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RideOutlinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> rideId = const Value.absent(),
+                Value<String> polyline = const Value.absent(),
+                Value<double> south = const Value.absent(),
+                Value<double> west = const Value.absent(),
+                Value<double> north = const Value.absent(),
+                Value<double> east = const Value.absent(),
+              }) => RideOutlinesCompanion(
+                rideId: rideId,
+                polyline: polyline,
+                south: south,
+                west: west,
+                north: north,
+                east: east,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> rideId = const Value.absent(),
+                required String polyline,
+                required double south,
+                required double west,
+                required double north,
+                required double east,
+              }) => RideOutlinesCompanion.insert(
+                rideId: rideId,
+                polyline: polyline,
+                south: south,
+                west: west,
+                north: north,
+                east: east,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RideOutlinesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({rideId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (rideId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.rideId,
+                                referencedTable: $$RideOutlinesTableReferences
+                                    ._rideIdTable(db),
+                                referencedColumn: $$RideOutlinesTableReferences
+                                    ._rideIdTable(db)
+                                    .rideId,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RideOutlinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RideOutlinesTable,
+      RideOutlineRow,
+      $$RideOutlinesTableFilterComposer,
+      $$RideOutlinesTableOrderingComposer,
+      $$RideOutlinesTableAnnotationComposer,
+      $$RideOutlinesTableCreateCompanionBuilder,
+      $$RideOutlinesTableUpdateCompanionBuilder,
+      (RideOutlineRow, $$RideOutlinesTableReferences),
+      RideOutlineRow,
+      PrefetchHooks Function({bool rideId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2649,4 +3484,6 @@ class $AppDatabaseManager {
       $$RidesTableTableManager(_db, _db.rides);
   $$TrackpointsTableTableManager get trackpoints =>
       $$TrackpointsTableTableManager(_db, _db.trackpoints);
+  $$RideOutlinesTableTableManager get rideOutlines =>
+      $$RideOutlinesTableTableManager(_db, _db.rideOutlines);
 }

@@ -21,6 +21,7 @@ Must:
     outline returns every point within `1` m of the original.
   @RideOutline.bounds is the box around all points as south, west, north and east.
   Distances use the shared @DistanceCalculator seam.
+  @segmentDistanceM is the shared distance from a point to a segment; @OutlineHit and @AreaFilter reuse it.
 
 Must not:
   Read trackpoints, the database or the clock.
