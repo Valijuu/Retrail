@@ -1,5 +1,3 @@
 <de-DE>
-Neu:
-• Snowboard und Ski als Aktivitäten für deine Fahrten im Winter
-• Neues App-Symbol
+Neu: Snowboard und Ski als Aktivitäten für deine Fahrten im Winter.
 </de-DE>
