@@ -23,6 +23,7 @@ Structure:
   ./route_group.dart: Original plus follows, best time
   ./route_row_stats.dart: One comparison-sheet row
   ./route_selection.dart: Followed-routes search and summary
+  ./elevation.dart: Ascent and descent from recorded altitudes
 
 Owns:
   /test/domain/domain_test_helpers.dart

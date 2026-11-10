@@ -1,0 +1,55 @@
+Spec: Elevation
+
+Purpose:
+  Ascent and descent of a ride from its recorded altitudes, live and at save.
+
+Owns:
+  ./elevation.dart
+  /test/domain/elevation_test.dart
+
+References:
+  /docs/decisions/0002-elevation-from-gps.md
+  /lib/tracking/tracking.sdd
+
+Must:
+  @ElevationGain has the totals ascent and descent in metres, both never negative.
+  Altitudes are smoothed with a trailing running median over the last `5` samples; fewer samples use what exists.
+  A change counts only when the smoothed altitude is at least `3` m away from the last counted level; the
+    first smoothed sample sets that level and counts nothing.
+  Missing (`null`) altitudes are skipped and do not move the level.
+  @ElevationAccumulator takes one altitude at a time and exposes the running totals; @ElevationGain.of a list
+    gives exactly the totals of feeding that list to an accumulator.
+  A list with fewer than two usable altitudes has no elevation: the result is `null`, not `0`.
+
+Must not:
+  Read the clock, the database or the platform; units are metres.
+
+Scenario: flat ride with noise
+  Given altitudes that wander within `±2` m around one level
+  When the gain is computed
+  Then ascent and descent are `0`
+
+Scenario: steady climb
+  Given altitudes rising from `100` to `200` m in steps of `1` m
+  When the gain is computed
+  Then the ascent is within `3` m of `100` and the descent is `0`
+
+Scenario: single spike
+  Given a flat ride with one sample `40` m too high
+  When the gain is computed
+  Then the spike adds nothing
+
+Example:
+  altitudes `100`, `110`, `100`: ascent `10`, descent `10`
+  altitudes `null`, `null`: `null`
+  one altitude: `null`
+
+Tasks:
+  [ ] #97 @ElevationGain and @ElevationAccumulator (EXACT), including accumulator equals batch.
+  [ ] #97 `LocationFix` altitude and accuracy, trackpoint altitude column, ride ascent and descent columns.
+  [?] #97 Schema version: `6` here; if #96 merges first this becomes `7` and the upgrade step moves with it.
+  [ ] #97 History card and detail, live value on the ride screen, l10n (de, en), `CHANGELOG.md`.
+
+Done when:
+  `flutter analyze` is clean, `flutter test` passes and `specdd lint` passes.
+  A short ride with a hill is recorded on an Android and an iOS device and the totals look plausible.

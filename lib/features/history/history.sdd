@@ -13,6 +13,7 @@ References:
   /docs/specs/history/13-history.md
   /docs/specs/history/20-followed-rides.md
   /lib/map/map.sdd
+  /docs/decisions/0002-elevation-from-gps.md
 
 Must:
   Sort by date groups by day, newest day first; distance and top speed sort descending; duration ascending.
@@ -22,6 +23,8 @@ Must:
   Filters apply live; there is no Apply step.
   Search matches the display title or the comment, trimmed and case-insensitive.
   Stats come from the values stored with the ride, never from trackpoints at list time.
+  A card shows the stored ascent for skate types and the stored descent for snowboard and ski; the ride detail
+    shows both. A ride without elevation shows neither, never `0 m` (#97).
   Cards show the cached preview, never a live map.
   A target ride from Home is scrolled to and highlighted for `1.5` s, resetting filters that hide it.
   Long-press starts selection; back while selecting clears it.

@@ -31,6 +31,7 @@ References:
   /docs/specs/history/05b-gps-platform.md
   /docs/specs/history/06-live-activity.md
   /docs/specs/history/21-countdown-cue.md
+  /docs/decisions/0002-elevation-from-gps.md
   /ios/ios.sdd
   /android/android.sdd
 
@@ -51,6 +52,11 @@ Must:
     start, resume and stop.
   Resume does not count the paused gap as distance.
   A trackpoint is timestamped with when the fix was taken.
+  A recorded fix keeps its altitude when the platform reports a valid one: a vertical accuracy worse than `25` m
+    or an invalid altitude is stored as none, an unknown accuracy is accepted. Altitude never decides whether
+    a fix is recorded (#97).
+  The live ascent and descent come from @ElevationAccumulator over the recorded fixes; at stop the ride stores
+    the totals of @ElevationGain.
   Fix age and elapsed time come from the platform capture timestamp, never from ingestion time.
   The ride starts only after the permission gate grants location; Android 13+ also asks for notifications,
     iOS escalates to Always for screen-off recording.
@@ -63,6 +69,7 @@ Must:
     (`/assets/audio/countdown`, de or en) and is silent on Android when the ringer is not normal.
 
 Must not:
+  Ask for a new permission, add a plugin or use the network for elevation.
   Move recording logic into the foreground-task isolate.
   Request the `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission.
 
