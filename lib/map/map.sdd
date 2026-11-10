@@ -18,6 +18,8 @@ Owns:
   ./route_preview.dart
   ./route_sketch.dart
   ./overview_map.dart
+  ./overview_layers.dart
+  ./overview_pin.dart
   ./tile_grid.dart
   /test/map
   /test/fixtures/map
