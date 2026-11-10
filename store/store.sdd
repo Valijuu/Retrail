@@ -8,6 +8,7 @@ Owns:
   ./ios
 
 References:
+  /store/README.md
   /docs/play-store.md
   /tool/tool.sdd
 
