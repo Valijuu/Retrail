@@ -27,6 +27,39 @@ Future<T> firstData<T>(ProviderContainer c, StreamProvider<T> p) {
 }
 
 void main() {
+  group('HistoryFilterNotifier area (#96)', () {
+    test('setAreaPin sets the pin at the default radius, moving keeps it', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(historyFilterProvider.notifier);
+      n.setAreaPin((lat: 48.1, lng: 11.5));
+      expect(c.read(historyFilterProvider).area!.radiusKm, 5);
+      n.setAreaRadius(12);
+      n.setAreaPin((lat: 49, lng: 12));
+      final area = c.read(historyFilterProvider).area!;
+      expect((area.pin, area.radiusKm), ((lat: 49.0, lng: 12.0), 12));
+    });
+
+    test('setAreaRadius without a pin does nothing', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      c.read(historyFilterProvider.notifier).setAreaRadius(12);
+      expect(c.read(historyFilterProvider).area, isNull);
+    });
+
+    test('clearArea and reset remove the area', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(historyFilterProvider.notifier);
+      n.setAreaPin((lat: 1, lng: 2));
+      n.clearArea();
+      expect(c.read(historyFilterProvider).area, isNull);
+      n.setAreaPin((lat: 1, lng: 2));
+      n.reset();
+      expect(c.read(historyFilterProvider).area, isNull);
+    });
+  });
+
   group('HistoryFilterNotifier default state', () {
     test('a fresh container defaults to "All years"/unrestricted', () {
       final c = ProviderContainer();

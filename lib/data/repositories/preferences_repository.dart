@@ -23,12 +23,16 @@ class PreferencesRepository {
   static const _kPendingRideDetails = 'pending_ride_details';
   static const _kBatteryHintDismissed = 'battery_hint_dismissed';
   static const _kCountdownCueEnabled = 'countdown_cue_enabled';
+  static const _kHistoryView = 'history_view';
+  static const _kHistoryMapMode = 'history_map_mode';
 
   static const defaultUserName = 'Retrailer';
   static const defaultThemeMode = 'system';
   static const defaultLanguage = 'system';
   static const defaultActivityType = 'LONGBOARD';
   static const defaultHomeStatsPeriod = 'week';
+  static const defaultHistoryView = 'list';
+  static const defaultHistoryMapMode = 'lines';
 
   /// Max number of recent profile photos kept.
   static const maxRecentPhotos = 5;
@@ -105,6 +109,24 @@ class PreferencesRepository {
 
   Future<void> setCountdownCueEnabled(bool enabled) async {
     await _prefs.setBool(_kCountdownCueEnabled, enabled);
+    _notify();
+  }
+
+  /// The History tab's view: `list` | `map` (#96).
+  Stream<String> get historyView =>
+      _watch(() => _prefs.getString(_kHistoryView) ?? defaultHistoryView);
+
+  Future<void> setHistoryView(String view) async {
+    await _prefs.setString(_kHistoryView, view);
+    _notify();
+  }
+
+  /// How the History map draws the rides: `lines` | `heat` (#96).
+  Stream<String> get historyMapMode =>
+      _watch(() => _prefs.getString(_kHistoryMapMode) ?? defaultHistoryMapMode);
+
+  Future<void> setHistoryMapMode(String mode) async {
+    await _prefs.setString(_kHistoryMapMode, mode);
     _notify();
   }
 

@@ -32,12 +32,15 @@ class RideEntryItem extends HistoryItem {
 /// display list. Pure — mirrors `RideHistoryViewModel.ridesWithStats`. Stats
 /// come off the ride row (denormalized at save time, see
 /// `RideRepository.updateEndTime`), falling back to a duration-only estimate
-/// for the rare row without them yet — see [storedRideStats].
+/// for the rare row without them yet — see [storedRideStats]. With an area
+/// set, [areaRideIds] holds the rides inside it; rides without an outline yet
+/// are not among them and stay hidden (#96).
 List<HistoryItem> buildHistoryItems(
   List<Ride> rides,
   HistoryFilter f, {
   int? nowMs,
   String? locale,
+  Set<int>? areaRideIds,
 }) {
   // Multi-select activities: a ride matches ANY selected type; empty = all.
   final activityIds = {for (final a in f.activities) a.id};
@@ -47,6 +50,7 @@ List<HistoryItem> buildHistoryItems(
 
   final entries = rides
       .where((ride) => !f.favoritesOnly || ride.isFavorite)
+      .where((ride) => areaRideIds == null || areaRideIds.contains(ride.rideId))
       .where(
         (ride) =>
             f.routeIds.isEmpty ||
