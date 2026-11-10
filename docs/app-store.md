@@ -1,8 +1,8 @@
 # Apple App Store: preparation and release plan
 
 Counterpart to `docs/play-store.md`. Android is in production; this file tracks what iOS
-needs. Keep it in sync with `site/privacy/index.html` and the privacy manifest
-(`ios/Runner/PrivacyInfo.xcprivacy`).
+needs. Keep it in sync with the privacy policy on https://getretrail.app/privacy (source: `src/legal/content.ts`
+in the retrailWeb repo) and the privacy manifest (`ios/Runner/PrivacyInfo.xcprivacy`).
 
 ## Status
 
@@ -76,7 +76,7 @@ Retrail. Checked against the code on 2026-11-03.
 | Used for tracking | No |
 | Purpose | App Functionality |
 
-Privacy policy URL: https://valijuu.github.io/Retrail/privacy/ (names iOS, Apple, the Live Activity
+Privacy policy URL: https://getretrail.app/privacy (names iOS, Apple, the Live Activity
 and the connectivity probe; checked 2026-11-03).
 
 ## App Review notes (draft)
@@ -127,7 +127,7 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   for size and for a known text per screen (Vision OCR). The Live Activity on the lock screen is not
   automated. Framing: `tool/render_ios_store_graphics.sh` and `store/ios/screenshot_frame.html`
   (1320 × 2868, motives and captions in `store/ios/screenshots.tsv`, the same 8 as Play).
-- Support URL and marketing URL: the GitHub Pages site. Support contact: retrail.app@proton.me.
+- Support URL and marketing URL: https://getretrail.app. Support contact: retrail.app@proton.me.
 - Price: free. Paid features later need the Paid Apps agreement and the trader status (#67).
 
 ## Screenshot automation: where we stopped (2026-11-03)

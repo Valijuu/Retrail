@@ -1,7 +1,7 @@
 # Google Play: Data safety answers and store listing
 
-Prepared for the first Play Console setup (#45). Keep this file in sync with
-`site/privacy/index.html`: when the app starts sending data somewhere new,
+Prepared for the first Play Console setup (#45). Keep this file in sync with the privacy policy on
+https://getretrail.app/privacy (source: `src/legal/content.ts` in the retrailWeb repo): when the app starts sending data somewhere new,
 update the privacy policy, this file and the Data safety form together.
 
 ---
@@ -60,8 +60,8 @@ photo never leaves the device, no app activity, no crash logs, no device IDs).
 | Is this data required for your app, or can users choose? | **Required** (the map cannot be turned off) |
 | Why is this user data collected? | **App functionality** only |
 
-**Privacy policy URL:** https://valijuu.github.io/Retrail/privacy/
-**Imprint:** https://valijuu.github.io/Retrail/impressum/ — c/o address from online-impressum.de (Zustellungsvollmacht § 171 ZPO, scanned mail in their portal; check it every working day). The address is for the imprint only, never for a trade registration.
+**Privacy policy URL:** https://getretrail.app/privacy
+**Imprint:** https://getretrail.app/impressum — c/o address from online-impressum.de (Zustellungsvollmacht § 171 ZPO, scanned mail in their portal; check it every working day). The address is for the imprint only, never for a trade registration.
 
 Resulting store label: "This app may collect these data types: Location ·
 Data is encrypted in transit · No data shared with third parties".
@@ -192,8 +192,8 @@ France, Spain or Brazil would see a German page.
 | Category | Sports (alternative: Health & Fitness) |
 | Tags | Skateboarding, GPS tracker, Sports tracking |
 | Contact email | retrail.app@proton.me (same as the privacy policy; Play shows it publicly) |
-| Website | https://valijuu.github.io/Retrail/ (start page with the imprint and privacy policy, #67) |
-| Privacy policy | https://valijuu.github.io/Retrail/privacy/ |
+| Website | https://getretrail.app (start page with the imprint and privacy policy, #67) |
+| Privacy policy | https://getretrail.app/privacy |
 
 ### Graphics
 

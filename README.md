@@ -70,7 +70,7 @@ starting at [`retrail.sdd`](retrail.sdd); the development workflow is in
 
 Rides, routes and the profile stay on the device. Retrail has no backend. Network access is only used
 for map tiles from OpenFreeMap and a small connectivity check. See the
-[privacy policy](https://valijuu.github.io/Retrail/privacy/).
+[privacy policy](https://getretrail.app/privacy).
 
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, tiles by
 [OpenFreeMap](https://openfreemap.org).

@@ -16,7 +16,6 @@ Structure:
   ./ios: iOS host app, Live Activity extension, platform channels
   ./assets: Map styles, app icon and activity icons
   ./tool: Build, release, map-style and store-graphics scripts
-  ./site: GitHub Pages site with privacy policy and imprint
   ./store: Play Store listing texts, screenshots and graphics
   ./docs: Release, store and sideloading guides; decision notes; spec history
 
@@ -39,7 +38,6 @@ Owns:
   ./.githooks/pre-commit
   ./.githooks/pre-push
   ./.github/workflows/ios-build.yml
-  ./.github/workflows/pages.yml
   ./integration_test
   ./docs
 
