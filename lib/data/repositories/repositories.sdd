@@ -20,6 +20,7 @@ Must:
   Favouriting stores the injected clock's time; unfavouriting clears it.
   @PreferencesRepository wraps `shared_preferences` and re-emits a stream value on every write.
   Preference keys and defaults stay stable across releases.
+  Writing an outline for a ride that no longer exists is ignored without an error.
   Saving a ride stores its @RideOutline; rides without one get it filled in on request, one at a time (#96).
 
 Example:
