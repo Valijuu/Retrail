@@ -72,7 +72,7 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 7) {
         // v7: simplified ride geometry for the History map (#96). Filled in
-        // the background for rides recorded before (RideRepository).
+        // the background for rides recorded before (OutlineRepository).
         await m.createTable(rideOutlines);
       }
     },

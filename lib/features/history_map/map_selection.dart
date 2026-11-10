@@ -10,10 +10,12 @@ import 'route_badges.dart';
 
 /// The rides under the last tap, nearest first, and the one shown (#96).
 class MapSelection {
-  const MapSelection({this.rideIds = const [], this.index = 0});
+  const MapSelection({this.rideIds = const [], this.shownRideId});
 
   final List<int> rideIds;
-  final int index;
+
+  /// The ride whose card is shown; the first one when null or gone.
+  final int? shownRideId;
 }
 
 class MapSelectionNotifier extends Notifier<MapSelection> {
@@ -49,8 +51,10 @@ class MapSelectionNotifier extends Notifier<MapSelection> {
         item.ride.rideId: item.ride.date ?? item.ride.startTime ?? 0,
   };
 
-  void select(int index) =>
-      state = MapSelection(rideIds: state.rideIds, index: index);
+  /// Shows the card of [rideId]. Kept by ride id, so a ride dropping out of
+  /// the tapped ones does not move the card to another ride.
+  void show(int rideId) =>
+      state = MapSelection(rideIds: state.rideIds, shownRideId: rideId);
 
   void clear() => state = const MapSelection();
 }
@@ -95,4 +99,13 @@ final selectedRidesProvider = Provider<List<SelectedRide>>((ref) {
           groupSize: badges.groupSizeOf(id),
         ),
   ];
+});
+
+/// Where the shown card sits among [selectedRidesProvider]: the shown ride,
+/// or the first one when it is gone.
+final shownRideIndexProvider = Provider<int>((ref) {
+  final rides = ref.watch(selectedRidesProvider);
+  final shown = ref.watch(mapSelectionProvider.select((s) => s.shownRideId));
+  final index = rides.indexWhere((r) => r.entry.ride.rideId == shown);
+  return index < 0 ? 0 : index;
 });

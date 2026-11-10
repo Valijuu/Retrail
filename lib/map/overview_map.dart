@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show Factory;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:maplibre/maplibre.dart';
 
@@ -246,6 +248,13 @@ class _OverviewMapState extends State<OverviewMap> {
                 androidTextureMode: true,
                 androidMode: AndroidPlatformViewMode.tlhc_vd,
               ),
+              // The map lives inside the tab swipe: it must win horizontal
+              // drags, or panning it would change the tab.
+              gestureRecognizers: {
+                Factory<OneSequenceGestureRecognizer>(
+                  EagerGestureRecognizer.new,
+                ),
+              },
               onMapCreated: (c) {
                 _detach();
                 _controller = c;

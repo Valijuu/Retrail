@@ -60,6 +60,7 @@ class _OverviewPinState extends State<OverviewPin> {
               final p = _under(d.globalPosition, controller);
               if (p != null) setState(() => _dragged = p);
             },
+            onPanCancel: () => setState(() => _dragged = null),
             onPanEnd: (_) {
               final p = _dragged;
               setState(() => _dragged = null);

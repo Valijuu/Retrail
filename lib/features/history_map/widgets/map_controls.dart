@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../domain/area_filter.dart';
 import '../../../l10n/app_localizations.dart';
@@ -84,7 +85,7 @@ class AreaPanel extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppShapes.card,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

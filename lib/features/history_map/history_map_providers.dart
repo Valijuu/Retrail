@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:isolate';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/db/app_database.dart' show Ride;
 import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
 import '../../domain/ride_outline.dart';
@@ -67,7 +69,7 @@ class OverviewState {
 
   final HistoryMapMode mode;
 
-  /// The visible rides, newest first as the list shows them.
+  /// The visible rides, by id: a different sort order is the same set.
   final List<int> rideIds;
   final OverviewData? data;
 
@@ -99,36 +101,62 @@ class OverviewState {
   int get hashCode => Object.hash(mode, Object.hashAll(rideIds));
 }
 
-/// The rides with a drawable outline that pass the History filters, built
-/// into map data off the UI thread once the filters settle (#96).
-final overviewProvider = FutureProvider<OverviewState>((ref) async {
-  final mode = ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
-  final rides = [
-    for (final item in ref.watch(historyItemsProvider).value ?? const [])
+/// The rides with a route that pass the History filters, once the filters
+/// have settled (#96). Outline arrivals do not wait for this, only filter
+/// changes do, so the map fills up while the background fill runs.
+class SettledMapRidesNotifier extends Notifier<List<Ride>> {
+  Timer? _timer;
+
+  List<Ride> _routed(AsyncValue<List<HistoryItem>> items) => [
+    for (final item in items.value ?? const <HistoryItem>[])
       if (item is RideEntryItem && item.ride.hasRoute) item.ride,
   ];
+
+  @override
+  List<Ride> build() {
+    ref.onDispose(() => _timer?.cancel());
+    ref.listen(historyItemsProvider, (_, next) {
+      _timer?.cancel();
+      _timer = Timer(filterDebounce, () => state = _routed(next));
+    });
+    return _routed(ref.read(historyItemsProvider));
+  }
+}
+
+final settledMapRidesProvider =
+    NotifierProvider<SettledMapRidesNotifier, List<Ride>>(
+      SettledMapRidesNotifier.new,
+    );
+
+/// The rides with a drawable outline that pass the History filters, built
+/// into map data off the UI thread (#96).
+final overviewProvider = FutureProvider<OverviewState>((ref) async {
+  final mode = ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
+  final rides = ref.watch(settledMapRidesProvider);
   final outlined = ref.watch(outlinedRideIdsProvider).value ?? const <int>{};
-  await Future<void>.delayed(filterDebounce);
-  if (!ref.mounted) return OverviewState.empty;
 
   final store = ref.read(outlineStoreProvider);
   await store.refresh(outlined, [for (final r in rides) r.rideId]);
+  if (!ref.mounted) return OverviewState.empty;
   final visible = [
     for (final ride in rides)
       if (store.cache[ride.rideId] case final e? when !e.isEmpty) ride,
   ];
+  final entries = [for (final ride in visible) store.cache[ride.rideId]!];
   final request = [
-    for (final ride in visible)
+    for (var i = 0; i < visible.length; i++)
       OverviewRide(
-        rideId: ride.rideId,
-        typeId: ride.typ,
-        polyline: store.cache[ride.rideId]!.row.polyline,
-        lineFragment: store.cache[ride.rideId]!.lineFragment,
-        heatFragment: store.cache[ride.rideId]!.heatFragment,
+        rideId: visible[i].rideId,
+        typeId: visible[i].typ,
+        polyline: entries[i].row.polyline,
+        lineFragment: entries[i].lineFragment,
+        heatFragment: entries[i].heatFragment,
       ),
   ];
+  final bounds = _union([for (final e in entries) e.bounds]);
   final heat = mode == HistoryMapMode.heat;
   final data = await Isolate.run(() => buildOverviewData(request, heat: heat));
+  if (!ref.mounted) return OverviewState.empty;
   for (final MapEntry(:key, :value) in data.newLineFragments.entries) {
     store.cache[key]?.lineFragment = value;
   }
@@ -137,9 +165,9 @@ final overviewProvider = FutureProvider<OverviewState>((ref) async {
   }
   return OverviewState(
     mode: mode,
-    rideIds: [for (final r in visible) r.rideId],
+    rideIds: [for (final r in visible) r.rideId]..sort(),
     data: data,
-    bounds: _union([for (final r in visible) store.cache[r.rideId]!.bounds]),
+    bounds: bounds,
   );
 });
 

@@ -22,10 +22,6 @@ class OutlineDao extends DatabaseAccessor<AppDatabase> with _$OutlineDaoMixin {
     await into(rideOutlines).insertOnConflictUpdate(outline);
   });
 
-  Future<RideOutlineRow?> findByRideId(int rideId) => (select(
-    rideOutlines,
-  )..where((o) => o.rideId.equals(rideId))).getSingleOrNull();
-
   /// The outlines of [rideIds] only; unknown ids are skipped.
   Future<List<RideOutlineRow>> getByRideIds(Iterable<int> rideIds) =>
       (select(rideOutlines)..where((o) => o.rideId.isIn(rideIds))).get();
@@ -38,8 +34,6 @@ class OutlineDao extends DatabaseAccessor<AppDatabase> with _$OutlineDaoMixin {
       (rows) => {for (final row in rows) row.read(rideOutlines.rideId)!},
     );
   }
-
-  Future<List<RideOutlineRow>> getAll() => select(rideOutlines).get();
 
   /// Ride ids with a route but no outline yet, oldest id first: the work the
   /// background fill still has to do.

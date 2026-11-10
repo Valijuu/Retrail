@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db/app_database.dart' show RideOutlineRow;
+import '../../domain/area_filter.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../data/repositories/outline_repository.dart';
 import 'history_providers.dart';
@@ -43,19 +44,46 @@ final outlinedRideIdsProvider = StreamProvider<Set<int>>(
   (ref) => ref.watch(outlineRepositoryProvider).watchOutlinedRideIds(),
 );
 
+/// The History area filter once its changes have settled: a long press or
+/// the radius slider moves it often, the work behind it should not (#96).
+/// Removing the area applies at once.
+class SettledAreaNotifier extends Notifier<AreaFilter?> {
+  Timer? _timer;
+
+  @override
+  AreaFilter? build() {
+    ref.onDispose(() => _timer?.cancel());
+    ref.listen(historyFilterProvider.select((f) => f.area), (_, next) {
+      _timer?.cancel();
+      if (next == null) {
+        state = null;
+        return;
+      }
+      _timer = Timer(filterDebounce, () => state = next);
+    });
+    return ref.read(historyFilterProvider).area;
+  }
+}
+
+final settledAreaProvider = NotifierProvider<SettledAreaNotifier, AreaFilter?>(
+  SettledAreaNotifier.new,
+);
+
 /// The rides whose outline comes within the History area filter; null while
 /// no area is set. A ride without an outline is not among them (#96).
 final areaRideIdsProvider = FutureProvider<Set<int>?>((ref) async {
-  final area = ref.watch(historyFilterProvider.select((f) => f.area));
+  final area = ref.watch(settledAreaProvider);
   if (area == null) return null;
-  await Future<void>.delayed(filterDebounce);
   final ids = await ref.watch(outlinedRideIdsProvider.future);
-  if (!ref.mounted) return const {};
   final store = ref.read(outlineStoreProvider);
   await store.refresh(ids, ids);
+  if (!ref.mounted) return const {};
   return {
     for (final id in ids)
       if (store.cache[id] case final entry?)
-        if (!entry.isEmpty && area.matches(entry.outline)) id,
+        if (!entry.isEmpty &&
+            area.couldReach(entry.bounds) &&
+            area.matches(entry.outline))
+          id,
   };
 });

@@ -29,7 +29,7 @@ class MapLegend extends ConsumerWidget {
       for (final t in ActivityType.values)
         if (present.contains(t)) t,
     ];
-    if (types.length < 2) return const SizedBox.shrink();
+    if (types.isEmpty) return const SizedBox.shrink();
     return Wrap(
       spacing: 6,
       runSpacing: 6,

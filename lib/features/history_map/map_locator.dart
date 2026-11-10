@@ -49,6 +49,9 @@ class GeolocatorMapLocator implements MapLocator {
   /// Moving less than this, in metres, gives no new position.
   static const int _distanceFilterM = 5;
 
+  /// How long the my-location button waits for a fix.
+  static const Duration _fixTimeout = Duration(seconds: 10);
+
   @override
   Future<LocateResult> locate() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
@@ -66,15 +69,22 @@ class GeolocatorMapLocator implements MapLocator {
         return const LocateDenied();
       case LocationPermission.whileInUse:
       case LocationPermission.always:
-        final p = await Geolocator.getCurrentPosition();
-        return Located((lat: p.latitude, lng: p.longitude));
+        try {
+          final p = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(timeLimit: _fixTimeout),
+          );
+          return Located((lat: p.latitude, lng: p.longitude));
+        } on Exception {
+          // No fix in time (or the platform failed): same hint as a denial.
+          return const LocateDenied();
+        }
     }
   }
 
   @override
   Stream<LatLng> positions() => Geolocator.getPositionStream(
     locationSettings: const LocationSettings(distanceFilter: _distanceFilterM),
-  ).map((p) => (lat: p.latitude, lng: p.longitude));
+  ).map((p) => (lat: p.latitude, lng: p.longitude)).handleError((Object _) {});
 
   @override
   Future<void> openAppSettings() => Geolocator.openAppSettings();

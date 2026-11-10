@@ -44,7 +44,8 @@ class HeatPoints {
       untilNext -= length - covered;
     }
     final sinceLastPoint = spacingM - untilNext;
-    if (sinceLastPoint > _endSnapM) out.add(points.last);
+    // An outline without length still gives its first and last point.
+    if (sinceLastPoint > _endSnapM || out.length == 1) out.add(points.last);
     return out;
   }
 

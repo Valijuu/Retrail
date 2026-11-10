@@ -78,6 +78,12 @@ void main() {
       expect(points.last, _at(50, 50));
     });
 
+    test('two identical points give their first and last point', () {
+      final p = _at(3, 3);
+      final points = HeatPoints.along(RideOutline([p, p]), distance: _calc);
+      expect(points, [p, p]);
+    });
+
     test('a longer ride gets more points', () {
       final short = RideOutline([_at(0, 0), _at(0, 300)]);
       final long = RideOutline([_at(0, 0), _at(0, 3000)]);
