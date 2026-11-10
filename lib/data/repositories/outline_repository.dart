@@ -15,8 +15,13 @@ class OutlineRepository {
   final OutlineDao _outlines;
   final TrackpointDao _trackpoints;
 
-  /// Every stored outline.
-  Future<List<RideOutlineRow>> all() => _outlines.getAll();
+  /// The ids of the rides that have an outline row (see
+  /// [OutlineDao.watchOutlinedRideIds]).
+  Stream<Set<int>> watchOutlinedRideIds() => _outlines.watchOutlinedRideIds();
+
+  /// The stored outlines of [rideIds].
+  Future<List<RideOutlineRow>> load(Iterable<int> rideIds) =>
+      _outlines.getByRideIds(rideIds);
 
   /// Simplifies [points] and stores them as the outline of [rideId]. Fewer
   /// than two points store nothing; a ride that is gone is ignored.

@@ -22,6 +22,8 @@ References:
 
 Can modify:
   /lib/features/history/history_screen.dart
+  /lib/features/history/history_providers.dart
+  /lib/features/history/route_group_providers.dart
 
 Must:
   The History tab has a Liste/Karte switch; List is the default. The choice (`history_view`) and the map mode

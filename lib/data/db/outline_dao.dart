@@ -26,6 +26,19 @@ class OutlineDao extends DatabaseAccessor<AppDatabase> with _$OutlineDaoMixin {
     rideOutlines,
   )..where((o) => o.rideId.equals(rideId))).getSingleOrNull();
 
+  /// The outlines of [rideIds] only; unknown ids are skipped.
+  Future<List<RideOutlineRow>> getByRideIds(Iterable<int> rideIds) =>
+      (select(rideOutlines)..where((o) => o.rideId.isIn(rideIds))).get();
+
+  /// The ids of the rides that have an outline row, re-emitted when one is
+  /// added or removed. Reads the id column only, never the polyline.
+  Stream<Set<int>> watchOutlinedRideIds() {
+    final query = selectOnly(rideOutlines)..addColumns([rideOutlines.rideId]);
+    return query.watch().map(
+      (rows) => {for (final row in rows) row.read(rideOutlines.rideId)!},
+    );
+  }
+
   Future<List<RideOutlineRow>> getAll() => select(rideOutlines).get();
 
   /// Ride ids with a route but no outline yet, oldest id first: the work the
