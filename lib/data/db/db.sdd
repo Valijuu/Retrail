@@ -34,7 +34,7 @@ Must:
   `trackpoints.altitude` is the recorded altitude in metres or none. `rides.ascent_m` and `rides.descent_m`
     are the totals stored at save, or none for a ride without altitude data; older rides stay none.
   `ride_outlines` holds one row per ride: encoded polyline and bounding box; it is deleted with its ride
-    (`ON DELETE CASCADE`) and kept when the ride is edited.
+    (`ON DELETE CASCADE`, single and batch delete, each in one transaction) and kept when the ride is edited.
   The schema version is `6`; every older version upgrades in place without losing rides.
   Every schema change raises the version and adds an upgrade step.
   Reads are reactive Drift streams; @RideWithTrackpoints is assembled in the DAO.

@@ -14,6 +14,8 @@ References:
 Must:
   @RideOutline.simplify keeps the first and last point and drops every point that lies within `5` m of the
     line between its kept neighbours (Douglas-Peucker); the result never has more points than the input.
+  An outline has at most `500` points: when `5` m leaves more, the tolerance doubles until it fits, so
+    the stored text and the map data stay small on long rides.
   Fewer than two input points give an empty outline; two or more points that are all identical give two points.
   The encoded polyline uses the standard format with `5` decimal places; @RideOutline.decode of an encoded
     outline returns every point within `1` m of the original.

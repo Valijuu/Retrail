@@ -62,6 +62,21 @@ Must:
     stays visible.
   An empty history says so and offers no map; a filter with no result says so over the map.
   The map follows the live map rules of the map spec for the style load, disposal and light/dark switch.
+  Performance: outlines are read once into an in-memory cache by ride id and decoded on first use; a database
+    emission changes only the rides that were added, changed or removed. The list query for the map selects
+    only the outlines of rides that pass the filters.
+  Map data is rebuilt off the UI thread and pushed only when the visible set changes: one GeoJSON source per
+    type in Lines mode, one in Heat mode. Heat points are cached per ride, so a filter change only joins them.
+    Filter changes and the radius slider are debounced to `150` ms; while the slider moves only the circle
+    is redrawn.
+  Tap hits reject by outline bounds first and never decode an outline whose bounds are far from the tap.
+  The background fill handles one ride at a time, reads its trackpoints in one query, simplifies off the UI
+    thread, writes in one transaction and yields between rides. It runs only while the map view is visible or
+    an area is set, and stops when the app goes to the background.
+  Deleting: a deleted ride (single, batch, or Discard after a ride) disappears from the lines, the heat, the
+    legend counts, the list and the best-time badge with the next emission. A shown preview card whose ride is
+    gone closes; a pin and radius stay. Its cached outline, heat points and preview are dropped. Deleting an
+    original keeps its follows as ordinary rides with their outlines.
   No new network request is made; the map reads only data already on the device.
 
 Must not:
@@ -84,6 +99,17 @@ Scenario: rides around a place
   When a pin is set in one city with a radius of `10` km
   Then only the rides that come within `10` km of it remain, on the map and in the list, and the filter badge counts `1`
 
+Scenario: deleting a ride shown on the map
+  Given a ride's preview card is open on the map and the ride is part of a route group
+  When the ride is deleted in History
+  Then its line and heat points are gone, the card closes, the group's best time is recomputed without it,
+    and no outline row, cached heat points or preview file of that ride remain
+
+Scenario: deleting while the outline is being computed
+  Given the background fill is computing the outline of a ride
+  When the ride is deleted before the outline is written
+  Then no outline row is created and nothing fails
+
 Scenario: hiding a type
   Given the map shows longboard and ski rides
   When the ski type is turned off in the legend
@@ -94,6 +120,7 @@ Example:
   `history_map_mode`: `lines` by default, then `heat`
 
 Tasks:
+  [ ] #96 Performance and deletion: in-memory outline cache, isolate work, debounce, cascade and atomic batch delete, tests for both scenarios.
   [ ] #96 Schema version `6` with `ride_outlines`, outline at save, background fill for old rides.
   [ ] #96 Domain: @RideOutline, @OutlineHit, @HeatPoints, @AreaFilter (EXACT).
   [ ] #96 Overview map widget in `/lib/map` with lines, heat and position layers.
