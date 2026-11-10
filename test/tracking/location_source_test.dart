@@ -94,6 +94,10 @@ void main() {
       expect(recorded(accuracy: 25.1), isNull);
     });
 
+    test('drops an altitude with negative accuracy (iOS: invalid)', () {
+      expect(recorded(accuracy: -1), isNull);
+    });
+
     test('drops a non-finite altitude', () {
       expect(recorded(altitude: double.nan), isNull);
       expect(recorded(altitude: double.infinity), isNull);

@@ -49,7 +49,7 @@ Tasks:
   [x] #97 @ElevationGain and @ElevationAccumulator (EXACT), including accumulator equals batch.
   [x] #97 `LocationFix` altitude and accuracy, trackpoint altitude column, ride ascent and descent columns.
   [?] #97 Schema version: `6` here; if #96 merges first this becomes `7` and the upgrade step moves with it.
-  [ ] #97 History card and detail, live value on the ride screen, l10n (de, en), `CHANGELOG.md`.
+  [x] #97 History card and detail, live value on the ride screen, l10n (de, en), `CHANGELOG.md`.
   [!] #97 Device check: a short ride with a hill on an Android and an iOS device, totals plausible.
 
 Done when:

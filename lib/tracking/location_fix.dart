@@ -35,14 +35,15 @@ class LocationFix {
   final double? altitudeAccuracy;
 
   /// The altitude to record (#97): the platform altitude when it is valid, else
-  /// null. Invalid is a non-finite value, a vertical accuracy worse than
-  /// [maxAltitudeAccuracyM], or exactly `0` with unknown accuracy (the
+  /// null. Invalid is a non-finite value, a negative vertical accuracy (iOS),
+  /// a vertical accuracy worse than [maxAltitudeAccuracyM], or exactly `0` with unknown accuracy (the
   /// placeholder Android reports when it has no altitude). Never decides
   /// whether the fix itself is recorded.
   double? get recordedAltitude {
     final altitude = this.altitude;
     if (altitude == null || !altitude.isFinite) return null;
     final accuracy = altitudeAccuracy;
+    if (accuracy != null && accuracy < 0) return null; // iOS: invalid
     final accuracyKnown = accuracy != null && accuracy > 0;
     if (!accuracyKnown) return altitude == 0 ? null : altitude;
     return accuracy > maxAltitudeAccuracyM ? null : altitude;
