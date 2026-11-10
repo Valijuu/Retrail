@@ -18,8 +18,6 @@ class OutlineEntry {
   /// A route that gave no outline (fewer than two points) is stored empty.
   bool get isEmpty => row.polyline.isEmpty;
 
-  bool get isDecoded => _decoded != null;
-
   OutlineBounds get bounds =>
       (south: row.south, west: row.west, north: row.north, east: row.east);
 
@@ -30,8 +28,6 @@ class OutlineEntry {
 /// map fragments are lazy, and only changed or removed rides are touched.
 class OutlineCache {
   final Map<int, OutlineEntry> _entries = {};
-
-  Iterable<int> get rideIds => _entries.keys;
 
   OutlineEntry? operator [](int rideId) => _entries[rideId];
 
@@ -45,12 +41,8 @@ class OutlineCache {
     }
   }
 
-  /// Drops every cached ride that is not in [outlinedIds] and returns the ids
-  /// in [outlinedIds] that are not cached yet.
-  Set<int> sync(Set<int> outlinedIds) {
-    _entries.removeWhere((id, _) => !outlinedIds.contains(id));
-    return outlinedIds.difference(_entries.keys.toSet());
-  }
-
-  void evict(int rideId) => _entries.remove(rideId);
+  /// Drops every cached ride that is not in [outlinedIds]: a deleted ride
+  /// takes its outline and fragments with it.
+  void sync(Set<int> outlinedIds) =>
+      _entries.removeWhere((id, _) => !outlinedIds.contains(id));
 }

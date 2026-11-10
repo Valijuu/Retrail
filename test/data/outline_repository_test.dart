@@ -35,7 +35,9 @@ void main() {
     await _addLine(db, id);
     await rides.updateEndTime(id, 10);
 
-    final row = await db.outlineDao.findByRideId(id);
+    final row = await (db.select(
+      db.rideOutlines,
+    )..where((o) => o.rideId.equals(id))).getSingleOrNull();
     final outline = RideOutline.decode(row!.polyline);
     expect(outline.points.length, 2);
     expect(row.south, closeTo(48, 1e-9));
@@ -45,7 +47,7 @@ void main() {
   test('a ride without trackpoints gets no outline row', () async {
     final id = await rides.startRide(startedAtMs: 0);
     await rides.updateEndTime(id, 10);
-    expect(await db.outlineDao.getAll(), isEmpty);
+    expect(await db.select(db.rideOutlines).get(), isEmpty);
   });
 
   test('fillNext fills one ride at a time and reports what is left', () async {
@@ -62,9 +64,9 @@ void main() {
       );
     }
     expect(await outlines.fillNext(), isTrue);
-    expect(await db.outlineDao.getAll(), hasLength(1));
+    expect(await db.select(db.rideOutlines).get(), hasLength(1));
     expect(await outlines.fillNext(), isFalse); // the last one
-    expect(await db.outlineDao.getAll(), hasLength(2));
+    expect(await db.select(db.rideOutlines).get(), hasLength(2));
     expect(await outlines.fillNext(), isFalse); // nothing left to do
   });
 
@@ -81,7 +83,7 @@ void main() {
     );
     final fill = outlines.fillNext(afterRead: () => rides.deleteById(id));
     await fill;
-    expect(await db.outlineDao.getAll(), isEmpty);
+    expect(await db.select(db.rideOutlines).get(), isEmpty);
   });
 
   test('saving the outline of a gone ride is ignored', () async {
@@ -89,6 +91,6 @@ void main() {
       (lat: 1.0, lng: 2.0),
       (lat: 1.1, lng: 2.1),
     ]);
-    expect(await db.outlineDao.getAll(), isEmpty);
+    expect(await db.select(db.rideOutlines).get(), isEmpty);
   });
 }

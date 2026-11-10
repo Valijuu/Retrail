@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../history/history_ride_card.dart';
@@ -41,6 +42,8 @@ class MapPreviewCard extends StatelessWidget {
   final List<SelectedRide> rides;
   final int index;
   final MapCardActions actions;
+
+  /// Called with the id of the ride to show next.
   final ValueChanged<int> onSelect;
   final VoidCallback onClose;
 
@@ -57,13 +60,17 @@ class MapPreviewCard extends StatelessWidget {
     return GestureDetector(
       onHorizontalDragEnd: (d) {
         final v = d.primaryVelocity ?? 0;
-        if (v < -_swipeVelocity && at < rides.length - 1) onSelect(at + 1);
-        if (v > _swipeVelocity && at > 0) onSelect(at - 1);
+        if (v < -_swipeVelocity && at < rides.length - 1) {
+          onSelect(rides[at + 1].entry.ride.rideId);
+        }
+        if (v > _swipeVelocity && at > 0) {
+          onSelect(rides[at - 1].entry.ride.rideId);
+        }
       },
       child: Material(
         color: colors.surface,
         elevation: 4,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppShapes.heroCard,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
           child: Column(

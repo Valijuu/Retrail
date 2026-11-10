@@ -26,7 +26,7 @@ class AreaFilter {
     final points = outline.points;
     final box = outline.bounds;
     if (points.length < _minPointsForLine) return false;
-    if (box == null || !_nearBounds(box)) return false;
+    if (box == null || !couldReach(box)) return false;
     final reachM = radiusKm * _metresPerKm + _edgeToleranceM;
     for (var i = 1; i < points.length; i++) {
       final metres = segmentDistanceM(pin, points[i - 1], points[i], distance);
@@ -36,8 +36,8 @@ class AreaFilter {
   }
 
   /// Whether [box], grown by the radius, contains the pin. Cheap rejection
-  /// of far rides before any segment is measured.
-  bool _nearBounds(OutlineBounds box) {
+  /// of far rides before any segment is measured or an outline is decoded.
+  bool couldReach(OutlineBounds box) {
     final dLat = radiusKm / _kmPerDegreeLat * _boundsMargin;
     final widest = math.max(box.south.abs(), box.north.abs()) + dLat;
     final cosLat = math.cos(math.min(widest, _maxLatitude) * _radiansPerDegree);

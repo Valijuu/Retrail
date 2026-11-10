@@ -40,19 +40,23 @@ final mapVisibleProvider = NotifierProvider<MapVisibleNotifier, bool>(
 /// pause in between, while the map is on screen or an area is set and the app
 /// is in front (#96). The state says whether a fill is running.
 class OutlineFillController extends Notifier<bool> {
+  bool _running = false;
+
+  /// Read fresh at every step: nobody may be listening when the map view is
+  /// left, and the fill must still stop.
+  bool get _wanted =>
+      (ref.read(mapVisibleProvider) ||
+          ref.read(historyFilterProvider).area != null) &&
+      ref.read(appForegroundProvider);
+
   @override
   bool build() {
-    final wanted =
-        (ref.watch(mapVisibleProvider) ||
-            ref.watch(historyFilterProvider.select((f) => f.area != null))) &&
-        ref.watch(appForegroundProvider);
-    _wanted = wanted;
-    if (wanted) Future.microtask(_run);
-    return false;
+    ref.watch(mapVisibleProvider);
+    ref.watch(historyFilterProvider.select((f) => f.area != null));
+    ref.watch(appForegroundProvider);
+    if (_wanted) Future.microtask(_run);
+    return _running;
   }
-
-  bool _wanted = false;
-  bool _running = false;
 
   Future<void> _run() async {
     if (_running || !_wanted) return;
@@ -65,6 +69,9 @@ class OutlineFillController extends Notifier<bool> {
         if (!more) break;
         await Future<void>.delayed(Duration.zero);
       }
+    } on Object {
+      // A failed ride (database closed, isolate gone) ends this pass; the
+      // next time the map is shown the fill starts again.
     } finally {
       _running = false;
       if (ref.mounted) state = false;

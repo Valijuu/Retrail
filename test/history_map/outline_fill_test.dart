@@ -3,8 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
+import 'package:retrail/data/repositories/outline_repository.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history_map/outline_fill.dart';
+
+/// Counts the fills and always reports more work.
+class _EndlessFill extends OutlineRepository {
+  _EndlessFill(AppDatabase db) : super(db.outlineDao, db.trackpointDao);
+  int calls = 0;
+
+  @override
+  Future<bool> fillNext({Future<void> Function()? afterRead}) async {
+    calls++;
+    return true;
+  }
+}
 
 class _Foreground extends AppForegroundNotifier {
   _Foreground(this.value);
@@ -55,7 +68,8 @@ void main() {
     return c;
   }
 
-  Future<int> outlineCount() async => (await db.outlineDao.getAll()).length;
+  Future<int> outlineCount() async =>
+      (await db.select(db.rideOutlines).get()).length;
 
   test(
     'nothing is filled while neither the map nor an area is shown',
@@ -86,5 +100,28 @@ void main() {
     c.read(mapVisibleProvider.notifier).set(true);
     await Future<void>.delayed(const Duration(milliseconds: 300));
     expect(await outlineCount(), 0);
+  });
+
+  test('the fill stops when the map view is left, even unobserved', () async {
+    final fake = _EndlessFill(db);
+    final c = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        outlineRepositoryProvider.overrideWithValue(fake),
+        appForegroundProvider.overrideWith(() => _Foreground(true)),
+      ],
+    );
+    addTearDown(c.dispose);
+    final sub = c.listen(outlineFillProvider, (_, _) {});
+    c.read(mapVisibleProvider.notifier).set(true);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(fake.calls, greaterThan(1));
+
+    sub.close(); // nobody listens any more, as after leaving the map view
+    c.read(mapVisibleProvider.notifier).set(false);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    final stopped = fake.calls;
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(fake.calls, stopped);
   });
 }

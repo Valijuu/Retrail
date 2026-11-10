@@ -126,7 +126,7 @@ void main() {
 
       expect(c.read(selectedRidesProvider), isEmpty);
       expect(c.read(overviewProvider).value!.rideIds, isEmpty);
-      expect(await db.outlineDao.getAll(), isEmpty);
+      expect(await db.select(db.rideOutlines).get(), isEmpty);
     },
   );
 

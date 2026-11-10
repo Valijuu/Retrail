@@ -30,7 +30,9 @@ void main() {
   test('an outline round-trips by ride id', () async {
     final id = await _ride(db);
     await db.outlineDao.upsert(_outline(id));
-    final outline = await db.outlineDao.findByRideId(id);
+    final outline = await (db.select(
+      db.rideOutlines,
+    )..where((o) => o.rideId.equals(id))).getSingleOrNull();
     expect(outline?.polyline, 'abc');
     expect(
       (outline!.south, outline.west, outline.north, outline.east),
@@ -42,19 +44,19 @@ void main() {
     final id = await _ride(db);
     await db.outlineDao.upsert(_outline(id));
     await db.outlineDao.upsert(_outline(id, polyline: 'xyz'));
-    expect((await db.outlineDao.getAll()).single.polyline, 'xyz');
+    expect((await db.select(db.rideOutlines).get()).single.polyline, 'xyz');
   });
 
   test('an outline for a ride that does not exist is ignored', () async {
     await db.outlineDao.upsert(_outline(999));
-    expect(await db.outlineDao.getAll(), isEmpty);
+    expect(await db.select(db.rideOutlines).get(), isEmpty);
   });
 
   test('deleting a ride deletes its outline', () async {
     final id = await _ride(db);
     await db.outlineDao.upsert(_outline(id));
     await db.rideDao.deleteById(id);
-    expect(await db.outlineDao.getAll(), isEmpty);
+    expect(await db.select(db.rideOutlines).get(), isEmpty);
   });
 
   test('batch delete removes the outlines of all rides in one go', () async {
@@ -65,7 +67,7 @@ void main() {
       await db.outlineDao.upsert(_outline(id));
     }
     await db.rideDao.deleteByIds([a, b]);
-    expect((await db.outlineDao.getAll()).map((o) => o.rideId), [c]);
+    expect((await db.select(db.rideOutlines).get()).map((o) => o.rideId), [c]);
   });
 
   test('rides without an outline are listed for the background fill', () async {
@@ -106,7 +108,7 @@ void main() {
     );
     addTearDown(upgraded.close);
     expect((await upgraded.rideDao.getAll().first).single.description, 'old');
-    expect(await upgraded.outlineDao.getAll(), isEmpty);
+    expect(await upgraded.select(upgraded.rideOutlines).get(), isEmpty);
     expect(await upgraded.outlineDao.rideIdsWithoutOutline(), [1]);
   });
 

@@ -119,13 +119,20 @@ final historyNarrowsRidesProvider = Provider<bool>(
 /// filter change. Widget tests stub this with a finite stream (Drift `.watch()`
 /// never closes — see the established test rule).
 final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
-  final filter = ref.watch(historyFilterProvider);
+  // The area is applied through [areaRideIdsProvider], not through the filter:
+  // moving the radius must not re-subscribe the ride query (#96).
+  final filter = ref.watch(
+    historyFilterProvider.select((f) => f.copyWith(clearArea: true)),
+  );
+  final hasArea = ref.watch(
+    historyFilterProvider.select((f) => f.area != null),
+  );
   final locale = ref.watch(dateFormatLocaleProvider);
   final repo = ref.watch(rideRepositoryProvider);
   final (start, end) = effectiveRange(filter);
   // With an area set, rides stay hidden until their outline says they are
   // inside it (#96).
-  final areaRideIds = filter.area == null
+  final areaRideIds = !hasArea
       ? null
       : ref.watch(areaRideIdsProvider).value ?? const <int>{};
   return repo

@@ -9,6 +9,7 @@ import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../history_map/history_map_providers.dart';
+import '../history_map/outline_fill.dart';
 import '../history_map/history_map_view.dart';
 import '../history_map/widgets/history_view_switch.dart';
 import '../history_map/widgets/map_preview_card.dart';
@@ -119,6 +120,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   void _maybeJumpToTarget() {
     final target = ref.read(historyTargetRideProvider);
     if (target == null) return;
+    // The jump lands in the list, whichever view was stored (#96).
+    if (ref.read(historyViewProvider).value == HistoryView.map) {
+      ref.read(historyMapControllerProvider).setView(HistoryView.list);
+    }
     final items = ref.read(historyItemsProvider).asData?.value ?? [];
     final found = items.any(
       (i) => i is RideEntryItem && i.ride.rideId == target,
@@ -269,14 +274,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
       }
     });
 
+    // Drives the background outline fill while an area is set (#96).
+    ref.watch(outlineFillProvider);
     final colors = context.colors;
     final items = ref.watch(historyItemsProvider).asData?.value ?? const [];
     final hasRides = items.any((i) => i is RideEntryItem);
+    final narrows = ref.watch(historyNarrowsRidesProvider);
     final showMap =
         (ref.watch(historyViewProvider).value ?? HistoryView.list) ==
             HistoryView.map &&
         !_selectionMode &&
-        (hasRides || ref.watch(historyNarrowsRidesProvider));
+        (hasRides || narrows);
 
     // The listen above only fires on *changes* — when the tab mounts with data
     // already loaded, warm the previews once from here (post-frame, so the
@@ -320,7 +328,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                     ref.read(historyFilterProvider.notifier).setQuery(q),
                 onOpenFilters: _openFilters,
               ),
-            if (!_selectionMode) const HistoryViewSwitch(),
+            if (!_selectionMode && (hasRides || narrows))
+              const HistoryViewSwitch(),
             Expanded(
               child: showMap
                   ? HistoryMapView(actions: _mapCardActions())

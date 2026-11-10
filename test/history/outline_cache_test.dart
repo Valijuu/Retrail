@@ -25,36 +25,27 @@ void main() {
 
   test('an unknown ride has no entry', () {
     expect(cache[1], isNull);
-    expect(cache.rideIds, isEmpty);
   });
 
   test('adding rows makes them available by ride id', () {
     cache.addRows([_row(1), _row(2)]);
-    expect(cache.rideIds, unorderedEquals([1, 2]));
+    expect(cache[2], isNotNull);
     expect(cache[1]!.bounds.south, 48.0);
   });
 
   test('the outline decodes on first use and then stays decoded', () {
     cache.addRows([_row(1)]);
     final entry = cache[1]!;
-    expect(entry.isDecoded, isFalse);
     expect(entry.outline.points, hasLength(2));
-    expect(entry.isDecoded, isTrue);
     expect(identical(entry.outline, entry.outline), isTrue);
   });
 
-  test('syncing ids reports what is missing and drops what is gone', () {
+  test('syncing ids drops the outlines of rides that are gone', () {
     cache.addRows([_row(1), _row(2)]);
-    final missing = cache.sync({2, 3});
-    expect(missing, {3});
-    expect(cache.rideIds, [2]);
-  });
-
-  test('evict drops the outline and its fragments', () {
-    cache.addRows([_row(1)]);
     cache[1]!.heatFragment = 'x';
-    cache.evict(1);
+    cache.sync({2, 3});
     expect(cache[1], isNull);
+    expect(cache[2], isNotNull);
   });
 
   test('adding a row for a cached ride keeps the entry and its fragments', () {
