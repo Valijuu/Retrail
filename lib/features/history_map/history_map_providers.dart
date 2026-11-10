@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/db/app_database.dart' show Ride;
 import '../../data/repositories/data_providers.dart';
 import '../../domain/activity_type.dart';
+import '../../domain/heading.dart' show LatLng;
 import '../../domain/ride_outline.dart';
 import '../history/area_providers.dart';
 import '../history/history_items.dart';
@@ -75,12 +76,6 @@ class OverviewState {
 
   /// The box around all visible rides, or null when there are none.
   final OutlineBounds? bounds;
-
-  /// Visible rides per activity type (the legend counts).
-  Map<ActivityType, int> get countByType => {
-    for (final e in (data?.countByType ?? const <String, int>{}).entries)
-      ActivityType.fromId(e.key) ?? ActivityType.other: e.value,
-  };
 
   // The map is pushed again only when the visible set or the mode changes.
   @override
@@ -200,3 +195,20 @@ final legendTypesProvider = StreamProvider<Set<ActivityType>>(
         },
       ),
 );
+
+/// Where the map camera was last left, kept while the map view is not on
+/// screen, so coming back shows the same part of the map at the same zoom.
+typedef RememberedCamera = ({LatLng center, double zoom});
+
+class MapCameraMemoryNotifier extends Notifier<RememberedCamera?> {
+  @override
+  RememberedCamera? build() => null;
+
+  void remember(LatLng center, double zoom) =>
+      state = (center: center, zoom: zoom);
+}
+
+final mapCameraMemoryProvider =
+    NotifierProvider<MapCameraMemoryNotifier, RememberedCamera?>(
+      MapCameraMemoryNotifier.new,
+    );

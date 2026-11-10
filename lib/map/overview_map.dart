@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show Factory;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +16,9 @@ import 'overview_layers.dart';
 import 'overview_pin.dart';
 import 'preview_projection.dart' show RoutePoint;
 import 'route_camera.dart';
+
+/// Kilometres per degree of latitude on the Haversine sphere.
+const double _kmPerDegreeLat = 111.195;
 
 /// Zoom the my-location button moves the camera to.
 const double kOverviewLocationZoom = 15;
@@ -38,6 +43,8 @@ class OverviewMap extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.onPinMoved,
+    this.onCameraIdle,
+    this.restoreCamera,
     this.showAttribution = true,
   });
 
@@ -68,6 +75,13 @@ class OverviewMap extends StatefulWidget {
   final void Function(LatLng point, double zoom)? onTap;
   final ValueChanged<LatLng>? onLongPress;
   final ValueChanged<LatLng>? onPinMoved;
+
+  /// Reports where the camera came to rest, to be kept for a later visit.
+  final void Function(LatLng center, double zoom)? onCameraIdle;
+
+  /// Starts at this camera instead of framing the rides (coming back to the
+  /// map after leaving it).
+  final ({LatLng center, double zoom})? restoreCamera;
 
   /// Whether the map draws its own attribution. A screen that stacks content
   /// at the bottom turns it off and shows the credit with that content.
@@ -116,10 +130,16 @@ class _OverviewMapState extends State<OverviewMap> {
   void didUpdateWidget(OverviewMap old) {
     super.didUpdateWidget(old);
     if (_sourcesReady) _pushAll();
+    final area = widget.area;
+    if (area != null &&
+        (old.area == null || area.radiusKm != old.area!.radiusKm)) {
+      _fitArea(area);
+    }
     if (widget.frameToken != old.frameToken) {
       _userMoved = false;
       _frame();
     } else if (!_userMoved &&
+        widget.restoreCamera == null &&
         widget.bounds != old.bounds &&
         old.bounds == null) {
       _frame();
@@ -176,7 +196,12 @@ class _OverviewMapState extends State<OverviewMap> {
     if (_superseded(style)) return;
     _sourcesReady = true;
     _pushAll();
-    await _frame();
+    final restore = widget.restoreCamera;
+    if (restore != null) {
+      await _jump(restore.center, restore.zoom);
+    } else {
+      await _frame();
+    }
     if (mounted && !_styleReady) setState(() => _styleReady = true);
   }
 
@@ -192,6 +217,24 @@ class _OverviewMapState extends State<OverviewMap> {
       height: _viewport.height,
     );
     if (fit == null) return;
+    await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
+  }
+
+  /// Zooms to show the whole area circle, so a larger radius zooms out.
+  Future<void> _fitArea(AreaFilter area) async {
+    if (_viewport.isEmpty) return;
+    final dLat = area.radiusKm / _kmPerDegreeLat;
+    final dLng = dLat / math.max(math.cos(area.pin.lat * math.pi / 180), 0.01);
+    final fit = fitRouteCamera(
+      <RoutePoint>[
+        (lat: area.pin.lat - dLat, lng: area.pin.lng - dLng),
+        (lat: area.pin.lat + dLat, lng: area.pin.lng + dLng),
+      ],
+      width: _viewport.width,
+      height: _viewport.height,
+    );
+    if (fit == null) return;
+    _userMoved = true;
     await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
   }
 
@@ -217,6 +260,14 @@ class _OverviewMapState extends State<OverviewMap> {
           lat: point.lat,
           lng: point.lon,
         ), _controller?.camera?.zoom ?? kLiveMapMinZoom);
+      case MapEventCameraIdle():
+        final camera = _controller?.camera;
+        if (camera != null) {
+          widget.onCameraIdle?.call((
+            lat: camera.center.lat,
+            lng: camera.center.lon,
+          ), camera.zoom);
+        }
       case MapEventLongClick(:final point):
         widget.onLongPress?.call((lat: point.lat, lng: point.lon));
       default:
@@ -242,7 +293,7 @@ class _OverviewMapState extends State<OverviewMap> {
               options: MapOptions(
                 initStyle: liveMapStyle(dark),
                 initCenter: _initialCenter,
-                initZoom: _initialZoom,
+                initZoom: widget.restoreCamera?.zoom ?? _initialZoom,
                 minZoom: kLiveMapMinZoom,
                 maxZoom: kLiveMapMaxZoom,
                 androidTextureMode: true,
@@ -292,6 +343,10 @@ class _OverviewMapState extends State<OverviewMap> {
   }
 
   Geographic get _initialCenter {
+    final restore = widget.restoreCamera;
+    if (restore != null) {
+      return Geographic(lon: restore.center.lng, lat: restore.center.lat);
+    }
     final box = widget.bounds;
     return box == null
         ? Geographic(lon: 0, lat: 0)

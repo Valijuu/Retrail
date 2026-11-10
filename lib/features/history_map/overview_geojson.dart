@@ -68,7 +68,6 @@ class OverviewRide {
 class OverviewData {
   const OverviewData({
     required this.linesByType,
-    required this.countByType,
     required this.heat,
     required this.newLineFragments,
     required this.newHeatFragments,
@@ -76,9 +75,6 @@ class OverviewData {
 
   /// Line GeoJSON per activity type id.
   final Map<String, String> linesByType;
-
-  /// Visible rides per activity type id (the legend counts).
-  final Map<String, int> countByType;
 
   /// Heat GeoJSON of all visible rides.
   final String heat;
@@ -92,13 +88,11 @@ class OverviewData {
 /// part the mode shows is built: the heat points when [heat], else the lines.
 OverviewData buildOverviewData(List<OverviewRide> rides, {bool heat = false}) {
   final linesByType = <String, List<String>>{};
-  final counts = <String, int>{};
   final heatFragments = <String>[];
   final newLines = <int, String>{};
   final newHeat = <int, String>{};
   for (final ride in rides) {
     final type = ActivityType.fromId(ride.typeId)?.id ?? ActivityType.other.id;
-    counts[type] = (counts[type] ?? 0) + 1;
     if (heat) {
       heatFragments.add(
         ride.heatFragment ??
@@ -115,7 +109,6 @@ OverviewData buildOverviewData(List<OverviewRide> rides, {bool heat = false}) {
     linesByType: {
       for (final e in linesByType.entries) e.key: linesGeoJson(e.value),
     },
-    countByType: counts,
     heat: heatGeoJson(heatFragments),
     newLineFragments: newLines,
     newHeatFragments: newHeat,

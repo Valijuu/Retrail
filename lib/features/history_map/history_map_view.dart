@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/theme_context.dart';
 import '../../core/widgets/app_snack_bar.dart';
 import '../../domain/activity_type.dart';
 import '../../domain/heading.dart' show LatLng;
@@ -45,8 +44,8 @@ const double _progressHeight = 2;
 /// How long after a filter change the next new set of rides is framed.
 const Duration _frameWindow = Duration(seconds: 2);
 
-/// What a filter change means for the camera: the rides it selects. Sort,
-/// and the radius while the pin stays, do not reframe.
+/// What a filter change means for the camera: the rides it selects. Sort and
+/// the area do not reframe; the map fits the area circle itself.
 Object _framingKey(HistoryFilter f) => Object.hash(
   f.query.trim(),
   f.favoritesOnly,
@@ -55,7 +54,6 @@ Object _framingKey(HistoryFilter f) => Object.hash(
   f.monthFrom,
   f.monthTo,
   Object.hashAllUnordered(f.routeIds),
-  f.area?.pin,
 );
 
 class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
@@ -68,6 +66,9 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   int _focusToken = 0;
   LatLng? _focus;
 
+  /// Where the camera was left on the last visit; null on the first one.
+  late final RememberedCamera? _restore = ref.read(mapCameraMemoryProvider);
+
   late final MapVisibleNotifier _visible = ref.read(
     mapVisibleProvider.notifier,
   );
@@ -76,7 +77,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   void initState() {
     super.initState();
     final bounds = ref.read(overviewProvider).value?.bounds;
-    _framePending = bounds == null;
+    _framePending = bounds == null && _restore == null;
     Future.microtask(() => _visible.set(true));
   }
 
@@ -167,9 +168,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final filling = ref.watch(outlineFillProvider);
 
     final l10n = AppLocalizations.of(context);
-    final colors = context.colors;
-    final overviewAsync = ref.watch(overviewProvider);
-    final overview = overviewAsync.value ?? OverviewState.empty;
+    final overview = ref.watch(overviewProvider).value ?? OverviewState.empty;
     final mode =
         ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
     final area = ref.watch(historyFilterProvider.select((f) => f.area));
@@ -183,11 +182,6 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final highlight = shown == null
         ? null
         : _highlightOf(ref.read(outlineStoreProvider), shown);
-    final noRides =
-        overviewAsync.hasValue &&
-        !overviewAsync.isLoading &&
-        overview.rideIds.isEmpty &&
-        !filling;
 
     return Stack(
       fit: StackFit.expand,
@@ -209,6 +203,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           onTap: selection.tap,
           onLongPress: filter.setAreaPin,
           onPinMoved: filter.setAreaPin,
+          restoreCamera: _restore,
+          onCameraIdle: ref.read(mapCameraMemoryProvider.notifier).remember,
           showAttribution: false,
         ),
         Positioned(
@@ -218,30 +214,27 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              MapModeSwitch(
-                mode: mode,
-                onChanged: ref.read(historyMapControllerProvider).setMode,
+              Row(
+                children: [
+                  MapModeSwitch(
+                    mode: mode,
+                    onChanged: ref.read(historyMapControllerProvider).setMode,
+                  ),
+                  const SizedBox(width: _panelGap),
+                  const Expanded(child: MapLegend()),
+                ],
               ),
-              const SizedBox(height: _panelGap),
-              const MapLegend(),
-              const SizedBox(height: _panelGap),
-              AreaPanel(
-                area: area,
-                onRadius: filter.setAreaRadius,
-                onRemove: filter.clearArea,
-              ),
+              if (area != null) ...[
+                const SizedBox(height: _panelGap),
+                AreaPanel(
+                  area: area,
+                  onRadius: filter.setAreaRadius,
+                  onRemove: filter.clearArea,
+                ),
+              ],
             ],
           ),
         ),
-        if (noRides)
-          Center(
-            child: Text(
-              l10n.historyNoMatches,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
-            ),
-          ),
         if (filling)
           Positioned(
             top: 0,

@@ -77,7 +77,6 @@ void main() {
     final state = await settle();
     expect(state.rideIds, [a]);
     expect(state.data!.linesByType.keys, ['LONGBOARD']);
-    expect(state.countByType, {ActivityType.longboard: 1});
     expect(state.bounds!.south, 48);
   });
 
@@ -87,7 +86,7 @@ void main() {
     c.read(historyFilterProvider.notifier).toggleActivity(ActivityType.ski);
     final state = await settle();
     expect(state.rideIds, [ski]);
-    expect(state.countByType, {ActivityType.ski: 1});
+    expect(state.data!.linesByType.keys, ['SKI']);
   });
 
   test('heat mode builds the heat points and no lines', () async {

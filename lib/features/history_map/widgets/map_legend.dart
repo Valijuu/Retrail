@@ -22,43 +22,47 @@ class MapLegend extends ConsumerWidget {
     final selected = ref.watch(
       historyFilterProvider.select((f) => f.activities),
     );
-    final counts =
-        ref.watch(overviewProvider).value?.countByType ??
-        const <ActivityType, int>{};
     final types = [
       for (final t in ActivityType.values)
         if (present.contains(t)) t,
     ];
     if (types.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: [
-        for (final type in types)
-          _LegendChip(
-            type: type,
-            shown: legendTypeShown(selected, type),
-            count: counts[type] ?? 0,
-            onTap: () => ref
-                .read(historyFilterProvider.notifier)
-                .setActivities(toggleLegendType(selected, present, type)),
-          ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final type in types) ...[
+            _LegendChip(
+              type: type,
+              shown: legendTypeShown(selected, type),
+              onTap: () => ref
+                  .read(historyFilterProvider.notifier)
+                  .setActivities(toggleLegendType(selected, present, type)),
+            ),
+            const SizedBox(width: _chipGap),
+          ],
+        ],
+      ),
     );
   }
 }
+
+/// Opacity of a legend chip while its type is shown or hidden.
+const double _shownAlpha = 0.92;
+const double _hiddenAlpha = 0.7;
+
+/// Space between two legend chips.
+const double _chipGap = 6;
 
 class _LegendChip extends StatelessWidget {
   const _LegendChip({
     required this.type,
     required this.shown,
-    required this.count,
     required this.onTap,
   });
 
   final ActivityType type;
   final bool shown;
-  final int count;
   final VoidCallback onTap;
 
   @override
@@ -72,7 +76,9 @@ class _LegendChip extends StatelessWidget {
       selected: shown,
       label: type.label(l10n),
       child: Material(
-        color: colors.surface.withValues(alpha: shown ? 0.92 : 0.7),
+        color: colors.surface.withValues(
+          alpha: shown ? _shownAlpha : _hiddenAlpha,
+        ),
         shape: StadiumBorder(
           side: BorderSide(color: shown ? line : colors.onSurfaceVariant),
         ),
@@ -92,17 +98,8 @@ class _LegendChip extends StatelessWidget {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 type.glyph(size: 16, color: tint),
-                if (shown) ...[
-                  const SizedBox(width: 4),
-                  Text(
-                    '$count',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(color: tint),
-                  ),
-                ],
               ],
             ),
           ),

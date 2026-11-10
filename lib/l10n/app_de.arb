@@ -247,7 +247,6 @@
   "historyMapMyLocation": "Mein Standort",
   "historyMapRemovePin": "Pin entfernen",
   "historyMapRadius": "Umkreis: {km} km",
-  "historyMapPinHint": "Karte lange drücken, um Fahrten rund um einen Ort zu sehen",
   "historyMapBestTime": "Bestzeit",
   "historyMapRidesOnRoute": "{count, plural, =1{1 Fahrt auf dieser Strecke} other{{count} Fahrten auf dieser Strecke}}",
   "historyMapCardCounter": "{index}/{count}",

@@ -1,3 +1,4 @@
+import '../history_map/outline_fill.dart' show mapVisibleProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -131,6 +132,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           },
           child: PageView(
             controller: _controller,
+            // The History map needs sideways drags for panning and pinching.
+            physics: ref.watch(mapVisibleProvider)
+                ? const NeverScrollableScrollPhysics()
+                : null,
             onPageChanged: _onPageChanged,
             children: [
               ValueListenableBuilder<int>(

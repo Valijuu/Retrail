@@ -53,6 +53,5 @@ English is the default and should read naturally (not a literal back-translation
 | Map mode lines / heat | Linien / Heatmap |
 | My location (map button) | Mein Standort |
 | Area filter radius / remove pin | Umkreis: n km / Pin entfernen |
-| Map pin hint | Karte lange drücken, um Fahrten rund um einen Ort zu sehen |
 | n rides on this route | n Fahrten auf dieser Strecke |
 | Preparing routes | Strecken werden vorbereitet … |
