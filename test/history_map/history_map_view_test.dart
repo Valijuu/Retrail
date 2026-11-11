@@ -219,27 +219,33 @@ void main() {
     },
   );
 
-  testWidgets('hiding a type in the legend hides it in the list too', (
-    tester,
-  ) async {
-    await _ride(db, title: 'Board ride', type: 'LONGBOARD');
-    await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
-    await pump(tester, view: 'map');
-    await settle(tester);
+  testWidgets(
+    'unticking a type in the activity menu hides it in the list too',
+    (tester) async {
+      await _ride(db, title: 'Board ride', type: 'LONGBOARD');
+      await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
+      await pump(tester, view: 'map');
+      await settle(tester);
 
-    await tester.tap(
-      find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.label == 'Ski',
-      ),
-    );
-    await settle(tester);
-    await tester.tap(find.text('List'));
-    await settle(tester);
+      expect(find.text('2/2'), findsOneWidget);
+      await tester.tap(find.byTooltip('Activities'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ski'));
+      await tester.pumpAndSettle();
+      // The menu stays open while ticking; the button shows the new count.
+      expect(find.text('Ski'), findsOneWidget);
+      expect(find.text('1/2'), findsOneWidget);
+      await tester.tap(find.byTooltip('Activities'));
+      await tester.pumpAndSettle();
+      await settle(tester);
+      await tester.tap(find.text('List'));
+      await settle(tester);
 
-    expect(find.text('Board ride'), findsOneWidget);
-    expect(find.text('Powder day'), findsNothing);
-    await finish(tester);
-  });
+      expect(find.text('Board ride'), findsOneWidget);
+      expect(find.text('Powder day'), findsNothing);
+      await finish(tester);
+    },
+  );
 
   group('camera framing', () {
     OverviewMap map(WidgetTester tester) =>

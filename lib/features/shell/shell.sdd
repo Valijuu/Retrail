@@ -16,9 +16,8 @@ Must:
     and `/follow`; every route fades in and out over `180` ms.
   While onboarding state is loading the app shows the splash; without finished onboarding it goes to `/init`.
   A pending ride deep link opens `/ride` once and is cleared.
-  The shell shows Home, History and Settings in a swipeable page view with a Material 3 navigation bar
-    driven by one tab list.
-  While the History map is on screen the page view does not swipe, so the map can be panned and pinched.
+  The shell shows Home, History and Settings in a page view that does not swipe, with a Material 3 navigation bar
+    driven by one tab list; tabs change only through the bar, so maps can be panned and pinched.
   The shell owns the greeting selector and re-rolls the greeting each time Home settles as the current tab.
   Tapping a ride on Home switches to History and scrolls to that ride.
   Theme mode follows the stored preference; `system`, `light` and `dark` map to @ThemeMode.

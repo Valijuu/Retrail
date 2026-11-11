@@ -20,6 +20,12 @@ import 'route_camera.dart';
 /// Kilometres per degree of latitude on the Haversine sphere.
 const double _kmPerDegreeLat = 111.195;
 
+/// Where the map starts when there is nothing to frame and nothing remembered:
+/// a world view over Europe. Not 0/0, where the base map has an object of its
+/// own that looks like a stray position dot.
+const double _fallbackLat = 30;
+const double _fallbackLon = 10;
+
 /// Zoom the my-location button moves the camera to.
 const double kOverviewLocationZoom = 15;
 
@@ -349,7 +355,7 @@ class _OverviewMapState extends State<OverviewMap> {
     }
     final box = widget.bounds;
     return box == null
-        ? Geographic(lon: 0, lat: 0)
+        ? Geographic(lon: _fallbackLon, lat: _fallbackLat)
         : Geographic(
             lon: (box.west + box.east) / 2,
             lat: (box.south + box.north) / 2,

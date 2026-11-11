@@ -264,5 +264,6 @@
   "historyMapLocationBlocked": "Location is blocked for Retrail.",
   "historyMapOpenSettings": "Settings",
   "historyMapLocationOff": "Location services are off.",
-  "historyMapPreparing": "Preparing routes…"
+  "historyMapPreparing": "Preparing routes…",
+  "historyMapActivities": "Activities"
 }

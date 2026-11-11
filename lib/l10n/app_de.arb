@@ -255,5 +255,6 @@
   "historyMapLocationBlocked": "Der Standort ist für Retrail gesperrt.",
   "historyMapOpenSettings": "Einstellungen",
   "historyMapLocationOff": "Die Ortungsdienste sind aus.",
-  "historyMapPreparing": "Strecken werden vorbereitet …"
+  "historyMapPreparing": "Strecken werden vorbereitet …",
+  "historyMapActivities": "Aktivitäten"
 }

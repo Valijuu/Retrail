@@ -44,15 +44,17 @@ Must:
   Lines mode draws one line per ride, thin and semi-transparent, in its activity type's colour, so a
     route ridden often looks denser. The nine types have nine distinct colours that stay readable on the light
     and the dark style; colour is never the only cue.
-  The legend lists the types that occur, each with its icon and colour. Tapping a type shows or hides it
-    by changing the shared activity filter.
+  The activity menu is one drop-down button showing how many of the occurring types are on (`2/3`). It lists
+    the types that occur, each with a checkbox, its colour bar and icon; ticking shows or hides the type by
+    changing the shared activity filter and keeps the menu open. The last shown type cannot be unticked, since
+    an empty filter would show every type again.
   Heat mode draws the @HeatPoints of the visible rides as one heatmap layer in the app's primary colour;
-    the filters and legend apply as in Lines mode.
+    the filters and activity menu apply as in Lines mode.
   The camera starts framing all visible rides north-up. When the filters change it frames the new set once;
     a user gesture is never overridden afterwards. Leaving the map view and coming back shows the same camera.
   Setting the pin or changing the radius zooms the camera to show the whole circle.
-  The controls are compact: the mode switch is two icons and the legend one scrolling row of small chips beside it,
-    without counts; the radius panel shows only while a pin is set.
+  The controls are compact: the mode switch is two icons and the activity menu one button beside it;
+    the radius panel shows only while a pin is set.
   Tapping the map finds the rides under the tap with @OutlineHit. The nearest ride is highlighted and its
     preview card shows at the bottom: the cached preview, title, distance, duration, average speed and type,
     as on the History card, including the stored ascent or descent of #97 when the ride has one and nothing
@@ -121,8 +123,12 @@ Scenario: deleting while the outline is being computed
 
 Scenario: hiding a type
   Given the map shows longboard and ski rides
-  When the ski type is turned off in the legend
+  When the ski type is unticked in the activity menu
   Then the ski lines disappear and the list shows only longboard rides too
+
+Scenario: the last type stays on
+  Given the map shows only longboard rides, every other type unticked
+  Then the longboard checkbox is disabled and the map never goes empty through the menu
 
 Example:
   `history_view`: `list` by default, then `map`

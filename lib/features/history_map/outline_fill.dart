@@ -29,7 +29,11 @@ class MapVisibleNotifier extends Notifier<bool> {
   @override
   bool build() => false;
 
-  void set(bool visible) => state = visible;
+  /// The map view sets this from a microtask after dispose; by then the
+  /// container may be gone (tests, app shutdown), so a dead ref is a no-op.
+  void set(bool visible) {
+    if (ref.mounted) state = visible;
+  }
 }
 
 final mapVisibleProvider = NotifierProvider<MapVisibleNotifier, bool>(

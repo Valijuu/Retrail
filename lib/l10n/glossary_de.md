@@ -55,3 +55,4 @@ English is the default and should read naturally (not a literal back-translation
 | Area filter radius / remove pin | Umkreis: n km / Pin entfernen |
 | n rides on this route | n Fahrten auf dieser Strecke |
 | Preparing routes | Strecken werden vorbereitet … |
+| Map activities menu | Aktivitäten |

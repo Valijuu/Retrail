@@ -1,4 +1,3 @@
-import '../history_map/outline_fill.dart' show mapVisibleProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -132,10 +131,9 @@ class _MainShellState extends ConsumerState<MainShell> {
           },
           child: PageView(
             controller: _controller,
-            // The History map needs sideways drags for panning and pinching.
-            physics: ref.watch(mapVisibleProvider)
-                ? const NeverScrollableScrollPhysics()
-                : null,
+            // Tabs change through the navigation bar only: a sideways swipe
+            // got in the way of panning and pinching the maps.
+            physics: const NeverScrollableScrollPhysics(),
             onPageChanged: _onPageChanged,
             children: [
               ValueListenableBuilder<int>(

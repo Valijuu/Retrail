@@ -18,7 +18,7 @@ import 'map_selection.dart';
 import 'outline_fill.dart';
 import 'overview_geojson.dart';
 import 'widgets/map_controls.dart';
-import 'widgets/map_legend.dart';
+import 'widgets/activity_menu.dart';
 import 'widgets/map_preview_card.dart';
 
 /// The map view of the History tab (#96): every ride with a route as a line
@@ -221,7 +221,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                     onChanged: ref.read(historyMapControllerProvider).setMode,
                   ),
                   const SizedBox(width: _panelGap),
-                  const Expanded(child: MapLegend()),
+                  const ActivityMenu(),
                 ],
               ),
               if (area != null) ...[

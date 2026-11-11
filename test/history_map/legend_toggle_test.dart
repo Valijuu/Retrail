@@ -27,8 +27,17 @@ void main() {
     expect(toggleLegendType({_lb, _ski}, {_lb, _ski, _sb}, _sb), isEmpty);
   });
 
-  test('hiding the last shown type shows everything instead', () {
-    expect(toggleLegendType({_lb}, {_lb, _ski}, _lb), isEmpty);
+  test('the last shown type stays on, it cannot be hidden', () {
+    expect(toggleLegendType({_lb}, {_lb, _ski}, _lb), {_lb});
+    expect(toggleLegendType({}, {_lb}, _lb), isEmpty);
+  });
+
+  test('a type is locked only while it is the single shown one', () {
+    expect(legendTypeLocked({_lb}, {_lb, _ski}, _lb), isTrue);
+    expect(legendTypeLocked({_lb}, {_lb, _ski}, _ski), isFalse);
+    expect(legendTypeLocked({}, {_lb}, _lb), isTrue);
+    expect(legendTypeLocked({}, {_lb, _ski}, _lb), isFalse);
+    expect(legendTypeLocked({_lb, _ski}, {_lb, _ski, _sb}, _lb), isFalse);
   });
 
   test('a type is shown when the filter is empty or contains it', () {
