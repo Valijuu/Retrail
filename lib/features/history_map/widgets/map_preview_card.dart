@@ -28,7 +28,8 @@ class MapCardActions {
 
 /// The tapped ride at the bottom of the map: the History card itself, with a
 /// header for the best-time badge, the route's ride count, the `n/m` pager
-/// and a close control. Swipe sideways to move through several hits (#96).
+/// and a close control. Swipe sideways to move through different routes
+/// under the tap; the rides of one route open from the count (#96).
 class MapPreviewCard extends StatelessWidget {
   const MapPreviewCard({
     super.key,
@@ -87,16 +88,22 @@ class MapPreviewCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
-                  // The route-group text takes all the room left of the pager
-                  // and wraps to a second line instead of being cut (#103).
+                  // The route's ride count opens the whole route group, so the
+                  // card shows one entry per route (#96). It takes the room
+                  // left of the pager and wraps instead of being cut (#103).
                   if (ride.groupSize > 1)
                     Expanded(
-                      child: Text(
-                        l10n.historyMapRidesOnRoute(ride.groupSize),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.labelMedium?.copyWith(
-                          color: colors.onSurfaceVariant,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: () => actions.onOpenRouteGroup(ride),
+                          iconAlignment: IconAlignment.end,
+                          icon: const Icon(Icons.chevron_right, size: 18),
+                          label: Text(
+                            l10n.historyMapRidesOnRoute(ride.groupSize),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     )

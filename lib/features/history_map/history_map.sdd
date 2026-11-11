@@ -63,10 +63,11 @@ Must:
   Tapping the map finds the rides under the tap with @OutlineHit. The nearest ride is highlighted and its
     preview card shows at the bottom: the cached preview, title, distance, duration, average speed and type,
     as on the History card, including the stored ascent or descent of #97 when the ride has one and nothing
-    when it has none; the card is the History card, not a copy of it. Several hits can be swiped; the card shows `n/m`.
-  A ride that is the best of its route group shows a best-time badge and, when its group has more rides,
-    "n rides on this route"; a swipe through the group's rides shows each one's time. Rides outside a group
-    have no badge.
+    when it has none; the card is the History card, not a copy of it. Several routes under the tap can be swiped;
+    the card shows `n/m` and never pages through the rides of one route.
+  The rides of one route group show as one entry: the card of the group's best ride when it was hit, else of
+    its nearest hit, with the best-time badge and the count "n rides on this route"; tapping the count opens
+    the group's rides as History does. Rides outside a group have no badge.
   Tapping the card opens the ride detail as History does. Tapping empty map or the close control hides the card.
   The my-location button asks for location while the app is in use, never for Always and never for
     notifications. Granted: it shows the position and moves the camera there at zoom `15`, north-up.
@@ -108,7 +109,8 @@ Scenario: return to the app
 Scenario: tap on an overlapping stretch
   Given three rides pass the tapped point and two belong to one followed route
   When the map is tapped there
-  Then the nearest ride is highlighted, the card shows `1/3`, and the best ride of its group has the badge
+  Then the card shows `1/2` (two routes), and the route of the two rides shows its best ride with the badge
+    and the count `2 rides on this route`
 
 Scenario: rides around a place
   Given the map shows rides from two cities

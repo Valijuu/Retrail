@@ -178,46 +178,57 @@ void main() {
     await finish(tester);
   });
 
-  testWidgets(
-    'tapping the map shows the best ride first, pages with n/m and closes',
-    (tester) async {
-      final original = await _ride(db, title: 'Original', durationMs: 900);
-      await _ride(
-        db,
-        title: 'Faster follow',
-        followed: original,
-        durationMs: 800,
-        coverage: 1,
-        date: 2,
-      );
-      await pump(tester, view: 'map');
-      await settle(tester);
+  testWidgets('the rides of one route share one card with the best ride', (
+    tester,
+  ) async {
+    final original = await _ride(db, title: 'Original', durationMs: 900);
+    await _ride(
+      db,
+      title: 'Faster follow',
+      followed: original,
+      durationMs: 800,
+      coverage: 1,
+      date: 2,
+    );
+    await pump(tester, view: 'map');
+    await settle(tester);
 
-      container.read(mapSelectionProvider.notifier).tap(_tap, 14);
-      await settle(tester);
-      expect(find.text('1/2'), findsOneWidget);
-      expect(find.text('2 rides on this route'), findsOneWidget);
-      // The newest ride is first, and it is the group's best time.
-      expect(find.text('Faster follow'), findsOneWidget);
-      expect(find.text('Best time'), findsOneWidget);
+    container.read(mapSelectionProvider.notifier).tap(_tap, 14);
+    await settle(tester);
+    // One route, one card: no pager, the best ride, a count that opens the group.
+    expect(find.text('1/2'), findsNothing);
+    expect(find.text('Faster follow'), findsOneWidget);
+    expect(find.text('Original'), findsNothing);
+    expect(find.text('Best time'), findsOneWidget);
+    expect(find.text('2 rides on this route'), findsOneWidget);
 
-      await tester.fling(
-        find.byType(MapPreviewCard),
-        const Offset(-300, 0),
-        1000,
-      );
-      await tester.pump();
-      expect(find.text('2/2'), findsOneWidget);
-      expect(find.text('Original'), findsOneWidget);
-      expect(find.text('Best time'), findsNothing);
-      expect(find.text('2 rides on this route'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pump();
+    expect(find.text('2 rides on this route'), findsNothing);
+    await finish(tester);
+  });
 
-      await tester.tap(find.byTooltip('Close'));
-      await tester.pump();
-      expect(find.text('2/2'), findsNothing);
-      await finish(tester);
-    },
-  );
+  testWidgets('different routes under the tap page with n/m', (tester) async {
+    await _ride(db, title: 'Alpha', date: 2);
+    await _ride(db, title: 'Beta', date: 1);
+    await pump(tester, view: 'map');
+    await settle(tester);
+
+    container.read(mapSelectionProvider.notifier).tap(_tap, 14);
+    await settle(tester);
+    expect(find.text('1/2'), findsOneWidget);
+    expect(find.text('Alpha'), findsOneWidget);
+
+    await tester.fling(
+      find.byType(MapPreviewCard),
+      const Offset(-300, 0),
+      1000,
+    );
+    await tester.pump();
+    expect(find.text('2/2'), findsOneWidget);
+    expect(find.text('Beta'), findsOneWidget);
+    await finish(tester);
+  });
 
   testWidgets(
     'unticking a type in the activity menu hides it in the list too',

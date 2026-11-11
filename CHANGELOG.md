@@ -20,6 +20,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 
 ### Changed
 - On the map, a menu entry ticks or unticks all activities at once and the last activity stays on (#96).
+- On the map, the rides of one route share one card (the best one), and its ride count opens the whole route;
+  swiping is only for different routes under your finger (#96).
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.
 

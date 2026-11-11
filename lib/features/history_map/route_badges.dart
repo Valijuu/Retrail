@@ -7,10 +7,19 @@ import '../history/route_group_providers.dart' show routeGroupRideOf;
 /// Which rides hold the best time of their route group, and how big each
 /// ride's group is (#96). The time comes from @RouteGroup, never recomputed.
 class RouteBadges {
-  const RouteBadges(this.bestRideIds, this._groupSizeByRide);
+  const RouteBadges(
+    this.bestRideIds,
+    this._groupSizeByRide, [
+    this._groupKeyByRide = const {},
+  ]);
 
   final Set<int> bestRideIds;
   final Map<int, int> _groupSizeByRide;
+  final Map<int, int> _groupKeyByRide;
+
+  /// One key for every ride of a route group (the original's id), the ride's
+  /// own id outside any group.
+  int groupKeyOf(int rideId) => _groupKeyByRide[rideId] ?? rideId;
 
   /// Rides in the route group of [rideId], itself included; `1` outside any.
   int groupSizeOf(int rideId) => _groupSizeByRide[rideId] ?? 1;
@@ -29,6 +38,7 @@ RouteBadges routeBadges(List<Ride> rides) {
   }
   final best = <int>{};
   final sizes = <int, int>{};
+  final keys = <int, int>{};
   RouteGroupRide competitor(Ride r) => routeGroupRideOf(
     RideEntryItem(r, storedRideStats(r) ?? statsWithoutTrackpoints(r)),
   );
@@ -39,9 +49,11 @@ RouteBadges routeBadges(List<Ride> rides) {
     final bestId = group.bestRideId;
     if (bestId != null) best.add(bestId);
     sizes[rootId] = follows.length + 1;
+    keys[rootId] = rootId;
     for (final f in follows) {
       sizes[f.rideId] = follows.length + 1;
+      keys[f.rideId] = rootId;
     }
   }
-  return RouteBadges(best, sizes);
+  return RouteBadges(best, sizes, keys);
 }

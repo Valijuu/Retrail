@@ -75,7 +75,7 @@ void main() {
       Future<void>.delayed(const Duration(milliseconds: 600));
 
   test(
-    'tapping on an overlapping stretch selects all rides, best flagged',
+    'tapping an overlapping stretch gives one entry per route, the best ride for a group',
     () async {
       final original = await _ride(db, durationMs: 900, date: 1);
       final follow = await _ride(
@@ -90,10 +90,12 @@ void main() {
 
       c.read(mapSelectionProvider.notifier).tap(_tap, 14);
       final rides = c.read(selectedRidesProvider);
+      // The original and its follow are one route: only the best one stays.
       expect(
         rides.map((r) => r.entry.ride.rideId),
-        unorderedEquals([original, follow, other]),
+        unorderedEquals([follow, other]),
       );
+      expect(rides.any((r) => r.entry.ride.rideId == original), isFalse);
       final best = rides.singleWhere((r) => r.isBest);
       expect(best.entry.ride.rideId, follow);
       expect(best.groupSize, 2);

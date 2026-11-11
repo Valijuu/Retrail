@@ -79,8 +79,11 @@ class SelectedRide {
   final int groupSize;
 }
 
-/// The tapped rides that still exist, in tap order. A ride deleted while its
-/// card is open drops out; with none left the card is gone (#96).
+/// The tapped routes that still exist, in tap order, one entry per route
+/// group: the group's best ride when it was hit, else its nearest hit. Rides
+/// of one route show the same line, so paging through them told the rider
+/// nothing; the group's other rides open from the card (#96). A ride deleted
+/// while its card is open drops out; with none left the card is gone.
 final selectedRidesProvider = Provider<List<SelectedRide>>((ref) {
   final selection = ref.watch(mapSelectionProvider);
   final items = ref.watch(historyItemsProvider).value ?? const [];
@@ -90,14 +93,25 @@ final selectedRidesProvider = Provider<List<SelectedRide>>((ref) {
   };
   final badges =
       ref.watch(routeBadgesProvider).value ?? const RouteBadges({}, {});
+  // Group key -> the representative ride id, in order of first hit.
+  final chosen = <int, int>{};
+  for (final id in selection.rideIds) {
+    if (!byId.containsKey(id)) continue;
+    final key = badges.groupKeyOf(id);
+    final current = chosen[key];
+    if (current == null ||
+        (badges.bestRideIds.contains(id) &&
+            !badges.bestRideIds.contains(current))) {
+      chosen[key] = id;
+    }
+  }
   return [
-    for (final id in selection.rideIds)
-      if (byId[id] case final entry?)
-        SelectedRide(
-          entry,
-          isBest: badges.bestRideIds.contains(id),
-          groupSize: badges.groupSizeOf(id),
-        ),
+    for (final id in chosen.values)
+      SelectedRide(
+        byId[id]!,
+        isBest: badges.bestRideIds.contains(id),
+        groupSize: badges.groupSizeOf(id),
+      ),
   ];
 });
 
