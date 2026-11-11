@@ -45,12 +45,16 @@ Must:
     route ridden often looks denser. The nine types have nine distinct colours that stay readable on the light
     and the dark style; colour is never the only cue.
   The activity menu is one drop-down button showing how many of the occurring types are on (`2/3`). It lists
-    the types that occur, each with a checkbox, its colour bar and icon; ticking shows or hides the type by
-    changing the shared activity filter and keeps the menu open. An "all" row on top ticks every type; while every
-    type is on, tapping it keeps only the first type. The last shown type cannot be unticked, since an empty
-    filter would show every type again.
+    the types that occur, each with a checkbox, its colour bar and icon; ticking shows or hides the type on the
+    map and keeps the menu open. The selection belongs to the map alone: the History list keeps its own
+    activity filter, and the filter badge does not count it. An "all" row on top switches every type on, or,
+    while every type is on, every type off; the last type can be unticked too.
   Heat mode draws the @HeatPoints of the visible rides as one heatmap layer in the app's primary colour;
     the filters and activity menu apply as in Lines mode.
+  The map opens on the rider's own activity (Settings, "Default activity"): when the map view opens, and again
+    whenever that activity changes, the map narrows to it, if it occurs among the rides with a route and
+    another type does too. Otherwise, and between those moments, every selection in the activity menu stays as
+    the rider made it, including unticking the own activity while another one is on.
   The camera starts framing all visible rides north-up. When the filters change it frames the new set once;
     a user gesture is never overridden afterwards. Leaving the map view and coming back shows the same camera.
   Setting the pin by a long press moves the camera to it and shows the whole circle. Changing the radius only
@@ -131,25 +135,16 @@ Scenario: deleting while the outline is being computed
 Scenario: hiding a type
   Given the map shows longboard and ski rides
   When the ski type is unticked in the activity menu
-  Then the ski lines disappear and the list shows only longboard rides too
+  Then the ski lines disappear; the History list still shows the ski rides
 
-Scenario: the last type stays on
-  Given the map shows only longboard rides, every other type unticked
-  Then the longboard checkbox is disabled and the map never goes empty through the menu
+Scenario: the map opens on my activity
+  Given Settings has ski as my activity and the history has longboard and ski rides
+  When the map view opens
+  Then only ski is ticked in the activity menu and shown on the map, the History list is not narrowed, and
+    longboard can be ticked on and ski unticked afterwards
 
-Example:
-  `history_view`: `list` by default, then `map`
-  `history_map_mode`: `lines` by default, then `heat`
+Scenario: nothing ticked
+  Given the map shows longboard and ski rides
+  When every type is unticked in the activity menu
+  Then the map shows no ride, the button reads `0/2`, and the History list still shows all rides
 
-Tasks:
-  [x] #96 Performance and deletion: in-memory outline cache, isolate work, debounce, cascade and atomic batch delete, tests for both scenarios.
-  [x] #96 Schema version `7` with `ride_outlines`, upgrade step, outline at save, background fill for old rides.
-  [x] #96 Domain: @RideOutline, @OutlineHit, @HeatPoints, @AreaFilter (EXACT).
-  [x] #96 Overview map widget in `/lib/map` with lines, heat and position layers.
-  [x] #96 History switch, legend, preview card, pin and radius slider, preferences.
-  [x] #96 `CHANGELOG.md` and l10n (de, en); no privacy-policy change, there is no new data flow.
-  [!] #96 Device check: many rides and performance, position button and pin (dragging, and panning the map without changing the tab), tap pager and best-time badge, deleting a ride whose card is open (Android and iOS).
-
-Done when:
-  `flutter analyze` is clean, `flutter test` passes and `specdd lint` passes.
-  The overview with many rides, the position button and the tap pager are checked on an Android and an iOS device.

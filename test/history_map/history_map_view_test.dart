@@ -16,6 +16,7 @@ import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_filter.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_screen.dart';
+import 'package:retrail/features/history_map/map_activities.dart';
 import 'package:retrail/features/history_map/map_selection.dart';
 import 'package:retrail/features/history_map/widgets/map_preview_card.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -82,12 +83,16 @@ void main() {
     await db.close();
   });
 
-  Future<void> pump(WidgetTester tester, {String? view}) async {
+  Future<void> pump(WidgetTester tester, {String? view, String? own}) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    SharedPreferences.setMockInitialValues({'history_view': ?view});
+    SharedPreferences.setMockInitialValues({
+      'history_view': ?view,
+      // An activity that never occurs in these rides: the map starts on all.
+      'last_activity_type': own ?? 'MOUNTAINBOARD',
+    });
     final prefs = await SharedPreferences.getInstance();
     container = ProviderContainer(
       overrides: [
@@ -231,7 +236,7 @@ void main() {
   });
 
   testWidgets(
-    'unticking a type in the activity menu hides it in the list too',
+    'unticking a type in the activity menu leaves the list as it is',
     (tester) async {
       await _ride(db, title: 'Board ride', type: 'LONGBOARD');
       await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
@@ -246,19 +251,46 @@ void main() {
       // The menu stays open while ticking; the button shows the new count.
       expect(find.text('Ski'), findsOneWidget);
       expect(find.text('1/2'), findsOneWidget);
+      expect(container.read(mapActivitiesProvider), {ActivityType.longboard});
       await tester.tap(find.byTooltip('Activities'));
       await tester.pumpAndSettle();
       await settle(tester);
       await tester.tap(find.text('List'));
       await settle(tester);
 
+      // The History list has its own activity filter, untouched.
+      expect(container.read(historyFilterProvider).activities, isEmpty);
       expect(find.text('Board ride'), findsOneWidget);
-      expect(find.text('Powder day'), findsNothing);
+      expect(find.text('Powder day'), findsOneWidget);
       await finish(tester);
     },
   );
 
-  testWidgets('the all row ticks every type or keeps just the first one', (
+  testWidgets('the map opens on the rider\'s own activity, still changeable', (
+    tester,
+  ) async {
+    await _ride(db, title: 'Board ride', type: 'LONGBOARD');
+    await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
+    await pump(tester, view: 'map', own: 'SKI');
+    await settle(tester);
+
+    expect(find.text('1/2'), findsOneWidget);
+    expect(container.read(mapActivitiesProvider), {ActivityType.ski});
+    // The list is not narrowed by it.
+    expect(container.read(historyFilterProvider).activities, isEmpty);
+
+    // Tick the other one on, then the own one off: the rider decides.
+    await tester.tap(find.byTooltip('Activities'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Longboard'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ski'));
+    await tester.pumpAndSettle();
+    expect(container.read(mapActivitiesProvider), {ActivityType.longboard});
+    await finish(tester);
+  });
+
+  testWidgets('the all row ticks every type or none, the last one can go too', (
     tester,
   ) async {
     await _ride(db, title: 'Board ride', type: 'LONGBOARD');
@@ -270,10 +302,19 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('All activities'));
     await tester.pumpAndSettle();
-    expect(find.text('1/2'), findsOneWidget);
+    expect(find.text('0/2'), findsOneWidget);
+    expect(container.read(mapActivitiesProvider), isEmpty);
     await tester.tap(find.text('All activities'));
     await tester.pumpAndSettle();
     expect(find.text('2/2'), findsOneWidget);
+    expect(container.read(mapActivitiesProvider), isNull);
+
+    // One type on, then off again: nothing is switched back on behind it.
+    await tester.tap(find.text('Ski'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Longboard'));
+    await tester.pumpAndSettle();
+    expect(container.read(mapActivitiesProvider), isEmpty);
     await finish(tester);
   });
 
@@ -294,9 +335,7 @@ void main() {
       final first = map(tester).frameToken;
       expect(map(tester).bounds!.south, 48);
 
-      container
-          .read(historyFilterProvider.notifier)
-          .toggleActivity(ActivityType.ski);
+      container.read(mapActivitiesProvider.notifier).set({ActivityType.ski});
       await settle(tester);
       expect(map(tester).frameToken, isNot(first));
       expect(map(tester).bounds!.south, 52);

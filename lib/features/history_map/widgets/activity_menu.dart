@@ -6,10 +6,9 @@ import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../domain/activity_type.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../history/history_providers.dart';
 import '../../onboarding/activity_type_ui.dart';
 import '../history_map_providers.dart';
-import '../legend_toggle.dart';
+import '../map_activities.dart';
 import 'map_controls.dart' show kMapControlHeight;
 
 /// Width of the colour bar in front of an activity in the menu.
@@ -18,8 +17,8 @@ const double _colourBarHeight = 4;
 const double _glyphSize = 18;
 
 /// One drop-down for the activity types of the history: each with its map
-/// colour and icon and a checkbox. Ticking works on the shared activity
-/// filter, so the list follows (#96). The menu stays open while ticking.
+/// colour and icon and a checkbox. The map keeps its own selection, apart
+/// from the History list's filter (#96). The menu stays open while ticking.
 class ActivityMenu extends ConsumerWidget {
   const ActivityMenu({super.key});
 
@@ -29,40 +28,35 @@ class ActivityMenu extends ConsumerWidget {
     final colors = context.colors;
     final brightness = Theme.of(context).brightness;
     final present = ref.watch(legendTypesProvider).value ?? const {};
-    final selected = ref.watch(
-      historyFilterProvider.select((f) => f.activities),
-    );
+    final selected = ref.watch(mapActivitiesProvider);
+    final notifier = ref.read(mapActivitiesProvider.notifier);
     final types = [
       for (final t in ActivityType.values)
         if (present.contains(t)) t,
     ];
     if (types.isEmpty) return const SizedBox.shrink();
-    final shownCount = types.where((t) => legendTypeShown(selected, t)).length;
+    final shownCount = types.where((t) => mapTypeShown(selected, t)).length;
 
     return MenuAnchor(
       menuChildren: [
         CheckboxMenuButton(
           closeOnActivate: false,
           tristate: true,
-          value: shownCount == types.length ? true : null,
-          onChanged: types.length < 2
-              ? null
-              : (_) => ref
-                    .read(historyFilterProvider.notifier)
-                    .setActivities(toggleAllLegendTypes(selected, present)),
+          value: shownCount == types.length
+              ? true
+              : shownCount == 0
+              ? false
+              : null,
+          onChanged: (_) => notifier.set(toggleAllMapTypes(selected, present)),
           child: Text(l10n.historyMapAllActivities),
         ),
         const Divider(height: 1),
         for (final type in types)
           CheckboxMenuButton(
             closeOnActivate: false,
-            value: legendTypeShown(selected, type),
-            // The last shown type stays on: the empty filter means "all".
-            onChanged: legendTypeLocked(selected, present, type)
-                ? null
-                : (_) => ref
-                      .read(historyFilterProvider.notifier)
-                      .setActivities(toggleLegendType(selected, present, type)),
+            value: mapTypeShown(selected, type),
+            onChanged: (_) =>
+                notifier.set(toggleMapType(selected, present, type)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

@@ -11,6 +11,7 @@ import '../../domain/ride_outline.dart';
 import '../history/area_providers.dart';
 import '../history/history_items.dart';
 import '../history/history_providers.dart';
+import 'map_activities.dart';
 import 'overview_geojson.dart';
 import 'route_badges.dart';
 
@@ -102,18 +103,33 @@ class OverviewState {
 class SettledMapRidesNotifier extends Notifier<List<Ride>> {
   Timer? _timer;
 
-  List<Ride> _routed(AsyncValue<List<HistoryItem>> items) => [
-    for (final item in items.value ?? const <HistoryItem>[])
-      if (item is RideEntryItem && item.ride.hasRoute) item.ride,
-  ];
+  List<Ride> _routed(AsyncValue<List<HistoryItem>> items) {
+    final types = ref.read(mapActivitiesProvider);
+    return [
+      for (final item in items.value ?? const <HistoryItem>[])
+        if (item is RideEntryItem &&
+            item.ride.hasRoute &&
+            mapTypeShown(
+              types,
+              ActivityType.fromId(item.ride.typ) ?? ActivityType.other,
+            ))
+          item.ride,
+    ];
+  }
 
   @override
   List<Ride> build() {
     ref.onDispose(() => _timer?.cancel());
-    ref.listen(historyItemsProvider, (_, next) {
+    void settle() {
       _timer?.cancel();
-      _timer = Timer(filterDebounce, () => state = _routed(next));
-    });
+      _timer = Timer(
+        filterDebounce,
+        () => state = _routed(ref.read(historyItemsProvider)),
+      );
+    }
+
+    ref.listen(historyItemsProvider, (_, _) => settle());
+    ref.listen(mapActivitiesProvider, (_, _) => settle());
     return _routed(ref.read(historyItemsProvider));
   }
 }

@@ -13,6 +13,9 @@ import '../history/area_providers.dart';
 import '../history/history_filter.dart';
 import '../history/history_providers.dart';
 import 'history_map_providers.dart';
+import '../home/home_providers.dart' show lastActivityTypeProvider;
+import 'map_activities.dart';
+import 'map_default_activity.dart';
 import 'map_locator.dart';
 import 'map_selection.dart';
 import 'outline_fill.dart';
@@ -49,7 +52,6 @@ const Duration _frameWindow = Duration(seconds: 2);
 Object _framingKey(HistoryFilter f) => Object.hash(
   f.query.trim(),
   f.favoritesOnly,
-  Object.hashAllUnordered(f.activities),
   f.year,
   f.monthFrom,
   f.monthTo,
@@ -78,7 +80,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     super.initState();
     final bounds = ref.read(overviewProvider).value?.bounds;
     _framePending = bounds == null && _restore == null;
-    Future.microtask(() => _visible.set(true));
+    Future.microtask(() {
+      _visible.set(true);
+      if (mounted) applyMapDefaultActivity(ref);
+    });
   }
 
   @override
@@ -90,6 +95,11 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
 
   void _onFilterChanged(HistoryFilter? previous, HistoryFilter next) {
     if (previous == null || _framingKey(previous) == _framingKey(next)) return;
+    _reframe();
+  }
+
+  /// The camera frames the new set of rides once when it arrives.
+  void _reframe() {
     _framePending = true;
     _frameWindowTimer?.cancel();
     _frameWindowTimer = Timer(_frameWindow, () => _framePending = false);
@@ -158,6 +168,12 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   @override
   Widget build(BuildContext context) {
     ref.listen<HistoryFilter>(historyFilterProvider, _onFilterChanged);
+    ref.listen(mapActivitiesProvider, (_, _) => _reframe());
+    ref.listen(legendTypesProvider, (_, _) => applyMapDefaultActivity(ref));
+    ref.listen(
+      lastActivityTypeProvider,
+      (_, _) => applyMapDefaultActivity(ref),
+    );
     ref.listen(overviewProvider, _onOverview);
     ref.listen(outlineFillProvider, (was, filling) {
       if (was == true && !filling) {
