@@ -22,7 +22,10 @@ class OverviewPin extends StatefulWidget {
     required this.onDragged,
   });
 
-  final LatLng pin;
+  /// The pin to grab; null draws nothing. The widget stays in the map's
+  /// children either way: adding and removing it changed the platform view's
+  /// child list each time the pin came and went.
+  final LatLng? pin;
   final GlobalKey mapKey;
   final ValueChanged<LatLng> onMoved;
   final ValueChanged<LatLng?> onDragged;
@@ -34,7 +37,7 @@ class OverviewPin extends StatefulWidget {
 class _OverviewPinState extends State<OverviewPin> {
   LatLng? _dragged;
 
-  LatLng get _shown => _dragged ?? widget.pin;
+  LatLng? get _shown => _dragged ?? widget.pin;
 
   LatLng? _under(Offset global, MapController controller) {
     final box = widget.mapKey.currentContext?.findRenderObject();
@@ -49,12 +52,13 @@ class _OverviewPinState extends State<OverviewPin> {
   @override
   Widget build(BuildContext context) {
     final controller = MapController.maybeOf(context);
-    if (controller == null) return const SizedBox.shrink();
+    final shown = _shown;
+    if (controller == null || shown == null) return const SizedBox.shrink();
     return WidgetLayer(
       allowInteraction: true,
       markers: [
         Marker(
-          point: Geographic(lon: _shown.lng, lat: _shown.lat),
+          point: Geographic(lon: shown.lng, lat: shown.lat),
           size: kOverviewPinSize,
           alignment: Alignment.bottomCenter,
           child: GestureDetector(

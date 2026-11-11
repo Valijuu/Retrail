@@ -59,8 +59,8 @@ Must:
     the rider made it, including unticking the own activity while another one is on.
   The camera starts framing all visible rides north-up. When the filters change it frames the new set once;
     a user gesture is never overridden afterwards. Leaving the map view and coming back shows the same camera.
-  Setting the pin by a long press moves the camera to it and shows the whole circle. Changing the radius only
-    zooms, so the pin stays where it is on screen; dragging the pin moves no camera.
+  Setting the pin by a long press moves the camera to it once and shows the whole circle. Changing the radius
+    or dragging the pin moves no camera, so the rider can stay zoomed out while the slider moves.
   The pin is drawn by the map itself, not as a widget over it, so it and the circle do not tremble while the
     map moves or the radius changes.
   The controls are compact: the mode switch is two icons and the activity menu one button beside it, both

@@ -119,7 +119,6 @@ class _OverviewMapState extends State<OverviewMap> {
   /// A long press sets the pin: the camera then moves to it. A drag of the
   /// pin or the location button does not.
   bool _centerOnPin = false;
-  int _zoomSeq = 0;
 
   /// What each source holds now, so an unchanged payload is not pushed again.
   final Map<String, String> _pushed = {};
@@ -149,13 +148,12 @@ class _OverviewMapState extends State<OverviewMap> {
         area != null && (old.area == null || area.pin != old.area!.pin);
     if (pinChanged || area == null) _dragPin = null;
     if (_sourcesReady) _pushAll();
-    if (area != null) {
-      if (old.area == null || (pinChanged && _centerOnPin)) {
-        _centerOnPin = false;
-        _fitArea(area, recentre: true);
-      } else if (area.radiusKm != old.area!.radiusKm) {
-        _fitArea(area, recentre: false);
-      }
+    // A new pin by long press moves the camera to it once; a new radius or a
+    // dragged pin leaves the camera alone, so the rider can stay zoomed out
+    // while the slider moves.
+    if (area != null && (old.area == null || (pinChanged && _centerOnPin))) {
+      _centerOnPin = false;
+      _fitArea(area);
     }
     if (widget.frameToken != old.frameToken) {
       _userMoved = false;
@@ -244,11 +242,8 @@ class _OverviewMapState extends State<OverviewMap> {
     await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
   }
 
-  /// Fits the whole area circle. A new pin ([recentre]) also moves the
-  /// camera to it; a new radius only zooms, so the pin stays where the rider
-  /// sees it instead of jumping to the middle, and only the latest zoom runs
-  /// while the slider moves.
-  Future<void> _fitArea(AreaFilter area, {required bool recentre}) async {
+  /// Moves the camera to a new pin and shows its whole circle.
+  Future<void> _fitArea(AreaFilter area) async {
     if (_viewport.isEmpty) return;
     final dLat = area.radiusKm / _kmPerDegreeLat;
     final dLng = dLat / math.max(math.cos(area.pin.lat * math.pi / 180), 0.01);
@@ -262,16 +257,7 @@ class _OverviewMapState extends State<OverviewMap> {
     );
     if (fit == null) return;
     _userMoved = true;
-    if (recentre) {
-      await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
-      return;
-    }
-    final seq = ++_zoomSeq;
-    try {
-      if (seq == _zoomSeq) await _controller?.moveCamera(zoom: fit.zoom);
-    } catch (_) {
-      // A superseded move is expected while the slider moves.
-    }
+    await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
   }
 
   /// Moves first and then zooms at the new centre (#41), north-up.
@@ -350,9 +336,9 @@ class _OverviewMapState extends State<OverviewMap> {
               onStyleLoaded: _onStyleLoaded,
               onEvent: _onEvent,
               children: [
-                if (area != null && widget.onPinMoved != null)
+                if (widget.onPinMoved != null)
                   OverviewPin(
-                    pin: area.pin,
+                    pin: area?.pin,
                     mapKey: _mapKey,
                     onMoved: widget.onPinMoved!,
                     onDragged: (p) {
