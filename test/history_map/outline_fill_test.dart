@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/outline_repository.dart';
-import 'package:retrail/features/history/history_providers.dart';
+import 'package:retrail/features/history_map/map_area.dart';
 import 'package:retrail/features/history_map/outline_fill.dart';
 
 /// Counts the fills and always reports more work.
@@ -90,7 +90,7 @@ void main() {
 
   test('setting an area starts the fill without the map', () async {
     final c = container();
-    c.read(historyFilterProvider.notifier).setAreaPin((lat: 48.0, lng: 11.0));
+    c.read(mapAreaProvider.notifier).setPin((lat: 48.0, lng: 11.0));
     await Future<void>.delayed(const Duration(milliseconds: 500));
     expect(await outlineCount(), 2);
   });

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/domain/activity_type.dart';
-import 'package:retrail/domain/area_filter.dart';
 import 'package:retrail/features/history/history_filter.dart';
 
 // 2024-06-12 12:00 (fixed reference, matches history_range_test.dart /
@@ -181,44 +180,6 @@ void main() {
       ]) {
         expect(narrowsRides(f), isTrue, reason: '$f');
       }
-    });
-  });
-
-  group('area field (#96)', () {
-    final area = AreaFilter(pin: (lat: 48.1, lng: 11.5));
-
-    test('defaults to null', () {
-      expect(const HistoryFilter().area, isNull);
-    });
-
-    test('copyWith sets and clearArea resets it', () {
-      final f = const HistoryFilter().copyWith(area: area);
-      expect(f.area, area);
-      expect(f.copyWith(clearArea: true).area, isNull);
-    });
-
-    test('equality and hashCode include the area', () {
-      final a = const HistoryFilter().copyWith(area: area);
-      final b = const HistoryFilter().copyWith(
-        area: AreaFilter(pin: (lat: 48.1, lng: 11.5)),
-      );
-      expect(a, b);
-      expect(a.hashCode, b.hashCode);
-      expect(a == const HistoryFilter(), isFalse);
-      expect(a == a.copyWith(area: area.copyWith(radiusKm: 9)), isFalse);
-    });
-
-    test('a set area counts as one deviation, whatever the radius', () {
-      final f = const HistoryFilter().copyWith(area: area);
-      expect(activeFilterCount(f), 1);
-      expect(
-        activeFilterCount(f.copyWith(area: area.copyWith(radiusKm: 30))),
-        1,
-      );
-    });
-
-    test('a set area narrows the rides', () {
-      expect(narrowsRides(const HistoryFilter().copyWith(area: area)), isTrue);
     });
   });
 }

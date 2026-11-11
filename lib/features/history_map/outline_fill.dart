@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/data_providers.dart';
-import '../history/history_providers.dart';
+import 'map_area.dart';
 
 /// Whether the app is in front. The background fill stops otherwise (#96).
 class AppForegroundNotifier extends Notifier<bool> with WidgetsBindingObserver {
@@ -49,14 +49,13 @@ class OutlineFillController extends Notifier<bool> {
   /// Read fresh at every step: nobody may be listening when the map view is
   /// left, and the fill must still stop.
   bool get _wanted =>
-      (ref.read(mapVisibleProvider) ||
-          ref.read(historyFilterProvider).area != null) &&
+      (ref.read(mapVisibleProvider) || ref.read(mapAreaProvider) != null) &&
       ref.read(appForegroundProvider);
 
   @override
   bool build() {
     ref.watch(mapVisibleProvider);
-    ref.watch(historyFilterProvider.select((f) => f.area != null));
+    ref.watch(mapAreaProvider.select((a) => a != null));
     ref.watch(appForegroundProvider);
     if (_wanted) Future.microtask(_run);
     return _running;

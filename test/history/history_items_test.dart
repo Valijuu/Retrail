@@ -371,35 +371,4 @@ void main() {
       expect(narrowsRides(f), isTrue);
     });
   });
-
-  group('area (#96)', () {
-    final rides = [_ride(1), _ride(2), _ride(3)];
-    List<int> ids(List<HistoryItem> items) => [
-      for (final i in items)
-        if (i is RideEntryItem) i.ride.rideId,
-    ];
-
-    test('without an area set every ride stays', () {
-      final items = buildHistoryItems(rides, const HistoryFilter());
-      expect(ids(items), unorderedEquals([1, 2, 3]));
-    });
-
-    test('with an area only the rides inside it remain', () {
-      final items = buildHistoryItems(
-        rides,
-        const HistoryFilter(),
-        areaRideIds: {2},
-      );
-      expect(ids(items), [2]);
-    });
-
-    test('rides without an outline yet are hidden while an area is set', () {
-      final items = buildHistoryItems(
-        rides,
-        const HistoryFilter(),
-        areaRideIds: const {},
-      );
-      expect(ids(items), isEmpty);
-    });
-  });
 }

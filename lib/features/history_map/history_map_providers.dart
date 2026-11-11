@@ -12,6 +12,7 @@ import '../history/area_providers.dart';
 import '../history/history_items.dart';
 import '../history/history_providers.dart';
 import 'map_activities.dart';
+import 'map_area.dart';
 import 'overview_geojson.dart';
 import 'route_badges.dart';
 
@@ -105,10 +106,17 @@ class SettledMapRidesNotifier extends Notifier<List<Ride>> {
 
   List<Ride> _routed(AsyncValue<List<HistoryItem>> items) {
     final types = ref.read(mapActivitiesProvider);
+    // With an area set, rides stay hidden until their outline says they are
+    // inside it.
+    final hasArea = ref.read(settledMapAreaProvider) != null;
+    final inArea = hasArea
+        ? ref.read(mapAreaRideIdsProvider).value ?? const <int>{}
+        : null;
     return [
       for (final item in items.value ?? const <HistoryItem>[])
         if (item is RideEntryItem &&
             item.ride.hasRoute &&
+            (inArea == null || inArea.contains(item.ride.rideId)) &&
             mapTypeShown(
               types,
               ActivityType.fromId(item.ride.typ) ?? ActivityType.other,
@@ -130,6 +138,7 @@ class SettledMapRidesNotifier extends Notifier<List<Ride>> {
 
     ref.listen(historyItemsProvider, (_, _) => settle());
     ref.listen(mapActivitiesProvider, (_, _) => settle());
+    ref.listen(mapAreaRideIdsProvider, (_, _) => settle());
     return _routed(ref.read(historyItemsProvider));
   }
 }

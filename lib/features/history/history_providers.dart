@@ -1,12 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/activity_type.dart';
-import '../../domain/area_filter.dart';
-import '../../domain/heading.dart' show LatLng;
 import '../../data/repositories/data_providers.dart';
 import '../active_ride/active_ride_providers.dart';
 import '../settings/settings_providers.dart';
-import 'area_providers.dart';
 import 'history_controller.dart';
 import 'history_filter.dart';
 import 'history_items.dart';
@@ -81,21 +78,6 @@ class HistoryFilterNotifier extends Notifier<HistoryFilter> {
     }
   }
 
-  /// Pins the area at [pin]; a radius chosen before stays (#96).
-  void setAreaPin(LatLng pin) => state = state.copyWith(
-    area: state.area?.copyWith(pin: pin) ?? AreaFilter(pin: pin),
-  );
-
-  /// Sets the area radius in km (clamped); does nothing without a pin.
-  void setAreaRadius(double radiusKm) {
-    final area = state.area;
-    if (area != null) {
-      state = state.copyWith(area: area.copyWith(radiusKm: radiusKm));
-    }
-  }
-
-  void clearArea() => state = state.copyWith(clearArea: true);
-
   void reset() => state = _defaultFilter();
 }
 
@@ -119,32 +101,13 @@ final historyNarrowsRidesProvider = Provider<bool>(
 /// filter change. Widget tests stub this with a finite stream (Drift `.watch()`
 /// never closes — see the established test rule).
 final historyItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
-  // The area is applied through [areaRideIdsProvider], not through the filter:
-  // moving the radius must not re-subscribe the ride query (#96).
-  final filter = ref.watch(
-    historyFilterProvider.select((f) => f.copyWith(clearArea: true)),
-  );
-  final hasArea = ref.watch(
-    historyFilterProvider.select((f) => f.area != null),
-  );
+  final filter = ref.watch(historyFilterProvider);
   final locale = ref.watch(dateFormatLocaleProvider);
   final repo = ref.watch(rideRepositoryProvider);
   final (start, end) = effectiveRange(filter);
-  // With an area set, rides stay hidden until their outline says they are
-  // inside it (#96).
-  final areaRideIds = !hasArea
-      ? null
-      : ref.watch(areaRideIdsProvider).value ?? const <int>{};
   return repo
       .getRidesInRange(startMs: start, endMs: end)
-      .map(
-        (rides) => buildHistoryItems(
-          rides,
-          filter,
-          locale: locale,
-          areaRideIds: areaRideIds,
-        ),
-      );
+      .map((rides) => buildHistoryItems(rides, filter, locale: locale));
 });
 
 /// Distinct calendar years present in the ride history, descending (newest

@@ -30,13 +30,15 @@ Must:
   The History tab has a Liste/Karte switch; List is the default. The choice (`history_view`) and the map mode
     Lines or Heat (`history_map_mode`) are stored in preferences and come back after the app was closed
     and reopened or returned to from the background.
-  The map view uses the History filters (activities, year, months, favourites, followed routes, search)
-    through the same provider; changing a filter changes list and map alike. Sort and selection stay list-only.
+  The map view uses the History header filters (year, months, favourites, followed routes, search) through the
+    same provider; changing one changes list and map alike. Sort and selection stay list-only. The activity
+    selection and the area are the map's own.
   A long press on the map sets a pin; the my-location button also sets it to the current position (after the
     permission rules below). The pin can be dragged or removed, and a radius slider from `1` to `50` km
     (default `5`) draws the circle on the map. With a pin, only rides that match @AreaFilter remain.
-  The area is part of the shared History filter: the list, the legend and the filter badge follow it; the badge
-    counts it as one deviation and Reset clears it. It is not stored across app starts, like the other filters.
+  The area belongs to the map alone, like the activity selection: the History list, its filters and the filter
+    badge do not know it, and it is not stored across app starts. Filters set in the History header (search,
+    year, months, favourites, route, sort) apply to the list and the map alike.
   While an area is set, rides without an outline are hidden until theirs is ready; setting an area starts
     the background fill at once.
   Only rides with a route are drawn. A ride without an outline gets one in the background, one at a time, and
@@ -119,7 +121,8 @@ Scenario: tap on an overlapping stretch
 Scenario: rides around a place
   Given the map shows rides from two cities
   When a pin is set in one city with a radius of `10` km
-  Then only the rides that come within `10` km of it remain, on the map and in the list, and the filter badge counts `1`
+  Then only the rides that come within `10` km of it remain on the map; the History list and the filter badge
+    are unchanged
 
 Scenario: deleting a ride shown on the map
   Given a ride's preview card is open on the map and the ride is part of a route group

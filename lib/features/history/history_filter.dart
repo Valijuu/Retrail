@@ -1,7 +1,6 @@
 import 'package:collection/collection.dart';
 
 import '../../domain/activity_type.dart';
-import '../../domain/area_filter.dart';
 
 /// Sort-order chips for the history filter. Mirrors the original `SortOrder`.
 enum SortOrder { date, distance, speed, duration }
@@ -22,7 +21,6 @@ class HistoryFilter {
     this.monthFrom,
     this.monthTo,
     this.routeIds = const {},
-    this.area,
   });
 
   final SortOrder sort;
@@ -48,10 +46,6 @@ class HistoryFilter {
   /// when it is one of them or followed one. Empty = all rides.
   final Set<int> routeIds;
 
-  /// "Rides around here" (#96): a pin and radius; only rides whose outline
-  /// comes within the radius remain. Null = everywhere.
-  final AreaFilter? area;
-
   HistoryFilter copyWith({
     SortOrder? sort,
     String? query,
@@ -64,8 +58,6 @@ class HistoryFilter {
     int? monthTo,
     bool clearMonthTo = false,
     Set<int>? routeIds,
-    AreaFilter? area,
-    bool clearArea = false,
   }) => HistoryFilter(
     sort: sort ?? this.sort,
     query: query ?? this.query,
@@ -75,7 +67,6 @@ class HistoryFilter {
     monthFrom: clearMonthFrom ? null : (monthFrom ?? this.monthFrom),
     monthTo: clearMonthTo ? null : (monthTo ?? this.monthTo),
     routeIds: routeIds ?? this.routeIds,
-    area: clearArea ? null : (area ?? this.area),
   );
 
   @override
@@ -88,8 +79,7 @@ class HistoryFilter {
       other.year == year &&
       other.monthFrom == monthFrom &&
       other.monthTo == monthTo &&
-      _setEq.equals(other.routeIds, routeIds) &&
-      other.area == area;
+      _setEq.equals(other.routeIds, routeIds);
 
   @override
   int get hashCode => Object.hash(
@@ -101,7 +91,6 @@ class HistoryFilter {
     monthFrom,
     monthTo,
     _setEq.hash(routeIds),
-    area,
   );
 }
 
@@ -121,7 +110,6 @@ int activeFilterCount(HistoryFilter f) {
   if (f.year != null) count++;
   if (f.monthFrom != null || f.monthTo != null) count++;
   if (f.routeIds.isNotEmpty) count++;
-  if (f.area != null) count++;
   return count;
 }
 
@@ -135,5 +123,4 @@ bool narrowsRides(HistoryFilter f) =>
     f.year != null ||
     f.monthFrom != null ||
     f.monthTo != null ||
-    f.routeIds.isNotEmpty ||
-    f.area != null;
+    f.routeIds.isNotEmpty;

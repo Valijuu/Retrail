@@ -21,7 +21,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 ### Changed
 - The map opens on your own activity from Settings (you can still tick others on and off). Its activity menu
   works on the map only and leaves the History list alone, and an entry ticks or unticks all activities at
-  once (#96).
+  once. The pin with its radius works on the map only as well (#96).
 - On the map, the rides of one route share one card (the best one), and its ride count opens the whole route;
   swiping is only for different routes under your finger (#96).
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be

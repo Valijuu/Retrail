@@ -20,7 +20,8 @@ Must:
   Sort by date groups by day, newest day first; distance and top speed sort descending; duration ascending.
   The year, month range, activities, favourites and search filters combine; at All years a month range means
     those months in every year.
-  The filter badge counts every deviation from the default except the search; a set map area counts as one.
+  The filter badge counts every deviation from the default except the search; the map's own activity selection
+    and area do not count (#96).
   Filters apply live; there is no Apply step.
   Search matches the display title or the comment, trimmed and case-insensitive.
   Stats come from the values stored with the ride, never from trackpoints at list time.
@@ -32,7 +33,5 @@ Must:
   Deleting evicts the preview; deletes confirm with ICU plurals.
   Route chips open the comparison sheet; the followed-routes filter is shown once a route was followed.
   An empty filter result says so instead of showing the empty history.
-  With an area set, a ride stays hidden until its outline says it is inside; the outlines come from the in-memory
-    outline store, loaded on demand (#96).
-  A Liste/Karte switch at the top changes between this list and the map view of @HistoryMap; the filters
-    are shared and the choice is stored (#96).
+  A Liste/Karte switch at the top changes between this list and the map view of @HistoryMap; the header filters
+    and search are shared, the map's activity selection and area are not, and the choice is stored (#96).

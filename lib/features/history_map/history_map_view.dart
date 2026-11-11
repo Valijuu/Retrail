@@ -15,6 +15,7 @@ import '../history/history_providers.dart';
 import 'history_map_providers.dart';
 import '../home/home_providers.dart' show lastActivityTypeProvider;
 import 'map_activities.dart';
+import 'map_area.dart';
 import 'map_default_activity.dart';
 import 'map_locator.dart';
 import 'map_selection.dart';
@@ -145,7 +146,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
       case Located(:final position):
         ref.read(locationEnabledProvider.notifier).enable();
         ref.read(mapPositionProvider.notifier).set(position);
-        ref.read(historyFilterProvider.notifier).setAreaPin(position);
+        ref.read(mapAreaProvider.notifier).setPin(position);
         setState(() {
           _focus = position;
           _focusToken++;
@@ -187,11 +188,11 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final overview = ref.watch(overviewProvider).value ?? OverviewState.empty;
     final mode =
         ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
-    final area = ref.watch(historyFilterProvider.select((f) => f.area));
+    final area = ref.watch(mapAreaProvider);
     final selected = ref.watch(selectedRidesProvider);
     final shownIndex = ref.watch(shownRideIndexProvider);
     final position = ref.watch(mapPositionProvider);
-    final filter = ref.read(historyFilterProvider.notifier);
+    final areaNotifier = ref.read(mapAreaProvider.notifier);
     final selection = ref.read(mapSelectionProvider.notifier);
     final data = overview.data;
     final shown = selected.isEmpty ? null : selected[shownIndex];
@@ -217,8 +218,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           focus: _focus,
           focusToken: _focusToken,
           onTap: selection.tap,
-          onLongPress: filter.setAreaPin,
-          onPinMoved: filter.setAreaPin,
+          onLongPress: areaNotifier.setPin,
+          onPinMoved: areaNotifier.setPin,
           restoreCamera: _restore,
           onCameraIdle: ref.read(mapCameraMemoryProvider.notifier).remember,
           showAttribution: false,
@@ -244,8 +245,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                 const SizedBox(height: _panelGap),
                 AreaPanel(
                   area: area,
-                  onRadius: filter.setAreaRadius,
-                  onRemove: filter.clearArea,
+                  onRadius: areaNotifier.setRadius,
+                  onRemove: areaNotifier.clear,
                 ),
               ],
             ],

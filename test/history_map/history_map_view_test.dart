@@ -17,6 +17,7 @@ import 'package:retrail/features/history/history_filter.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_screen.dart';
 import 'package:retrail/features/history_map/map_activities.dart';
+import 'package:retrail/features/history_map/map_area.dart';
 import 'package:retrail/features/history_map/map_selection.dart';
 import 'package:retrail/features/history_map/widgets/map_preview_card.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -355,13 +356,10 @@ void main() {
       await _ride(db);
       await pump(tester, view: 'map');
       await settle(tester);
-      container.read(historyFilterProvider.notifier).setAreaPin((
-        lat: 48.0,
-        lng: 11.0,
-      ));
+      container.read(mapAreaProvider.notifier).setPin((lat: 48.0, lng: 11.0));
       await settle(tester);
       final framed = map(tester).frameToken;
-      container.read(historyFilterProvider.notifier).setAreaRadius(20);
+      container.read(mapAreaProvider.notifier).setRadius(20);
       await settle(tester);
       expect(map(tester).frameToken, framed);
       await finish(tester);
