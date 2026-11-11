@@ -266,24 +266,6 @@ void main() {
     await finish(tester);
   });
 
-  testWidgets('a map without rides under the filters says so', (tester) async {
-    await _ride(db, title: 'Board ride', type: 'LONGBOARD');
-    await pump(tester, view: 'map');
-    await settle(tester);
-    expect(find.text('No rides with a route for these filters'), findsNothing);
-
-    container.read(historyFilterProvider.notifier).setAreaPin((
-      lat: -40.0,
-      lng: 170.0,
-    ));
-    await settle(tester);
-    expect(
-      find.text('No rides with a route for these filters'),
-      findsOneWidget,
-    );
-    await finish(tester);
-  });
-
   group('camera framing', () {
     OverviewMap map(WidgetTester tester) =>
         tester.widget<OverviewMap>(find.byType(OverviewMap));

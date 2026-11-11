@@ -112,6 +112,15 @@ class _OverviewMapState extends State<OverviewMap> {
   Size _viewport = Size.zero;
   Brightness? _brightness;
 
+  /// Where the pin is drawn while the rider drags it, until the new pin
+  /// arrives through [OverviewMap.area].
+  LatLng? _dragPin;
+
+  /// A long press sets the pin: the camera then moves to it. A drag of the
+  /// pin or the location button does not.
+  bool _centerOnPin = false;
+  int _zoomSeq = 0;
+
   /// What each source holds now, so an unchanged payload is not pushed again.
   final Map<String, String> _pushed = {};
 
@@ -135,11 +144,18 @@ class _OverviewMapState extends State<OverviewMap> {
   @override
   void didUpdateWidget(OverviewMap old) {
     super.didUpdateWidget(old);
-    if (_sourcesReady) _pushAll();
     final area = widget.area;
-    if (area != null &&
-        (old.area == null || area.radiusKm != old.area!.radiusKm)) {
-      _fitArea(area);
+    final pinChanged =
+        area != null && (old.area == null || area.pin != old.area!.pin);
+    if (pinChanged || area == null) _dragPin = null;
+    if (_sourcesReady) _pushAll();
+    if (area != null) {
+      if (old.area == null || (pinChanged && _centerOnPin)) {
+        _centerOnPin = false;
+        _fitArea(area, recentre: true);
+      } else if (area.radiusKm != old.area!.radiusKm) {
+        _fitArea(area, recentre: false);
+      }
     }
     if (widget.frameToken != old.frameToken) {
       _userMoved = false;
@@ -182,6 +198,7 @@ class _OverviewMapState extends State<OverviewMap> {
           : areaCircleGeoJson(area.pin, area.radiusKm),
     );
     _push(overviewPositionSource, overviewPointGeoJson(widget.position));
+    _push(overviewPinSource, overviewPointGeoJson(_dragPin ?? area?.pin));
   }
 
   bool _superseded(StyleController style) =>
@@ -197,6 +214,7 @@ class _OverviewMapState extends State<OverviewMap> {
       style,
       colors: colors,
       brightness: brightness,
+      pixelRatio: MediaQuery.devicePixelRatioOf(context),
       stale: () => _superseded(style),
     );
     if (_superseded(style)) return;
@@ -226,8 +244,11 @@ class _OverviewMapState extends State<OverviewMap> {
     await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
   }
 
-  /// Zooms to show the whole area circle, so a larger radius zooms out.
-  Future<void> _fitArea(AreaFilter area) async {
+  /// Fits the whole area circle. A new pin ([recentre]) also moves the
+  /// camera to it; a new radius only zooms, so the pin stays where the rider
+  /// sees it instead of jumping to the middle, and only the latest zoom runs
+  /// while the slider moves.
+  Future<void> _fitArea(AreaFilter area, {required bool recentre}) async {
     if (_viewport.isEmpty) return;
     final dLat = area.radiusKm / _kmPerDegreeLat;
     final dLng = dLat / math.max(math.cos(area.pin.lat * math.pi / 180), 0.01);
@@ -241,7 +262,16 @@ class _OverviewMapState extends State<OverviewMap> {
     );
     if (fit == null) return;
     _userMoved = true;
-    await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
+    if (recentre) {
+      await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
+      return;
+    }
+    final seq = ++_zoomSeq;
+    try {
+      if (seq == _zoomSeq) await _controller?.moveCamera(zoom: fit.zoom);
+    } catch (_) {
+      // A superseded move is expected while the slider moves.
+    }
   }
 
   /// Moves first and then zooms at the new centre (#41), north-up.
@@ -275,6 +305,7 @@ class _OverviewMapState extends State<OverviewMap> {
           ), camera.zoom);
         }
       case MapEventLongClick(:final point):
+        _centerOnPin = true;
         widget.onLongPress?.call((lat: point.lat, lng: point.lon));
       default:
     }
@@ -324,6 +355,13 @@ class _OverviewMapState extends State<OverviewMap> {
                     pin: area.pin,
                     mapKey: _mapKey,
                     onMoved: widget.onPinMoved!,
+                    onDragged: (p) {
+                      _dragPin = p;
+                      _push(
+                        overviewPinSource,
+                        overviewPointGeoJson(p ?? widget.area?.pin),
+                      );
+                    },
                   ),
               ],
             ),

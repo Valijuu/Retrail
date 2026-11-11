@@ -7,6 +7,8 @@ import 'package:maplibre/maplibre.dart';
 import '../core/theme/app_colors.dart';
 import '../domain/activity_type.dart';
 import '../domain/heading.dart' show LatLng;
+import 'live_map.dart' show symbolRaster;
+import 'route_marker_painter.dart' show areaPinImagePng;
 
 /// An empty GeoJSON document MapLibre accepts when there is nothing to draw.
 const String emptyOverviewGeoJson =
@@ -20,6 +22,8 @@ const String overviewHeatSource = 'heat';
 const String overviewHighlightSource = 'highlight';
 const String overviewAreaSource = 'area';
 const String overviewPositionSource = 'position';
+const String overviewPinSource = 'pin';
+const String _pinImage = 'area-pin';
 
 /// Ring points of the area circle.
 const int _circleSteps = 64;
@@ -88,6 +92,7 @@ Future<void> addOverviewLayers(
   StyleController style, {
   required AppColors colors,
   required Brightness brightness,
+  required double pixelRatio,
   required bool Function() stale,
 }) async {
   Future<bool> source(String id) async {
@@ -208,13 +213,36 @@ Future<void> addOverviewLayers(
   )) {
     return;
   }
-  await layer(
+  if (!await layer(
     CircleStyleLayer(
       id: 'position-dot',
       sourceId: overviewPositionSource,
       paint: {
         'circle-radius': _positionRadius,
         'circle-color': overviewHex(colors.routeLineBlue),
+      },
+    ),
+  )) {
+    return;
+  }
+  // The area pin is a symbol of the map itself, on top of everything: it
+  // follows the camera without the lag a widget over the map has.
+  if (!await source(overviewPinSource)) return;
+  final raster = symbolRaster(1, pixelRatio);
+  final png = await areaPinImagePng(colors, raster.rasterRatio);
+  if (stale()) return;
+  await style.addImage(_pinImage, png);
+  if (stale()) return;
+  await layer(
+    SymbolStyleLayer(
+      id: 'area-pin',
+      sourceId: overviewPinSource,
+      layout: {
+        'icon-image': _pinImage,
+        'icon-size': raster.iconSize,
+        'icon-anchor': 'bottom',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
       },
     ),
   );

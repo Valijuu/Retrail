@@ -237,3 +237,33 @@ Future<Uint8List> _rasterise(
   image.dispose();
   return bytes!.buffer.asUint8List();
 }
+
+/// Side of the square the area pin image is drawn in; the pin's tip sits at
+/// the bottom centre, so the symbol anchors at `bottom`.
+const double areaPinImageSize = 48;
+
+/// The area pin (the soft Material map-marker teardrop in the primary colour)
+/// as a PNG for a MapLibre symbol layer: drawn by the map itself, it moves
+/// with the map frame by frame, which a Flutter widget on top of the map does
+/// not (#96).
+Future<Uint8List> areaPinImagePng(AppColors colors, double pixelRatio) =>
+    _rasterise(areaPinImageSize, pixelRatio, (canvas, c) {
+      // The marker is drawn on the 24-unit Material grid (x 5..19, y 2..22)
+      // at twice the size, then moved down so its tip touches the bottom.
+      canvas
+        ..translate(c.dx - 24, c.dy - 24 + 4)
+        ..scale(2);
+      final body = ui.Path()
+        ..moveTo(12, 2)
+        ..cubicTo(8.13, 2, 5, 5.13, 5, 9)
+        ..relativeCubicTo(0, 5.25, 7, 13, 7, 13)
+        ..relativeCubicTo(0, 0, 7, -7.75, 7, -13)
+        ..relativeCubicTo(0, -3.87, -3.13, -7, -7, -7)
+        ..close();
+      canvas.drawPath(body, ui.Paint()..color = colors.primary);
+      canvas.drawCircle(
+        const ui.Offset(12, 9),
+        2.6,
+        ui.Paint()..color = colors.scrim,
+      );
+    });
