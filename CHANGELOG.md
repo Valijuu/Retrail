@@ -19,6 +19,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
   the location button) to set a pin and show only the rides within 1 to 50 km of it (#96).
 
 ### Changed
+- On the map, a menu entry ticks or unticks all activities at once, the last activity stays on, and a hint shows
+  when the filters leave no ride (#96).
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.
 

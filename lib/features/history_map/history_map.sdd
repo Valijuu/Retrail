@@ -46,15 +46,18 @@ Must:
     and the dark style; colour is never the only cue.
   The activity menu is one drop-down button showing how many of the occurring types are on (`2/3`). It lists
     the types that occur, each with a checkbox, its colour bar and icon; ticking shows or hides the type by
-    changing the shared activity filter and keeps the menu open. The last shown type cannot be unticked, since
-    an empty filter would show every type again.
+    changing the shared activity filter and keeps the menu open. An "all" row on top ticks every type; while every
+    type is on, tapping it keeps only the first type. The last shown type cannot be unticked, since an empty
+    filter would show every type again.
   Heat mode draws the @HeatPoints of the visible rides as one heatmap layer in the app's primary colour;
     the filters and activity menu apply as in Lines mode.
   The camera starts framing all visible rides north-up. When the filters change it frames the new set once;
     a user gesture is never overridden afterwards. Leaving the map view and coming back shows the same camera.
   Setting the pin or changing the radius zooms the camera to show the whole circle.
-  The controls are compact: the mode switch is two icons and the activity menu one button beside it;
-    the radius panel shows only while a pin is set.
+  The controls are compact: the mode switch is two icons and the activity menu one button beside it, both
+    `40` dp high; the radius panel shows only while a pin is set.
+  While the filters leave no ride to draw, a pill over the map says so.
+  The preview card's route-group text may wrap to a second line, it is never cut.
   Tapping the map finds the rides under the tap with @OutlineHit. The nearest ride is highlighted and its
     preview card shows at the bottom: the cached preview, title, distance, duration, average speed and type,
     as on the History card, including the stored ascent or descent of #97 when the ride has one and nothing
@@ -125,6 +128,10 @@ Scenario: hiding a type
   Given the map shows longboard and ski rides
   When the ski type is unticked in the activity menu
   Then the ski lines disappear and the list shows only longboard rides too
+
+Scenario: no ride under the filters
+  Given the search text matches no ride
+  Then the map shows no lines and a pill says no rides match
 
 Scenario: the last type stays on
   Given the map shows only longboard rides, every other type unticked

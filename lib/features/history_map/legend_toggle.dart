@@ -33,3 +33,16 @@ Set<ActivityType> toggleLegendType(
   if (shown.containsAll(present)) return {};
   return shown;
 }
+
+/// The activity filter after a tap on the "all" row of the activity menu:
+/// with every present type shown it narrows to the first present type (one
+/// always stays on, see [legendTypeLocked]); otherwise it shows every type.
+Set<ActivityType> toggleAllLegendTypes(
+  Set<ActivityType> selected,
+  Set<ActivityType> present,
+) {
+  final allShown = selected.isEmpty || selected.containsAll(present);
+  if (!allShown) return {};
+  if (present.length < 2) return {};
+  return {ActivityType.values.firstWhere(present.contains)};
+}

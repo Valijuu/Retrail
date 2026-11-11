@@ -45,4 +45,17 @@ void main() {
     expect(legendTypeShown({_lb}, _ski), isFalse);
     expect(legendTypeShown({_lb}, _lb), isTrue);
   });
+
+  test('"all" with everything shown keeps only the first present type', () {
+    expect(toggleAllLegendTypes({}, {_ski, _lb}), {_lb});
+    expect(toggleAllLegendTypes({_lb, _ski}, {_lb, _ski}), {_lb});
+  });
+
+  test('"all" with a partial selection shows every type again', () {
+    expect(toggleAllLegendTypes({_lb}, {_lb, _ski, _sb}), isEmpty);
+  });
+
+  test('"all" with a single present type changes nothing', () {
+    expect(toggleAllLegendTypes({}, {_lb}), isEmpty);
+  });
 }

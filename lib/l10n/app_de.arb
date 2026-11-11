@@ -256,5 +256,7 @@
   "historyMapOpenSettings": "Einstellungen",
   "historyMapLocationOff": "Die Ortungsdienste sind aus.",
   "historyMapPreparing": "Strecken werden vorbereitet …",
-  "historyMapActivities": "Aktivitäten"
+  "historyMapActivities": "Aktivitäten",
+  "historyMapAllActivities": "Alle Aktivitäten",
+  "historyMapNoRides": "Keine Fahrten mit Strecke für diese Filter"
 }

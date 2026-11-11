@@ -247,6 +247,43 @@ void main() {
     },
   );
 
+  testWidgets('the all row ticks every type or keeps just the first one', (
+    tester,
+  ) async {
+    await _ride(db, title: 'Board ride', type: 'LONGBOARD');
+    await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
+    await pump(tester, view: 'map');
+    await settle(tester);
+
+    await tester.tap(find.byTooltip('Activities'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All activities'));
+    await tester.pumpAndSettle();
+    expect(find.text('1/2'), findsOneWidget);
+    await tester.tap(find.text('All activities'));
+    await tester.pumpAndSettle();
+    expect(find.text('2/2'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('a map without rides under the filters says so', (tester) async {
+    await _ride(db, title: 'Board ride', type: 'LONGBOARD');
+    await pump(tester, view: 'map');
+    await settle(tester);
+    expect(find.text('No rides with a route for these filters'), findsNothing);
+
+    container.read(historyFilterProvider.notifier).setAreaPin((
+      lat: -40.0,
+      lng: 170.0,
+    ));
+    await settle(tester);
+    expect(
+      find.text('No rides with a route for these filters'),
+      findsOneWidget,
+    );
+    await finish(tester);
+  });
+
   group('camera framing', () {
     OverviewMap map(WidgetTester tester) =>
         tester.widget<OverviewMap>(find.byType(OverviewMap));

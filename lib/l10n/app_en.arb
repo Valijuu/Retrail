@@ -265,5 +265,7 @@
   "historyMapOpenSettings": "Settings",
   "historyMapLocationOff": "Location services are off.",
   "historyMapPreparing": "Preparing routes…",
-  "historyMapActivities": "Activities"
+  "historyMapActivities": "Activities",
+  "historyMapAllActivities": "All activities",
+  "historyMapNoRides": "No rides with a route for these filters"
 }

@@ -10,6 +10,7 @@ import '../../history/history_providers.dart';
 import '../../onboarding/activity_type_ui.dart';
 import '../history_map_providers.dart';
 import '../legend_toggle.dart';
+import 'map_controls.dart' show kMapControlHeight;
 
 /// Width of the colour bar in front of an activity in the menu.
 const double _colourBarWidth = 14;
@@ -40,6 +41,18 @@ class ActivityMenu extends ConsumerWidget {
 
     return MenuAnchor(
       menuChildren: [
+        CheckboxMenuButton(
+          closeOnActivate: false,
+          tristate: true,
+          value: shownCount == types.length ? true : null,
+          onChanged: types.length < 2
+              ? null
+              : (_) => ref
+                    .read(historyFilterProvider.notifier)
+                    .setActivities(toggleAllLegendTypes(selected, present)),
+          child: Text(l10n.historyMapAllActivities),
+        ),
+        const Divider(height: 1),
         for (final type in types)
           CheckboxMenuButton(
             closeOnActivate: false,
@@ -80,21 +93,28 @@ class ActivityMenu extends ConsumerWidget {
               controller.isOpen ? controller.close() : controller.open(),
           child: Tooltip(
             message: l10n.historyMapActivities,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.layers_outlined, color: colors.primary, size: 20),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$shownCount/${types.length}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(color: colors.onSurface),
-                  ),
-                  Icon(Icons.arrow_drop_down, color: colors.primary),
-                ],
+            child: SizedBox(
+              height: kMapControlHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.layers_outlined,
+                      color: colors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$shownCount/${types.length}',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colors.onSurface,
+                      ),
+                    ),
+                    Icon(Icons.arrow_drop_down, color: colors.primary),
+                  ],
+                ),
               ),
             ),
           ),

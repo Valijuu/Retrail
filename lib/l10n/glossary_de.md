@@ -56,3 +56,5 @@ English is the default and should read naturally (not a literal back-translation
 | n rides on this route | n Fahrten auf dieser Strecke |
 | Preparing routes | Strecken werden vorbereitet … |
 | Map activities menu | Aktivitäten |
+| Map activities menu, all | Alle Aktivitäten |
+| Map without rides | Keine Fahrten mit Strecke für diese Filter |

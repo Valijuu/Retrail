@@ -20,6 +20,7 @@ import 'overview_geojson.dart';
 import 'widgets/map_controls.dart';
 import 'widgets/activity_menu.dart';
 import 'widgets/map_preview_card.dart';
+import 'widgets/no_rides_hint.dart';
 
 /// The map view of the History tab (#96): every ride with a route as a line
 /// or heat, the legend, the area pin and radius, the position button and the
@@ -168,7 +169,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final filling = ref.watch(outlineFillProvider);
 
     final l10n = AppLocalizations.of(context);
-    final overview = ref.watch(overviewProvider).value ?? OverviewState.empty;
+    final overviewAsync = ref.watch(overviewProvider);
+    final overview = overviewAsync.value ?? OverviewState.empty;
+    // Nothing to draw once the set has arrived (#102).
+    final noRides = overviewAsync.hasValue && overview.rideIds.isEmpty;
     final mode =
         ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
     final area = ref.watch(historyFilterProvider.select((f) => f.area));
@@ -235,6 +239,16 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
             ],
           ),
         ),
+        if (noRides)
+          Positioned(
+            left: _edgeInset,
+            right: _edgeInset,
+            top: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Center(child: NoRidesHint(text: l10n.historyMapNoRides)),
+            ),
+          ),
         if (filling)
           Positioned(
             top: 0,

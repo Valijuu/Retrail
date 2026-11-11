@@ -70,12 +70,6 @@ class _OverviewPinState extends State<OverviewPin> {
               Icons.location_on,
               size: kOverviewPinSize.height,
               color: colors.primary,
-              shadows: [
-                Shadow(
-                  blurRadius: 4,
-                  color: colors.scrim.withValues(alpha: 0.35),
-                ),
-              ],
             ),
           ),
         ),

@@ -6,6 +6,10 @@ import '../../../domain/area_filter.dart';
 import '../../../l10n/app_localizations.dart';
 import '../history_map_providers.dart';
 
+/// Height of the controls in the top row of the map: the mode switch (the
+/// segmented button's own standard height) and the activity menu button share it.
+const double kMapControlHeight = 40;
+
 /// Lines / Heat switch of the map.
 class MapModeSwitch extends StatelessWidget {
   const MapModeSwitch({super.key, required this.mode, required this.onChanged});
@@ -21,7 +25,6 @@ class MapModeSwitch extends StatelessWidget {
       showSelectedIcon: false,
       style: SegmentedButton.styleFrom(
         backgroundColor: colors.surface.withValues(alpha: _panelAlpha),
-        visualDensity: VisualDensity.compact,
       ),
       segments: [
         ButtonSegment(

@@ -87,17 +87,21 @@ class MapPreviewCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
+                  // The route-group text takes all the room left of the pager
+                  // and wraps to a second line instead of being cut (#103).
                   if (ride.groupSize > 1)
-                    Flexible(
+                    Expanded(
                       child: Text(
                         l10n.historyMapRidesOnRoute(ride.groupSize),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: text.labelMedium?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
                       ),
-                    ),
-                  const Spacer(),
+                    )
+                  else
+                    const Spacer(),
                   if (rides.length > 1)
                     Text(
                       l10n.historyMapCardCounter(at + 1, rides.length),
