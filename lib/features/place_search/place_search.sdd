@@ -1,0 +1,85 @@
+Spec: Place search
+
+Purpose:
+  Find a place by name from the map view of the History tab and set the area pin there, so "rides around
+    here" does not need a long press on the right spot.
+
+Owns:
+  ./*.dart
+  ./widgets/*.dart
+  /test/place_search
+
+References:
+  /lib/features/history_map/history_map.sdd
+  /lib/domain/area_filter.sdd
+  /lib/map/map.sdd
+
+Can modify:
+  /lib/features/history_map/history_map_view.dart
+  /lib/features/history_map/widgets/map_controls.dart
+  /site
+  /docs/play-store.md
+  /docs/app-store.md
+
+Must:
+  The map view shows one magnifier button among its controls (the Komoot map has the same). It opens a search
+    field over the map; closing it brings the controls back. The magnifier in the History header stays what it
+    is: it searches the rider's rides by title, in the list and on the map alike.
+  Typing asks Photon (`https://photon.komoot.io/api`, OpenStreetMap data, no key) for places. A request goes out
+    only after the rider paused typing for `400` ms and the text has at least `3` characters; an older request
+    is dropped when a newer one starts. At most `5` suggestions show, each with its name and a second line with
+    the city and country.
+  The request carries the typed text and the app language (`lang`, `de` or `en`) and nothing else: no position,
+    no ride data, no identifier. Photon's fair-use rules are kept: no request per keystroke, no bulk use.
+  Choosing a suggestion sets the pin there like a long press: the pin keeps a radius chosen before (default
+    `5` km), the camera moves to it once and shows the whole circle, and the search field closes.
+  An empty result says so ("no place found"); a failed request (offline, error, timeout of `8` s) says the search
+    is not available now. Both leave the map and the pin as they are.
+  Queries and results are not stored on the device or logged.
+  The search panel names its source: "Search by Photon · © OpenStreetMap".
+  The privacy policy in `/site` and the store data-safety answers say that the typed search text goes to
+    Photon (photon.komoot.io) when the rider uses the place search, and nothing is sent otherwise.
+
+Must not:
+  Send text while the field is empty, under `3` characters or unchanged since the last request.
+  Send the rider's position, ride titles, filters or any identifier.
+  Replace or hide the ride search of the History header.
+
+Scenario: find a place
+  Given the map view is open without a pin
+  When the rider taps the magnifier, types `Hamb` and picks "Hamburg, Germany"
+  Then the pin is set in Hamburg with a radius of `5` km, the camera shows the whole circle and the field closes
+
+Scenario: typing pauses
+  Given the search field is open
+  When the rider types `Hamburg` letter by letter within `400` ms each
+  Then one request goes out, with the full text, after the last letter
+
+Scenario: too short
+  Given the search field is open
+  When the rider types `Ha`
+  Then no request goes out and no hint about failure shows
+
+Scenario: no network
+  Given the device is offline
+  When the rider types `Hamburg`
+  Then the panel says the search is not available now and the map is unchanged
+
+Scenario: the ride search stays
+  Given the History header search holds `loop`
+  When the rider opens the place search
+  Then the ride filter `loop` stays on the list and the map
+
+Example:
+  Request: `https://photon.komoot.io/api/?q=Hamburg&limit=5&lang=de`
+  Suggestion line one: `Hamburg`, line two: `Hamburg, Deutschland`
+
+Tasks:
+  [ ] #106 Photon client behind a provider (debounce, drop older requests, parse name and place line).
+  [ ] #106 Magnifier button and search panel over the map; choosing a suggestion sets the pin.
+  [ ] #106 German and English copy, glossary entry, source line.
+  [ ] #106 Privacy policy in /site and the store data-safety answers.
+  [ ] #106 Device check: typing on a phone, offline, pin and camera after choosing.
+
+Done when:
+  Every Scenario passes as a test, the policy and store answers name Photon, and the device check is done.
