@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/widgets/app_snack_bar.dart';
 import '../../domain/activity_type.dart';
-import '../../domain/heading.dart' show LatLng;
 import '../../domain/route_markers.dart'
     show RouteEndpointStyle, routeEndpointStyle;
 import '../../map/overview_layers.dart' show OverviewEnds;
@@ -69,8 +68,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   Timer? _frameWindowTimer;
   List<int>? _framedIds;
   int _frameToken = 0;
-  int _focusToken = 0;
-  LatLng? _focus;
+  int _areaFocusToken = 0;
 
   /// Where the camera was left on the last visit; null on the first one.
   late final RememberedCamera? _restore = ref.read(mapCameraMemoryProvider);
@@ -150,10 +148,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
         ref.read(locationEnabledProvider.notifier).enable();
         ref.read(mapPositionProvider.notifier).set(position);
         ref.read(mapAreaProvider.notifier).setPin(position);
-        setState(() {
-          _focus = position;
-          _focusToken++;
-        });
+        // Like a long press: the camera shows the pin's whole circle.
+        setState(() => _areaFocusToken++);
       case LocateDenied():
         hint(l10n.historyMapLocationDenied);
       case LocateBlocked():
@@ -220,8 +216,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           highlightEnds: ends,
           area: area,
           position: position,
-          focus: _focus,
-          focusToken: _focusToken,
+          areaFocusToken: _areaFocusToken,
           onTap: selection.tap,
           onLongPress: areaNotifier.setPin,
           onPinMoved: areaNotifier.setPin,

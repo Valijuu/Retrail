@@ -249,6 +249,7 @@
   "historyMapRadius": "Umkreis: {km} km",
   "historyMapBestTime": "Bestzeit",
   "historyMapRidesOnRoute": "{count, plural, =1{1 Fahrt auf dieser Strecke} other{{count} Fahrten auf dieser Strecke}}",
+  "historyMapRideCount": "{count, plural, =1{1 Fahrt} other{{count} Fahrten}}",
   "historyMapCloseCard": "Schließen",
   "historyMapLocationDenied": "Standort nicht erlaubt. Erlaube ihn, um zu sehen, wo du bist.",
   "historyMapLocationBlocked": "Der Standort ist für Retrail gesperrt.",

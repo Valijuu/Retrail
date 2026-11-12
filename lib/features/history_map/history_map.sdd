@@ -63,7 +63,8 @@ Must:
     the rider made it, including unticking the own activity while another one is on.
   The camera starts framing all visible rides north-up. When the filters change it frames the new set once;
     a user gesture is never overridden afterwards. Leaving the map view and coming back shows the same camera.
-  Setting the pin by a long press moves the camera to it once and shows the whole circle. Changing the radius
+  Setting the pin (long press, location button) moves the camera to it once and shows the whole circle with
+    some room around it, about two thirds of the screen width. Changing the radius
     or dragging the pin moves no camera, so the rider can stay zoomed out while the slider moves.
   The pin is drawn by the map itself, not as a widget over it, so it and the circle do not tremble while the
     map moves or the radius changes.
@@ -77,11 +78,12 @@ Must:
   A tap shows one card and never pages or swipes: the rides of one route draw the same line, and overlapping
     routes are the same stretch to the rider. The card is that of the nearest route's best ride (its nearest
     hit when the best ride was not hit; equally near hits go to the newest), with the best-time badge and the
-    count "n rides on this route"; tapping the count opens the group's rides as History does. Rides outside a
+    count "n rides" (the tooltip says "n rides on this route"); the label stays on one line; tapping the count opens the group's rides as History does. Rides outside a
     group have no badge.
   Tapping the card opens the ride detail as History does. Tapping empty map or the close control hides the card.
   The my-location button asks for location while the app is in use, never for Always and never for
-    notifications. Granted: it shows the position and moves the camera there at zoom `15`, north-up.
+    notifications. Granted: it shows the position, sets the pin there and shows the pin's whole circle, like a long
+    press, north-up.
     Denied: it shows a hint; denied for good: the hint offers the app settings. The position stream runs only
     while the map view is visible and the app is in the foreground.
   Without tiles (offline, style not loaded) the lines still show over a plain background, and the attribution
@@ -120,7 +122,7 @@ Scenario: return to the app
 Scenario: tap on an overlapping stretch
   Given three rides pass the tapped point and two belong to one followed route
   When the map is tapped there
-  Then one card shows, the best ride of the nearest route with the badge and the count `2 rides on this route`
+  Then one card shows, the best ride of the nearest route with the badge and the count `2 rides`
     when that route is the followed one, and a swipe sideways changes nothing
 
 Scenario: rides around a place

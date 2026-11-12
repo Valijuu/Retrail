@@ -69,20 +69,25 @@ class MapPreviewCard extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 // The route's ride count opens the whole route group; the
-                // card shows one ride and never pages (#96, #109). It wraps
-                // instead of being cut (#103).
+                // card shows one ride and never pages (#96, #109). The short
+                // label stays on one line (#103).
                 if (ride.groupSize > 1)
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () => actions.onOpenRouteGroup(ride),
-                        iconAlignment: IconAlignment.end,
-                        icon: const Icon(Icons.chevron_right, size: 18),
-                        label: Text(
-                          l10n.historyMapRidesOnRoute(ride.groupSize),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                      // The short label says how many; the tooltip and the
+                      // screen reader say whose rides they are.
+                      child: Tooltip(
+                        message: l10n.historyMapRidesOnRoute(ride.groupSize),
+                        child: TextButton.icon(
+                          onPressed: () => actions.onOpenRouteGroup(ride),
+                          iconAlignment: IconAlignment.end,
+                          icon: const Icon(Icons.chevron_right, size: 18),
+                          label: Text(
+                            l10n.historyMapRideCount(ride.groupSize),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ),

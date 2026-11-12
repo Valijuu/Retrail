@@ -17,6 +17,11 @@ import 'overview_pin.dart';
 import 'preview_projection.dart' show RoutePoint;
 import 'route_camera.dart';
 
+/// How far beyond the circle the camera looks when it shows a new pin: the
+/// circle fills about two thirds of the screen width, so its surroundings are
+/// in view and the circle is easy to take in.
+const double _areaFitMargin = 1.5;
+
 /// Kilometres per degree of latitude on the Haversine sphere.
 const double _kmPerDegreeLat = 111.195;
 
@@ -25,9 +30,6 @@ const double _kmPerDegreeLat = 111.195;
 /// own that looks like a stray position dot.
 const double _fallbackLat = 30;
 const double _fallbackLon = 10;
-
-/// Zoom the my-location button moves the camera to.
-const double kOverviewLocationZoom = 15;
 
 /// The overview map of the History map view (#96): every visible ride as
 /// lines from one GeoJSON source per activity type, or as one heatmap, plus
@@ -45,8 +47,7 @@ class OverviewMap extends StatefulWidget {
     this.highlightEnds,
     this.area,
     this.position,
-    this.focus,
-    this.focusToken,
+    this.areaFocusToken,
     this.onTap,
     this.onLongPress,
     this.onPinMoved,
@@ -76,10 +77,9 @@ class OverviewMap extends StatefulWidget {
   final AreaFilter? area;
   final LatLng? position;
 
-  /// Moves the camera to [focus] at [kOverviewLocationZoom] when [focusToken]
-  /// changes (the my-location button).
-  final LatLng? focus;
-  final Object? focusToken;
+  /// Moves the camera to the area pin and shows the whole circle when this
+  /// changes (the my-location button), like a long press does.
+  final Object? areaFocusToken;
 
   /// A tap on the map, with the zoom it happened at.
   final void Function(LatLng point, double zoom)? onTap;
@@ -156,7 +156,10 @@ class _OverviewMapState extends State<OverviewMap> {
     // A new pin by long press moves the camera to it once; a new radius or a
     // dragged pin leaves the camera alone, so the rider can stay zoomed out
     // while the slider moves.
-    if (area != null && (old.area == null || (pinChanged && _centerOnPin))) {
+    if (area != null &&
+        (old.area == null ||
+            (pinChanged && _centerOnPin) ||
+            widget.areaFocusToken != old.areaFocusToken)) {
       _centerOnPin = false;
       _fitArea(area);
     }
@@ -168,10 +171,6 @@ class _OverviewMapState extends State<OverviewMap> {
         widget.bounds != old.bounds &&
         old.bounds == null) {
       _frame();
-    }
-    if (widget.focusToken != old.focusToken && widget.focus != null) {
-      _userMoved = true;
-      _jump(widget.focus!, kOverviewLocationZoom);
     }
   }
 
@@ -258,7 +257,7 @@ class _OverviewMapState extends State<OverviewMap> {
   /// Moves the camera to a new pin and shows its whole circle.
   Future<void> _fitArea(AreaFilter area) async {
     if (_viewport.isEmpty) return;
-    final dLat = area.radiusKm / _kmPerDegreeLat;
+    final dLat = area.radiusKm * _areaFitMargin / _kmPerDegreeLat;
     final dLng = dLat / math.max(math.cos(area.pin.lat * math.pi / 180), 0.01);
     final fit = fitRouteCamera(
       <RoutePoint>[

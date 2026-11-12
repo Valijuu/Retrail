@@ -206,11 +206,11 @@ void main() {
     expect(find.text('Faster follow'), findsOneWidget);
     expect(find.text('Original'), findsNothing);
     expect(find.text('Best time'), findsOneWidget);
-    expect(find.text('2 rides on this route'), findsOneWidget);
+    expect(find.text('2 rides'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Close'));
     await tester.pump();
-    expect(find.text('2 rides on this route'), findsNothing);
+    expect(find.text('2 rides'), findsNothing);
     await finish(tester);
   });
 

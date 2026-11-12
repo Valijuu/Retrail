@@ -257,6 +257,8 @@
   "historyMapBestTime": "Best time",
   "historyMapRidesOnRoute": "{count, plural, =1{1 ride on this route} other{{count} rides on this route}}",
   "@historyMapRidesOnRoute": {"placeholders": {"count": {"type": "int"}}},
+  "historyMapRideCount": "{count, plural, =1{1 ride} other{{count} rides}}",
+  "@historyMapRideCount": {"placeholders": {"count": {"type": "int"}}},
   "historyMapCloseCard": "Close",
   "historyMapLocationDenied": "Location is not allowed. Allow it to see where you are.",
   "historyMapLocationBlocked": "Location is blocked for Retrail.",
