@@ -14,16 +14,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
   ascent (or the descent for snowboard and ski), and the ride detail shows both. Older rides and rides
   without height data show nothing (#97).
 - The History tab has a Map view next to the list: all your rides at once as lines in the colour of their
-  activity, or as a heatmap, with an activity menu to tick the activities you want to see. Tap a line to see the ride, swipe
-  through rides that overlap, and see which one holds the best time of its route. Press and hold the map (or use
+  activity, or as a heatmap, with an activity menu to tick the activities you want to see. Tap a line to see one card: the best
+  ride of that route, with its best time and a count that opens all rides of the route. Press and hold the map (or use
   the location button) to set a pin and show only the rides within 1 to 50 km of it (#96).
 
 ### Changed
 - The map opens on your own activity from Settings (you can still tick others on and off). Its activity menu
   works on the map only and leaves the History list alone, and an entry ticks or unticks all activities at
   once. The pin with its radius works on the map only as well (#96).
-- On the map, the rides of one route share one card (the best one), and its ride count opens the whole route;
-  swiping is only for different routes under your finger (#96).
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.
 

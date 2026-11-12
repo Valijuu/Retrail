@@ -189,13 +189,11 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final mode =
         ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
     final area = ref.watch(mapAreaProvider);
-    final selected = ref.watch(selectedRidesProvider);
-    final shownIndex = ref.watch(shownRideIndexProvider);
+    final shown = ref.watch(selectedRideProvider);
     final position = ref.watch(mapPositionProvider);
     final areaNotifier = ref.read(mapAreaProvider.notifier);
     final selection = ref.read(mapSelectionProvider.notifier);
     final data = overview.data;
-    final shown = selected.isEmpty ? null : selected[shownIndex];
     final highlight = shown == null
         ? null
         : _highlightOf(ref.read(outlineStoreProvider), shown);
@@ -277,10 +275,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                 )
               else
                 MapPreviewCard(
-                  rides: selected,
-                  index: shownIndex,
+                  ride: shown,
                   actions: widget.actions,
-                  onSelect: selection.show,
                   onClose: selection.clear,
                 ),
               const SizedBox(height: kMapAttributionInset),

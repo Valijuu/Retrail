@@ -8,14 +8,11 @@ import '../history/history_providers.dart';
 import 'history_map_providers.dart';
 import 'route_badges.dart';
 
-/// The rides under the last tap, nearest first, and the one shown (#96).
+/// The rides under the last tap, nearest first (#96).
 class MapSelection {
-  const MapSelection({this.rideIds = const [], this.shownRideId});
+  const MapSelection({this.rideIds = const []});
 
   final List<int> rideIds;
-
-  /// The ride whose card is shown; the first one when null or gone.
-  final int? shownRideId;
 }
 
 class MapSelectionNotifier extends Notifier<MapSelection> {
@@ -51,11 +48,6 @@ class MapSelectionNotifier extends Notifier<MapSelection> {
         item.ride.rideId: item.ride.date ?? item.ride.startTime ?? 0,
   };
 
-  /// Shows the card of [rideId]. Kept by ride id, so a ride dropping out of
-  /// the tapped ones does not move the card to another ride.
-  void show(int rideId) =>
-      state = MapSelection(rideIds: state.rideIds, shownRideId: rideId);
-
   void clear() => state = const MapSelection();
 }
 
@@ -79,12 +71,12 @@ class SelectedRide {
   final int groupSize;
 }
 
-/// The tapped routes that still exist, in tap order, one entry per route
-/// group: the group's best ride when it was hit, else its nearest hit. Rides
-/// of one route show the same line, so paging through them told the rider
-/// nothing; the group's other rides open from the card (#96). A ride deleted
-/// while its card is open drops out; with none left the card is gone.
-final selectedRidesProvider = Provider<List<SelectedRide>>((ref) {
+/// The card of the tap: the nearest route's best ride (the group's best ride
+/// when it was hit, else the nearest hit of that group), or null. Rides of
+/// one route draw the same line, so the card shows one ride and never pages;
+/// the route's other rides open from its count (#96, #109). A ride deleted
+/// while its card is open, or hidden by the map's own filters, drops out.
+final selectedRideProvider = Provider<SelectedRide?>((ref) {
   final selection = ref.watch(mapSelectionProvider);
   final items = ref.watch(historyItemsProvider).value ?? const [];
   final byId = {
@@ -93,38 +85,26 @@ final selectedRidesProvider = Provider<List<SelectedRide>>((ref) {
   };
   final badges =
       ref.watch(routeBadgesProvider).value ?? const RouteBadges({}, {});
-  // A ride the map's own filters hide has no card either.
   final onMap = ref.watch(overviewProvider.select((o) => o.value?.rideIds));
-  final shown = onMap?.toSet();
-  // Group key -> the representative ride id, in order of first hit.
-  final chosen = <int, int>{};
-  for (final id in selection.rideIds) {
-    if (!byId.containsKey(id) || (shown != null && !shown.contains(id))) {
-      continue;
-    }
-    final key = badges.groupKeyOf(id);
-    final current = chosen[key];
-    if (current == null ||
-        (badges.bestRideIds.contains(id) &&
-            !badges.bestRideIds.contains(current))) {
-      chosen[key] = id;
-    }
-  }
-  return [
-    for (final id in chosen.values)
-      SelectedRide(
-        byId[id]!,
-        isBest: badges.bestRideIds.contains(id),
-        groupSize: badges.groupSizeOf(id),
-      ),
+  final onMapIds = onMap?.toSet();
+  final hits = [
+    for (final id in selection.rideIds)
+      if (byId.containsKey(id) && (onMapIds == null || onMapIds.contains(id)))
+        id,
   ];
-});
-
-/// Where the shown card sits among [selectedRidesProvider]: the shown ride,
-/// or the first one when it is gone.
-final shownRideIndexProvider = Provider<int>((ref) {
-  final rides = ref.watch(selectedRidesProvider);
-  final shown = ref.watch(mapSelectionProvider.select((s) => s.shownRideId));
-  final index = rides.indexWhere((r) => r.entry.ride.rideId == shown);
-  return index < 0 ? 0 : index;
+  if (hits.isEmpty) return null;
+  final key = badges.groupKeyOf(hits.first);
+  final sameRoute = [
+    for (final id in hits)
+      if (badges.groupKeyOf(id) == key) id,
+  ];
+  final id = sameRoute.firstWhere(
+    badges.bestRideIds.contains,
+    orElse: () => sameRoute.first,
+  );
+  return SelectedRide(
+    byId[id]!,
+    isBest: badges.bestRideIds.contains(id),
+    groupSize: badges.groupSizeOf(id),
+  );
 });

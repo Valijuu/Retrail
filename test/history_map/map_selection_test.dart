@@ -63,7 +63,7 @@ void main() {
       ],
     );
     c.listen(overviewProvider, (_, _) {});
-    c.listen(selectedRidesProvider, (_, _) {});
+    c.listen(selectedRideProvider, (_, _) {});
     c.listen(routeBadgesProvider, (_, _) {});
   });
   tearDown(() async {
@@ -75,7 +75,7 @@ void main() {
       Future<void>.delayed(const Duration(milliseconds: 600));
 
   test(
-    'tapping an overlapping stretch gives one entry per route, the best ride for a group',
+    'tapping an overlapping stretch gives one card: the nearest route\'s best ride',
     () async {
       final original = await _ride(db, durationMs: 900, date: 1);
       final follow = await _ride(
@@ -85,24 +85,17 @@ void main() {
         coverage: 1,
         date: 2,
       );
-      final other = await _ride(db, date: 3);
+      final other = await _ride(db, date: 1);
       await settle();
 
       c.read(mapSelectionProvider.notifier).tap(_tap, 14);
-      final rides = c.read(selectedRidesProvider);
-      // The original and its follow are one route: only the best one stays.
-      expect(
-        rides.map((r) => r.entry.ride.rideId),
-        unorderedEquals([follow, other]),
-      );
-      expect(rides.any((r) => r.entry.ride.rideId == original), isFalse);
-      final best = rides.singleWhere((r) => r.isBest);
-      expect(best.entry.ride.rideId, follow);
-      expect(best.groupSize, 2);
-      expect(
-        rides.singleWhere((r) => r.entry.ride.rideId == other).groupSize,
-        1,
-      );
+      // The original and its follow are one route: one card, the best ride.
+      final card = c.read(selectedRideProvider)!;
+      expect(card.entry.ride.rideId, follow);
+      expect(card.isBest, isTrue);
+      expect(card.groupSize, 2);
+      expect(card.entry.ride.rideId, isNot(original));
+      expect(card.entry.ride.rideId, isNot(other));
     },
   );
 
@@ -110,9 +103,9 @@ void main() {
     await _ride(db);
     await settle();
     final n = c.read(mapSelectionProvider.notifier)..tap(_tap, 14);
-    expect(c.read(selectedRidesProvider), isNotEmpty);
+    expect(c.read(selectedRideProvider), isNotNull);
     n.tap((lat: 49.0, lng: 11.005), 14);
-    expect(c.read(selectedRidesProvider), isEmpty);
+    expect(c.read(selectedRideProvider), isNull);
   });
 
   test(
@@ -121,12 +114,12 @@ void main() {
       final id = await _ride(db);
       await settle();
       c.read(mapSelectionProvider.notifier).tap(_tap, 14);
-      expect(c.read(selectedRidesProvider), hasLength(1));
+      expect(c.read(selectedRideProvider), isNotNull);
 
       await db.rideDao.deleteById(id);
       await settle();
 
-      expect(c.read(selectedRidesProvider), isEmpty);
+      expect(c.read(selectedRideProvider), isNull);
       expect(c.read(overviewProvider).value!.rideIds, isEmpty);
       expect(await db.select(db.rideOutlines).get(), isEmpty);
     },
@@ -152,13 +145,14 @@ void main() {
     },
   );
 
-  test('one of several cards is deleted: the others stay, in order', () async {
+  test('the card moves to another hit when its ride is deleted', () async {
     final a = await _ride(db, date: 1);
     final b = await _ride(db, date: 2);
     await settle();
     c.read(mapSelectionProvider.notifier).tap(_tap, 14);
-    await db.rideDao.deleteById(a);
+    final shown = c.read(selectedRideProvider)!.entry.ride.rideId;
+    await db.rideDao.deleteById(shown);
     await settle();
-    expect(c.read(selectedRidesProvider).map((r) => r.entry.ride.rideId), [b]);
+    expect(c.read(selectedRideProvider)!.entry.ride.rideId, shown == a ? b : a);
   });
 }
