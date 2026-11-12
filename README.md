@@ -1,27 +1,34 @@
-# Retrail
+<p align="center">
+  <img src="store/play/icon_512.png" width="120" alt="Retrail app icon: an orange R with a route pin on a dark brown tile">
+</p>
 
-**The GPS tracker for everything on wheels.** Retrail records longboard, skateboard, inline-skate and
-roller-skate rides (route, speed, distance) and keeps them on your phone. It has no account, no ads
-and no tracking.
+<h1 align="center">Retrail</h1>
+
+<p align="center"><b>Leave your trail – the GPS tracker for skate &amp; snow.</b></p>
+
+Retrail records longboard, skateboard, inline-skate, roller-skate, scooter, snowboard and ski rides
+(route, speed, distance, height) and keeps them on your phone. It has no account, no ads and no
+tracking.
 
 Retrail is a Flutter app for **Android and iOS**.
 
 <p align="center">
   <img src="store/play/screenshots/en/01_track.png" width="24%" alt="Recording a ride on the live map">
-  <img src="store/play/screenshots/en/02_best_time.png" width="24%" alt="Comparing the runs of a followed route">
-  <img src="store/play/screenshots/en/04_history.png" width="24%" alt="Ride history with map previews">
-  <img src="store/play/screenshots/en/07_countdown.png" width="24%" alt="Spoken countdown before the ride">
+  <img src="store/play/screenshots/en/02_activities.png" width="24%" alt="Choosing an activity, from longboard to snowboard and ski">
+  <img src="store/play/screenshots/en/03_best_time.png" width="24%" alt="Comparing the runs of a followed route">
+  <img src="store/play/screenshots/en/05_history.png" width="24%" alt="Ride history with map previews">
 </p>
 
 ## Features
 
 ### Record a ride
-- Pick an activity: **Longboard, Skateboard, Mountainboard, Inline skates, Roller skates, Scooter** or
-  **Other**.
+- Pick an activity: **Longboard, Skateboard, Mountainboard, Inline skates, Roller skates, Scooter,
+  Snowboard, Ski** or **Other**.
 - A 10-second countdown before you roll. The last five seconds are spoken and the phone vibrates, so
   it can already be in your pocket. The countdown also shows whether GPS is ready. The cue can be
   turned off in the settings.
-- A live map with your route, a speedometer-style speed display, distance, duration and top speed.
+- A live map with your route, a speedometer-style speed display, distance, duration and top speed,
+  plus the running ascent and descent.
 - Pause and resume at any time. Recording continues with the screen off, controlled from the
   notification (Android) or a **Live Activity** on the lock screen and in the Dynamic Island (iOS).
 - Recording works without mobile data.
@@ -38,7 +45,8 @@ Retrail is a Flutter app for **Android and iOS**.
   way there. Partial runs are listed separately.
 
 ### Ride history
-- Each ride has a map preview, distance, duration and speeds.
+- Each ride has a map preview, distance, duration, speeds and height (ascent, or descent for
+  snowboard and ski).
 - Search, filter by year, month, activity and followed route, mark favourites.
 - Rename rides, add notes, navigate to a ride's start point.
 - The home screen shows your kilometres for this week, today and this year.
