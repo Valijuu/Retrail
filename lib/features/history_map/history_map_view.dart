@@ -43,7 +43,9 @@ class HistoryMapView extends ConsumerStatefulWidget {
 const double _edgeInset = 12;
 const double _topInset = 8;
 const double _panelGap = 6;
-const double _cardInset = 8;
+
+/// Side space of the ride card over the map: narrow, so the map stays in view.
+const double _cardInset = 28;
 const double _progressHeight = 2;
 
 /// How long after a filter change the next new set of rides is framed.

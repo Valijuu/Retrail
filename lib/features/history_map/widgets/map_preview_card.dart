@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../domain/ride_title.dart';
 import '../../history/history_ride_card.dart';
 import '../map_selection.dart';
 
@@ -30,7 +32,7 @@ class MapCardActions {
 /// header for the best-time badge, the route's ride count and a close
 /// control. One card per tap: the nearest route's best ride; the route's other
 /// rides open from the count (#96, #109).
-class MapPreviewCard extends StatelessWidget {
+class MapPreviewCard extends ConsumerWidget {
   const MapPreviewCard({
     super.key,
     required this.ride,
@@ -44,7 +46,7 @@ class MapPreviewCard extends StatelessWidget {
   final VoidCallback onClose;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     final text = Theme.of(context).textTheme;
@@ -95,6 +97,19 @@ class MapPreviewCard extends StatelessWidget {
                 else
                   const Spacer(),
                 IconButton(
+                  onPressed: () => navigateToRideStart(
+                    context,
+                    ref,
+                    ride.entry.ride.rideId,
+                    rideDisplayTitle(
+                      ride.entry.ride,
+                      locale: Localizations.localeOf(context).toString(),
+                    ),
+                  ),
+                  tooltip: l10n.a11yNavigateToStartPoint,
+                  icon: Icon(Icons.directions, color: colors.primary),
+                ),
+                IconButton(
                   onPressed: onClose,
                   tooltip: l10n.historyMapCloseCard,
                   icon: Icon(Icons.close, color: colors.onSurface),
@@ -103,6 +118,7 @@ class MapPreviewCard extends StatelessWidget {
             ),
             HistoryRideCard(
               key: ValueKey('map_card_${ride.entry.ride.rideId}'),
+              showPreview: false,
               entry: ride.entry,
               selectionMode: false,
               selected: false,

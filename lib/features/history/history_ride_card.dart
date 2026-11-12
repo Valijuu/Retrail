@@ -35,6 +35,7 @@ class HistoryRideCard extends ConsumerStatefulWidget {
     required this.onToggleFavorite,
     this.onFollowRoute,
     this.onOpenRouteGroup,
+    this.showPreview = true,
   });
 
   final RideEntryItem entry;
@@ -59,6 +60,10 @@ class HistoryRideCard extends ConsumerStatefulWidget {
   /// Opens the comparison of this ride's route group from its Followed /
   /// "n× followed" chip (Spec 20).
   final VoidCallback? onOpenRouteGroup;
+
+  /// Shows the cached map preview on top. The map's own card leaves it out:
+  /// the map right behind it shows the route (#96).
+  final bool showPreview;
 
   @override
   ConsumerState<HistoryRideCard> createState() => _HistoryRideCardState();
@@ -134,14 +139,15 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Thumbnail(
-              rideId: ride.rideId,
-              hasRoute: hasRoute,
-              title: title,
-              selectionMode: widget.selectionMode,
-              selected: widget.selected,
-              onTap: widget.selectionMode ? widget.onTap : widget.onOpenMap,
-            ),
+            if (widget.showPreview)
+              _Thumbnail(
+                rideId: ride.rideId,
+                hasRoute: hasRoute,
+                title: title,
+                selectionMode: widget.selectionMode,
+                selected: widget.selected,
+                onTap: widget.selectionMode ? widget.onTap : widget.onOpenMap,
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
               child: Column(
@@ -381,17 +387,8 @@ class _Thumbnail extends ConsumerWidget {
                   shape: const CircleBorder(),
                   child: IconButton(
                     iconSize: 20,
-                    onPressed: () async {
-                      final points = await loadRidePoints(ref, rideId);
-                      if (points.isEmpty || !context.mounted) return;
-                      await navigateTo(
-                        context,
-                        ref.read(navigationLauncherProvider),
-                        points.first.lat,
-                        points.first.lng,
-                        title,
-                      );
-                    },
+                    onPressed: () =>
+                        navigateToRideStart(context, ref, rideId, title),
                     icon: Icon(Icons.directions, color: colors.primary),
                     tooltip: l10n.a11yNavigateToStartPoint,
                   ),
@@ -557,4 +554,23 @@ class _RouteChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Hands the start of ride [rideId] to a maps app the rider picks ("Navigate
+/// to start"): the thumbnail's button and the map card's button.
+Future<void> navigateToRideStart(
+  BuildContext context,
+  WidgetRef ref,
+  int rideId,
+  String title,
+) async {
+  final points = await loadRidePoints(ref, rideId);
+  if (points.isEmpty || !context.mounted) return;
+  await navigateTo(
+    context,
+    ref.read(navigationLauncherProvider),
+    points.first.lat,
+    points.first.lng,
+    title,
+  );
 }
