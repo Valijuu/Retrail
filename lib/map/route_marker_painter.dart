@@ -242,7 +242,9 @@ Future<Uint8List> _rasterise(
 /// the bottom centre, so the symbol anchors at `bottom`.
 const double areaPinImageSize = 48;
 
-/// The area pin (the soft Material map-marker teardrop in the primary colour)
+/// The area pin (the soft Material map-marker teardrop in the primary colour,
+/// its dot in the theme's surface colour: dark on the dark map, light on the
+/// light one)
 /// as a PNG for a MapLibre symbol layer: drawn by the map itself, it moves
 /// with the map frame by frame, which a Flutter widget on top of the map does
 /// not (#96).
@@ -264,6 +266,6 @@ Future<Uint8List> areaPinImagePng(AppColors colors, double pixelRatio) =>
       canvas.drawCircle(
         const ui.Offset(12, 9),
         2.6,
-        ui.Paint()..color = colors.scrim,
+        ui.Paint()..color = colors.surface,
       );
     });
