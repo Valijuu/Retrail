@@ -43,6 +43,10 @@ Must:
     the background fill at once.
   Only rides with a route are drawn. A ride without an outline gets one in the background, one at a time, and
     appears when it is ready.
+  Every line has a light edge under it, so a line reads as a route on the map and not as a bare stroke.
+  The tapped ride additionally shows direction arrowheads along its line and its start and finish like the route
+    preview does (@RouteEndpointStyle): one combined marker for a loop, a start and a finish otherwise. Other
+    rides get no markers, so many rides stay calm.
   Lines mode draws one line per ride, thin and semi-transparent, in its activity type's colour, so a
     route ridden often looks denser. The nine types have nine distinct colours that stay readable on the light
     and the dark style; colour is never the only cue.

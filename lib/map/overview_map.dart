@@ -42,6 +42,7 @@ class OverviewMap extends StatefulWidget {
     required this.bounds,
     required this.frameToken,
     this.highlight,
+    this.highlightEnds,
     this.area,
     this.position,
     this.focus,
@@ -69,6 +70,9 @@ class OverviewMap extends StatefulWidget {
 
   /// GeoJSON of the tapped ride, drawn on top.
   final String? highlight;
+
+  /// Start and finish markers of the tapped ride; null draws none.
+  final OverviewEnds? highlightEnds;
   final AreaFilter? area;
   final LatLng? position;
 
@@ -192,6 +196,10 @@ class _OverviewMapState extends State<OverviewMap> {
     }
     _push(overviewHeatSource, heat ?? emptyOverviewGeoJson);
     _push(overviewHighlightSource, widget.highlight ?? emptyOverviewGeoJson);
+    final ends = widget.highlightEnds;
+    _push(overviewStartSource, overviewPointGeoJson(ends?.start));
+    _push(overviewFinishSource, overviewPointGeoJson(ends?.finish));
+    _push(overviewLoopSource, overviewPointGeoJson(ends?.loop));
     final area = widget.area;
     _push(
       overviewAreaSource,

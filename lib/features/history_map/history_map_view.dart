@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/widgets/app_snack_bar.dart';
 import '../../domain/activity_type.dart';
 import '../../domain/heading.dart' show LatLng;
+import '../../domain/route_markers.dart'
+    show RouteEndpointStyle, routeEndpointStyle;
+import '../../map/overview_layers.dart' show OverviewEnds;
 import '../../l10n/app_localizations.dart';
 import '../../map/overview_map.dart';
 import '../../map/map_attribution.dart';
@@ -197,6 +200,9 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final highlight = shown == null
         ? null
         : _highlightOf(ref.read(outlineStoreProvider), shown);
+    final ends = shown == null
+        ? null
+        : _endsOf(ref.read(outlineStoreProvider), shown);
 
     return Stack(
       fit: StackFit.expand,
@@ -211,6 +217,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           bounds: overview.bounds,
           frameToken: _frameToken,
           highlight: highlight,
+          highlightEnds: ends,
           area: area,
           position: position,
           focus: _focus,
@@ -286,6 +293,24 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
         ),
       ],
     );
+  }
+
+  /// Where the tapped ride starts and finishes: one combined marker for a
+  /// loop, a start and a finish otherwise (the preview's rule).
+  OverviewEnds? _endsOf(OutlineStore store, SelectedRide ride) {
+    final entry = store.cache[ride.entry.ride.rideId];
+    if (entry == null || entry.isEmpty) return null;
+    final points = entry.outline.points;
+    switch (routeEndpointStyle(points)) {
+      case RouteEndpointStyle.none:
+        return null;
+      case RouteEndpointStyle.startOnly:
+        return OverviewEnds(start: points.first);
+      case RouteEndpointStyle.loop:
+        return OverviewEnds(loop: points.first);
+      case RouteEndpointStyle.open:
+        return OverviewEnds(start: points.first, finish: points.last);
+    }
   }
 
   /// The tapped ride's line, built once and kept with its cached outline.

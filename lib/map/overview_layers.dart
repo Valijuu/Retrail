@@ -8,7 +8,13 @@ import '../core/theme/app_colors.dart';
 import '../domain/activity_type.dart';
 import '../domain/heading.dart' show LatLng;
 import 'live_map.dart' show symbolRaster;
-import 'route_marker_painter.dart' show areaPinImagePng;
+import 'route_marker_painter.dart'
+    show
+        RouteMarkerImage,
+        areaPinImagePng,
+        mapEndpointMarkerScale,
+        routeArrowImagePng,
+        routeMarkerImagePng;
 
 /// An empty GeoJSON document MapLibre accepts when there is nothing to draw.
 const String emptyOverviewGeoJson =
@@ -23,6 +29,43 @@ const String overviewHighlightSource = 'highlight';
 const String overviewAreaSource = 'area';
 const String overviewPositionSource = 'position';
 const String overviewPinSource = 'pin';
+const String overviewStartSource = 'hl-start';
+const String overviewFinishSource = 'hl-finish';
+const String overviewLoopSource = 'hl-loop';
+const String _arrowImage = 'hl-arrow';
+
+/// Where the tapped ride starts and finishes: a closed loop (start and finish
+/// within 30 m) gets one combined marker, an open ride a start and a finish,
+/// the same rule and look as the route preview (@RouteEndpointStyle).
+class OverviewEnds {
+  const OverviewEnds({this.start, this.finish, this.loop});
+
+  final LatLng? start;
+  final LatLng? finish;
+  final LatLng? loop;
+
+  @override
+  bool operator ==(Object other) =>
+      other is OverviewEnds &&
+      other.start == start &&
+      other.finish == finish &&
+      other.loop == loop;
+
+  @override
+  int get hashCode => Object.hash(start, finish, loop);
+}
+
+/// Width of the light edge under every ride line, so a line reads as a route
+/// on the map rather than a bare stroke.
+const double _casingWidth = 4.6;
+
+/// The arrowhead image is sized for the route preview's line; the highlight
+/// line is wider, so it scales up a little.
+const double _arrowIconScale = 1.2;
+const double _casingOpacity = 0.30;
+
+/// Distance between direction arrowheads along the tapped ride, in px.
+const double _arrowSpacingPx = 56;
 const String _pinImage = 'area-pin';
 
 /// Ring points of the area circle.
@@ -160,6 +203,20 @@ Future<void> addOverviewLayers(
     if (!await source(overviewSourceId(type))) return;
     if (!await layer(
       LineStyleLayer(
+        id: '${overviewSourceId(type)}-casing',
+        sourceId: overviewSourceId(type),
+        layout: round,
+        paint: {
+          'line-color': overviewHex(colors.routeLineHalo),
+          'line-width': _casingWidth,
+          'line-opacity': _casingOpacity,
+        },
+      ),
+    )) {
+      return;
+    }
+    if (!await layer(
+      LineStyleLayer(
         id: '${overviewSourceId(type)}-line',
         sourceId: overviewSourceId(type),
         layout: round,
@@ -199,6 +256,57 @@ Future<void> addOverviewLayers(
     ),
   )) {
     return;
+  }
+  // Direction arrowheads and start/finish markers of the tapped ride, drawn
+  // by the map like the live route's (images registered once per style).
+  final arrow = symbolRaster(_arrowIconScale, pixelRatio);
+  final arrowPng = await routeArrowImagePng(colors, arrow.rasterRatio);
+  if (stale()) return;
+  await style.addImage(_arrowImage, arrowPng);
+  if (stale()) return;
+  if (!await layer(
+    SymbolStyleLayer(
+      id: 'highlight-arrows',
+      sourceId: overviewHighlightSource,
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': _arrowSpacingPx,
+        'icon-image': _arrowImage,
+        'icon-size': arrow.iconSize,
+        'icon-rotation-alignment': 'map',
+        'icon-keep-upright': false,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+    ),
+  )) {
+    return;
+  }
+  final marker = symbolRaster(mapEndpointMarkerScale, pixelRatio);
+  for (final (source_, kind) in [
+    (overviewStartSource, RouteMarkerImage.start),
+    (overviewFinishSource, RouteMarkerImage.finish),
+    (overviewLoopSource, RouteMarkerImage.loop),
+  ]) {
+    final png = await routeMarkerImagePng(kind, colors, marker.rasterRatio);
+    if (stale()) return;
+    await style.addImage('hl-${kind.name}', png);
+    if (stale()) return;
+    if (!await source(source_)) return;
+    if (!await layer(
+      SymbolStyleLayer(
+        id: '$source_-marker',
+        sourceId: source_,
+        layout: {
+          'icon-image': 'hl-${kind.name}',
+          'icon-size': marker.iconSize,
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+        },
+      ),
+    )) {
+      return;
+    }
   }
   if (!await source(overviewPositionSource)) return;
   if (!await layer(

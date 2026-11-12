@@ -15,7 +15,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
   without height data show nothing (#97).
 - The History tab has a Map view next to the list: all your rides at once as lines in the colour of their
   activity, or as a heatmap, with an activity menu to tick the activities you want to see. Tap a line to see one card: the best
-  ride of that route, with its best time and a count that opens all rides of the route. Press and hold the map (or use
+  ride of that route, with its best time and a count that opens all rides of the route; the tapped ride shows
+  its direction and its start and finish on the map. Press and hold the map (or use
   the location button) to set a pin and show only the rides within 1 to 50 km of it (#96).
 
 ### Changed
