@@ -268,5 +268,11 @@
   "historyMapHiddenRides": "{shown} of {total} rides",
   "@historyMapHiddenRides": {"placeholders": {"shown": {"type": "int"}, "total": {"type": "int"}}},
   "historyMapActivities": "Activities",
-  "historyMapAllActivities": "All activities"
+  "historyMapAllActivities": "All activities",
+  "placeSearchOpen": "Search a place",
+  "placeSearchHint": "Place or address…",
+  "placeSearchClose": "Close search",
+  "placeSearchNone": "No place found.",
+  "placeSearchUnavailable": "Place search is not available right now.",
+  "placeSearchSource": "Search by Photon · © OpenStreetMap"
 }

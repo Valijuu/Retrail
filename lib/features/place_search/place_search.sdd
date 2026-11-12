@@ -17,7 +17,6 @@ References:
 Can modify:
   /lib/features/history_map/history_map_view.dart
   /lib/features/history_map/widgets/map_controls.dart
-  /site
   /docs/play-store.md
   /docs/app-store.md
 
@@ -37,8 +36,9 @@ Must:
     is not available now. Both leave the map and the pin as they are.
   Queries and results are not stored on the device or logged.
   The search panel names its source: "Search by Photon · © OpenStreetMap".
-  The privacy policy in `/site` and the store data-safety answers say that the typed search text goes to
-    Photon (photon.komoot.io) when the rider uses the place search, and nothing is sent otherwise.
+  The privacy policy on getretrail.app (repo `retrailWeb`) and the store data-safety answers say that the typed
+    search text goes to Photon (photon.komoot.io) when the rider uses the place search, and nothing is sent
+    otherwise.
 
 Must not:
   Send text while the field is empty, under `3` characters or unchanged since the last request.
@@ -75,10 +75,10 @@ Example:
   Suggestion line one: `Hamburg`, line two: `Hamburg, Deutschland`
 
 Tasks:
-  [ ] #106 Photon client behind a provider (debounce, drop older requests, parse name and place line).
-  [ ] #106 Magnifier button and search panel over the map; choosing a suggestion sets the pin.
-  [ ] #106 German and English copy, glossary entry, source line.
-  [ ] #106 Privacy policy in /site and the store data-safety answers.
+  [x] #106 Photon client behind a provider (debounce, drop older requests, parse name and place line).
+  [x] #106 Magnifier button and search panel over the map; choosing a suggestion sets the pin.
+  [x] #106 German and English copy, glossary entry, source line.
+  [x] #106 Store data-safety answers; the privacy policy text is an issue in `retrailWeb`.
   [ ] #106 Device check: typing on a phone, offline, pin and camera after choosing.
 
 Done when:

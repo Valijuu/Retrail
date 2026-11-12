@@ -16,6 +16,10 @@ import '../history/history_filter.dart';
 import '../history/history_providers.dart';
 import 'history_map_providers.dart';
 import '../home/home_providers.dart' show lastActivityTypeProvider;
+import '../place_search/photon_client.dart' show PlaceSuggestion;
+import '../place_search/place_search_controller.dart';
+import '../place_search/widgets/place_search_button.dart';
+import '../place_search/widgets/place_search_panel.dart';
 import 'map_area.dart';
 import 'map_items.dart';
 import 'map_default_activity.dart';
@@ -97,6 +101,13 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   void dispose() {
     Future.microtask(() => _visible.set(false));
     super.dispose();
+  }
+
+  /// A chosen place sets the pin like a long press and moves the camera to it.
+  void _onPlacePicked(PlaceSuggestion place) {
+    ref.read(mapAreaProvider.notifier).setPin(place.point);
+    ref.read(placeSearchProvider.notifier).close();
+    setState(() => _areaFocusToken++);
   }
 
   void _onFilterChanged(HistoryFilter? previous, HistoryFilter next) {
@@ -205,6 +216,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final routedTotal = ref.watch(routedRideCountProvider).value ?? 0;
     // What the map really draws: header filters, activities and area together.
     final routedShown = ref.watch(settledMapRidesProvider).length;
+    final searching = ref.watch(placeSearchProvider.select((s) => s.open));
     final position = ref.watch(mapPositionProvider);
     final areaNotifier = ref.read(mapAreaProvider.notifier);
     final selection = ref.read(mapSelectionProvider.notifier);
@@ -248,17 +260,24 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  MapModeSwitch(
-                    mode: mode,
-                    onChanged: ref.read(historyMapControllerProvider).setMode,
-                  ),
-                  const SizedBox(width: _panelGap),
-                  const ActivityMenu(),
-                ],
-              ),
-              if (routedShown < routedTotal) ...[
+              if (searching)
+                PlaceSearchPanel(onPick: _onPlacePicked)
+              else
+                Row(
+                  children: [
+                    MapModeSwitch(
+                      mode: mode,
+                      onChanged: ref.read(historyMapControllerProvider).setMode,
+                    ),
+                    const SizedBox(width: _panelGap),
+                    const ActivityMenu(),
+                    const Spacer(),
+                    PlaceSearchButton(
+                      onPressed: ref.read(placeSearchProvider.notifier).open,
+                    ),
+                  ],
+                ),
+              if (!searching && routedShown < routedTotal) ...[
                 const SizedBox(height: _panelGap),
                 HiddenRidesLine(
                   shown: routedShown,

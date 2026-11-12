@@ -63,15 +63,17 @@ On Linux: `base64 -w0 file` gives the base64 value. The certificate request is m
 ## Privacy label (App Store Connect → App Privacy)
 
 Same facts as the Play Data safety form: map tile requests to OpenFreeMap leave the device,
-and they reveal the viewed area. The only other request is the connectivity probe
-(`https://clients3.google.com/generate_204`, no payload, named in the privacy policy); it carries
-no data type of Apple's list. Rides, GPS points, profile photo and settings stay on the device.
+and they reveal the viewed area. The place search on the map (#106) sends the typed place name
+and the app language to Photon (`photon.komoot.io`) while the rider uses it: **Search History**,
+not linked, not used for tracking, App Functionality. The only other request is the connectivity
+probe (`https://clients3.google.com/generate_204`, no payload, named in the privacy policy); it
+carries no data type of Apple's list. Rides, GPS points, profile photo and settings stay on the device.
 "Navigate to start" hands a coordinate to a maps app the user picks; that is not collection by
 Retrail. Checked against the code on 2026-11-03.
 
 | Question | Answer |
 |---|---|
-| Data collected | **Coarse Location** only |
+| Data collected | **Coarse Location**, **Search History** |
 | Linked to the user | No |
 | Used for tracking | No |
 | Purpose | App Functionality |

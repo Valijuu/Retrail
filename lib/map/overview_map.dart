@@ -79,7 +79,8 @@ class OverviewMap extends StatefulWidget {
   final LatLng? position;
 
   /// Moves the camera to the area pin and shows the whole circle when this
-  /// changes (the my-location button), like a long press does.
+  /// changes (the my-location button, a place chosen in the search), like a
+  /// long press does.
   final Object? areaFocusToken;
 
   /// A tap on the map, with the zoom it happened at.

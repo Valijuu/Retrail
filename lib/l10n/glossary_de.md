@@ -59,3 +59,6 @@ English is the default and should read naturally (not a literal back-translation
 | Map activities menu, all | Alle Aktivitäten |
 | Map: rides hidden by the header filters | 12 von 40 Fahrten |
 | Map card, ride count | 13 Fahrten (Tooltip: 13 Fahrten auf dieser Strecke) |
+| Place search (map) | Ort suchen / Ort oder Adresse … |
+| Place search, no result | Kein Ort gefunden. |
+| Place search, down | Die Ortssuche ist gerade nicht verfügbar. |

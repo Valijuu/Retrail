@@ -19,6 +19,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
   its direction and its start and finish on the map. The location button sets the pin and shows its whole
   5 km circle with some room around it. Press and hold the map (or use
   the location button) to set a pin and show only the rides within 1 to 50 km of it (#96).
+- Search a place by name on the map (magnifier next to the activity menu) and set the pin there; the
+  typed text goes to Photon (OpenStreetMap data) only while you use it (#106).
 
 ### Changed
 - The map opens on your own activity from Settings (you can still tick others on and off). Its activity menu

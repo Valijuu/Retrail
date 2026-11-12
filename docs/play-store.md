@@ -12,12 +12,13 @@ update the privacy policy, this file and the Data safety form together.
 
 Google counts data as **collected** when the app (or a library in it)
 transmits it off the device. Data processed only on the device is not
-declared. Retrail sends exactly two kinds of request:
+declared. Retrail sends exactly three kinds of request:
 
 | Request | To | What it reveals | Declare? |
 |---|---|---|---|
 | Map tiles, styles, fonts, sprites | OpenFreeMap (`tiles.openfreemap.org`, via Cloudflare) | IP address, user agent, **the map area being viewed** — during a ride that is the rider's surroundings | **Yes: Approximate location** (see below) |
 | Connectivity probe | `clients3.google.com/generate_204` | IP address only, empty request | No — an IP address alone is not one of Play's data types, and nothing else is sent |
+| Place search (#106) | Photon (`photon.komoot.io`, OpenStreetMap data) | IP address, user agent, **the typed place name** and the app language — only while the rider uses the place search on the map, never a position, ride or identifier | **Yes: In-app search history** (see below) |
 
 Everything else stays on the device: rides, GPS track points, profile name
 and photo, settings, preview images (`lib/data/`, `lib/features/profile/`).
@@ -47,6 +48,7 @@ claim ephemeral processing.
 **Data types** — select only:
 
 - Location → **Approximate location**
+- App activity → **In-app search history** (the place search, #106)
 
 Leave everything else unselected (no personal info, no photos — the profile
 photo never leaves the device, no app activity, no crash logs, no device IDs).
@@ -58,6 +60,15 @@ photo never leaves the device, no app activity, no crash logs, no device IDs).
 | Is this data collected, shared, or both? | **Collected** (not shared: the tile request goes straight to the map service the app uses to draw its map, which processes it to serve the map) |
 | Is this data processed ephemerally? | **No** |
 | Is this data required for your app, or can users choose? | **Required** (the map cannot be turned off) |
+| Why is this user data collected? | **App functionality** only |
+
+**Data usage and handling — In-app search history**
+
+| Question | Answer |
+|---|---|
+| Is this data collected, shared, or both? | **Collected** (not shared: the typed text goes straight to the place service that answers the search) |
+| Is this data processed ephemerally? | **No** (we cannot verify Photon's request logs) |
+| Is this data required for your app, or can users choose? | **Users can choose** (only the place search on the map sends it; a long press sets the pin without it) |
 | Why is this user data collected? | **App functionality** only |
 
 **Privacy policy URL:** https://getretrail.app/privacy

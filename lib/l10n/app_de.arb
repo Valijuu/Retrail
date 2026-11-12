@@ -258,5 +258,11 @@
   "historyMapPreparing": "Strecken werden vorbereitet …",
   "historyMapHiddenRides": "{shown} von {total} Fahrten",
   "historyMapActivities": "Aktivitäten",
-  "historyMapAllActivities": "Alle Aktivitäten"
+  "historyMapAllActivities": "Alle Aktivitäten",
+  "placeSearchOpen": "Ort suchen",
+  "placeSearchHint": "Ort oder Adresse …",
+  "placeSearchClose": "Suche schließen",
+  "placeSearchNone": "Kein Ort gefunden.",
+  "placeSearchUnavailable": "Die Ortssuche ist gerade nicht verfügbar.",
+  "placeSearchSource": "Suche: Photon · © OpenStreetMap"
 }

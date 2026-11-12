@@ -93,7 +93,8 @@ explanation.
 ## Releases
 
 Android releases follow the global `play-release` skill and `docs/android-release.md`; store texts and form
-answers live in `docs/play-store.md`. The privacy policy and imprint in `/site` change in the same change
-whenever the app starts sending data somewhere new.
+answers live in `docs/play-store.md`. The privacy policy and imprint live on getretrail.app (repo `retrailWeb`,
+`src/legal/content.ts`); they change in the same change whenever the app starts sending data somewhere
+new, as an issue in that repo when it is not checked out.
 At release, the **Unreleased** section of `/CHANGELOG.md` gets the version and date and is the source for
 the store release notes; a new empty **Unreleased** section follows.
