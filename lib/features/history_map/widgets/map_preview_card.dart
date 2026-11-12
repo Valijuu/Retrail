@@ -109,13 +109,28 @@ class MapPreviewCard extends StatelessWidget {
                     )
                   else
                     const Spacer(),
-                  if (rides.length > 1)
+                  if (rides.length > 1) ...[
+                    IconButton(
+                      onPressed: at > 0
+                          ? () => onSelect(rides[at - 1].entry.ride.rideId)
+                          : null,
+                      tooltip: l10n.historyMapPreviousRoute,
+                      icon: const Icon(Icons.chevron_left),
+                    ),
                     Text(
                       l10n.historyMapCardCounter(at + 1, rides.length),
                       style: text.labelMedium?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
                     ),
+                    IconButton(
+                      onPressed: at < rides.length - 1
+                          ? () => onSelect(rides[at + 1].entry.ride.rideId)
+                          : null,
+                      tooltip: l10n.historyMapNextRoute,
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
                   IconButton(
                     onPressed: onClose,
                     tooltip: l10n.historyMapCloseCard,

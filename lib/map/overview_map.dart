@@ -137,6 +137,7 @@ class _OverviewMapState extends State<OverviewMap> {
     _controller = null;
     _style = null;
     _sourcesReady = false;
+    _styleReady = false;
     _pushed.clear();
   }
 
@@ -173,7 +174,10 @@ class _OverviewMapState extends State<OverviewMap> {
   void _push(String id, String data) {
     if (_pushed[id] == data) return;
     _pushed[id] = data;
-    _style?.updateGeoJsonSource(id: id, data: data);
+    // A failed update forgets its payload, so the next push retries it.
+    _style?.updateGeoJsonSource(id: id, data: data).catchError((Object _) {
+      if (_pushed[id] == data) _pushed.remove(id);
+    });
   }
 
   void _pushAll() {
@@ -224,7 +228,8 @@ class _OverviewMapState extends State<OverviewMap> {
     } else {
       await _frame();
     }
-    if (mounted && !_styleReady) setState(() => _styleReady = true);
+    if (_superseded(style)) return;
+    if (!_styleReady) setState(() => _styleReady = true);
   }
 
   Future<void> _frame() async {

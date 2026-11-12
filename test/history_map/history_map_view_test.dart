@@ -214,6 +214,44 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('the card can be paged with its own buttons too', (tester) async {
+    await _ride(db, title: 'Alpha', date: 2);
+    await _ride(db, title: 'Beta', date: 1);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    container.read(mapSelectionProvider.notifier).tap(_tap, 14);
+    await settle(tester);
+
+    expect(find.text('Alpha'), findsOneWidget);
+    await tester.tap(find.byTooltip('Next route'));
+    await tester.pump();
+    expect(find.text('Beta'), findsOneWidget);
+    expect(find.text('2/2'), findsOneWidget);
+    await tester.tap(find.byTooltip('Previous route'));
+    await tester.pump();
+    expect(find.text('Alpha'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('a ride the map filter hides loses its card', (tester) async {
+    await _ride(db, title: 'Board ride', type: 'LONGBOARD');
+    await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    container.read(mapSelectionProvider.notifier).tap(_tap, 14);
+    await settle(tester);
+    expect(find.byTooltip('Next route'), findsOneWidget);
+
+    container.read(mapActivitiesProvider.notifier).set({
+      ActivityType.longboard,
+    });
+    await settle(tester);
+    expect(find.text('Powder day'), findsNothing);
+    expect(find.text('Board ride'), findsOneWidget);
+    expect(find.byTooltip('Next route'), findsNothing);
+    await finish(tester);
+  });
+
   testWidgets('different routes under the tap page with n/m', (tester) async {
     await _ride(db, title: 'Alpha', date: 2);
     await _ride(db, title: 'Beta', date: 1);

@@ -259,6 +259,8 @@
   "@historyMapRidesOnRoute": {"placeholders": {"count": {"type": "int"}}},
   "historyMapCardCounter": "{index}/{count}",
   "@historyMapCardCounter": {"placeholders": {"index": {"type": "int"}, "count": {"type": "int"}}},
+  "historyMapPreviousRoute": "Previous route",
+  "historyMapNextRoute": "Next route",
   "historyMapCloseCard": "Close",
   "historyMapLocationDenied": "Location is not allowed. Allow it to see where you are.",
   "historyMapLocationBlocked": "Location is blocked for Retrail.",

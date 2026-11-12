@@ -29,8 +29,9 @@ void applyMapDefaultActivity(WidgetRef ref) {
   final present = ref.read(legendTypesProvider).value;
   if (own == null || present == null || !present.contains(own)) return;
   if (ref.read(mapDefaultAppliedProvider) == own) return;
-  ref.read(mapDefaultAppliedProvider.notifier).set(own);
-  // With one type in the history there is nothing to narrow.
+  // With one type in the history there is nothing to narrow yet; a second
+  // type showing up later narrows then.
   if (present.length < 2) return;
+  ref.read(mapDefaultAppliedProvider.notifier).set(own);
   ref.read(mapActivitiesProvider.notifier).set({own});
 }

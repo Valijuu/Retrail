@@ -93,10 +93,15 @@ final selectedRidesProvider = Provider<List<SelectedRide>>((ref) {
   };
   final badges =
       ref.watch(routeBadgesProvider).value ?? const RouteBadges({}, {});
+  // A ride the map's own filters hide has no card either.
+  final onMap = ref.watch(overviewProvider.select((o) => o.value?.rideIds));
+  final shown = onMap?.toSet();
   // Group key -> the representative ride id, in order of first hit.
   final chosen = <int, int>{};
   for (final id in selection.rideIds) {
-    if (!byId.containsKey(id)) continue;
+    if (!byId.containsKey(id) || (shown != null && !shown.contains(id))) {
+      continue;
+    }
     final key = badges.groupKeyOf(id);
     final current = chosen[key];
     if (current == null ||

@@ -61,6 +61,7 @@ class OverviewState {
     required this.rideIds,
     required this.data,
     required this.bounds,
+    this.typeIds = const [],
   });
 
   static const empty = OverviewState(
@@ -74,6 +75,10 @@ class OverviewState {
 
   /// The visible rides, by id: a different sort order is the same set.
   final List<int> rideIds;
+
+  /// The activity type of each ride in [rideIds], in the same order: editing
+  /// a ride's type moves its line to another colour without changing the set.
+  final List<String?> typeIds;
   final OverviewData? data;
 
   /// The box around all visible rides, or null when there are none.
@@ -85,7 +90,8 @@ class OverviewState {
       other is OverviewState &&
       other.mode == mode &&
       other.rideIds.length == rideIds.length &&
-      _sameIds(other.rideIds);
+      _sameIds(other.rideIds) &&
+      _sameTypes(other.typeIds);
 
   bool _sameIds(List<int> ids) {
     for (var i = 0; i < ids.length; i++) {
@@ -94,8 +100,17 @@ class OverviewState {
     return true;
   }
 
+  bool _sameTypes(List<String?> types) {
+    if (types.length != typeIds.length) return false;
+    for (var i = 0; i < types.length; i++) {
+      if (types[i] != typeIds[i]) return false;
+    }
+    return true;
+  }
+
   @override
-  int get hashCode => Object.hash(mode, Object.hashAll(rideIds));
+  int get hashCode =>
+      Object.hash(mode, Object.hashAll(rideIds), Object.hashAll(typeIds));
 }
 
 /// The rides with a route that pass the History filters, once the filters
@@ -183,9 +198,12 @@ final overviewProvider = FutureProvider<OverviewState>((ref) async {
   for (final MapEntry(:key, :value) in data.newHeatFragments.entries) {
     store.cache[key]?.heatFragment = value;
   }
+  final byId = {for (final r in visible) r.rideId: r.typ};
+  final sortedIds = [for (final r in visible) r.rideId]..sort();
   return OverviewState(
     mode: mode,
-    rideIds: [for (final r in visible) r.rideId]..sort(),
+    rideIds: sortedIds,
+    typeIds: [for (final id in sortedIds) byId[id]],
     data: data,
     bounds: bounds,
   );
