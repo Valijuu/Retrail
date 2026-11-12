@@ -59,6 +59,9 @@ const double _panelGap = 6;
 const double _cardInset = 8;
 const double _progressHeight = 2;
 
+/// Room the search panel leaves at the bottom for the attribution line.
+const double _searchBottomInset = 44;
+
 /// What a filter change means for the camera: the rides it selects. Sort and
 /// the area do not reframe; the map fits the area circle itself.
 Object _framingKey(HistoryFilter f) => Object.hash(
@@ -257,11 +260,15 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           top: _topInset,
           left: _edgeInset,
           right: _edgeInset,
+          // While searching, the column is bounded below so the panel can
+          // scroll its suggestions instead of growing under the keyboard.
+          bottom: searching ? _searchBottomInset : null,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (searching)
-                PlaceSearchPanel(onPick: _onPlacePicked)
+                Flexible(child: PlaceSearchPanel(onPick: _onPlacePicked))
               else
                 Row(
                   children: [

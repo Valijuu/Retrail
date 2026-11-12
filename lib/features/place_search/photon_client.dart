@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../domain/heading.dart' show LatLng;
+import '../../map/openfreemap.dart' show kMapUserAgent;
 
 /// One place Photon suggested: its name, a second line with the city and
 /// country, and where it is.
@@ -58,8 +59,13 @@ class PhotonClient {
   }) async {
     final http.Response response;
     try {
+      // The same app user agent as the map tiles: Photon answers the default
+      // Dart one with 403.
       response = await _client
-          .get(requestUri(query, lang: lang))
+          .get(
+            requestUri(query, lang: lang),
+            headers: const {'User-Agent': kMapUserAgent},
+          )
           .timeout(timeout);
     } on TimeoutException catch (e) {
       throw PlaceSearchUnavailable(e);

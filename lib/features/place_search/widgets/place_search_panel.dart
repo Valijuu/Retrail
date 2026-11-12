@@ -70,27 +70,37 @@ class _PlaceSearchPanelState extends ConsumerState<PlaceSearchPanel> {
           ),
           if (search.status == PlaceSearchStatus.loading)
             const LinearProgressIndicator(minHeight: 2),
-          for (final place in search.suggestions)
-            ListTile(
-              dense: true,
-              leading: Icon(Icons.place_outlined, color: colors.primary),
-              title: Text(place.name),
-              subtitle: place.detail.isEmpty ? null : Text(place.detail),
-              onTap: () => widget.onPick(place),
+          // The suggestions scroll inside the room the map leaves, so the
+          // source line below stays in view over the keyboard.
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              children: [
+                for (final place in search.suggestions)
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.place_outlined, color: colors.primary),
+                    title: Text(place.name),
+                    subtitle: place.detail.isEmpty ? null : Text(place.detail),
+                    onTap: () => widget.onPick(place),
+                  ),
+                if (search.status == PlaceSearchStatus.empty ||
+                    search.status == PlaceSearchStatus.unavailable)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                    child: Text(
+                      search.status == PlaceSearchStatus.empty
+                          ? l10n.placeSearchNone
+                          : l10n.placeSearchUnavailable,
+                      style: text.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          if (search.status == PlaceSearchStatus.empty ||
-              search.status == PlaceSearchStatus.unavailable)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text(
-                search.status == PlaceSearchStatus.empty
-                    ? l10n.placeSearchNone
-                    : l10n.placeSearchUnavailable,
-                style: text.bodyMedium?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
-            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Text(

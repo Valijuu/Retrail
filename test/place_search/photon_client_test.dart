@@ -54,10 +54,16 @@ void main() {
   });
 
   test('a good answer is parsed, an error status is "unavailable"', () async {
+    http.Request? seen;
     final ok = PhotonClient(
-      client: MockClient((_) async => http.Response(_body, 200)),
+      client: MockClient((req) async {
+        seen = req;
+        return http.Response(_body, 200);
+      }),
     );
     expect(await ok.search('Hamburg', lang: 'de'), hasLength(2));
+    // Photon refuses the default Dart user agent; the app names itself.
+    expect(seen!.headers['User-Agent'], 'Retrail (io.github.valijuu.retrail)');
     final bad = PhotonClient(
       client: MockClient((_) async => http.Response('nope', 503)),
     );

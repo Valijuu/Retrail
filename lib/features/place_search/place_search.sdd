@@ -22,14 +22,15 @@ Can modify:
 
 Must:
   The map view shows one magnifier button among its controls (the Komoot map has the same). It opens a search
-    field over the map; closing it brings the controls back. The magnifier in the History header stays what it
+    field over the map; closing it brings the controls back. The suggestions scroll inside the room the map
+    leaves above the attribution, so the source line stays in view over the keyboard. The magnifier in the History header stays what it
     is: it searches the rider's rides by title, in the list and on the map alike.
   Typing asks Photon (`https://photon.komoot.io/api`, OpenStreetMap data, no key) for places. A request goes out
     only after the rider paused typing for `400` ms and the text has at least `3` characters; an older request
     is dropped when a newer one starts. At most `5` suggestions show, each with its name and a second line with
     the city and country.
-  The request carries the typed text and the app language (`lang`, `de` or `en`) and nothing else: no position,
-    no ride data, no identifier. Photon's fair-use rules are kept: no request per keystroke, no bulk use.
+  The request carries the typed text, the app language (`lang`, `de` or `en`) and the app's user agent of
+    @Map (Photon refuses the default one) and nothing else: no position, no ride data, no identifier. Photon's fair-use rules are kept: no request per keystroke, no bulk use.
   Choosing a suggestion sets the pin there like a long press: the pin keeps a radius chosen before (default
     `5` km), the camera moves to it once and shows the whole circle, and the search field closes.
   An empty result says so ("no place found"); a failed request (offline, error, timeout of `8` s) says the search
@@ -79,7 +80,7 @@ Tasks:
   [x] #106 Magnifier button and search panel over the map; choosing a suggestion sets the pin.
   [x] #106 German and English copy, glossary entry, source line.
   [x] #106 Store data-safety answers; the privacy policy text is an issue in `retrailWeb`.
-  [ ] #106 Device check: typing on a phone, offline, pin and camera after choosing.
+  [x] #106 Device check: typing on a phone, offline, pin and camera after choosing (Pixel 7, 2026-11-12).
 
 Done when:
   Every Scenario passes as a test, the policy and store answers name Photon, and the device check is done.
