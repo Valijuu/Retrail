@@ -22,7 +22,9 @@ encoded polyline with its bounding box, in a new table `ride_outlines` (schema v
 - Tap hits, the heatmap points and the camera framing all work on outlines, never on trackpoints.
 - One map line layer per activity type, fed by one GeoJSON source per type, not one layer per ride.
 - The "rides around here" filter (pin and radius) also works on outlines: a ride matches when any segment of
-  it comes within the radius. It lives in the shared History filter, so list and map agree.
+  it comes within the radius. It belongs to the map alone, like the activity selection: the History list and
+  its filters do not know it, and it is not stored across app starts (see
+  `lib/features/history_map/history_map.sdd` and `map_area.dart`).
 - The best time of a route comes from `@RouteGroup`; the overview never recomputes it.
 
 ## Rejected alternatives
