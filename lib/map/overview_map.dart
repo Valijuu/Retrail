@@ -113,6 +113,11 @@ class _OverviewMapState extends State<OverviewMap> {
   bool _sourcesReady = false;
   bool _styleReady = false;
   bool _userMoved = false;
+
+  /// The camera has been put somewhere on purpose (framing, remembered
+  /// camera, pin). Rides appearing later (a filter that had hidden them all)
+  /// do not frame again by themselves; only a frame request does.
+  bool _placed = false;
   Size _viewport = Size.zero;
   Brightness? _brightness;
 
@@ -142,6 +147,7 @@ class _OverviewMapState extends State<OverviewMap> {
     _style = null;
     _sourcesReady = false;
     _styleReady = false;
+    _placed = false;
     _pushed.clear();
   }
 
@@ -167,6 +173,7 @@ class _OverviewMapState extends State<OverviewMap> {
       _userMoved = false;
       _frame();
     } else if (!_userMoved &&
+        !_placed &&
         widget.restoreCamera == null &&
         widget.bounds != old.bounds &&
         old.bounds == null) {
@@ -277,6 +284,7 @@ class _OverviewMapState extends State<OverviewMap> {
     final controller = _controller;
     if (controller == null) return;
     final center = Geographic(lon: to.lng, lat: to.lat);
+    _placed = true;
     try {
       await controller.moveCamera(center: center, bearing: 0);
       await controller.moveCamera(center: center, zoom: zoom);

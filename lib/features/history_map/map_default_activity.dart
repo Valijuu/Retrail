@@ -23,21 +23,22 @@ final mapDefaultAppliedProvider =
 /// Narrows the map to the rider's own activity when the map opens, and again
 /// whenever that activity changes in Settings; between those moments every
 /// tick in the activity menu is the rider's own. Needs the activity to occur
-/// in the history, or the map would open empty.
-void applyMapDefaultActivity(WidgetRef ref) {
+/// in the history, or the map would open empty. True when it narrowed the map.
+bool applyMapDefaultActivity(WidgetRef ref) {
   final own = ref.read(lastActivityTypeProvider).value;
   final present = ref.read(legendTypesProvider).value;
-  if (own == null || present == null) return;
+  if (own == null || present == null) return false;
   if (!present.contains(own)) {
     // Not available now: forget the mark, so the activity narrows the map
     // again once it occurs.
     ref.read(mapDefaultAppliedProvider.notifier).set(null);
-    return;
+    return false;
   }
-  if (ref.read(mapDefaultAppliedProvider) == own) return;
+  if (ref.read(mapDefaultAppliedProvider) == own) return false;
   // With one type in the history there is nothing to narrow yet; a second
   // type showing up later narrows then.
-  if (present.length < 2) return;
+  if (present.length < 2) return false;
   ref.read(mapDefaultAppliedProvider.notifier).set(own);
   ref.read(mapActivitiesProvider.notifier).set({own});
+  return true;
 }

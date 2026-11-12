@@ -16,7 +16,6 @@ import '../history/history_filter.dart';
 import '../history/history_providers.dart';
 import 'history_map_providers.dart';
 import '../home/home_providers.dart' show lastActivityTypeProvider;
-import 'map_activities.dart';
 import 'map_area.dart';
 import 'map_default_activity.dart';
 import 'map_locator.dart';
@@ -84,7 +83,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     _framePending = bounds == null && _restore == null;
     Future.microtask(() {
       _visible.set(true);
-      if (mounted) applyMapDefaultActivity(ref);
+      if (mounted) _applyDefaultActivity();
     });
   }
 
@@ -98,6 +97,12 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   void _onFilterChanged(HistoryFilter? previous, HistoryFilter next) {
     if (previous == null || _framingKey(previous) == _framingKey(next)) return;
     _reframe();
+  }
+
+  /// The rider's own activity as the map's start: the camera frames that set
+  /// once. The rider's own ticks in the activity menu never move the camera.
+  void _applyDefaultActivity() {
+    if (applyMapDefaultActivity(ref)) _reframe();
   }
 
   /// The camera frames the new set of rides once when it arrives.
@@ -168,12 +173,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   @override
   Widget build(BuildContext context) {
     ref.listen<HistoryFilter>(historyFilterProvider, _onFilterChanged);
-    ref.listen(mapActivitiesProvider, (_, _) => _reframe());
-    ref.listen(legendTypesProvider, (_, _) => applyMapDefaultActivity(ref));
-    ref.listen(
-      lastActivityTypeProvider,
-      (_, _) => applyMapDefaultActivity(ref),
-    );
+    ref.listen(legendTypesProvider, (_, _) => _applyDefaultActivity());
+    ref.listen(lastActivityTypeProvider, (_, _) => _applyDefaultActivity());
     ref.listen(overviewProvider, _onOverview);
     ref.listen(outlineFillProvider, (was, filling) {
       if (was == true && !filling) {

@@ -344,7 +344,7 @@ void main() {
     OverviewMap map(WidgetTester tester) =>
         tester.widget<OverviewMap>(find.byType(OverviewMap));
 
-    testWidgets('a filter change frames the new set, once, with its bounds', (
+    testWidgets('a header filter change frames the new set, once', (
       tester,
     ) async {
       // The native map is replaced, but the OverviewMap widget stays in the
@@ -357,7 +357,7 @@ void main() {
       final first = map(tester).frameToken;
       expect(map(tester).bounds!.south, 48);
 
-      container.read(mapActivitiesProvider.notifier).set({ActivityType.ski});
+      container.read(historyFilterProvider.notifier).setQuery('North');
       await settle(tester);
       expect(map(tester).frameToken, isNot(first));
       expect(map(tester).bounds!.south, 52);
@@ -369,6 +369,42 @@ void main() {
           .setSort(SortOrder.distance);
       await settle(tester);
       expect(map(tester).frameToken, framed);
+      await finish(tester);
+    });
+
+    testWidgets('ticking activities never moves the camera', (tester) async {
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);
+      await _ride(db, title: 'North', type: 'SKI', lat: 52, date: 2);
+      await pump(tester, view: 'map');
+      await settle(tester);
+      final first = map(tester).frameToken;
+
+      final n = container.read(mapActivitiesProvider.notifier);
+      for (final types in <Set<ActivityType>?>[
+        {ActivityType.ski},
+        {ActivityType.longboard},
+        <ActivityType>{},
+        null,
+      ]) {
+        n.set(types);
+        await settle(tester);
+        expect(map(tester).frameToken, first, reason: '$types');
+      }
+      await finish(tester);
+    });
+
+    testWidgets('the start on my own activity frames its rides once', (
+      tester,
+    ) async {
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);
+      await _ride(db, title: 'North', type: 'SKI', lat: 52, date: 2);
+      await pump(tester, view: 'map', own: 'SKI');
+      await settle(tester);
+      expect(container.read(mapActivitiesProvider), {ActivityType.ski});
+      expect(map(tester).bounds!.south, 52);
+      expect(map(tester).frameToken, greaterThan(0));
       await finish(tester);
     });
 
