@@ -106,6 +106,13 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     super.dispose();
   }
 
+  /// Opening the search closes an open ride card: map and search panel do not
+  /// compete (#108).
+  void _openPlaceSearch() {
+    ref.read(mapSelectionProvider.notifier).clear();
+    ref.read(placeSearchProvider.notifier).open();
+  }
+
   /// A chosen place sets the pin like a long press and moves the camera to it.
   void _onPlacePicked(PlaceSuggestion place) {
     ref.read(mapAreaProvider.notifier).setPin(place.point);
@@ -279,9 +286,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                     const SizedBox(width: _panelGap),
                     const ActivityMenu(),
                     const Spacer(),
-                    PlaceSearchButton(
-                      onPressed: ref.read(placeSearchProvider.notifier).open,
-                    ),
+                    PlaceSearchButton(onPressed: _openPlaceSearch),
                   ],
                 ),
               if (!searching && routedShown < routedTotal) ...[

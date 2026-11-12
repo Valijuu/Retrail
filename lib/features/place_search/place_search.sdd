@@ -35,6 +35,7 @@ Must:
     `5` km), the camera moves to it once and shows the whole circle, and the search field closes.
   An empty result says so ("no place found"); a failed request (offline, error, timeout of `8` s) says the search
     is not available now. Both leave the map and the pin as they are.
+  Opening the search closes an open ride preview card, and no card shows while the search is open (#108).
   Queries and results are not stored on the device or logged.
   The search panel names its source: "Search by Photon · © OpenStreetMap".
   The privacy policy on getretrail.app (repo `retrailWeb`) and the store data-safety answers say that the typed
@@ -56,6 +57,11 @@ Scenario: typing pauses
   Given the search field is open
   When the rider types `Hamburg` letter by letter within `400` ms each
   Then one request goes out, with the full text, after the last letter
+
+Scenario: a ride preview is open
+  Given a ride's preview card is open on the map
+  When the rider taps the magnifier
+  Then the card is gone and the search field is open
 
 Scenario: too short
   Given the search field is open

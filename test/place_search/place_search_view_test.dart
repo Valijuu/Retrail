@@ -13,10 +13,12 @@ import 'package:retrail/core/theme/app_theme.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
+import 'package:retrail/domain/ride_outline.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_screen.dart';
 import 'package:retrail/features/history_map/map_area.dart';
+import 'package:retrail/features/history_map/map_selection.dart';
 import 'package:retrail/features/place_search/photon_client.dart';
 import 'package:retrail/features/place_search/place_search_controller.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -49,12 +51,27 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await db.rideDao.insert(
+    final id = await db.rideDao.insert(
       RidesCompanion.insert(
         description: const Value('Board ride'),
         startTime: const Value(1),
         date: const Value(1),
         hasRoute: const Value(true),
+      ),
+    );
+    final outline = RideOutline([
+      (lat: 48.0, lng: 11.0),
+      (lat: 48.0, lng: 11.01),
+    ]);
+    final box = outline.bounds!;
+    await db.outlineDao.upsert(
+      RideOutlinesCompanion.insert(
+        rideId: Value(id),
+        polyline: outline.encode(),
+        south: box.south,
+        west: box.west,
+        north: box.north,
+        east: box.east,
       ),
     );
     SharedPreferences.setMockInitialValues({
@@ -166,6 +183,22 @@ void main() {
     expect(find.byType(TextField), findsNothing);
     expect(container.read(mapAreaProvider), isNull);
     expect(find.byTooltip('Search a place'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('opening the search closes an open ride card', (tester) async {
+    await pump(tester);
+    container.read(mapSelectionProvider.notifier).tap((
+      lat: 48.0,
+      lng: 11.005,
+    ), 14);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(container.read(mapSelectionProvider).rideIds, isNotEmpty);
+
+    await tester.tap(find.byTooltip('Search a place'));
+    await tester.pumpAndSettle();
+    expect(container.read(mapSelectionProvider).rideIds, isEmpty);
+    expect(find.byType(TextField), findsOneWidget);
     await finish(tester);
   });
 }
