@@ -54,6 +54,15 @@ class _PlaceSearchPanelState extends ConsumerState<PlaceSearchPanel> {
                   autofocus: true,
                   textInputAction: TextInputAction.search,
                   onChanged: notifier.setQuery,
+                  // A pasted wall of text would become a huge request URL.
+                  maxLength: placeSearchMaxChars,
+                  buildCounter:
+                      (
+                        _, {
+                        required currentLength,
+                        required isFocused,
+                        maxLength,
+                      }) => null,
                   decoration: InputDecoration(
                     hintText: l10n.placeSearchHint,
                     border: InputBorder.none,

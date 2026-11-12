@@ -42,6 +42,7 @@ Must:
     otherwise.
 
 Must not:
+  Take more than `100` characters in the field.
   Send text while the field is empty, under `3` characters or unchanged since the last request.
   Send the rider's position, ride titles, filters or any identifier.
   Replace or hide the ride search of the History header.

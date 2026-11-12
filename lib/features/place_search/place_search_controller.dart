@@ -12,6 +12,9 @@ const Duration placeSearchDebounce = Duration(milliseconds: 400);
 /// Shorter texts are not sent.
 const int placeSearchMinChars = 3;
 
+/// The field takes no more characters than this.
+const int placeSearchMaxChars = 100;
+
 enum PlaceSearchStatus {
   /// Closed, or open with too little text.
   idle,
