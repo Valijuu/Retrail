@@ -48,9 +48,6 @@ const double _panelGap = 6;
 const double _cardInset = 28;
 const double _progressHeight = 2;
 
-/// How long after a filter change the next new set of rides is framed.
-const Duration _frameWindow = Duration(seconds: 2);
-
 /// What a filter change means for the camera: the rides it selects. Sort and
 /// the area do not reframe; the map fits the area circle itself.
 Object _framingKey(HistoryFilter f) => Object.hash(
@@ -64,9 +61,9 @@ Object _framingKey(HistoryFilter f) => Object.hash(
 
 class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   /// The camera frames the visible rides once after the filters changed, when
-  /// the new set has arrived; and once when the view opens without data.
+  /// the new set has arrived; and once when the view opens without data. It
+  /// waits however long the new set takes; a camera gesture cancels it.
   bool _framePending = false;
-  Timer? _frameWindowTimer;
   List<int>? _framedIds;
   int _frameToken = 0;
   int _areaFocusToken = 0;
@@ -91,7 +88,6 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
 
   @override
   void dispose() {
-    _frameWindowTimer?.cancel();
     Future.microtask(() => _visible.set(false));
     super.dispose();
   }
@@ -108,11 +104,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   }
 
   /// The camera frames the new set of rides once when it arrives.
-  void _reframe() {
-    _framePending = true;
-    _frameWindowTimer?.cancel();
-    _frameWindowTimer = Timer(_frameWindow, () => _framePending = false);
-  }
+  void _reframe() => _framePending = true;
+
+  /// A gesture of the rider is never overridden by a frame still waiting.
+  void _onUserMoved() => _framePending = false;
 
   void _onOverview(
     AsyncValue<OverviewState>? previous,
@@ -123,8 +118,13 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     // rides are still being given their outline the set is not complete yet.
     if (next.isLoading || state == null || state.bounds == null) return;
     if (ref.read(outlineFillProvider)) return;
-    final sameSet = _framedIds != null && _sameIds(_framedIds!, state.rideIds);
-    if (!_framePending || sameSet) return;
+    if (!_framePending) return;
+    // The new set is through: frame it once, unless the camera shows it
+    // already. Either way nothing is left waiting for a later change.
+    if (_framedIds != null && _sameIds(_framedIds!, state.rideIds)) {
+      _framePending = false;
+      return;
+    }
     setState(() {
       _framePending = false;
       _framedIds = state.rideIds;
@@ -225,6 +225,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           onPinMoved: areaNotifier.setPin,
           restoreCamera: _restore,
           onCameraIdle: ref.read(mapCameraMemoryProvider.notifier).remember,
+          onUserMoved: _onUserMoved,
           showAttribution: false,
         ),
         Positioned(

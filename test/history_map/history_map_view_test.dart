@@ -372,6 +372,65 @@ void main() {
       await finish(tester);
     });
 
+    testWidgets('a slow new set after a filter change still frames', (
+      tester,
+    ) async {
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);
+      await _ride(db, title: 'North', type: 'SKI', lat: 52, date: 2);
+      await pump(tester, view: 'map');
+      await settle(tester);
+      final first = map(tester).frameToken;
+
+      container.read(historyFilterProvider.notifier).setQuery('North');
+      // Seconds pass on the clock before the new set is through.
+      await tester.pump(const Duration(seconds: 3));
+      await settle(tester);
+      expect(map(tester).frameToken, isNot(first));
+      expect(map(tester).bounds!.south, 52);
+      await finish(tester);
+    });
+
+    testWidgets('a gesture before the new set arrives cancels the frame', (
+      tester,
+    ) async {
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);
+      await _ride(db, title: 'North', type: 'SKI', lat: 52, date: 2);
+      await pump(tester, view: 'map');
+      await settle(tester);
+      final first = map(tester).frameToken;
+
+      container.read(historyFilterProvider.notifier).setQuery('North');
+      map(tester).onUserMoved!();
+      await settle(tester);
+      expect(map(tester).bounds!.south, 52);
+      expect(map(tester).frameToken, first);
+      await finish(tester);
+    });
+
+    testWidgets('a filter change that keeps the set leaves no frame waiting', (
+      tester,
+    ) async {
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);
+      await _ride(db, title: 'North', type: 'SKI', lat: 52, date: 2);
+      await pump(tester, view: 'map');
+      await settle(tester);
+      final first = map(tester).frameToken;
+
+      // Both titles contain "th": the same rides stay.
+      container.read(historyFilterProvider.notifier).setQuery('th');
+      await settle(tester);
+      expect(map(tester).frameToken, first);
+      // A later change of the set by the activity menu does not frame.
+      container.read(mapActivitiesProvider.notifier).set({ActivityType.ski});
+      await settle(tester);
+      expect(map(tester).bounds!.south, 52);
+      expect(map(tester).frameToken, first);
+      await finish(tester);
+    });
+
     testWidgets('ticking activities never moves the camera', (tester) async {
       OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
       await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);

@@ -52,6 +52,7 @@ class OverviewMap extends StatefulWidget {
     this.onLongPress,
     this.onPinMoved,
     this.onCameraIdle,
+    this.onUserMoved,
     this.restoreCamera,
     this.showAttribution = true,
   });
@@ -88,6 +89,9 @@ class OverviewMap extends StatefulWidget {
 
   /// Reports where the camera came to rest, to be kept for a later visit.
   final void Function(LatLng center, double zoom)? onCameraIdle;
+
+  /// The rider started moving the camera by a gesture.
+  final VoidCallback? onUserMoved;
 
   /// Starts at this camera instead of framing the rides (coming back to the
   /// map after leaving it).
@@ -297,6 +301,7 @@ class _OverviewMapState extends State<OverviewMap> {
     switch (e) {
       case MapEventStartMoveCamera(reason: CameraChangeReason.apiGesture):
         _userMoved = true;
+        widget.onUserMoved?.call();
       case MapEventClick(:final point):
         widget.onTap?.call((
           lat: point.lat,

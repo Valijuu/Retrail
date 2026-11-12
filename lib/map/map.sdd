@@ -66,6 +66,8 @@ Must:
   The overview map of the History map view draws ride outlines as one GeoJSON source and line layer per activity
     type, or one heatmap layer, plus the user position; it follows the same style-load, disposal and
     light/dark rules as the live map (#43, #47) and shows the attribution.
+  The overview map reports the start of a camera gesture by the rider through `onUserMoved`, so its owner can
+    drop a frame it still waits for.
 
 Must not:
   Put a live map into a list item.
