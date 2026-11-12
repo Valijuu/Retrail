@@ -14,7 +14,7 @@ References:
 
 Must:
   @AreaFilter holds a pin (latitude, longitude) and a radius in km from `1` to `50` in steps of `1`;
-    a radius outside that range is clamped. The default radius is `5` km.
+    a radius outside that range is clamped and then rounded to a whole kilometre. The default radius is `5` km.
   @AreaFilter.matches is true when any segment of the outline passes within the radius of the pin, so a ride
     that only touches the circle counts; the distance is that of the nearest segment.
   The outline's bounds, grown by the radius, reject far rides before any segment is measured.
@@ -40,4 +40,5 @@ Scenario: ride stays outside
 Example:
   radius `0` or below: clamped to `1`
   radius `80`: clamped to `50`
+  radius `7.4`: rounded to `7`; radius `0.4`: clamped to `1`
   an outline that ends exactly `5` km from the pin at radius `5`: matches

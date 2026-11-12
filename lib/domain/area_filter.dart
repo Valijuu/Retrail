@@ -4,10 +4,11 @@ import 'distance_calculator.dart';
 import 'heading.dart' show LatLng;
 import 'ride_outline.dart';
 
-/// The "rides around here" filter (#96): a pinned point and a radius.
+/// The "rides around here" filter (#96): a pinned point and a radius in
+/// whole kilometres.
 class AreaFilter {
   AreaFilter({required this.pin, double radiusKm = defaultRadiusKm})
-    : radiusKm = radiusKm.clamp(minRadiusKm, maxRadiusKm).toDouble();
+    : radiusKm = radiusKm.clamp(minRadiusKm, maxRadiusKm).roundToDouble();
 
   static const double minRadiusKm = 1;
   static const double maxRadiusKm = 50;

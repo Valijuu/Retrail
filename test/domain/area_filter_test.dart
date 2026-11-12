@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/domain/area_filter.dart';
 import 'package:retrail/domain/distance_calculator.dart';
@@ -26,6 +28,14 @@ void main() {
 
     test('radius 80 is clamped to 50', () {
       expect(AreaFilter(pin: _km(0, 0), radiusKm: 80).radiusKm, 50);
+    });
+
+    test('a radius rounds to a whole kilometre after clamping', () {
+      expect(AreaFilter(pin: _km(0, 0), radiusKm: 7.4).radiusKm, 7);
+      expect(AreaFilter(pin: _km(0, 0), radiusKm: 7.5).radiusKm, 8);
+      expect(AreaFilter(pin: _km(0, 0), radiusKm: 0.4).radiusKm, 1);
+      expect(AreaFilter(pin: _km(0, 0), radiusKm: 49.9).radiusKm, 50);
+      expect(AreaFilter(pin: _km(0, 0)).copyWith(radiusKm: 3.2).radiusKm, 3);
     });
 
     test('two filters with the same pin and radius are equal', () {
@@ -62,11 +72,11 @@ void main() {
     });
 
     test('an outline that ends exactly 5 km from the pin matches', () {
-      final end = _km(5, 0);
+      // 5 km north on the Haversine sphere (radius 6371 km).
+      final end = (lat: 5000 / (6371000 * math.pi / 180), lng: 0.0);
       final exact = _calc.distanceBetween(pin.lat, pin.lng, end.lat, end.lng);
-      final f = AreaFilter(pin: pin, radiusKm: exact / 1000);
-      // radius is clamped to a double; the end sits exactly on the circle.
-      expect(matches(f, [_km(5, 20), end]), isTrue);
+      expect(exact, closeTo(5000, 1e-6));
+      expect(matches(filter(), [(lat: end.lat, lng: 0.2), end]), isTrue);
     });
 
     test('bounds grown by the radius reject a far outline unmeasured', () {
