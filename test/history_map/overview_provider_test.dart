@@ -7,7 +7,9 @@ import 'package:retrail/data/repositories/preferences_repository.dart';
 import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/ride_outline.dart';
 import 'package:retrail/features/history/area_providers.dart';
+import 'package:retrail/features/history/history_filter.dart';
 import 'package:retrail/features/history/history_providers.dart';
+import 'package:retrail/features/history_map/map_activities.dart';
 import 'package:retrail/features/history_map/history_map_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,10 +18,12 @@ Future<int> _ride(
   String? type = 'LONGBOARD',
   bool outline = true,
   double lat = 48,
+  String? title,
 }) async {
   final id = await db.rideDao.insert(
     RidesCompanion.insert(
       typ: Value(type),
+      description: Value(title),
       startTime: const Value(1),
       date: const Value(1),
       hasRoute: const Value(true),
@@ -80,10 +84,29 @@ void main() {
     expect(state.bounds!.south, 48);
   });
 
-  test('the activity filter changes list and map alike', () async {
+  test('the header activity filter and sort are the list\'s alone', () async {
+    final lb = await _ride(db, type: 'LONGBOARD');
+    final ski = await _ride(db, type: 'SKI');
+    final n = c.read(historyFilterProvider.notifier)
+      ..toggleActivity(ActivityType.ski)
+      ..setSort(SortOrder.distance);
+    final state = await settle();
+    expect(state.rideIds, unorderedEquals([lb, ski]));
+    expect(n, isNotNull);
+  });
+
+  test('the header search narrows the map as it narrows the list', () async {
+    await _ride(db, type: 'LONGBOARD', title: 'Alpha');
+    final beta = await _ride(db, type: 'SKI', title: 'Beta');
+    c.read(historyFilterProvider.notifier).setQuery('Beta');
+    final state = await settle();
+    expect(state.rideIds, [beta]);
+  });
+
+  test('the map\'s own activity selection still narrows the map', () async {
     await _ride(db, type: 'LONGBOARD');
     final ski = await _ride(db, type: 'SKI');
-    c.read(historyFilterProvider.notifier).toggleActivity(ActivityType.ski);
+    c.read(mapActivitiesProvider.notifier).set({ActivityType.ski});
     final state = await settle();
     expect(state.rideIds, [ski]);
     expect(state.data!.linesByType.keys, ['SKI']);

@@ -25,6 +25,7 @@ void main() {
     WidgetTester tester, {
     List<int> years = const [2024, 2023],
     List<FollowedRoute> routes = const [],
+    bool forMap = false,
   }) async {
     container = ProviderContainer(
       overrides: [
@@ -46,12 +47,31 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const Scaffold(body: HistoryFilterSheet()),
+          home: Scaffold(body: HistoryFilterSheet(forMap: forMap)),
         ),
       ),
     );
     await tester.pump();
   }
+
+  testWidgets('opened from the map it hides sort and activities', (
+    tester,
+  ) async {
+    await pump(tester, forMap: true);
+    expect(find.text('YEAR'), findsOneWidget);
+    expect(find.text('SORT BY'), findsNothing);
+    expect(find.text('ACTIVITY TYPE'), findsNothing);
+    expect(find.byType(FilterChip), findsNothing);
+    expect(find.byType(Switch), findsOneWidget); // favourites stay
+  });
+
+  testWidgets('opened from the list it keeps sort and activities', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.text('SORT BY'), findsOneWidget);
+    expect(find.text('ACTIVITY TYPE'), findsOneWidget);
+  });
 
   testWidgets(
     'activity chips with a glyph draw no checkmark over it (issue #29)',

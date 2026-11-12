@@ -10,9 +10,9 @@ import '../../domain/heading.dart' show LatLng;
 import '../../domain/ride_outline.dart';
 import '../history/area_providers.dart';
 import '../history/history_items.dart';
-import '../history/history_providers.dart';
 import 'map_activities.dart';
 import 'map_area.dart';
+import 'map_items.dart';
 import 'overview_geojson.dart';
 import 'route_badges.dart';
 
@@ -147,14 +147,14 @@ class SettledMapRidesNotifier extends Notifier<List<Ride>> {
       _timer?.cancel();
       _timer = Timer(
         filterDebounce,
-        () => state = _routed(ref.read(historyItemsProvider)),
+        () => state = _routed(ref.read(mapItemsProvider)),
       );
     }
 
-    ref.listen(historyItemsProvider, (_, _) => settle());
+    ref.listen(mapItemsProvider, (_, _) => settle());
     ref.listen(mapActivitiesProvider, (_, _) => settle());
     ref.listen(mapAreaRideIdsProvider, (_, _) => settle());
-    return _routed(ref.read(historyItemsProvider));
+    return _routed(ref.read(mapItemsProvider));
   }
 }
 

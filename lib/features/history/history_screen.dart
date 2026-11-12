@@ -9,6 +9,7 @@ import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../history_map/history_map_providers.dart';
+import '../history_map/map_items.dart';
 import '../history_map/outline_fill.dart';
 import '../history_map/history_map_view.dart';
 import '../history_map/widgets/history_view_switch.dart';
@@ -231,11 +232,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     }
   }
 
-  Future<void> _openFilters() => showAppScrollableSheet<void>(
-    context: context,
-    builder: (_, scrollController) =>
-        HistoryFilterSheet(scrollController: scrollController),
-  );
+  Future<void> _openFilters() {
+    final forMap =
+        (ref.read(historyViewProvider).value ?? HistoryView.list) ==
+        HistoryView.map;
+    return showAppScrollableSheet<void>(
+      context: context,
+      builder: (_, scrollController) => HistoryFilterSheet(
+        scrollController: scrollController,
+        forMap: forMap,
+      ),
+    );
+  }
 
   Future<void> _confirmDelete({int? single, bool batch = false}) async {
     final ids = batch ? _selectedIds.toList() : [single!];
@@ -326,7 +334,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
               _FilterBar(
                 searchController: _searchController,
                 showSearch: _showSearch,
-                activeFilterCount: ref.watch(activeFilterCountProvider),
+                activeFilterCount: showMap
+                    ? ref.watch(activeMapFilterCountProvider)
+                    : ref.watch(activeFilterCountProvider),
                 onToggleSearch: () =>
                     setState(() => _showSearch = !_showSearch),
                 onSearchChange: (q) =>
@@ -337,7 +347,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
               const HistoryViewSwitch(),
             Expanded(
               child: showMap
-                  ? HistoryMapView(actions: _mapCardActions())
+                  ? HistoryMapView(
+                      actions: _mapCardActions(),
+                      onOpenFilters: _openFilters,
+                    )
                   : hasRides
                   ? ListView.separated(
                       controller: _scrollController,

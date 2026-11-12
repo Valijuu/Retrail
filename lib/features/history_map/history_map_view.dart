@@ -13,10 +13,12 @@ import '../../map/overview_map.dart';
 import '../../map/map_attribution.dart';
 import '../history/area_providers.dart';
 import '../history/history_filter.dart';
+import '../history/history_items.dart';
 import '../history/history_providers.dart';
 import 'history_map_providers.dart';
 import '../home/home_providers.dart' show lastActivityTypeProvider;
 import 'map_area.dart';
+import 'map_items.dart';
 import 'map_default_activity.dart';
 import 'map_locator.dart';
 import 'map_selection.dart';
@@ -24,6 +26,7 @@ import 'outline_fill.dart';
 import 'overview_geojson.dart';
 import 'widgets/map_controls.dart';
 import 'widgets/activity_menu.dart';
+import 'widgets/hidden_rides_line.dart';
 import 'widgets/map_preview_card.dart';
 
 /// The map view of the History tab (#96): every ride with a route as a line
@@ -31,9 +34,16 @@ import 'widgets/map_preview_card.dart';
 /// preview card of the tapped ride. The History screen passes the card's
 /// [actions].
 class HistoryMapView extends ConsumerStatefulWidget {
-  const HistoryMapView({super.key, required this.actions});
+  const HistoryMapView({
+    super.key,
+    required this.actions,
+    required this.onOpenFilters,
+  });
 
   final MapCardActions actions;
+
+  /// Opens the header's filter sheet for the map (from the hidden-rides line).
+  final VoidCallback onOpenFilters;
 
   @override
   ConsumerState<HistoryMapView> createState() => _HistoryMapViewState();
@@ -190,6 +200,15 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
         ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
     final area = ref.watch(mapAreaProvider);
     final shown = ref.watch(selectedRideProvider);
+    final headerNarrows = ref.watch(
+      historyFilterProvider.select(mapHeaderFilterNarrows),
+    );
+    final routedTotal = ref.watch(routedRideCountProvider).value ?? 0;
+    final routedShown = [
+      for (final i
+          in ref.watch(mapItemsProvider).value ?? const <HistoryItem>[])
+        if (i is RideEntryItem && i.ride.hasRoute) i,
+    ].length;
     final position = ref.watch(mapPositionProvider);
     final areaNotifier = ref.read(mapAreaProvider.notifier);
     final selection = ref.read(mapSelectionProvider.notifier);
@@ -243,6 +262,14 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                   const ActivityMenu(),
                 ],
               ),
+              if (headerNarrows && routedShown < routedTotal) ...[
+                const SizedBox(height: _panelGap),
+                HiddenRidesLine(
+                  shown: routedShown,
+                  total: routedTotal,
+                  onTap: widget.onOpenFilters,
+                ),
+              ],
               if (area != null) ...[
                 const SizedBox(height: _panelGap),
                 AreaPanel(

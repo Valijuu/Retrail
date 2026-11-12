@@ -30,9 +30,14 @@ Must:
   The History tab has a Liste/Karte switch; List is the default. The choice (`history_view`) and the map mode
     Lines or Heat (`history_map_mode`) are stored in preferences and come back after the app was closed
     and reopened or returned to from the background.
-  The map view uses the History header filters (year, months, favourites, followed routes, search) through the
-    same provider; changing one changes list and map alike. Sort and selection stay list-only. The activity
-    selection and the area are the map's own.
+  The map view uses the History header's search and filters year, months, favourites and followed routes through
+    the same provider; changing one changes list and map alike. The header's activity filter, its sort order
+    and the list selection are the list's alone and have no effect on the map; the activity selection and the
+    area are the map's own, so the map has exactly one activity control (#113).
+  In the map view the header's filter sheet shows only what the map uses (year, months, favourites, followed
+    routes), without sort and activities, and its badge counts only those. While the search or these filters
+    hide rides from the map, a line over it says "n of m rides" (rides with a route); tapping it opens the
+    filter sheet.
   A long press on the map sets a pin; the my-location button also sets it to the current position (after the
     permission rules below). The pin can be dragged or removed, and a radius slider from `1` to `50` km
     (default `5`) draws the circle on the map. With a pin, only rides that match @AreaFilter remain.

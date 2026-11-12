@@ -265,6 +265,8 @@
   "historyMapOpenSettings": "Settings",
   "historyMapLocationOff": "Location services are off.",
   "historyMapPreparing": "Preparing routes…",
+  "historyMapHiddenRides": "{shown} of {total} rides",
+  "@historyMapHiddenRides": {"placeholders": {"shown": {"type": "int"}, "total": {"type": "int"}}},
   "historyMapActivities": "Activities",
   "historyMapAllActivities": "All activities"
 }

@@ -24,6 +24,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 - The map opens on your own activity from Settings (you can still tick others on and off). Its activity menu
   works on the map only and leaves the History list alone, and an entry ticks or unticks all activities at
   once. The pin with its radius works on the map only as well (#96).
+- On the map, the search and filters at the top only act where they make sense: the activity filter and the sort
+  order stay with the list, the filter menu shows only year, months, favourites and routes there, and a line
+  "12 of 40 rides" shows when they hide rides (#113).
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.
 

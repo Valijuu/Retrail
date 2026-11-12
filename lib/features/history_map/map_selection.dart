@@ -4,8 +4,8 @@ import '../../domain/heading.dart' show LatLng;
 import '../../domain/outline_hit.dart';
 import '../history/area_providers.dart';
 import '../history/history_items.dart';
-import '../history/history_providers.dart';
 import 'history_map_providers.dart';
+import 'map_items.dart';
 import 'route_badges.dart';
 
 /// The rides under the last tap, nearest first (#96).
@@ -43,7 +43,7 @@ class MapSelectionNotifier extends Notifier<MapSelection> {
   }
 
   Map<int, int> _timestamps() => {
-    for (final item in ref.read(historyItemsProvider).value ?? const [])
+    for (final item in ref.read(mapItemsProvider).value ?? const [])
       if (item is RideEntryItem)
         item.ride.rideId: item.ride.date ?? item.ride.startTime ?? 0,
   };
@@ -78,7 +78,7 @@ class SelectedRide {
 /// while its card is open, or hidden by the map's own filters, drops out.
 final selectedRideProvider = Provider<SelectedRide?>((ref) {
   final selection = ref.watch(mapSelectionProvider);
-  final items = ref.watch(historyItemsProvider).value ?? const [];
+  final items = ref.watch(mapItemsProvider).value ?? const [];
   final byId = {
     for (final item in items)
       if (item is RideEntryItem) item.ride.rideId: item,

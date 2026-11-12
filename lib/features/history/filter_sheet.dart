@@ -20,11 +20,20 @@ import '../../core/theme/theme_context.dart';
 /// touched — there is no separate "Apply" step; the sheet is dismissed by
 /// dragging down or tapping outside it. Ports `FilterBottomSheet`.
 class HistoryFilterSheet extends ConsumerWidget {
-  const HistoryFilterSheet({super.key, this.scrollController});
+  const HistoryFilterSheet({
+    super.key,
+    this.scrollController,
+    this.forMap = false,
+  });
 
   /// The enclosing `DraggableScrollableSheet`'s controller, so dragging the
   /// content down moves (and closes) the sheet instead of only scrolling.
   final ScrollController? scrollController;
+
+  /// Opened from the map view: only what the map uses (year, months,
+  /// favourites, routes). Sort and activities are the list's alone; the map
+  /// has its own activity menu (#113).
+  final bool forMap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,46 +113,48 @@ class HistoryFilterSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 20),
-            _SectionLabel(l10n.historySectionSort),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final (label, value) in sorts)
+            if (!forMap) ...[
+              _SectionLabel(l10n.historySectionSort),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final (label, value) in sorts)
+                    FilterChip(
+                      selected: filter.sort == value,
+                      onSelected: (_) => notifier.setSort(value),
+                      label: Text(label),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _SectionLabel(l10n.historySectionActivity),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  // Multi-select: pick any combination of activities; "All" clears.
                   FilterChip(
-                    selected: filter.sort == value,
-                    onSelected: (_) => notifier.setSort(value),
-                    label: Text(label),
+                    selected: filter.activities.isEmpty,
+                    onSelected: (_) => notifier.clearActivities(),
+                    label: Text(l10n.activityAll),
                   ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _SectionLabel(l10n.historySectionActivity),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                // Multi-select: pick any combination of activities; "All" clears.
-                FilterChip(
-                  selected: filter.activities.isEmpty,
-                  onSelected: (_) => notifier.clearActivities(),
-                  label: Text(l10n.activityAll),
-                ),
-                for (final type in ActivityType.values)
-                  FilterChip(
-                    selected: filter.activities.contains(type),
-                    onSelected: (_) => notifier.toggleActivity(type),
-                    avatar: type.glyph(size: 18),
-                    // M3 draws the checkmark on top of the avatar glyph —
-                    // the fill already marks the selection (issue #29).
-                    showCheckmark: false,
-                    label: Text(type.label(l10n)),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
+                  for (final type in ActivityType.values)
+                    FilterChip(
+                      selected: filter.activities.contains(type),
+                      onSelected: (_) => notifier.toggleActivity(type),
+                      avatar: type.glyph(size: 18),
+                      // M3 draws the checkmark on top of the avatar glyph —
+                      // the fill already marks the selection (issue #29).
+                      showCheckmark: false,
+                      label: Text(type.label(l10n)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
             Row(
               children: [
                 Icon(Icons.favorite, size: 20, color: colors.primary),

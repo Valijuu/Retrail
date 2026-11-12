@@ -57,4 +57,5 @@ English is the default and should read naturally (not a literal back-translation
 | Preparing routes | Strecken werden vorbereitet … |
 | Map activities menu | Aktivitäten |
 | Map activities menu, all | Alle Aktivitäten |
+| Map: rides hidden by the header filters | 12 von 40 Fahrten |
 | Map card, ride count | 13 Fahrten (Tooltip: 13 Fahrten auf dieser Strecke) |

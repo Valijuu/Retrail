@@ -1,4 +1,9 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retrail/domain/activity_type.dart';
+import 'package:retrail/features/history/history_filter.dart';
+import 'package:retrail/features/history/history_providers.dart';
+import 'package:retrail/features/history_map/map_items.dart';
 import 'package:retrail/features/history_map/history_map_providers.dart';
 
 void main() {
@@ -17,5 +22,18 @@ void main() {
       state(['SKI', 'LONGBOARD']).hashCode,
     );
     expect(state(['SKI', 'LONGBOARD']) == state(['SKI', 'SKI']), isFalse);
+  });
+
+  test('the map badge counts only the header filters the map uses', () {
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    expect(c.read(activeMapFilterCountProvider), 0);
+    c.read(historyFilterProvider.notifier)
+      ..toggleActivity(ActivityType.ski)
+      ..setSort(SortOrder.distance);
+    expect(c.read(activeFilterCountProvider), 2);
+    expect(c.read(activeMapFilterCountProvider), 0);
+    c.read(historyFilterProvider.notifier).setFavoritesOnly(true);
+    expect(c.read(activeMapFilterCountProvider), 1);
   });
 }

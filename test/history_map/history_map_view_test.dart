@@ -288,6 +288,42 @@ void main() {
     },
   );
 
+  testWidgets('a header search that hides rides shows "n of m rides"', (
+    tester,
+  ) async {
+    await _ride(db, title: 'Alpha ride');
+    await _ride(db, title: 'Beta ride', date: 2);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    expect(find.text('1 of 2 rides'), findsNothing);
+
+    container.read(historyFilterProvider.notifier).setQuery('Alpha');
+    await settle(tester);
+    expect(find.text('1 of 2 rides'), findsOneWidget);
+
+    container.read(historyFilterProvider.notifier).setQuery('');
+    await settle(tester);
+    expect(find.text('1 of 2 rides'), findsNothing);
+    await finish(tester);
+  });
+
+  testWidgets('the header activity filter does not hide rides on the map', (
+    tester,
+  ) async {
+    await _ride(db, title: 'Board ride', type: 'LONGBOARD');
+    await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    container
+        .read(historyFilterProvider.notifier)
+        .toggleActivity(ActivityType.ski);
+    await settle(tester);
+    // No "n of m" line: the activity filter is not one the map uses.
+    expect(find.textContaining(' of 2 rides'), findsNothing);
+    expect(find.text('2/2'), findsOneWidget);
+    await finish(tester);
+  });
+
   testWidgets('the map opens on the rider\'s own activity, still changeable', (
     tester,
   ) async {

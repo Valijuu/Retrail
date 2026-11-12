@@ -33,5 +33,7 @@ Must:
   Deleting evicts the preview; deletes confirm with ICU plurals.
   Route chips open the comparison sheet; the followed-routes filter is shown once a route was followed.
   An empty filter result says so instead of showing the empty history.
-  A Liste/Karte switch at the top changes between this list and the map view of @HistoryMap; the header filters
-    and search are shared, the map's activity selection and area are not, and the choice is stored (#96).
+  A Liste/Karte switch at the top changes between this list and the map view of @HistoryMap; the header search and the
+    filters year, months, favourites and routes are shared, the header's activity filter and sort are not
+    used by the map, the map's own activity selection and area are not used by the list, and the choice is
+    stored (#96, #113).
