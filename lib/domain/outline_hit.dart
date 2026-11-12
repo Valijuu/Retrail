@@ -111,8 +111,7 @@ class OutlineHit {
     final dLng = dLat / cosLat;
     return tap.lat >= box.south - dLat &&
         tap.lat <= box.north + dLat &&
-        tap.lng >= box.west - dLng &&
-        tap.lng <= box.east + dLng;
+        withinLongitudes(tap.lng, box.west - dLng, box.east + dLng);
   }
 
   /// Radius of the sphere the default Haversine distance uses.

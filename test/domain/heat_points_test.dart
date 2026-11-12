@@ -92,5 +92,28 @@ void main() {
         greaterThan(HeatPoints.along(short, distance: _calc).length),
       );
     });
+
+    test('a ride across the antimeridian takes the short arc (#100)', () {
+      // About 111 m along the equator from 179.9995 E to 179.9995 W.
+      const outline = RideOutline([
+        (lat: 0, lng: 179.9995),
+        (lat: 0, lng: -179.9995),
+      ]);
+      final points = HeatPoints.along(outline, distance: _calc);
+      expect(points, hasLength(5));
+      for (final p in points) {
+        expect(p.lng.abs(), greaterThan(179.999));
+        expect(p.lng.abs(), lessThanOrEqualTo(180));
+      }
+      for (var i = 1; i < points.length - 1; i++) {
+        final fromStart = _calc.distanceBetween(
+          0,
+          179.9995,
+          points[i].lat,
+          points[i].lng,
+        );
+        expect(fromStart, closeTo(i * HeatPoints.spacingM, _toleranceM));
+      }
+    });
   });
 }

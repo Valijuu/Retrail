@@ -21,6 +21,8 @@ Must:
   An outline with fewer than two points never hits.
   @OutlineHit.find takes @OutlineCandidate entries (ride id, timestamp, bounds, lazily decoded outline); an outline is
     decoded only when the tap lies near its bounds.
+  The bounds test also accepts a tap across `±180` from the outline (the tap longitude a whole turn east or
+    west), so a ride beside the antimeridian is hit from either side (#100).
   A hit is marked best when its ride is the best of its @RouteGroup; the hit function takes the best ride
     ids as input and never computes a best time.
 

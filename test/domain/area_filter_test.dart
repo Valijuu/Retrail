@@ -82,6 +82,35 @@ void main() {
       expect(matches(filter(50), [_km(49.6, -20), _km(49.6, 20)]), isTrue);
       expect(matches(filter(50), [_km(50.5, -20), _km(50.5, 20)]), isFalse);
     });
+
+    test(
+      'a pin across the antimeridian reaches a ride on the other side (#100)',
+      () {
+        final eastPin = AreaFilter(pin: (lat: 0, lng: 179.99));
+        expect(
+          eastPin.matches(
+            const RideOutline([(lat: 0, lng: -179.99), (lat: 0, lng: -179.95)]),
+            distance: _calc,
+          ),
+          isTrue,
+        );
+        final westPin = AreaFilter(pin: (lat: 0, lng: -179.99));
+        expect(
+          westPin.matches(
+            const RideOutline([(lat: 0, lng: 179.95), (lat: 0, lng: 179.99)]),
+            distance: _calc,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('a far pin across the antimeridian stays outside (#100)', () {
+      final f = AreaFilter(pin: (lat: 0, lng: 179.9));
+      const ride = RideOutline([(lat: 0, lng: -179.0), (lat: 0, lng: -178.9)]);
+      expect(f.matches(ride, distance: _calc), isFalse);
+      expect(f.couldReach(ride.bounds!), isFalse);
+    });
   });
 }
 

@@ -17,6 +17,8 @@ Must:
   An outline shorter than `30` m gives its first and last point.
   An outline with fewer than two points gives none.
   Points keep the ride order and carry no weight other than `1`.
+  Between two outline points the heat points follow the short arc, also across `±180` longitude, and their
+    longitudes stay within `-180` to `180` (#100).
 
 Must not:
   Round to a grid or merge points of different rides; the map layer adds overlapping heat.

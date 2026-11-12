@@ -44,8 +44,7 @@ class AreaFilter {
     final dLng = dLat / math.max(cosLat, _minCosLatitude);
     return pin.lat >= box.south - dLat &&
         pin.lat <= box.north + dLat &&
-        pin.lng >= box.west - dLng &&
-        pin.lng <= box.east + dLng;
+        withinLongitudes(pin.lng, box.west - dLng, box.east + dLng);
   }
 
   /// Fewer points than this make no segment, so nothing can come near.

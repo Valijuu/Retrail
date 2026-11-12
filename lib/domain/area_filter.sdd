@@ -18,6 +18,8 @@ Must:
   @AreaFilter.matches is true when any segment of the outline passes within the radius of the pin, so a ride
     that only touches the circle counts; the distance is that of the nearest segment.
   The outline's bounds, grown by the radius, reject far rides before any segment is measured.
+  The bounds test also accepts a pin across `±180` from the outline (the pin longitude a whole turn east or
+    west), so a ride beside the antimeridian matches from either side (#100).
   An outline with fewer than two points never matches.
   Distances are metres on the sphere used by the shared @DistanceCalculator and stay within `1` % of it for
     radii up to `50` km.

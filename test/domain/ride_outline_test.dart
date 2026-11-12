@@ -193,4 +193,70 @@ void main() {
       expect(const RideOutline([]).bounds, isNull);
     });
   });
+
+  group('segmentDistanceM', () {
+    test('a point beside a normal segment: the perpendicular distance', () {
+      final d = segmentDistanceM(_at(100, 50), _at(0, 0), _at(0, 100), _calc);
+      expect(d, closeTo(100, 0.5));
+    });
+
+    test('a segment across the antimeridian takes the short arc (#100)', () {
+      const east = (lat: 0.0, lng: 179.999);
+      const west = (lat: 0.0, lng: -179.999);
+      expect(
+        segmentDistanceM((lat: 0, lng: 180), east, west, _calc),
+        lessThan(1),
+      );
+      expect(
+        segmentDistanceM((lat: 0, lng: -180), west, east, _calc),
+        lessThan(1),
+      );
+    });
+
+    test(
+      'a point near Greenwich never projects onto an antimeridian segment (#100)',
+      () {
+        const east = (lat: 0.0, lng: 179.0);
+        const west = (lat: 0.0, lng: -179.0);
+        expect(
+          segmentDistanceM((lat: 0, lng: 0), east, west, _calc),
+          greaterThan(19000000),
+        );
+      },
+    );
+
+    test(
+      'a straight ride across the antimeridian simplifies to its ends (#100)',
+      () {
+        // 11 m steps east from 179.9995 E, wrapping to the west after 180.
+        final points = [
+          for (var i = 0; i <= 10; i++)
+            (lat: 0.0, lng: (179.9995 + i * 0.0001 + 180) % 360 - 180),
+        ];
+        final outline = RideOutline.simplify(points, distance: _calc);
+        expect(outline.points, [points.first, points.last]);
+      },
+    );
+  });
+
+  group('longitude helpers', () {
+    test('unwrapLongitude takes the short arc from the reference (#100)', () {
+      expect(unwrapLongitude(-179, 179), 181);
+      expect(unwrapLongitude(179, -179), -181);
+      expect(unwrapLongitude(12, 11), 12);
+    });
+
+    test('normaliseLongitude keeps -180 to 180 and wraps the rest', () {
+      expect(normaliseLongitude(181), -179);
+      expect(normaliseLongitude(-181), 179);
+      expect(normaliseLongitude(11.5), 11.5);
+    });
+
+    test('withinLongitudes also accepts the same longitude across ±180', () {
+      expect(withinLongitudes(-179.9, 179.8, 180.2), isTrue);
+      expect(withinLongitudes(179.9, -180.2, -179.8), isTrue);
+      expect(withinLongitudes(11, 10, 12), isTrue);
+      expect(withinLongitudes(13, 10, 12), isFalse);
+    });
+  });
 }

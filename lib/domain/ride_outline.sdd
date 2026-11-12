@@ -22,6 +22,10 @@ Must:
   @RideOutline.bounds is the box around all points as south, west, north and east.
   Distances use the shared @DistanceCalculator seam.
   @segmentDistanceM is the shared distance from a point to a segment; @OutlineHit and @AreaFilter reuse it.
+  @segmentDistanceM unwraps the longitudes of the segment end and the point around the segment start, so a
+    segment across `±180` takes the short arc and a point near Greenwich never projects onto it (#100).
+  @unwrapLongitude, @normaliseLongitude and @withinLongitudes are the shared longitude helpers for the
+    antimeridian; a box test with @withinLongitudes also accepts the longitude a whole turn east or west.
 
 Must not:
   Read trackpoints, the database or the clock.

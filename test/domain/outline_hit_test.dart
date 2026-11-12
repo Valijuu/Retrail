@@ -145,5 +145,39 @@ void main() {
       expect(_find(_at(0, 0), [faraway]), isEmpty);
       expect(decoded, 0);
     });
+
+    test(
+      'a tap across the antimeridian hits a ride on the other side (#100)',
+      () {
+        final eastRide = _ride(1, const [
+          (lat: 0, lng: 179.998),
+          (lat: 0, lng: 179.9995),
+        ]);
+        final hits = _find((lat: 0, lng: -179.9998), [eastRide]);
+        expect(hits.map((h) => h.rideId), [1]);
+        expect(hits.single.distanceM, closeTo(78, 1));
+
+        final westRide = _ride(2, const [
+          (lat: 0, lng: -179.998),
+          (lat: 0, lng: -179.9995),
+        ]);
+        expect(
+          _find((lat: 0, lng: 179.9998), [westRide]).map((h) => h.rideId),
+          [2],
+        );
+      },
+    );
+
+    test(
+      'a tap far from the antimeridian still misses a ride beside it (#100)',
+      () {
+        final ride = _ride(1, const [
+          (lat: 0, lng: 179.998),
+          (lat: 0, lng: 179.9995),
+        ]);
+        expect(_find((lat: 0, lng: -179.99), [ride]), isEmpty);
+        expect(_find((lat: 0, lng: 0), [ride]), isEmpty);
+      },
+    );
   });
 }

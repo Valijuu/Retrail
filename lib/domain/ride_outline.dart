@@ -170,24 +170,59 @@ class RideOutline {
 }
 
 const _degreesPerHalfTurn = 180;
+const _degreesPerTurn = 360;
+
+/// [lng] moved by whole turns so it lies within half a turn of [reference],
+/// so the way from [reference] to it is the short arc, also across ±180 (#100).
+double unwrapLongitude(double lng, double reference) {
+  var delta = lng - reference;
+  while (delta > _degreesPerHalfTurn) {
+    delta -= _degreesPerTurn;
+  }
+  while (delta < -_degreesPerHalfTurn) {
+    delta += _degreesPerTurn;
+  }
+  return reference + delta;
+}
+
+/// Whether [lng], or the same longitude a whole turn east or west, lies
+/// between [west] and [east], so a box test also accepts points across ±180
+/// (#100).
+bool withinLongitudes(double lng, double west, double east) {
+  for (final shift in const [0, -_degreesPerTurn, _degreesPerTurn]) {
+    final shifted = lng + shift;
+    if (shifted >= west && shifted <= east) return true;
+  }
+  return false;
+}
+
+/// [lng] moved by whole turns into `-180` to `180`.
+double normaliseLongitude(double lng) {
+  if (lng >= -_degreesPerHalfTurn && lng <= _degreesPerHalfTurn) return lng;
+  return unwrapLongitude(lng, 0);
+}
 
 /// Distance in metres from [p] to the nearest point of the segment a→b,
 /// measured with [distance]. The foot of the perpendicular is found in a
-/// local equirectangular frame (longitude scaled by cos(latitude)).
+/// local equirectangular frame (longitude scaled by cos(latitude)) around
+/// [a], with the longitudes of [b] and [p] unwrapped around it, so a segment
+/// across ±180 takes the short arc (#100).
 double segmentDistanceM(
   LatLng p,
   LatLng a,
   LatLng b,
   DistanceCalculator distance,
 ) {
+  final bLng = unwrapLongitude(b.lng, a.lng);
+  final pLng = unwrapLongitude(p.lng, a.lng);
   final k = math.cos(a.lat * math.pi / _degreesPerHalfTurn);
-  final bx = (b.lng - a.lng) * k, by = b.lat - a.lat;
-  final px = (p.lng - a.lng) * k, py = p.lat - a.lat;
+  final bx = (bLng - a.lng) * k, by = b.lat - a.lat;
+  final px = (pLng - a.lng) * k, py = p.lat - a.lat;
   final dd = bx * bx + by * by;
   final t = dd == 0 ? 0.0 : ((px * bx + py * by) / dd).clamp(0.0, 1.0);
   final q = (
     lat: a.lat + (b.lat - a.lat) * t,
-    lng: a.lng + (b.lng - a.lng) * t,
+    lng: normaliseLongitude(a.lng + (bLng - a.lng) * t),
   );
   return distance.distanceBetween(p.lat, p.lng, q.lat, q.lng);
 }

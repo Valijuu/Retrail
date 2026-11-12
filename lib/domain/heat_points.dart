@@ -50,9 +50,12 @@ class HeatPoints {
   }
 
   /// The point at [fraction] (`0` to `1`) of the straight way from [from]
-  /// to [to].
-  static LatLng _between(LatLng from, LatLng to, double fraction) => (
-    lat: from.lat + (to.lat - from.lat) * fraction,
-    lng: from.lng + (to.lng - from.lng) * fraction,
-  );
+  /// to [to], along the short arc also across ±180 (#100).
+  static LatLng _between(LatLng from, LatLng to, double fraction) {
+    final toLng = unwrapLongitude(to.lng, from.lng);
+    return (
+      lat: from.lat + (to.lat - from.lat) * fraction,
+      lng: normaliseLongitude(from.lng + (toLng - from.lng) * fraction),
+    );
+  }
 }
