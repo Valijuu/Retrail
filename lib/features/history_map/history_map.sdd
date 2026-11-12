@@ -78,7 +78,8 @@ Must:
   Tapping the map finds the rides under the tap with @OutlineHit. The nearest ride is highlighted and its
     preview card shows at the bottom: the cached preview, title, distance, duration, average speed and type,
     as on the History card, including the stored ascent or descent of #97 when the ride has one and nothing
-    when it has none; the card is the History card, not a copy of it.
+    when it has none; the card is the History card, not a copy of it, with its preview slot a little lower than in the list (about a
+    sixth less tall; the preview is cut slightly at top and bottom).
   A tap shows one card and never pages or swipes: the rides of one route draw the same line, and overlapping
     routes are the same stretch to the rider. The card is that of the nearest route's best ride (its nearest
     hit when the best ride was not hit; equally near hits go to the newest), with the best-time badge and the

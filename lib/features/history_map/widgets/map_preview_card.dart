@@ -103,6 +103,7 @@ class MapPreviewCard extends StatelessWidget {
             ),
             HistoryRideCard(
               key: ValueKey('map_card_${ride.entry.ride.rideId}'),
+              previewAspectScale: _previewAspectScale,
               entry: ride.entry,
               selectionMode: false,
               selected: false,
@@ -122,3 +123,7 @@ class MapPreviewCard extends StatelessWidget {
     );
   }
 }
+
+/// The map's card shows the preview a little lower than the list does: the
+/// slot is this much wider than tall, so a little of the top and bottom is cut.
+const double _previewAspectScale = 1.2;

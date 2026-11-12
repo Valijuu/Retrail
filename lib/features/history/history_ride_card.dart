@@ -35,6 +35,7 @@ class HistoryRideCard extends ConsumerStatefulWidget {
     required this.onToggleFavorite,
     this.onFollowRoute,
     this.onOpenRouteGroup,
+    this.previewAspectScale = 1,
   });
 
   final RideEntryItem entry;
@@ -59,6 +60,11 @@ class HistoryRideCard extends ConsumerStatefulWidget {
   /// Opens the comparison of this ride's route group from its Followed /
   /// "n× followed" chip (Spec 20).
   final VoidCallback? onOpenRouteGroup;
+
+  /// Widens the preview slot's aspect ratio by this factor: above `1` the slot
+  /// is lower and `BoxFit.cover` crops a little of the preview's top and
+  /// bottom. The map's ride card uses it to stay low (#96).
+  final double previewAspectScale;
 
   @override
   ConsumerState<HistoryRideCard> createState() => _HistoryRideCardState();
@@ -140,6 +146,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
               title: title,
               selectionMode: widget.selectionMode,
               selected: widget.selected,
+              aspectScale: widget.previewAspectScale,
               onTap: widget.selectionMode ? widget.onTap : widget.onOpenMap,
             ),
             Padding(
@@ -298,6 +305,7 @@ class _Thumbnail extends ConsumerWidget {
     required this.title,
     required this.selectionMode,
     required this.selected,
+    required this.aspectScale,
     required this.onTap,
   });
 
@@ -306,6 +314,7 @@ class _Thumbnail extends ConsumerWidget {
   final String title;
   final bool selectionMode;
   final bool selected;
+  final double aspectScale;
   final VoidCallback onTap;
 
   @override
@@ -324,7 +333,7 @@ class _Thumbnail extends ConsumerWidget {
       child: AspectRatio(
         // Pin the slot to the render aspect so BoxFit.cover shows the whole route
         // (render aspect == display aspect → no crop). Single source of truth.
-        aspectRatio: previewAspectRatio,
+        aspectRatio: previewAspectRatio * aspectScale,
         child: Stack(
           children: [
             Positioned.fill(
