@@ -121,8 +121,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     final target = ref.read(historyTargetRideProvider);
     if (target == null) return;
     // The jump lands in the list, whichever view was stored (#96).
+    // The jump waits for the list: it resumes when the view has changed.
     if (ref.read(historyViewProvider).value == HistoryView.map) {
       ref.read(historyMapControllerProvider).setView(HistoryView.list);
+      return;
     }
     final items = ref.read(historyItemsProvider).asData?.value ?? [];
     final found = items.any(
@@ -260,6 +262,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   @override
   Widget build(BuildContext context) {
     ref.listen(historyTargetRideProvider, (_, _) => _maybeJumpToTarget());
+    ref.listen(historyViewProvider, (_, next) {
+      if (next.value == HistoryView.list) _maybeJumpToTarget();
+    });
     ref.listen(historyItemsProvider, (_, next) {
       _maybeJumpToTarget();
       final items = next.asData?.value;

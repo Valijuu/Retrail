@@ -12,7 +12,7 @@ class MapDefaultAppliedNotifier extends Notifier<ActivityType?> {
   @override
   ActivityType? build() => null;
 
-  void set(ActivityType type) => state = type;
+  void set(ActivityType? type) => state = type;
 }
 
 final mapDefaultAppliedProvider =
@@ -27,7 +27,13 @@ final mapDefaultAppliedProvider =
 void applyMapDefaultActivity(WidgetRef ref) {
   final own = ref.read(lastActivityTypeProvider).value;
   final present = ref.read(legendTypesProvider).value;
-  if (own == null || present == null || !present.contains(own)) return;
+  if (own == null || present == null) return;
+  if (!present.contains(own)) {
+    // Not available now: forget the mark, so the activity narrows the map
+    // again once it occurs.
+    ref.read(mapDefaultAppliedProvider.notifier).set(null);
+    return;
+  }
   if (ref.read(mapDefaultAppliedProvider) == own) return;
   // With one type in the history there is nothing to narrow yet; a second
   // type showing up later narrows then.
