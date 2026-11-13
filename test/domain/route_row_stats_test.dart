@@ -18,6 +18,21 @@ void main() {
       expect(row.avgSpeedKmh, closeTo(18.3, 0.1));
       expect(row.offRouteMetres, isNull);
     });
+    test('the top speed is the whole ride\'s — 30 km/h, also for a follow', () {
+      expect(
+        routeRowStats(_ride(4600, 906), routeLengthM: 4600).maxSpeedKmh,
+        30,
+      );
+      expect(
+        routeRowStats(
+          _ride(7000, 1144),
+          routeLengthM: 4600,
+          coverage: 1,
+          routeTimeMs: 773000,
+        ).maxSpeedKmh,
+        30,
+      );
+    });
     test('a follow without a route time shows its ride unchanged', () {
       final row = routeRowStats(
         _ride(7000, 1144),

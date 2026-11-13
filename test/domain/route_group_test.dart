@@ -43,15 +43,29 @@ void main() {
       final g = buildRouteGroup(_ride(1), [_ride(2)]);
       expect([for (final r in g.partial) r.rideId], [2]);
     });
-    test('complete and partial follows are listed oldest first', () {
+    test('complete follows are listed fastest first, partial oldest first', () {
       final g = buildRouteGroup(_ride(1), [
-        _ride(2, at: 300, coverage: 1),
-        _ride(3, at: 100, coverage: 1),
+        _ride(2, at: 300, durationMs: 500000, coverage: 1),
+        _ride(3, at: 100, durationMs: 700000, coverage: 1),
         _ride(4, at: 250, coverage: 0.2),
         _ride(5, at: 50, coverage: 0.2),
       ]);
-      expect([for (final r in g.complete) r.rideId], [3, 2]);
+      expect([for (final r in g.complete) r.rideId], [2, 3]);
       expect([for (final r in g.partial) r.rideId], [5, 4]);
+    });
+    test('equal times in the complete follows — the older ride first', () {
+      final g = buildRouteGroup(_ride(1), [
+        _ride(2, at: 300, durationMs: 500000, coverage: 1),
+        _ride(3, at: 100, durationMs: 500000, coverage: 1),
+      ]);
+      expect([for (final r in g.complete) r.rideId], [3, 2]);
+    });
+    test('a complete follow without a time is listed last', () {
+      final g = buildRouteGroup(_ride(1), [
+        _ride(2, at: 100, durationMs: 0, coverage: 1),
+        _ride(3, at: 300, durationMs: 900000, coverage: 1),
+      ]);
+      expect([for (final r in g.complete) r.rideId], [3, 2]);
     });
     test('one candidate alone gets no best — original only plus a partial', () {
       final g = buildRouteGroup(_ride(1), [

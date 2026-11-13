@@ -15,3 +15,4 @@ Must:
     distance, its time on the route and the average over those.
   The rest of the ride shows as an off-route hint from `100` m on.
   The original, or an older follow without those values, shows the whole ride.
+  Every row also shows the top speed of its whole ride, a follow's too: the route part has no speed of its own.

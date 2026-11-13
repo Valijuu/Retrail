@@ -143,6 +143,7 @@
   "@chipOriginal": {"placeholders": {"count": {"type": "int"}}},
   "chipFollowCount": "{count, plural, =1{1× nachgefahren} other{{count}× nachgefahren}}",
   "@chipFollowCount": {"placeholders": {"count": {"type": "int"}}},
+  "routeGroupSpeeds": "Ø {avg} · max {max} km/h",
   "routeGroupOriginal": "Original",
   "routeGroupFollows": "Nachgefahren ({count})",
   "@routeGroupFollows": {"placeholders": {"count": {"type": "int"}}},

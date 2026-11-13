@@ -18,6 +18,7 @@ class RouteRowStats {
     required this.distanceMetres,
     required this.durationMs,
     required this.avgSpeedKmh,
+    required this.maxSpeedKmh,
     this.offRouteMetres,
   });
 
@@ -31,6 +32,9 @@ class RouteRowStats {
 
   /// [distanceMetres] over [durationMs] in km/h; 0 for a zero time.
   final double avgSpeedKmh;
+
+  /// The top speed of the whole ride: the route part has no speed of its own.
+  final double maxSpeedKmh;
 
   /// Metres ridden off the route (the way to it, past the finish). Null on
   /// the original, a follow without route stats, or under
@@ -54,6 +58,7 @@ RouteRowStats routeRowStats(
       distanceMetres: ride.distanceMetres,
       durationMs: ride.durationMs,
       avgSpeedKmh: ride.avgSpeedKmh,
+      maxSpeedKmh: ride.maxSpeedKmh,
     );
   }
   final onRouteM = math.min(routeLengthM * coverage, ride.distanceMetres);
@@ -64,6 +69,7 @@ RouteRowStats routeRowStats(
     avgSpeedKmh: routeTimeMs == 0
         ? 0
         : onRouteM / routeTimeMs * _kmhPerMetrePerMs,
+    maxSpeedKmh: ride.maxSpeedKmh,
     offRouteMetres: offRouteM < minOffRouteHintM ? null : offRouteM,
   );
 }

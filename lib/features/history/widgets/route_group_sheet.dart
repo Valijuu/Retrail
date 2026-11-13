@@ -157,7 +157,7 @@ class _RideRow extends StatelessWidget {
           Text(
             '${formatShortDistanceKm(stats.distanceMetres, locale: locale)} · '
             '${formatDuration(stats.durationMs)} · '
-            'Ø ${stats.avgSpeedKmh.round()} km/h',
+            '${l10n.routeGroupSpeeds(stats.avgSpeedKmh.round(), stats.maxSpeedKmh.round())}',
           ),
           if (offRoute != null)
             Text(

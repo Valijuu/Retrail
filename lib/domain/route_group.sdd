@@ -15,3 +15,5 @@ Must:
   The best time is the shortest positive duration among the original and complete follows,
     shown only when at least two compete; a tie keeps the older ride.
   A follow competes with its time on the route; the original competes with its whole duration.
+  The complete follows are listed fastest first, so the best time is on top; equal times and untimed rides
+    (`0` ms, last) keep the older ride first. Partial follows stay oldest first.

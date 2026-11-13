@@ -146,7 +146,7 @@ void main() {
     expect(
       find.descendant(
         of: row(4),
-        matching: find.text('2.1 km · 01:40 · Ø 15 km/h'),
+        matching: find.text('2.1 km · 01:40 · Ø 15 · max 25 km/h'),
       ),
       findsOneWidget,
     );
@@ -184,7 +184,7 @@ void main() {
     expect(
       find.descendant(
         of: row(2),
-        matching: find.text('4.6 km · 12:53 · Ø 21 km/h'),
+        matching: find.text('4.6 km · 12:53 · Ø 21 · max 25 km/h'),
       ),
       findsOneWidget,
     );

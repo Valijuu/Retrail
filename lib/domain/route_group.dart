@@ -42,7 +42,8 @@ class RouteGroup {
 
   final RouteGroupRide original;
 
-  /// Follows covering at least [fullCoverageThreshold], oldest first.
+  /// Follows covering at least [fullCoverageThreshold], fastest first (a tie
+  /// or a missing time: older first, the untimed last).
   final List<RouteGroupRide> complete;
 
   /// Follows below [fullCoverageThreshold] or of unknown coverage, oldest
@@ -62,13 +63,22 @@ RouteGroup buildRouteGroup(
 ) {
   final byDate = [...follows]
     ..sort((a, b) => a.timestampMs.compareTo(b.timestampMs));
-  final complete = [...byDate.where(_isComplete)];
+  final complete = [...byDate.where(_isComplete)]..sort(_fastestFirst);
   return RouteGroup(
     original: original,
     complete: complete,
     partial: [...byDate.where((ride) => !_isComplete(ride))],
     bestRideId: _fastestRideId([original, ...complete]),
   );
+}
+
+/// Timed rides before untimed ones, shorter before longer, equal times
+/// older first (a total order: [List.sort] is not stable).
+int _fastestFirst(RouteGroupRide a, RouteGroupRide b) {
+  final aTimed = a.durationMs > 0, bTimed = b.durationMs > 0;
+  if (aTimed != bTimed) return aTimed ? -1 : 1;
+  final byTime = aTimed ? a.durationMs.compareTo(b.durationMs) : 0;
+  return byTime != 0 ? byTime : a.timestampMs.compareTo(b.timestampMs);
 }
 
 bool _isComplete(RouteGroupRide ride) =>
