@@ -5,7 +5,8 @@ import '../history/history_filter.dart';
 import '../history/history_items.dart';
 import '../history/history_providers.dart';
 import '../history/history_range.dart';
-import 'history_map_providers.dart' show routeBadgesProvider;
+import 'history_map_providers.dart'
+    show routeBadgesProvider, settledMapRidesProvider;
 import 'route_badges.dart';
 import '../settings/settings_providers.dart' show dateFormatLocaleProvider;
 
@@ -14,11 +15,6 @@ import '../settings/settings_providers.dart' show dateFormatLocaleProvider;
 /// the header are the list's alone; the map has its own activity menu.
 HistoryFilter mapHeaderFilter(HistoryFilter f) =>
     f.copyWith(activities: const {}, sort: SortOrder.date);
-
-/// Whether the header filters the map uses hide rides from it (the search
-/// text counts here, unlike in the filter badge).
-bool mapHeaderFilterNarrows(HistoryFilter f) =>
-    narrowsRides(mapHeaderFilter(f));
 
 /// The rides the map starts from: the History items under the header filters
 /// the map uses (see [mapHeaderFilter]). The list keeps [historyItemsProvider].
@@ -57,3 +53,14 @@ final routedRideCountProvider = StreamProvider<int>((ref) {
 final activeMapFilterCountProvider = Provider<int>(
   (ref) => activeFilterCount(mapHeaderFilter(ref.watch(historyFilterProvider))),
 );
+
+/// "10 of 52 rides" in the activity button: the unique routes the map draws
+/// and the unique routes the history has (#113).
+final mapRideCountsProvider = Provider<({int shown, int total})>((ref) {
+  final badges = ref.watch(routeBadgesProvider).value;
+  final shown = uniqueRoutes(
+    ref.watch(settledMapRidesProvider).map((r) => r.rideId),
+    badges,
+  );
+  return (shown: shown, total: ref.watch(routedRideCountProvider).value ?? 0);
+});

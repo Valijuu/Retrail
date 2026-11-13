@@ -9,6 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../onboarding/activity_type_ui.dart';
 import '../history_map_providers.dart';
 import '../map_activities.dart';
+import '../map_items.dart';
 import 'map_controls.dart' show kMapControlHeight;
 
 /// Width of the colour bar in front of an activity in the menu.
@@ -34,6 +35,7 @@ class ActivityMenu extends ConsumerWidget {
     const types = ActivityType.values;
     if (present.isEmpty) return const SizedBox.shrink();
     final shownCount = types.where((t) => mapTypeShown(selected, t)).length;
+    final counts = ref.watch(mapRideCountsProvider);
 
     return MenuAnchor(
       menuChildren: [
@@ -104,10 +106,18 @@ class ActivityMenu extends ConsumerWidget {
                       size: 20,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      '$shownCount/${types.length}',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: colors.onSurface,
+                    Flexible(
+                      child: Text(
+                        counts.shown < counts.total
+                            ? l10n.historyMapHiddenRides(
+                                counts.shown,
+                                counts.total,
+                              )
+                            : l10n.historyMapRideCount(counts.total),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(color: colors.onSurface),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Icon(Icons.arrow_drop_down, color: colors.primary),

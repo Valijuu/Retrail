@@ -21,7 +21,6 @@ import '../place_search/place_search_controller.dart';
 import '../place_search/widgets/place_search_button.dart';
 import '../place_search/widgets/place_search_panel.dart';
 import 'map_area.dart';
-import 'map_items.dart';
 import 'map_default_activity.dart';
 import 'map_locator.dart';
 import 'map_selection.dart';
@@ -29,7 +28,6 @@ import 'outline_fill.dart';
 import 'overview_geojson.dart';
 import 'widgets/map_controls.dart';
 import 'widgets/activity_menu.dart';
-import 'widgets/hidden_rides_line.dart';
 import 'widgets/map_preview_card.dart';
 
 /// The map view of the History tab (#96): every ride with a route as a line
@@ -37,16 +35,9 @@ import 'widgets/map_preview_card.dart';
 /// preview card of the tapped ride. The History screen passes the card's
 /// [actions].
 class HistoryMapView extends ConsumerStatefulWidget {
-  const HistoryMapView({
-    super.key,
-    required this.actions,
-    required this.onOpenFilters,
-  });
+  const HistoryMapView({super.key, required this.actions});
 
   final MapCardActions actions;
-
-  /// Opens the header's filter sheet for the map (from the hidden-rides line).
-  final VoidCallback onOpenFilters;
 
   @override
   ConsumerState<HistoryMapView> createState() => _HistoryMapViewState();
@@ -220,17 +211,6 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
         ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
     final area = ref.watch(mapAreaProvider);
     final shown = ref.watch(selectedRideProvider);
-    final headerNarrows = ref.watch(
-      historyFilterProvider.select(mapHeaderFilterNarrows),
-    );
-    final routedTotal = ref.watch(routedRideCountProvider).value ?? 0;
-    // What the map really draws: header filters, activities and area together.
-    // Followed rides lie on their original's route: count each route once.
-    final badges = ref.watch(routeBadgesProvider).value;
-    final routedShown = uniqueRoutes(
-      ref.watch(settledMapRidesProvider).map((r) => r.rideId),
-      badges,
-    );
     final searching = ref.watch(placeSearchProvider.select((s) => s.open));
     final position = ref.watch(mapPositionProvider);
     final areaNotifier = ref.read(mapAreaProvider.notifier);
@@ -289,19 +269,17 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                       onChanged: ref.read(historyMapControllerProvider).setMode,
                     ),
                     const SizedBox(width: _panelGap),
-                    const ActivityMenu(),
-                    const Spacer(),
+                    // Takes the room left of the search button; its label
+                    // shortens on a narrow screen.
+                    const Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: ActivityMenu(),
+                      ),
+                    ),
                     PlaceSearchButton(onPressed: _openPlaceSearch),
                   ],
                 ),
-              if (!searching && routedShown < routedTotal) ...[
-                const SizedBox(height: _panelGap),
-                HiddenRidesLine(
-                  shown: routedShown,
-                  total: routedTotal,
-                  onTap: headerNarrows ? widget.onOpenFilters : null,
-                ),
-              ],
               if (area != null) ...[
                 const SizedBox(height: _panelGap),
                 AreaPanel(

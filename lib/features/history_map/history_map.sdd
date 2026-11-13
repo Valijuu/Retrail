@@ -35,11 +35,10 @@ Must:
     and the list selection are the list's alone and have no effect on the map; the activity selection and the
     area are the map's own, so the map has exactly one activity control (#113).
   In the map view the header's filter sheet shows only what the map uses (year, months, favourites, followed
-    routes), without sort and activities, and its badge counts only those. While the search, these filters,
-    the activity selection or the area hide rides from the map, a line over it says "n of m rides" (rides
-    with a route, a followed ride counted with its original so only unique routes count; n is what the map
-    draws); tapping it opens the filter sheet when the header filters hide
-    rides.
+    routes), without sort and activities, and its badge counts only those. The activity button also
+    carries the count of rides: "n of m rides" while the search, these filters, the activity selection or the
+    area hide rides from the map, "m rides" otherwise (rides with a route; a ride on the same line as another
+    counts with it, so only unique routes count; n is what the map draws). There is no separate line for it.
   A long press on the map sets a pin; the my-location button also sets it to the current position (after the
     permission rules below). The pin can be dragged or removed, and a radius slider from `1` to `50` km
     (default `5`) draws the circle on the map. With a pin, only rides that match @AreaFilter remain.
@@ -57,7 +56,7 @@ Must:
   Lines mode draws one line per ride, thin and semi-transparent, in its activity type's colour, so a
     route ridden often looks denser. The nine types have nine distinct colours that stay readable on the light
     and the dark style; colour is never the only cue.
-  The activity menu is one drop-down button showing how many of all types are on (`2/6`). It lists
+  The activity menu is one drop-down button showing the ride count (see below). It lists
     all types, those without a ride with a route dimmed, each with a checkbox, its colour bar and icon; ticking shows or hides the type on the
     map and keeps the menu open. The selection belongs to the map alone: the History list keeps its own
     activity filter, and the filter badge does not count it. An "all" row on top switches every type on, or,

@@ -202,7 +202,7 @@ void main() {
     container.read(mapSelectionProvider.notifier).tap(_tap, 14);
     await settle(tester);
     // One route, one card: no pager, the best ride, a count that opens the group.
-    expect(find.text('1/${ActivityType.values.length}'), findsNothing);
+    expect(find.text('1 of 2 rides'), findsNothing);
     expect(find.text('Faster follow'), findsOneWidget);
     expect(find.text('Original'), findsNothing);
     expect(find.text('Best time'), findsOneWidget);
@@ -265,24 +265,14 @@ void main() {
       await pump(tester, view: 'map');
       await settle(tester);
 
-      expect(
-        find.text(
-          '${ActivityType.values.length}/${ActivityType.values.length}',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('2 rides'), findsOneWidget);
       await tester.tap(find.byTooltip('Activities'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Ski'));
       await tester.pumpAndSettle();
       // The menu stays open while ticking; the button shows the new count.
       expect(find.text('Ski'), findsOneWidget);
-      expect(
-        find.text(
-          '${ActivityType.values.length - 1}/${ActivityType.values.length}',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('1 of 2 rides'), findsOneWidget);
       expect(
         container.read(mapActivitiesProvider),
         ActivityType.values.toSet()..remove(ActivityType.ski),
@@ -346,12 +336,9 @@ void main() {
         .read(historyFilterProvider.notifier)
         .toggleActivity(ActivityType.ski);
     await settle(tester);
-    // No "n of m" line: the activity filter is not one the map uses.
+    // The header's activity filter is not one the map uses: no "n of m".
     expect(find.textContaining(' of 2 rides'), findsNothing);
-    expect(
-      find.text('${ActivityType.values.length}/${ActivityType.values.length}'),
-      findsOneWidget,
-    );
+    expect(find.text('2 rides'), findsOneWidget);
     await finish(tester);
   });
 
@@ -363,7 +350,7 @@ void main() {
     await pump(tester, view: 'map', own: 'SKI');
     await settle(tester);
 
-    expect(find.text('1/${ActivityType.values.length}'), findsOneWidget);
+    expect(find.text('1 of 2 rides'), findsOneWidget);
     expect(container.read(mapActivitiesProvider), {ActivityType.ski});
     // The list is not narrowed by it.
     expect(container.read(historyFilterProvider).activities, isEmpty);
@@ -391,14 +378,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('All activities'));
     await tester.pumpAndSettle();
-    expect(find.text('0/${ActivityType.values.length}'), findsOneWidget);
+    expect(find.text('0 of 2 rides'), findsOneWidget);
     expect(container.read(mapActivitiesProvider), isEmpty);
     await tester.tap(find.text('All activities'));
     await tester.pumpAndSettle();
-    expect(
-      find.text('${ActivityType.values.length}/${ActivityType.values.length}'),
-      findsOneWidget,
-    );
+    expect(find.text('2 rides'), findsOneWidget);
     expect(container.read(mapActivitiesProvider), isNull);
 
     // One type on, then off again: nothing is switched back on behind it.

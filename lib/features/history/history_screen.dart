@@ -347,10 +347,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
               const HistoryViewSwitch(),
             Expanded(
               child: showMap
-                  ? HistoryMapView(
-                      actions: _mapCardActions(),
-                      onOpenFilters: _openFilters,
-                    )
+                  ? HistoryMapView(actions: _mapCardActions())
                   : hasRides
                   ? ListView.separated(
                       controller: _scrollController,
