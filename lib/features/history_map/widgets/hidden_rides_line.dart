@@ -4,8 +4,9 @@ import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/theme_context.dart';
 import '../../../l10n/app_localizations.dart';
 
-/// "12 of 40 rides" over the map while the header's search or filters hide
-/// rides from it (#113); a tap opens the filter sheet.
+/// "12 of 40 rides" over the map while its filters (header, activities, area)
+/// hide rides from it (#113); a tap opens the filter sheet when that is where
+/// rides are hidden.
 class HiddenRidesLine extends StatelessWidget {
   const HiddenRidesLine({
     super.key,
@@ -16,7 +17,7 @@ class HiddenRidesLine extends StatelessWidget {
 
   final int shown;
   final int total;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

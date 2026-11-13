@@ -13,7 +13,6 @@ import '../../map/overview_map.dart';
 import '../../map/map_attribution.dart';
 import '../history/area_providers.dart';
 import '../history/history_filter.dart';
-import '../history/history_items.dart';
 import '../history/history_providers.dart';
 import 'history_map_providers.dart';
 import '../home/home_providers.dart' show lastActivityTypeProvider;
@@ -204,11 +203,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
       historyFilterProvider.select(mapHeaderFilterNarrows),
     );
     final routedTotal = ref.watch(routedRideCountProvider).value ?? 0;
-    final routedShown = [
-      for (final i
-          in ref.watch(mapItemsProvider).value ?? const <HistoryItem>[])
-        if (i is RideEntryItem && i.ride.hasRoute) i,
-    ].length;
+    // What the map really draws: header filters, activities and area together.
+    final routedShown = ref.watch(settledMapRidesProvider).length;
     final position = ref.watch(mapPositionProvider);
     final areaNotifier = ref.read(mapAreaProvider.notifier);
     final selection = ref.read(mapSelectionProvider.notifier);
@@ -262,12 +258,12 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                   const ActivityMenu(),
                 ],
               ),
-              if (headerNarrows && routedShown < routedTotal) ...[
+              if (routedShown < routedTotal) ...[
                 const SizedBox(height: _panelGap),
                 HiddenRidesLine(
                   shown: routedShown,
                   total: routedTotal,
-                  onTap: widget.onOpenFilters,
+                  onTap: headerNarrows ? widget.onOpenFilters : null,
                 ),
               ],
               if (area != null) ...[

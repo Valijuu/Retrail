@@ -35,9 +35,10 @@ Must:
     and the list selection are the list's alone and have no effect on the map; the activity selection and the
     area are the map's own, so the map has exactly one activity control (#113).
   In the map view the header's filter sheet shows only what the map uses (year, months, favourites, followed
-    routes), without sort and activities, and its badge counts only those. While the search or these filters
-    hide rides from the map, a line over it says "n of m rides" (rides with a route); tapping it opens the
-    filter sheet.
+    routes), without sort and activities, and its badge counts only those. While the search, these filters,
+    the activity selection or the area hide rides from the map, a line over it says "n of m rides" (rides
+    with a route; n is what the map draws); tapping it opens the filter sheet when the header filters hide
+    rides.
   A long press on the map sets a pin; the my-location button also sets it to the current position (after the
     permission rules below). The pin can be dragged or removed, and a radius slider from `1` to `50` km
     (default `5`) draws the circle on the map. With a pin, only rides that match @AreaFilter remain.
