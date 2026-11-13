@@ -1,0 +1,50 @@
+Spec: Route match
+
+Purpose:
+  Which rides lie on the same line, so the overview map counts and opens them as one route (#114).
+
+Owns:
+  ./route_match.dart
+  /test/domain/route_match_test.dart
+
+References:
+  /docs/decisions/0001-ride-outlines.md
+  /lib/domain/ride_outline.sdd
+  /lib/domain/route_group.sdd
+
+Must:
+  Two outlines lie on the same line when every point of each lies within `30` m of the other outline (the
+    nearest segment, measured like @OutlineHit); the direction they were ridden in does not matter.
+  An outline with fewer than two points lies on no line with any other; its ride forms a group of its own.
+  Outlines whose bounds are more than `30` m apart never match; their points are not compared.
+  Groups are transitive: when A matches B and B matches C, all three form one group, even if A and C do not
+    match directly.
+  A follow link (a ride's followed ride id, when that ride is among the input) joins the two rides' groups
+    as well, whatever their outlines.
+  Every ride gets a group key: the smallest ride id of its group. A ride alone keys to its own id.
+  @RouteMatch.groups takes @RouteMatchEntry values (ride id, followed ride id, bounds, outline points) and
+    returns ride id → group key for every entry.
+
+Must not:
+  Know the database, the map package or Riverpod.
+  Compute best times; that stays with @RouteGroup.
+
+Scenario: the same run recorded twice without a follow link
+  Given two rides whose outlines run along the same street, `10` m apart
+  When the groups are built
+  Then both get the same key
+
+Scenario: a short ride along part of a long one
+  Given a ride that covers only the first half of another ride's line
+  When the groups are built
+  Then they stay in separate groups
+
+Scenario: the same line ridden backwards
+  Given two rides on the same line in opposite directions
+  When the groups are built
+  Then both get the same key
+
+Example:
+  rides 121 and 124 on the same line, no follow link: both key to `121`
+  ride 125 follows 121 but its line lies elsewhere: key `121`
+  ride 7 with an empty outline: key `7`

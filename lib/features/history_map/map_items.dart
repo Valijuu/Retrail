@@ -8,6 +8,7 @@ import '../history/history_range.dart';
 import 'history_map_providers.dart'
     show routeBadgesProvider, settledMapRidesProvider;
 import 'route_badges.dart';
+import 'route_lines.dart';
 import '../settings/settings_providers.dart' show dateFormatLocaleProvider;
 
 /// The filter the map uses of the History header (#113): search, year, months,
@@ -30,21 +31,29 @@ final mapItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
 
 /// How many different routes [rideIds] make up: a followed ride counts with
 /// its original (#113). Without [badges] every ride counts on its own.
-int uniqueRoutes(Iterable<int> rideIds, RouteBadges? badges) =>
-    {for (final id in rideIds) badges?.groupKeyOf(id) ?? id}.length;
+int uniqueRoutes(
+  Iterable<int> rideIds,
+  Map<int, int>? lines,
+  RouteBadges? badges,
+) => {for (final id in rideIds) routeKeyOf(id, lines, badges)}.length;
 
 /// How many different routes the history has, before any filter: the total
 /// in "12 of 40 rides".
 final routedRideCountProvider = StreamProvider<int>((ref) {
   final badges = ref.watch(routeBadgesProvider).value;
+  final lines = ref.watch(routeLineKeysProvider).value;
   return ref
       .watch(rideRepositoryProvider)
       .getAllRides()
       .map(
-        (rides) => uniqueRoutes([
-          for (final r in rides)
-            if (r.hasRoute) r.rideId,
-        ], badges),
+        (rides) => uniqueRoutes(
+          [
+            for (final r in rides)
+              if (r.hasRoute) r.rideId,
+          ],
+          lines,
+          badges,
+        ),
       );
 });
 
@@ -60,6 +69,7 @@ final mapRideCountsProvider = Provider<({int shown, int total})>((ref) {
   final badges = ref.watch(routeBadgesProvider).value;
   final shown = uniqueRoutes(
     ref.watch(settledMapRidesProvider).map((r) => r.rideId),
+    ref.watch(routeLineKeysProvider).value,
     badges,
   );
   return (shown: shown, total: ref.watch(routedRideCountProvider).value ?? 0);

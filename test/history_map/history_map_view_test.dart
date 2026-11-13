@@ -37,7 +37,7 @@ Future<int> _ride(
   double? coverage,
   int date = 1,
   String? type,
-  double lat = 48,
+  double? lat,
 }) async {
   final id = await db.rideDao.insert(
     RidesCompanion.insert(
@@ -55,7 +55,10 @@ Future<int> _ride(
       followCoverage: Value(coverage),
     ),
   );
-  final o = RideOutline([(lat: lat, lng: 11.0), (lat: lat, lng: 11.01)]);
+  // Rides on the same line count as one route (#114): by default every ride
+  // gets a line of its own, one date step (0.1°) further north.
+  final y = lat ?? 48 + (date - 1) * 0.1;
+  final o = RideOutline([(lat: y, lng: 11.0), (lat: y, lng: 11.01)]);
   final b = o.bounds!;
   await db.outlineDao.upsert(
     RideOutlinesCompanion.insert(
@@ -195,6 +198,7 @@ void main() {
       durationMs: 800,
       coverage: 1,
       date: 2,
+      lat: 48,
     );
     await pump(tester, view: 'map');
     await settle(tester);
@@ -202,7 +206,7 @@ void main() {
     container.read(mapSelectionProvider.notifier).tap(_tap, 14);
     await settle(tester);
     // One route, one card: no pager, the best ride, a count that opens the group.
-    expect(find.text('1 of 2 rides'), findsNothing);
+    expect(find.text('1 of 2 routes'), findsNothing);
     expect(find.text('Faster follow'), findsOneWidget);
     expect(find.text('Original'), findsNothing);
     expect(find.text('Best time'), findsOneWidget);
@@ -216,7 +220,7 @@ void main() {
 
   testWidgets('a ride the map filter hides loses its card', (tester) async {
     await _ride(db, title: 'Board ride', type: 'LONGBOARD');
-    await _ride(db, title: 'Powder day', type: 'SKI', date: 2);
+    await _ride(db, title: 'Powder day', type: 'SKI', date: 2, lat: 48);
     await pump(tester, view: 'map');
     await settle(tester);
     container.read(mapSelectionProvider.notifier).tap(_tap, 14);
@@ -235,8 +239,8 @@ void main() {
   testWidgets('overlapping routes under the tap give one card, no paging', (
     tester,
   ) async {
-    await _ride(db, title: 'Alpha', date: 2);
-    await _ride(db, title: 'Beta', date: 1);
+    await _ride(db, title: 'Alpha', date: 2, lat: 48);
+    await _ride(db, title: 'Beta', date: 1, lat: 48);
     await pump(tester, view: 'map');
     await settle(tester);
 
@@ -265,14 +269,14 @@ void main() {
       await pump(tester, view: 'map');
       await settle(tester);
 
-      expect(find.text('2 rides'), findsOneWidget);
+      expect(find.text('2 routes'), findsOneWidget);
       await tester.tap(find.byTooltip('Activities'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Ski'));
       await tester.pumpAndSettle();
       // The menu stays open while ticking; the button shows the new count.
       expect(find.text('Ski'), findsOneWidget);
-      expect(find.text('1 of 2 rides'), findsOneWidget);
+      expect(find.text('1 of 2 routes'), findsOneWidget);
       expect(
         container.read(mapActivitiesProvider),
         ActivityType.values.toSet()..remove(ActivityType.ski),
@@ -302,7 +306,21 @@ void main() {
 
     container.read(historyFilterProvider.notifier).setQuery('Hill');
     await settle(tester);
-    expect(find.text('1 of 2 rides'), findsOneWidget);
+    expect(find.text('1 of 2 routes'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('rides on one line without a follow link count as one route', (
+    tester,
+  ) async {
+    await _ride(db, title: 'Run one', lat: 48);
+    await _ride(db, title: 'Run two', date: 2, lat: 48.0002);
+    await _ride(db, title: 'Elsewhere', date: 3, lat: 49);
+    await pump(tester, view: 'map');
+    await settle(tester);
+
+    // Three rides, two lines: the two runs are 22 m apart.
+    expect(find.text('2 routes'), findsOneWidget);
     await finish(tester);
   });
 
@@ -313,15 +331,15 @@ void main() {
     await _ride(db, title: 'Beta ride', date: 2);
     await pump(tester, view: 'map');
     await settle(tester);
-    expect(find.text('1 of 2 rides'), findsNothing);
+    expect(find.text('1 of 2 routes'), findsNothing);
 
     container.read(historyFilterProvider.notifier).setQuery('Alpha');
     await settle(tester);
-    expect(find.text('1 of 2 rides'), findsOneWidget);
+    expect(find.text('1 of 2 routes'), findsOneWidget);
 
     container.read(historyFilterProvider.notifier).setQuery('');
     await settle(tester);
-    expect(find.text('1 of 2 rides'), findsNothing);
+    expect(find.text('1 of 2 routes'), findsNothing);
     await finish(tester);
   });
 
@@ -337,8 +355,8 @@ void main() {
         .toggleActivity(ActivityType.ski);
     await settle(tester);
     // The header's activity filter is not one the map uses: no "n of m".
-    expect(find.textContaining(' of 2 rides'), findsNothing);
-    expect(find.text('2 rides'), findsOneWidget);
+    expect(find.textContaining(' of 2 routes'), findsNothing);
+    expect(find.text('2 routes'), findsOneWidget);
     await finish(tester);
   });
 
@@ -350,7 +368,7 @@ void main() {
     await pump(tester, view: 'map', own: 'SKI');
     await settle(tester);
 
-    expect(find.text('1 of 2 rides'), findsOneWidget);
+    expect(find.text('1 of 2 routes'), findsOneWidget);
     expect(container.read(mapActivitiesProvider), {ActivityType.ski});
     // The list is not narrowed by it.
     expect(container.read(historyFilterProvider).activities, isEmpty);
@@ -378,11 +396,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('All activities'));
     await tester.pumpAndSettle();
-    expect(find.text('0 of 2 rides'), findsOneWidget);
+    expect(find.text('0 of 2 routes'), findsOneWidget);
     expect(container.read(mapActivitiesProvider), isEmpty);
     await tester.tap(find.text('All activities'));
     await tester.pumpAndSettle();
-    expect(find.text('2 rides'), findsOneWidget);
+    expect(find.text('2 routes'), findsOneWidget);
     expect(container.read(mapActivitiesProvider), isNull);
 
     // One type on, then off again: nothing is switched back on behind it.

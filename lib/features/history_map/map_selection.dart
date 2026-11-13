@@ -7,6 +7,7 @@ import '../history/history_items.dart';
 import 'history_map_providers.dart';
 import 'map_items.dart';
 import 'route_badges.dart';
+import 'route_lines.dart';
 
 /// The rides under the last tap, nearest first (#96).
 class MapSelection {
@@ -93,10 +94,11 @@ final selectedRideProvider = Provider<SelectedRide?>((ref) {
         id,
   ];
   if (hits.isEmpty) return null;
-  final key = badges.groupKeyOf(hits.first);
+  final lines = ref.watch(routeLineKeysProvider).value;
+  final key = routeKeyOf(hits.first, lines, badges);
   final sameRoute = [
     for (final id in hits)
-      if (badges.groupKeyOf(id) == key) id,
+      if (routeKeyOf(id, lines, badges) == key) id,
   ];
   final id = sameRoute.firstWhere(
     badges.bestRideIds.contains,
@@ -105,6 +107,6 @@ final selectedRideProvider = Provider<SelectedRide?>((ref) {
   return SelectedRide(
     byId[id]!,
     isBest: badges.bestRideIds.contains(id),
-    groupSize: badges.groupSizeOf(id),
+    groupSize: routeSizeOf(id, lines, badges),
   );
 });

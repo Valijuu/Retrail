@@ -113,7 +113,7 @@ class ActivityMenu extends ConsumerWidget {
                                 counts.shown,
                                 counts.total,
                               )
-                            : l10n.historyMapRideCount(counts.total),
+                            : l10n.historyMapRouteCount(counts.total),
                         style: Theme.of(context).textTheme.labelMedium
                             ?.copyWith(color: colors.onSurface),
                         maxLines: 1,

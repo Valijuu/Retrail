@@ -29,7 +29,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 - The map's activity menu lists every activity, dimming those without rides (#113).
 - On the map, the search and filters at the top only act where they make sense: the activity filter and the sort
   order stay with the list, and the filter menu shows only year, months, favourites and routes there. The
-  activity button shows how many rides the map draws ("12 of 40 rides"), counting each route once, whether
+  activity button shows how many routes the map draws ("12 of 40 routes"); rides on the same line count as one route, also without "follow", whether
   the search, the filters, the activity menu or the pin's radius hide the rest (#113).
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.
