@@ -56,8 +56,8 @@ Must:
   Lines mode draws one line per ride, thin and semi-transparent, in its activity type's colour, so a
     route ridden often looks denser. The nine types have nine distinct colours that stay readable on the light
     and the dark style; colour is never the only cue.
-  The activity menu is one drop-down button showing how many of the occurring types are on (`2/3`). It lists
-    the types that occur, each with a checkbox, its colour bar and icon; ticking shows or hides the type on the
+  The activity menu is one drop-down button showing how many of all types are on (`2/6`). It lists
+    all types, those without a ride with a route dimmed, each with a checkbox, its colour bar and icon; ticking shows or hides the type on the
     map and keeps the menu open. The selection belongs to the map alone: the History list keeps its own
     activity filter, and the filter badge does not count it. An "all" row on top switches every type on, or,
     while every type is on, every type off; the last type can be unticked too.

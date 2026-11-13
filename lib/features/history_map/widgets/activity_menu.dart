@@ -30,11 +30,9 @@ class ActivityMenu extends ConsumerWidget {
     final present = ref.watch(legendTypesProvider).value ?? const {};
     final selected = ref.watch(mapActivitiesProvider);
     final notifier = ref.read(mapActivitiesProvider.notifier);
-    final types = [
-      for (final t in ActivityType.values)
-        if (present.contains(t)) t,
-    ];
-    if (types.isEmpty) return const SizedBox.shrink();
+    // All activities are listed; those without a ride with a route are dimmed.
+    const types = ActivityType.values;
+    if (present.isEmpty) return const SizedBox.shrink();
     final shownCount = types.where((t) => mapTypeShown(selected, t)).length;
 
     return MenuAnchor(
@@ -47,7 +45,8 @@ class ActivityMenu extends ConsumerWidget {
               : shownCount == 0
               ? false
               : null,
-          onChanged: (_) => notifier.set(toggleAllMapTypes(selected, present)),
+          onChanged: (_) =>
+              notifier.set(toggleAllMapTypes(selected, types.toSet())),
           child: Text(l10n.historyMapAllActivities),
         ),
         const Divider(height: 1),
@@ -56,7 +55,7 @@ class ActivityMenu extends ConsumerWidget {
             closeOnActivate: false,
             value: mapTypeShown(selected, type),
             onChanged: (_) =>
-                notifier.set(toggleMapType(selected, present, type)),
+                notifier.set(toggleMapType(selected, types.toSet(), type)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -71,7 +70,12 @@ class ActivityMenu extends ConsumerWidget {
                 const SizedBox(width: 8),
                 type.glyph(size: _glyphSize, color: colors.onSurface),
                 const SizedBox(width: 8),
-                Text(type.label(l10n)),
+                Text(
+                  type.label(l10n),
+                  style: present.contains(type)
+                      ? null
+                      : TextStyle(color: colors.onSurfaceVariant),
+                ),
               ],
             ),
           ),
