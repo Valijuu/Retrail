@@ -51,7 +51,7 @@ claim ephemeral processing.
 - App activity → **In-app search history** (the place search, #106)
 
 Leave everything else unselected (no personal info, no photos — the profile
-photo never leaves the device, no app activity, no crash logs, no device IDs).
+photo never leaves the device, no app activity other than the search history, no crash logs, no device IDs).
 
 **Data usage and handling — Approximate location**
 
@@ -74,7 +74,8 @@ photo never leaves the device, no app activity, no crash logs, no device IDs).
 **Privacy policy URL:** https://getretrail.app/privacy
 **Imprint:** https://getretrail.app/impressum — c/o address from online-impressum.de (Zustellungsvollmacht § 171 ZPO, scanned mail in their portal; check it every working day). The address is for the imprint only, never for a trade registration.
 
-Resulting store label: "This app may collect these data types: Location ·
+Resulting store label: "This app may collect these data types: Location,
+Search history ·
 Data is encrypted in transit · No data shared with third parties".
 
 ### Related Play Console forms (same App content page)

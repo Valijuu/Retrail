@@ -19,7 +19,15 @@ class PlaceSearchPanel extends ConsumerStatefulWidget {
 }
 
 class _PlaceSearchPanelState extends ConsumerState<PlaceSearchPanel> {
-  final _controller = TextEditingController();
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: ref.read(placeSearchProvider).query,
+    );
+  }
 
   @override
   void dispose() {
