@@ -20,6 +20,7 @@ import '../place_search/photon_client.dart' show PlaceSuggestion;
 import '../place_search/place_search_controller.dart';
 import '../place_search/widgets/place_search_button.dart';
 import '../place_search/widgets/place_search_panel.dart';
+import 'map_back.dart';
 import 'map_area.dart';
 import 'map_default_activity.dart';
 import 'map_locator.dart';
@@ -86,26 +87,55 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final bounds = ref.read(overviewProvider).value?.bounds;
     _framePending = bounds == null && _restore == null;
     Future.microtask(() {
+      if (mounted) _back.register(_handleBack);
       _visible.set(true);
       if (mounted) _applyDefaultActivity();
     });
   }
 
+  final _activityMenu = MenuController();
+  late final _back = ref.read(mapBackProvider.notifier);
+
+  /// Back closes the activity menu, the place search or the ride card, in
+  /// that order; false when none is open (#115).
+  bool _handleBack() {
+    if (_activityMenu.isOpen) {
+      _activityMenu.close();
+      return true;
+    }
+    final search = ref.read(placeSearchProvider.notifier);
+    if (ref.read(placeSearchProvider).open) {
+      search.close();
+      return true;
+    }
+    final selection = ref.read(mapSelectionProvider.notifier);
+    if (ref.read(selectedRideProvider) != null) {
+      selection.clear();
+      return true;
+    }
+    return false;
+  }
+
   @override
   void dispose() {
     Future.microtask(() => _visible.set(false));
+    Future.microtask(() => _back.register(null));
     super.dispose();
   }
 
   /// Opening the search closes an open ride card: map and search panel do not
   /// compete (#108).
   void _openPlaceSearch() {
+    // The header search may hold the focus: the panel's field must get it
+    // (#116), and nothing takes it back afterwards (#117).
+    FocusManager.instance.primaryFocus?.unfocus();
     ref.read(mapSelectionProvider.notifier).clear();
     ref.read(placeSearchProvider.notifier).open();
   }
 
   /// A chosen place sets the pin like a long press and moves the camera to it.
   void _onPlacePicked(PlaceSuggestion place) {
+    FocusManager.instance.primaryFocus?.unfocus();
     ref.read(mapAreaProvider.notifier).setPin(place.point);
     ref.read(placeSearchProvider.notifier).close();
     setState(() => _areaFocusToken++);
@@ -113,6 +143,9 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
 
   void _onFilterChanged(HistoryFilter? previous, HistoryFilter next) {
     if (previous == null || _framingKey(previous) == _framingKey(next)) return;
+    // The camera belongs to the pin's circle: a search or filter typed there
+    // narrows the rides inside it and never zooms away (#121).
+    if (ref.read(mapAreaProvider) != null) return;
     _reframe();
   }
 
@@ -271,10 +304,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                     const SizedBox(width: _panelGap),
                     // Takes the room left of the search button; its label
                     // shortens on a narrow screen.
-                    const Expanded(
+                    Expanded(
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: ActivityMenu(),
+                        child: ActivityMenu(controller: _activityMenu),
                       ),
                     ),
                     PlaceSearchButton(onPressed: _openPlaceSearch),

@@ -42,6 +42,11 @@ Must:
     map draws, m what the history has. A tap on a line selects that route: the card shows its best ride and
     the ride count of the route. Until the lines are matched the follow groups stand in. There is no separate
     line for it.
+  Back on the map closes, one step per press, the open activity menu, the place search, then the ride card;
+    only with none of them open does it leave the tab as before (#115). Opening the place search, the filter
+    sheet or a route group takes the focus from the header search, so no keyboard comes back when they close
+    (#116, #117). While a pin is set, changes to the header search or filters never move the camera: it
+    belongs to the pin's circle (#121).
   A long press on the map sets a pin; the my-location button also sets it to the current position (after the
     permission rules below). The pin can be dragged or removed, and a radius slider from `1` to `50` km
     (default `5`) draws the circle on the map. With a pin, only rides that match @AreaFilter remain.

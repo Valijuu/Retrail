@@ -70,12 +70,16 @@ mixin HistoryRideActions on ConsumerState<HistoryScreen> {
   }
 
   /// The comparison of [entry]'s route group, [entry] selected (Spec 20).
-  Future<void> openRouteGroup(RideEntryItem entry) => showRouteGroupSheet(
-    context,
-    rootId: entry.ride.routeRootId,
-    highlightRideId: entry.ride.rideId,
-    onOpenRide: openDetail,
-  );
+  Future<void> openRouteGroup(RideEntryItem entry) {
+    // Closing the sheet would bring the header search's keyboard back (#117).
+    FocusManager.instance.primaryFocus?.unfocus();
+    return showRouteGroupSheet(
+      context,
+      rootId: entry.ride.routeRootId,
+      highlightRideId: entry.ride.rideId,
+      onOpenRide: openDetail,
+    );
+  }
 
   /// Loads [ride]'s route and starts "Follow route" for it (Spec 17). A
   /// repeat is followed along its original (Spec 20); [trackpoints], when

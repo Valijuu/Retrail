@@ -9,6 +9,7 @@ import '../../core/connectivity/connectivity_providers.dart';
 import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../history_map/history_map_providers.dart';
+import '../history_map/map_back.dart';
 import '../history_map/map_items.dart';
 import '../history_map/outline_fill.dart';
 import '../history_map/history_map_view.dart';
@@ -76,11 +77,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     widget.onRegisterBackHandler?.call(_handleBack);
   }
 
-  /// Back leaves selection mode first; otherwise it isn't ours to handle.
+  /// Back leaves selection mode first, then closes what is open on the map
+  /// (#115); otherwise it isn't ours to handle.
   bool _handleBack() {
-    if (!_selectionMode) return false;
-    _exitSelection();
-    return true;
+    if (_selectionMode) {
+      _exitSelection();
+      return true;
+    }
+    return ref.read(mapBackProvider)?.call() ?? false;
   }
 
   @override
@@ -233,6 +237,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   }
 
   Future<void> _openFilters() {
+    // Closing the sheet would hand the focus (and the keyboard) back to the
+    // header search (#117).
+    FocusManager.instance.primaryFocus?.unfocus();
     final forMap =
         (ref.read(historyViewProvider).value ?? HistoryView.list) ==
         HistoryView.map;

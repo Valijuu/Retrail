@@ -21,7 +21,10 @@ const double _glyphSize = 18;
 /// colour and icon and a checkbox. The map keeps its own selection, apart
 /// from the History list's filter (#96). The menu stays open while ticking.
 class ActivityMenu extends ConsumerWidget {
-  const ActivityMenu({super.key});
+  const ActivityMenu({super.key, this.controller});
+
+  /// Lets the map close the menu on Back (#115).
+  final MenuController? controller;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,6 +41,7 @@ class ActivityMenu extends ConsumerWidget {
     final counts = ref.watch(mapRideCountsProvider);
 
     return MenuAnchor(
+      controller: controller,
       menuChildren: [
         CheckboxMenuButton(
           closeOnActivate: false,

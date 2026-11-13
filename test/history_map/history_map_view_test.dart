@@ -16,6 +16,9 @@ import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_filter.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_screen.dart';
+import 'package:retrail/features/place_search/place_search_controller.dart';
+import 'package:retrail/features/place_search/widgets/place_search_button.dart';
+import 'package:retrail/features/place_search/widgets/place_search_panel.dart';
 import 'package:retrail/features/history_map/route_lines.dart';
 import 'package:retrail/features/history_map/map_activities.dart';
 import 'package:retrail/features/history_map/map_area.dart';
@@ -77,8 +80,10 @@ Future<int> _ride(
 void main() {
   late AppDatabase db;
   late ProviderContainer container;
+  bool Function()? backHandler;
 
   setUp(() {
+    backHandler = null;
     db = AppDatabase.memory();
     OverviewMap.debugMapBuilderOverride = (_) => const Text('native map');
   });
@@ -129,7 +134,9 @@ void main() {
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en'),
-          home: const Scaffold(body: HistoryScreen()),
+          home: Scaffold(
+            body: HistoryScreen(onRegisterBackHandler: (h) => backHandler = h),
+          ),
         ),
       ),
     );
@@ -154,6 +161,106 @@ void main() {
     }
     await tester.pump();
   }
+
+  group('focus of the header search (#116, #117)', () {
+    bool hasFocus(WidgetTester tester, Finder editable) =>
+        tester.widget<EditableText>(editable).focusNode.hasFocus;
+
+    Future<void> focusHeaderSearch(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Search').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(TextField).first);
+      await tester.pumpAndSettle();
+      expect(hasFocus(tester, find.byType(EditableText)), isTrue);
+    }
+
+    testWidgets('the place search gets the focus from the header search', (
+      tester,
+    ) async {
+      await _ride(db, title: 'Board ride');
+      await pump(tester, view: 'map');
+      await settle(tester);
+      await focusHeaderSearch(tester);
+
+      await tester.tap(find.byType(PlaceSearchButton));
+      await tester.pumpAndSettle();
+      final panel = find.descendant(
+        of: find.byType(PlaceSearchPanel),
+        matching: find.byType(EditableText),
+      );
+      expect(hasFocus(tester, panel), isTrue);
+      await finish(tester);
+    });
+
+    testWidgets('closing the filter sheet does not bring the keyboard back', (
+      tester,
+    ) async {
+      await _ride(db, title: 'Board ride');
+      await pump(tester, view: 'map');
+      await settle(tester);
+      await focusHeaderSearch(tester);
+
+      await tester.tap(find.byTooltip('Filter'));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      expect(hasFocus(tester, find.byType(EditableText)), isFalse);
+      await finish(tester);
+    });
+  });
+
+  group('back on the map (#115)', () {
+    testWidgets('back closes the open activity menu first', (tester) async {
+      await _ride(db, title: 'Board ride', type: 'LONGBOARD');
+      await pump(tester, view: 'map');
+      await settle(tester);
+      await tester.tap(find.byTooltip('Activities'));
+      await tester.pumpAndSettle();
+      expect(find.text('All activities'), findsOneWidget);
+
+      expect(backHandler!(), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.text('All activities'), findsNothing);
+      expect(backHandler!(), isFalse);
+      await finish(tester);
+    });
+
+    testWidgets('back closes the place search first', (tester) async {
+      await _ride(db, title: 'Board ride');
+      await pump(tester, view: 'map');
+      await settle(tester);
+      container.read(placeSearchProvider.notifier).open();
+      await tester.pump();
+
+      expect(backHandler!(), isTrue);
+      expect(container.read(placeSearchProvider).open, isFalse);
+      expect(backHandler!(), isFalse);
+      await finish(tester);
+    });
+
+    testWidgets('back closes the ride card first', (tester) async {
+      await _ride(db, title: 'Board ride');
+      await pump(tester, view: 'map');
+      await settle(tester);
+      container.read(mapSelectionProvider.notifier).tap(_tap, 14);
+      await settle(tester);
+      expect(find.text('Board ride'), findsOneWidget);
+
+      expect(backHandler!(), isTrue);
+      await settle(tester);
+      expect(find.text('Board ride'), findsNothing);
+      expect(backHandler!(), isFalse);
+      await finish(tester);
+    });
+
+    testWidgets('with nothing open back is not the map\'s', (tester) async {
+      await _ride(db, title: 'Board ride');
+      await pump(tester, view: 'map');
+      await settle(tester);
+      expect(backHandler!(), isFalse);
+      await finish(tester);
+    });
+  });
 
   testWidgets('the list is the default and the switch opens the map', (
     tester,
@@ -448,6 +555,28 @@ void main() {
           .setSort(SortOrder.distance);
       await settle(tester);
       expect(map(tester).frameToken, framed);
+      await finish(tester);
+    });
+
+    testWidgets('with an area set a header search leaves the camera alone', (
+      tester,
+    ) async {
+      // The camera belongs to the area (#121): typing a search after a place
+      // search must not zoom away from the circle, found rides or not.
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);
+      await _ride(db, title: 'North', type: 'SKI', lat: 48.01, date: 2);
+      await pump(tester, view: 'map');
+      await settle(tester);
+      container.read(mapAreaProvider.notifier).setPin((lat: 48.0, lng: 11.0));
+      await settle(tester);
+      final before = map(tester).frameToken;
+
+      container.read(historyFilterProvider.notifier).setQuery('North');
+      await settle(tester);
+      container.read(historyFilterProvider.notifier).setQuery('Nowhere');
+      await settle(tester);
+      expect(map(tester).frameToken, before);
       await finish(tester);
     });
 

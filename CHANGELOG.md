@@ -31,6 +31,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
   order stay with the list, and the filter menu shows only year, months, favourites and routes there. The
   activity button shows how many routes the map draws ("12 of 40 routes"); rides on the same line count as one route, also without "follow", whether
   the search, the filters, the activity menu or the pin's radius hide the rest (#113).
+- On the map, Back closes the open menu, place search or ride card first instead of leaving the tab (#115). The
+  keyboard no longer pops up again after the filter sheet, a route group or a found place closes, and the
+  place search takes the typing from the header search (#116, #117). With a pin set, typing a search no longer
+  zooms the map away from the circle (#121).
 - The route comparison lists the fastest follow first and shows the top speed next to the average.
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.
