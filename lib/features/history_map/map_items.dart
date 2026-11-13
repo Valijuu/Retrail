@@ -29,8 +29,9 @@ final mapItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
       .map((rides) => buildHistoryItems(rides, filter, locale: locale));
 });
 
-/// How many different routes [rideIds] make up: a followed ride counts with
-/// its original (#113). Without [badges] every ride counts on its own.
+/// How many different routes [rideIds] make up: rides on one line, and a
+/// followed ride with its original, count once (#113, #114). Until the lines
+/// are matched ([lines] null) the follow groups of [badges] stand in.
 int uniqueRoutes(
   Iterable<int> rideIds,
   Map<int, int>? lines,
@@ -38,7 +39,7 @@ int uniqueRoutes(
 ) => {for (final id in rideIds) routeKeyOf(id, lines, badges)}.length;
 
 /// How many different routes the history has, before any filter: the total
-/// in "12 of 40 rides".
+/// in "12 of 40 routes".
 final routedRideCountProvider = StreamProvider<int>((ref) {
   final badges = ref.watch(routeBadgesProvider).value;
   final lines = ref.watch(routeLineKeysProvider).value;

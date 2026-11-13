@@ -157,6 +157,20 @@ void main() {
         {1: 1, 2: 1, 3: 1},
       );
     });
+    test('many rides on one line are matched fast', () {
+      // 60 rides with 300 points on one line: rides already in one group
+      // are not compared again.
+      final entries = [
+        for (var id = 1; id <= 60; id++)
+          _ride(id, _line(offsetM: id % 5 * 1.0, n: 300)),
+      ];
+      final watch = Stopwatch()..start();
+      final result = RouteMatch.groups(entries);
+      watch.stop();
+      expect(result.values.toSet(), {1});
+      expect(watch.elapsedMilliseconds, lessThan(2000));
+    });
+
     test('every entry appears in the result', () {
       final entries = [
         for (var id = 1; id <= 6; id++) _ride(id, _line(offsetM: id * 1000.0)),

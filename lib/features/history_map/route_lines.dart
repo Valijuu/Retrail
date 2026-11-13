@@ -1,5 +1,6 @@
 import 'dart:isolate';
 
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/data_providers.dart';
@@ -8,37 +9,59 @@ import '../../domain/route_match.dart';
 import '../history/area_providers.dart';
 import 'route_badges.dart';
 
+/// The rides with a route and the ride each follows (#114); changes when a
+/// ride is added or removed or a follow link is written.
+final _routedFollowsProvider = StreamProvider<Map<int, int?>>(
+  (ref) => ref
+      .watch(rideRepositoryProvider)
+      .getAllRides()
+      .map(
+        (rides) => {
+          for (final r in rides)
+            if (r.hasRoute) r.rideId: r.followedRideId,
+        },
+      )
+      .distinct(mapEquals),
+);
+
+/// How long the lines wait for further changes before they are matched: an
+/// outline backfill changes the inputs ride by ride.
+final routeLinesDebounceProvider = Provider<Duration>(
+  (ref) => const Duration(milliseconds: 500),
+);
+
 /// Which rides lie on the same line, by ride id → group key (#114): every
-/// ride with an outline, grouped by geometry and by follow links, off the UI
+/// ride with a route, grouped by geometry and by follow links, off the UI
 /// thread. Null while it is being built; callers fall back to the follow
 /// groups of [RouteBadges] until then.
 final routeLineKeysProvider = FutureProvider<Map<int, int>>((ref) async {
   final outlined = ref.watch(outlinedRideIdsProvider).value ?? const <int>{};
-  final rides = await ref.watch(rideRepositoryProvider).getAllRides().first;
+  final follows = ref.watch(_routedFollowsProvider).value;
+  if (follows == null) return const {};
+  // Changed inputs dispose this run: only the last one matches.
+  await Future<void>.delayed(ref.read(routeLinesDebounceProvider));
   if (!ref.mounted) return const {};
   final store = ref.read(outlineStoreProvider);
-  final ids = [
-    for (final r in rides)
-      if (r.hasRoute && outlined.contains(r.rideId)) r.rideId,
-  ];
-  await store.refresh(outlined, ids);
+  await store.refresh(outlined, follows.keys);
   if (!ref.mounted) return const {};
-  final follows = {for (final r in rides) r.rideId: r.followedRideId};
   final request = [
-    for (final id in ids)
-      if (store.cache[id] case final e? when !e.isEmpty)
-        (
-          id: id,
-          followed: follows[id],
-          polyline: e.row.polyline,
-          bounds: e.bounds,
-        ),
+    for (final MapEntry(key: id, value: followed) in follows.entries)
+      (
+        id: id,
+        followed: followed,
+        polyline: store.cache[id]?.isEmpty == false
+            ? store.cache[id]!.row.polyline
+            : '',
+        bounds: store.cache[id]?.isEmpty == false
+            ? store.cache[id]!.bounds
+            : null,
+      ),
   ];
   return Isolate.run(() => _match(request));
 });
 
 Map<int, int> _match(
-  List<({int id, int? followed, String polyline, OutlineBounds bounds})>
+  List<({int id, int? followed, String polyline, OutlineBounds? bounds})>
   request,
 ) => RouteMatch.groups([
   for (final r in request)
@@ -46,7 +69,9 @@ Map<int, int> _match(
       rideId: r.id,
       followedRideId: r.followed,
       bounds: r.bounds,
-      points: RideOutline.decode(r.polyline).points,
+      points: r.polyline.isEmpty
+          ? const []
+          : RideOutline.decode(r.polyline).points,
     ),
 ]);
 

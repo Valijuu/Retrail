@@ -36,9 +36,10 @@ class RouteMatch {
 
     for (var i = 0; i < entries.length; i++) {
       for (var j = i + 1; j < entries.length; j++) {
-        if (_onSameLine(entries[i], entries[j])) {
-          unionFind.join(entries[i].rideId, entries[j].rideId);
-        }
+        final a = entries[i], b = entries[j];
+        // Groups are transitive: a pair already in one group needs no look.
+        if (unionFind.find(a.rideId) == unionFind.find(b.rideId)) continue;
+        if (_onSameLine(a, b)) unionFind.join(a.rideId, b.rideId);
       }
     }
     return {for (final e in entries) e.rideId: unionFind.find(e.rideId)};

@@ -16,6 +16,7 @@ import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/history_filter.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_screen.dart';
+import 'package:retrail/features/history_map/route_lines.dart';
 import 'package:retrail/features/history_map/map_activities.dart';
 import 'package:retrail/features/history_map/map_area.dart';
 import 'package:retrail/features/history_map/map_selection.dart';
@@ -101,6 +102,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
+        routeLinesDebounceProvider.overrideWithValue(Duration.zero),
         preferencesRepositoryProvider.overrideWithValue(
           PreferencesRepository(prefs),
         ),
