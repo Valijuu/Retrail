@@ -301,6 +301,21 @@ void main() {
     },
   );
 
+  testWidgets('followed rides are not counted, only unique routes', (
+    tester,
+  ) async {
+    final original = await _ride(db, title: 'Hill run');
+    await _ride(db, title: 'Hill run again', followed: original, date: 2);
+    await _ride(db, title: 'Zeta', date: 3);
+    await pump(tester, view: 'map');
+    await settle(tester);
+
+    container.read(historyFilterProvider.notifier).setQuery('Hill');
+    await settle(tester);
+    expect(find.text('1 of 2 rides'), findsOneWidget);
+    await finish(tester);
+  });
+
   testWidgets('a header search that hides rides shows "n of m rides"', (
     tester,
   ) async {

@@ -5,6 +5,8 @@ import '../history/history_filter.dart';
 import '../history/history_items.dart';
 import '../history/history_providers.dart';
 import '../history/history_range.dart';
+import 'history_map_providers.dart' show routeBadgesProvider;
+import 'route_badges.dart';
 import '../settings/settings_providers.dart' show dateFormatLocaleProvider;
 
 /// The filter the map uses of the History header (#113): search, year, months,
@@ -30,14 +32,25 @@ final mapItemsProvider = StreamProvider<List<HistoryItem>>((ref) {
       .map((rides) => buildHistoryItems(rides, filter, locale: locale));
 });
 
-/// How many rides with a route the history has, before any filter: the
-/// total in "12 of 40 rides".
-final routedRideCountProvider = StreamProvider<int>(
-  (ref) => ref
+/// How many different routes [rideIds] make up: a followed ride counts with
+/// its original (#113). Without [badges] every ride counts on its own.
+int uniqueRoutes(Iterable<int> rideIds, RouteBadges? badges) =>
+    {for (final id in rideIds) badges?.groupKeyOf(id) ?? id}.length;
+
+/// How many different routes the history has, before any filter: the total
+/// in "12 of 40 rides".
+final routedRideCountProvider = StreamProvider<int>((ref) {
+  final badges = ref.watch(routeBadgesProvider).value;
+  return ref
       .watch(rideRepositoryProvider)
       .getAllRides()
-      .map((rides) => rides.where((r) => r.hasRoute).length),
-);
+      .map(
+        (rides) => uniqueRoutes([
+          for (final r in rides)
+            if (r.hasRoute) r.rideId,
+        ], badges),
+      );
+});
 
 /// The filter badge in the map view: only the header filters the map uses
 /// (the list's sort and activity filter do not count there).

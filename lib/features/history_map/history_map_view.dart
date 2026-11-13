@@ -225,7 +225,12 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     );
     final routedTotal = ref.watch(routedRideCountProvider).value ?? 0;
     // What the map really draws: header filters, activities and area together.
-    final routedShown = ref.watch(settledMapRidesProvider).length;
+    // Followed rides lie on their original's route: count each route once.
+    final badges = ref.watch(routeBadgesProvider).value;
+    final routedShown = uniqueRoutes(
+      ref.watch(settledMapRidesProvider).map((r) => r.rideId),
+      badges,
+    );
     final searching = ref.watch(placeSearchProvider.select((s) => s.open));
     final position = ref.watch(mapPositionProvider);
     final areaNotifier = ref.read(mapAreaProvider.notifier);
