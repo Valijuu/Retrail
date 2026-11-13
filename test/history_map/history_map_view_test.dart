@@ -601,9 +601,11 @@ void main() {
     ) async {
       OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
       await _ride(db, title: 'South', lat: 48);
-      await _ride(db, title: 'North', lat: 52, date: 2);
+      await _ride(db, title: 'North', lat: 48.01, date: 2);
       await pump(tester, view: 'map');
       await settle(tester);
+      // The pin keeps both rides: the set is the same before and after, yet
+      // the camera moved to the circle in between.
       container.read(mapAreaProvider.notifier).setPin((lat: 48.0, lng: 11.0));
       await settle(tester);
       final withPin = map(tester).frameToken;
@@ -611,7 +613,6 @@ void main() {
       container.read(mapAreaProvider.notifier).clear();
       await settle(tester);
       expect(map(tester).frameToken, isNot(withPin));
-      expect(map(tester).bounds!.north, 52);
       await finish(tester);
     });
 

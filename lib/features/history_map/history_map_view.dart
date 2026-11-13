@@ -259,7 +259,11 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     ref.listen<HistoryFilter>(historyFilterProvider, _onFilterChanged);
     ref.listen(mapAreaProvider, (was, now) {
       // Without the pin the rides are all there is: frame them again (#118).
-      if (was != null && now == null) _reframe();
+      if (was != null && now == null) {
+        // The camera went to the circle: the old frame no longer shows them.
+        _framedIds = null;
+        _reframe();
+      }
     });
     ref.listen(legendTypesProvider, (_, _) => _applyDefaultActivity());
     ref.listen(lastActivityTypeProvider, (_, _) => _applyDefaultActivity());
