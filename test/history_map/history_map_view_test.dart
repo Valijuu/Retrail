@@ -20,6 +20,8 @@ import 'package:retrail/features/place_search/place_search_controller.dart';
 import 'package:retrail/features/place_search/widgets/place_search_button.dart';
 import 'package:retrail/features/place_search/widgets/place_search_panel.dart';
 import 'package:retrail/features/history_map/route_lines.dart';
+import 'package:retrail/features/history_map/history_map_providers.dart'
+    show overviewProvider;
 import 'package:retrail/features/history_map/map_activities.dart';
 import 'package:retrail/features/history_map/map_area.dart';
 import 'package:retrail/features/history_map/map_selection.dart';
@@ -430,6 +432,28 @@ void main() {
 
     // Three rides, two lines: the two runs are 22 m apart.
     expect(find.text('2 routes'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('a cleared search brings the shown set back without a rebuild', (
+    tester,
+  ) async {
+    await _ride(db, title: 'Alpha ride');
+    await _ride(db, title: 'Beta ride', date: 2);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    final before = container.read(overviewProvider).value!.data;
+    expect(before, isNotNull);
+
+    container.read(historyFilterProvider.notifier).setQuery('Nowhere');
+    await settle(tester);
+    container.read(historyFilterProvider.notifier).setQuery('');
+    await settle(tester);
+    // The same built data: nothing blinks while it is computed again (#127).
+    expect(
+      identical(container.read(overviewProvider).value!.data, before),
+      isTrue,
+    );
     await finish(tester);
   });
 

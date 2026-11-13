@@ -163,6 +163,13 @@ final settledMapRidesProvider =
       SettledMapRidesNotifier.new,
     );
 
+/// The last few built overview sets, by their rides and mode (#127).
+final overviewDataCacheProvider = Provider<Map<String, OverviewData>>(
+  (ref) => {},
+);
+
+const _overviewCacheSize = 4;
+
 /// The rides with a drawable outline that pass the History filters, built
 /// into map data off the UI thread (#96).
 final overviewProvider = FutureProvider<OverviewState>((ref) async {
@@ -190,8 +197,21 @@ final overviewProvider = FutureProvider<OverviewState>((ref) async {
   ];
   final bounds = _union([for (final e in entries) e.bounds]);
   final heat = mode == HistoryMapMode.heat;
-  final data = await Isolate.run(() => buildOverviewData(request, heat: heat));
+  // A set the map showed a moment ago (a search typed and cleared again)
+  // comes back at once instead of being built anew: no blink (#127).
+  final cacheKey =
+      '$heat|${[for (final r in visible) '${r.rideId}:${r.typ}'].join(',')}';
+  final cache = ref.read(overviewDataCacheProvider);
+  final data =
+      cache.remove(cacheKey) ??
+      await Isolate.run<OverviewData>(
+        () => buildOverviewData(request, heat: heat),
+      );
   if (!ref.mounted) return OverviewState.empty;
+  cache[cacheKey] = data;
+  while (cache.length > _overviewCacheSize) {
+    cache.remove(cache.keys.first);
+  }
   for (final MapEntry(:key, :value) in data.newLineFragments.entries) {
     store.cache[key]?.lineFragment = value;
   }
