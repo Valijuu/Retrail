@@ -48,6 +48,9 @@ class HistoryMapView extends ConsumerStatefulWidget {
 const double _edgeInset = 12;
 const double _topInset = 8;
 const double _panelGap = 6;
+
+/// Height the radius panel takes under the control row.
+const double _areaPanelInset = 80;
 const double _cardInset = 8;
 const double _progressHeight = 2;
 
@@ -63,6 +66,19 @@ Object _framingKey(HistoryFilter f) => Object.hash(
   f.monthFrom,
   f.monthTo,
   Object.hashAllUnordered(f.routeIds),
+);
+
+/// The framing key of the filters the map last saw: a filter changed while
+/// the list was open frames the map when it opens again (#118).
+class _FramedFilterNotifier extends Notifier<Object?> {
+  @override
+  Object? build() => null;
+
+  void remember(Object key) => state = key;
+}
+
+final _framedFilterProvider = NotifierProvider<_FramedFilterNotifier, Object?>(
+  _FramedFilterNotifier.new,
 );
 
 class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
@@ -84,8 +100,21 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   @override
   void initState() {
     super.initState();
-    final bounds = ref.read(overviewProvider).value?.bounds;
-    _framePending = bounds == null && _restore == null;
+    final framed = ref.read(_framedFilterProvider.notifier);
+    Future.microtask(() {
+      if (!mounted) return;
+      // Reading these in initState would resume paused providers while the
+      // tree is building.
+      final bounds = ref.read(overviewProvider).value?.bounds;
+      if (bounds == null && _restore == null) _framePending = true;
+      // A filter changed while the list was open frames the map now (#118).
+      final key = _framingKey(ref.read(historyFilterProvider));
+      final last = ref.read(_framedFilterProvider);
+      if (last != null && last != key && ref.read(mapAreaProvider) == null) {
+        _reframe();
+      }
+      framed.remember(key);
+    });
     Future.microtask(() {
       if (mounted) _back.register(_handleBack);
       _visible.set(true);
@@ -143,6 +172,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
 
   void _onFilterChanged(HistoryFilter? previous, HistoryFilter next) {
     if (previous == null || _framingKey(previous) == _framingKey(next)) return;
+    ref.read(_framedFilterProvider.notifier).remember(_framingKey(next));
     // The camera belongs to the pin's circle: a search or filter typed there
     // narrows the rides inside it and never zooms away (#121).
     if (ref.read(mapAreaProvider) != null) return;
@@ -227,6 +257,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   @override
   Widget build(BuildContext context) {
     ref.listen<HistoryFilter>(historyFilterProvider, _onFilterChanged);
+    ref.listen(mapAreaProvider, (was, now) {
+      // Without the pin the rides are all there is: frame them again (#118).
+      if (was != null && now == null) _reframe();
+    });
     ref.listen(legendTypesProvider, (_, _) => _applyDefaultActivity());
     ref.listen(lastActivityTypeProvider, (_, _) => _applyDefaultActivity());
     ref.listen(overviewProvider, _onOverview);
@@ -268,6 +302,12 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           heat: mode == HistoryMapMode.heat ? data?.heat : null,
           bounds: overview.bounds,
           frameToken: _frameToken,
+          // The control row, and the radius panel while a pin is set.
+          frameInsetTop:
+              _topInset +
+              kMapControlHeight +
+              _panelGap +
+              (area == null ? 0 : _areaPanelInset),
           highlight: highlight,
           highlightEnds: ends,
           area: area,

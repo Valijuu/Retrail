@@ -580,22 +580,38 @@ void main() {
       await finish(tester);
     });
 
-    testWidgets('a slow new set after a filter change still frames', (
+    testWidgets('framing keeps clear of the controls on top (#118)', (
       tester,
     ) async {
       OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
-      await _ride(db, title: 'South', type: 'LONGBOARD', lat: 48);
-      await _ride(db, title: 'North', type: 'SKI', lat: 52, date: 2);
+      await _ride(db, title: 'South', lat: 48);
       await pump(tester, view: 'map');
       await settle(tester);
-      final first = map(tester).frameToken;
+      final plain = map(tester).frameInsetTop;
+      expect(plain, greaterThan(0));
 
-      container.read(historyFilterProvider.notifier).setQuery('North');
-      // Seconds pass on the clock before the new set is through.
-      await tester.pump(const Duration(seconds: 3));
+      container.read(mapAreaProvider.notifier).setPin((lat: 48.0, lng: 11.0));
       await settle(tester);
-      expect(map(tester).frameToken, isNot(first));
-      expect(map(tester).bounds!.south, 52);
+      expect(map(tester).frameInsetTop, greaterThan(plain));
+      await finish(tester);
+    });
+
+    testWidgets('removing the pin frames the rides again (#118)', (
+      tester,
+    ) async {
+      OverviewMap.debugMapBuilderOverride = (_) => const SizedBox();
+      await _ride(db, title: 'South', lat: 48);
+      await _ride(db, title: 'North', lat: 52, date: 2);
+      await pump(tester, view: 'map');
+      await settle(tester);
+      container.read(mapAreaProvider.notifier).setPin((lat: 48.0, lng: 11.0));
+      await settle(tester);
+      final withPin = map(tester).frameToken;
+
+      container.read(mapAreaProvider.notifier).clear();
+      await settle(tester);
+      expect(map(tester).frameToken, isNot(withPin));
+      expect(map(tester).bounds!.north, 52);
       await finish(tester);
     });
 

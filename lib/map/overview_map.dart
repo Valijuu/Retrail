@@ -43,6 +43,7 @@ class OverviewMap extends StatefulWidget {
     required this.heat,
     required this.bounds,
     required this.frameToken,
+    this.frameInsetTop = 0,
     this.highlight,
     this.highlightEnds,
     this.area,
@@ -69,6 +70,10 @@ class OverviewMap extends StatefulWidget {
   /// Changes when the filters change: the map frames the visible rides again.
   /// A user gesture stops framing until the next change.
   final Object? frameToken;
+
+  /// Logical px at the top that controls cover: framing keeps the rides and
+  /// the pin's circle below them (#118).
+  final double frameInsetTop;
 
   /// GeoJSON of the tapped ride, drawn on top.
   final String? highlight;
@@ -261,6 +266,7 @@ class _OverviewMapState extends State<OverviewMap> {
       ],
       width: _viewport.width,
       height: _viewport.height,
+      insetTop: widget.frameInsetTop,
     );
     if (fit == null) return;
     await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);
@@ -278,6 +284,7 @@ class _OverviewMapState extends State<OverviewMap> {
       ],
       width: _viewport.width,
       height: _viewport.height,
+      insetTop: widget.frameInsetTop,
     );
     if (fit == null) return;
     _userMoved = true;

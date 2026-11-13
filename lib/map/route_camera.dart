@@ -40,6 +40,7 @@ RouteCamera? fitRouteCamera(
   required double width,
   required double height,
   double padding = _defaultFitPaddingPx,
+  double insetTop = 0,
 }) {
   if (points.isEmpty) return null;
   final lats = points.map((p) => p.lat);
@@ -59,12 +60,37 @@ RouteCamera? fitRouteCamera(
     return _log2(targetPx / (_mapLibreWorldSizeAtZoom0Px * worldFrac));
   }
 
-  final zoom = math.min(zoomToFit(width, lonFrac), zoomToFit(height, latFrac));
-  return (
-    lat: (north + south) / 2,
-    lng: (east + west) / 2,
-    zoom: math.min(zoom, maxPreviewZoom),
+  // [insetTop] px at the top are covered (controls over the map): the box is
+  // fitted to the free height below it.
+  final zoom = math.min(
+    zoomToFit(width, lonFrac),
+    zoomToFit(height - insetTop, latFrac),
   );
+  final fitZoom = math.min(zoom, maxPreviewZoom);
+  final centerLat = (north + south) / 2;
+  return (
+    lat: insetTop == 0
+        ? centerLat
+        : _shiftedNorth(centerLat, fitZoom, insetTop / 2),
+    lng: (east + west) / 2,
+    zoom: fitZoom,
+  );
+}
+
+/// [lat] moved north by [px] screen pixels at [zoom]: the camera centre that
+/// draws [lat] [px] below the screen centre.
+double _shiftedNorth(double lat, double zoom, double px) {
+  final worldPx = _mapLibreWorldSizeAtZoom0Px * math.pow(2, zoom).toDouble();
+  final y = latYFrac(lat) - px / worldPx;
+  final s = _tanh((0.5 - y) * 2 * math.pi);
+  return math.asin(s) * _degreesOfHalfTurn / math.pi;
+}
+
+const double _degreesOfHalfTurn = 180.0;
+
+double _tanh(double x) {
+  final e = math.exp(2 * x);
+  return (e - 1) / (e + 1);
 }
 
 /// Projects [points] into a [width] × [height] box exactly where a MapLibre

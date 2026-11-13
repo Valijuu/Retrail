@@ -35,6 +35,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
   keyboard no longer pops up again after the filter sheet, a route group or a found place closes, and the
   place search takes the typing from the header search (#116, #117). With a pin set, typing a search no longer
   zooms the map away from the circle (#121).
+- The map keeps rides and the pin's circle clear of the buttons on top when it frames them, frames the rides again after the pin is removed, and frames them after a filter changed in the list (#118).
 - The route comparison lists the fastest follow first and shows the top speed next to the average.
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.

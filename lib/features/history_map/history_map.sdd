@@ -47,6 +47,9 @@ Must:
     sheet or a route group takes the focus from the header search, so no keyboard comes back when they close
     (#116, #117). While a pin is set, changes to the header search or filters never move the camera: it
     belongs to the pin's circle (#121).
+  Framing keeps the rides and the pin's circle clear of the controls on top (the control row, plus the radius
+    panel while a pin is set). Removing the pin frames the rides again, and a header filter changed while the
+    list was shown frames the map when it opens (#118).
   A long press on the map sets a pin; the my-location button also sets it to the current position (after the
     permission rules below). The pin can be dragged or removed, and a radius slider from `1` to `50` km
     (default `5`) draws the circle on the map. With a pin, only rides that match @AreaFilter remain.
