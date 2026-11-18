@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -74,6 +74,11 @@ class AppDatabase extends _$AppDatabase {
         // v7: simplified ride geometry for the History map (#96). Filled in
         // the background for rides recorded before (OutlineRepository).
         await m.createTable(rideOutlines);
+      }
+      if (from == 7) {
+        // v8: a revision per outline row (#111). A table created above at v8
+        // already has the column.
+        await m.addColumn(rideOutlines, rideOutlines.revision);
       }
     },
     beforeOpen: (details) async {

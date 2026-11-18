@@ -17,13 +17,15 @@ class OutlineStore {
   final OutlineRepository _repo;
   final OutlineCache cache = OutlineCache();
 
-  /// Drops the outlines of rides that are gone and loads those of [wanted]
-  /// that are outlined ([outlinedIds]) but not cached yet, in one query.
-  Future<void> refresh(Set<int> outlinedIds, Iterable<int> wanted) async {
-    cache.sync(outlinedIds);
+  /// Drops the outlines of rides that are gone and loads, in one query,
+  /// those of [wanted] that are outlined ([revisions]: ride id → revision)
+  /// but not cached yet or cached at an older revision (#111).
+  Future<void> refresh(Map<int, int> revisions, Iterable<int> wanted) async {
+    cache.sync(revisions.keys.toSet());
     final missing = [
       for (final id in wanted)
-        if (outlinedIds.contains(id) && cache[id] == null) id,
+        if (revisions[id] case final revision?)
+          if (cache[id]?.row.revision != revision) id,
     ];
     if (missing.isEmpty) return;
     final List<RideOutlineRow> rows = await _repo.load(missing);
@@ -35,7 +37,7 @@ final outlineStoreProvider = Provider<OutlineStore>(
   (ref) => OutlineStore(ref.watch(outlineRepositoryProvider)),
 );
 
-/// The ids of the rides that have an outline row.
-final outlinedRideIdsProvider = StreamProvider<Set<int>>(
-  (ref) => ref.watch(outlineRepositoryProvider).watchOutlinedRideIds(),
+/// Ride id → revision of every ride that has an outline row (#111).
+final outlineRevisionsProvider = StreamProvider<Map<int, int>>(
+  (ref) => ref.watch(outlineRepositoryProvider).watchOutlineRevisions(),
 );

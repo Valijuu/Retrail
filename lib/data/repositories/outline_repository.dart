@@ -15,9 +15,10 @@ class OutlineRepository {
   final OutlineDao _outlines;
   final TrackpointDao _trackpoints;
 
-  /// The ids of the rides that have an outline row (see
-  /// [OutlineDao.watchOutlinedRideIds]).
-  Stream<Set<int>> watchOutlinedRideIds() => _outlines.watchOutlinedRideIds();
+  /// Ride id → revision of every outline row (see
+  /// [OutlineDao.watchOutlineRevisions]).
+  Stream<Map<int, int>> watchOutlineRevisions() =>
+      _outlines.watchOutlineRevisions();
 
   /// The stored outlines of [rideIds].
   Future<List<RideOutlineRow>> load(Iterable<int> rideIds) =>

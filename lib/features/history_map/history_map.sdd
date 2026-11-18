@@ -118,7 +118,8 @@ Must:
     again (#110).
   The map follows the live map rules of the map spec for the style load, disposal and light/dark switch.
   Performance: outlines are read once into an in-memory cache by ride id and decoded on first use; a database
-    emission changes only the rides that were added, changed or removed. The list query for the map selects
+    emission changes only the rides that were added, changed or removed; a rewritten outline is known by its
+    revision and read again (#111). The list query for the map selects
     only the outlines of rides that pass the filters.
   Map data is rebuilt off the UI thread and pushed only when the visible set changes: one GeoJSON source per
     type in Lines mode, one in Heat mode. Heat points are cached per ride, so a filter change only joins them.

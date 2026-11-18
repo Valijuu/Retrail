@@ -35,7 +35,8 @@ final routeLinesDebounceProvider = Provider<Duration>(
 /// thread. Null while it is being built; callers fall back to the follow
 /// groups of [RouteBadges] until then.
 final routeLineKeysProvider = FutureProvider<Map<int, int>>((ref) async {
-  final outlined = ref.watch(outlinedRideIdsProvider).value ?? const <int>{};
+  final outlined =
+      ref.watch(outlineRevisionsProvider).value ?? const <int, int>{};
   final follows = ref.watch(_routedFollowsProvider).value;
   if (follows == null) return const {};
   // Changed inputs dispose this run: only the last one matches.

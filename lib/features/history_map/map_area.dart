@@ -61,9 +61,10 @@ final settledMapAreaProvider =
 final mapAreaRideIdsProvider = FutureProvider<Set<int>?>((ref) async {
   final area = ref.watch(settledMapAreaProvider);
   if (area == null) return null;
-  final ids = await ref.watch(outlinedRideIdsProvider.future);
+  final revisions = await ref.watch(outlineRevisionsProvider.future);
+  final ids = revisions.keys;
   final store = ref.read(outlineStoreProvider);
-  await store.refresh(ids, ids);
+  await store.refresh(revisions, ids);
   if (!ref.mounted) return const {};
   return {
     for (final id in ids)

@@ -16,6 +16,7 @@ RideOutlineRow _row(int id, [List<(double, double)>? pts]) {
     west: box.west,
     north: box.north,
     east: box.east,
+    revision: 0,
   );
 }
 
@@ -74,6 +75,7 @@ void main() {
         west: 0,
         north: 0,
         east: 0,
+        revision: 0,
       ),
     ]);
     expect(cache[5]!.isEmpty, isTrue);

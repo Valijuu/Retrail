@@ -89,6 +89,10 @@ class RideOutlines extends Table {
   RealColumn get north => real()();
   RealColumn get east => real()();
 
+  /// Raised on every rewrite of the row, so the in-memory outline cache sees
+  /// a changed outline without reading the polyline again (#111).
+  IntColumn get revision => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {rideId};
 }

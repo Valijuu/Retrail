@@ -175,7 +175,8 @@ const _overviewCacheSize = 4;
 final overviewProvider = FutureProvider<OverviewState>((ref) async {
   final mode = ref.watch(historyMapModeProvider).value ?? HistoryMapMode.lines;
   final rides = ref.watch(settledMapRidesProvider);
-  final outlined = ref.watch(outlinedRideIdsProvider).value ?? const <int>{};
+  final outlined =
+      ref.watch(outlineRevisionsProvider).value ?? const <int, int>{};
 
   final store = ref.read(outlineStoreProvider);
   await store.refresh(outlined, [for (final r in rides) r.rideId]);

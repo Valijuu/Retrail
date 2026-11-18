@@ -1,4 +1,6 @@
 import 'package:drift/drift.dart' show Value;
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
@@ -23,8 +25,17 @@ void main() {
   setUp(() => db = AppDatabase.memory());
   tearDown(() => db.close());
 
-  test('schema version is 7', () {
-    expect(db.schemaVersion, 7);
+  test('schema version is 8', () {
+    expect(db.schemaVersion, 8);
+  });
+
+  test('rewriting an outline raises its revision (#111)', () async {
+    final id = await _ride(db);
+    await db.outlineDao.upsert(_outline(id));
+    expect((await db.outlineDao.getByRideIds([id])).single.revision, 0);
+    await db.outlineDao.upsert(_outline(id, polyline: 'xyz'));
+    final row = (await db.outlineDao.getByRideIds([id])).single;
+    expect((row.polyline, row.revision), ('xyz', 1));
   });
 
   test('an outline round-trips by ride id', () async {
@@ -129,20 +140,45 @@ void main() {
     expect(await db.outlineDao.getByRideIds(const []), isEmpty);
   });
 
-  test('watchOutlinedRideIds follows added and removed outlines', () async {
+  test('watchOutlineRevisions follows added, rewritten and removed outlines '
+      '(#111)', () async {
     final a = await _ride(db);
-    final emissions = <Set<int>>[];
-    final sub = db.outlineDao.watchOutlinedRideIds().listen(emissions.add);
+    final emissions = <Map<int, int>>[];
+    final sub = db.outlineDao.watchOutlineRevisions().listen(emissions.add);
     addTearDown(sub.cancel);
     await pumpEventQueue();
     await db.outlineDao.upsert(_outline(a));
     await pumpEventQueue();
+    await db.outlineDao.upsert(_outline(a, polyline: 'xyz'));
+    await pumpEventQueue();
     await db.rideDao.deleteById(a);
     await pumpEventQueue();
     expect(emissions, [
-      <int>{},
-      {a},
-      <int>{},
+      <int, int>{},
+      {a: 0},
+      {a: 1},
+      <int, int>{},
     ]);
+  });
+
+  test('migrating v7 to v8 keeps every outline at revision 0 (#111)', () async {
+    final dir = await Directory.systemTemp.createTemp('outline_v7');
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/db.sqlite');
+    // A v8 file turned back into v7: the outline table without revision.
+    final fresh = AppDatabase(NativeDatabase(file));
+    final id = await _ride(fresh);
+    await fresh.outlineDao.upsert(_outline(id));
+    await fresh.customStatement(
+      'ALTER TABLE ride_outlines DROP COLUMN revision',
+    );
+    await fresh.customStatement('PRAGMA user_version = 7');
+    await fresh.close();
+
+    final v7 = AppDatabase(NativeDatabase(file));
+    addTearDown(v7.close);
+    expect((await v7.outlineDao.getByRideIds([id])).single.revision, 0);
+    await v7.outlineDao.upsert(_outline(id, polyline: 'xyz'));
+    expect((await v7.outlineDao.getByRideIds([id])).single.revision, 1);
   });
 }

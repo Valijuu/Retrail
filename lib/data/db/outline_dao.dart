@@ -19,19 +19,37 @@ class OutlineDao extends DatabaseAccessor<AppDatabase> with _$OutlineDaoMixin {
       rides,
     )..where((r) => r.rideId.equals(rideId))).getSingleOrNull();
     if (exists == null) return;
-    await into(rideOutlines).insertOnConflictUpdate(outline);
+    // A rewrite keeps the row and raises its revision (#111).
+    await into(rideOutlines).insert(
+      outline,
+      onConflict: DoUpdate.withExcluded(
+        (old, excluded) => RideOutlinesCompanion.custom(
+          polyline: excluded.polyline,
+          south: excluded.south,
+          west: excluded.west,
+          north: excluded.north,
+          east: excluded.east,
+          revision: old.revision + const Constant(1),
+        ),
+      ),
+    );
   });
 
   /// The outlines of [rideIds] only; unknown ids are skipped.
   Future<List<RideOutlineRow>> getByRideIds(Iterable<int> rideIds) =>
       (select(rideOutlines)..where((o) => o.rideId.isIn(rideIds))).get();
 
-  /// The ids of the rides that have an outline row, re-emitted when one is
-  /// added or removed. Reads the id column only, never the polyline.
-  Stream<Set<int>> watchOutlinedRideIds() {
-    final query = selectOnly(rideOutlines)..addColumns([rideOutlines.rideId]);
+  /// Ride id → revision of every outline row, re-emitted when one is added,
+  /// rewritten or removed (#111). Reads the id and revision only, never the
+  /// polyline.
+  Stream<Map<int, int>> watchOutlineRevisions() {
+    final query = selectOnly(rideOutlines)
+      ..addColumns([rideOutlines.rideId, rideOutlines.revision]);
     return query.watch().map(
-      (rows) => {for (final row in rows) row.read(rideOutlines.rideId)!},
+      (rows) => {
+        for (final row in rows)
+          row.read(rideOutlines.rideId)!: row.read(rideOutlines.revision)!,
+      },
     );
   }
 

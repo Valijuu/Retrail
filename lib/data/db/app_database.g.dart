@@ -1631,6 +1631,18 @@ class $RideOutlinesTable extends RideOutlines
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     rideId,
@@ -1639,6 +1651,7 @@ class $RideOutlinesTable extends RideOutlines
     west,
     north,
     east,
+    revision,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1698,6 +1711,12 @@ class $RideOutlinesTable extends RideOutlines
     } else if (isInserting) {
       context.missing(_eastMeta);
     }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
     return context;
   }
 
@@ -1731,6 +1750,10 @@ class $RideOutlinesTable extends RideOutlines
         DriftSqlType.double,
         data['${effectivePrefix}east'],
       )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
     );
   }
 
@@ -1747,6 +1770,10 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
   final double west;
   final double north;
   final double east;
+
+  /// Raised on every rewrite of the row, so the in-memory outline cache sees
+  /// a changed outline without reading the polyline again (#111).
+  final int revision;
   const RideOutlineRow({
     required this.rideId,
     required this.polyline,
@@ -1754,6 +1781,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
     required this.west,
     required this.north,
     required this.east,
+    required this.revision,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1764,6 +1792,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
     map['west'] = Variable<double>(west);
     map['north'] = Variable<double>(north);
     map['east'] = Variable<double>(east);
+    map['revision'] = Variable<int>(revision);
     return map;
   }
 
@@ -1775,6 +1804,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
       west: Value(west),
       north: Value(north),
       east: Value(east),
+      revision: Value(revision),
     );
   }
 
@@ -1790,6 +1820,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
       west: serializer.fromJson<double>(json['west']),
       north: serializer.fromJson<double>(json['north']),
       east: serializer.fromJson<double>(json['east']),
+      revision: serializer.fromJson<int>(json['revision']),
     );
   }
   @override
@@ -1802,6 +1833,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
       'west': serializer.toJson<double>(west),
       'north': serializer.toJson<double>(north),
       'east': serializer.toJson<double>(east),
+      'revision': serializer.toJson<int>(revision),
     };
   }
 
@@ -1812,6 +1844,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
     double? west,
     double? north,
     double? east,
+    int? revision,
   }) => RideOutlineRow(
     rideId: rideId ?? this.rideId,
     polyline: polyline ?? this.polyline,
@@ -1819,6 +1852,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
     west: west ?? this.west,
     north: north ?? this.north,
     east: east ?? this.east,
+    revision: revision ?? this.revision,
   );
   RideOutlineRow copyWithCompanion(RideOutlinesCompanion data) {
     return RideOutlineRow(
@@ -1828,6 +1862,7 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
       west: data.west.present ? data.west.value : this.west,
       north: data.north.present ? data.north.value : this.north,
       east: data.east.present ? data.east.value : this.east,
+      revision: data.revision.present ? data.revision.value : this.revision,
     );
   }
 
@@ -1839,13 +1874,15 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
           ..write('south: $south, ')
           ..write('west: $west, ')
           ..write('north: $north, ')
-          ..write('east: $east')
+          ..write('east: $east, ')
+          ..write('revision: $revision')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(rideId, polyline, south, west, north, east);
+  int get hashCode =>
+      Object.hash(rideId, polyline, south, west, north, east, revision);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1855,7 +1892,8 @@ class RideOutlineRow extends DataClass implements Insertable<RideOutlineRow> {
           other.south == this.south &&
           other.west == this.west &&
           other.north == this.north &&
-          other.east == this.east);
+          other.east == this.east &&
+          other.revision == this.revision);
 }
 
 class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
@@ -1865,6 +1903,7 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
   final Value<double> west;
   final Value<double> north;
   final Value<double> east;
+  final Value<int> revision;
   const RideOutlinesCompanion({
     this.rideId = const Value.absent(),
     this.polyline = const Value.absent(),
@@ -1872,6 +1911,7 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
     this.west = const Value.absent(),
     this.north = const Value.absent(),
     this.east = const Value.absent(),
+    this.revision = const Value.absent(),
   });
   RideOutlinesCompanion.insert({
     this.rideId = const Value.absent(),
@@ -1880,6 +1920,7 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
     required double west,
     required double north,
     required double east,
+    this.revision = const Value.absent(),
   }) : polyline = Value(polyline),
        south = Value(south),
        west = Value(west),
@@ -1892,6 +1933,7 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
     Expression<double>? west,
     Expression<double>? north,
     Expression<double>? east,
+    Expression<int>? revision,
   }) {
     return RawValuesInsertable({
       if (rideId != null) 'ride_id': rideId,
@@ -1900,6 +1942,7 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
       if (west != null) 'west': west,
       if (north != null) 'north': north,
       if (east != null) 'east': east,
+      if (revision != null) 'revision': revision,
     });
   }
 
@@ -1910,6 +1953,7 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
     Value<double>? west,
     Value<double>? north,
     Value<double>? east,
+    Value<int>? revision,
   }) {
     return RideOutlinesCompanion(
       rideId: rideId ?? this.rideId,
@@ -1918,6 +1962,7 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
       west: west ?? this.west,
       north: north ?? this.north,
       east: east ?? this.east,
+      revision: revision ?? this.revision,
     );
   }
 
@@ -1942,6 +1987,9 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
     if (east.present) {
       map['east'] = Variable<double>(east.value);
     }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
     return map;
   }
 
@@ -1953,7 +2001,8 @@ class RideOutlinesCompanion extends UpdateCompanion<RideOutlineRow> {
           ..write('south: $south, ')
           ..write('west: $west, ')
           ..write('north: $north, ')
-          ..write('east: $east')
+          ..write('east: $east, ')
+          ..write('revision: $revision')
           ..write(')'))
         .toString();
   }
@@ -3154,6 +3203,7 @@ typedef $$RideOutlinesTableCreateCompanionBuilder =
       required double west,
       required double north,
       required double east,
+      Value<int> revision,
     });
 typedef $$RideOutlinesTableUpdateCompanionBuilder =
     RideOutlinesCompanion Function({
@@ -3163,6 +3213,7 @@ typedef $$RideOutlinesTableUpdateCompanionBuilder =
       Value<double> west,
       Value<double> north,
       Value<double> east,
+      Value<int> revision,
     });
 
 final class $$RideOutlinesTableReferences
@@ -3218,6 +3269,11 @@ class $$RideOutlinesTableFilterComposer
 
   ColumnFilters<double> get east => $composableBuilder(
     column: $table.east,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3279,6 +3335,11 @@ class $$RideOutlinesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RidesTableOrderingComposer get rideId {
     final $$RidesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3326,6 +3387,9 @@ class $$RideOutlinesTableAnnotationComposer
 
   GeneratedColumn<double> get east =>
       $composableBuilder(column: $table.east, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
 
   $$RidesTableAnnotationComposer get rideId {
     final $$RidesTableAnnotationComposer composer = $composerBuilder(
@@ -3385,6 +3449,7 @@ class $$RideOutlinesTableTableManager
                 Value<double> west = const Value.absent(),
                 Value<double> north = const Value.absent(),
                 Value<double> east = const Value.absent(),
+                Value<int> revision = const Value.absent(),
               }) => RideOutlinesCompanion(
                 rideId: rideId,
                 polyline: polyline,
@@ -3392,6 +3457,7 @@ class $$RideOutlinesTableTableManager
                 west: west,
                 north: north,
                 east: east,
+                revision: revision,
               ),
           createCompanionCallback:
               ({
@@ -3401,6 +3467,7 @@ class $$RideOutlinesTableTableManager
                 required double west,
                 required double north,
                 required double east,
+                Value<int> revision = const Value.absent(),
               }) => RideOutlinesCompanion.insert(
                 rideId: rideId,
                 polyline: polyline,
@@ -3408,6 +3475,7 @@ class $$RideOutlinesTableTableManager
                 west: west,
                 north: north,
                 east: east,
+                revision: revision,
               ),
           withReferenceMapper: (p0) => p0
               .map(
