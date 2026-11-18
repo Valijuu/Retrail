@@ -111,8 +111,17 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
       );
       return;
     }
-    state = state.copyWith(query: text);
-    if (trimmed == _lastSent) return;
+    if (trimmed == _lastSent) {
+      state = state.copyWith(query: text);
+      return;
+    }
+    // The shown places belong to the old text: none can be chosen for the
+    // new one (#125).
+    state = state.copyWith(
+      query: text,
+      status: PlaceSearchStatus.loading,
+      suggestions: const [],
+    );
     _debounce = Timer(ref.read(placeSearchDebounceProvider), () {
       _send(trimmed);
     });

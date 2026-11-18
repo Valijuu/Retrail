@@ -63,6 +63,18 @@ void main() {
     expect(c.read(placeSearchProvider).status, PlaceSearchStatus.unavailable);
   });
 
+  test('a changed text drops the old suggestions at once (#125)', () async {
+    c = make(answering(_body(['Hamburg'])));
+    final n = c.read(placeSearchProvider.notifier)
+      ..open()
+      ..setQuery('Hamburg');
+    await wait();
+    expect(c.read(placeSearchProvider).suggestions, isNotEmpty);
+    n.setQuery('Bremen');
+    expect(c.read(placeSearchProvider).suggestions, isEmpty);
+    expect(c.read(placeSearchProvider).status, PlaceSearchStatus.loading);
+  });
+
   test('one request goes out after the pause, with the full text', () async {
     c = make(answering(_body(['Hamburg'])));
     final n = c.read(placeSearchProvider.notifier)..open();

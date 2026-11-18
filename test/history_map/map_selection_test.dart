@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
 import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
+import 'package:retrail/domain/heading.dart' show LatLng;
 import 'package:retrail/domain/ride_outline.dart';
 import 'package:retrail/features/history_map/history_map_providers.dart';
 import 'package:retrail/features/history_map/map_selection.dart';
@@ -17,6 +18,7 @@ Future<int> _ride(
   int durationMs = 1000,
   double? coverage,
   int date = 1,
+  List<LatLng>? line,
 }) async {
   final id = await db.rideDao.insert(
     RidesCompanion.insert(
@@ -31,7 +33,9 @@ Future<int> _ride(
       followCoverage: Value(coverage),
     ),
   );
-  final o = RideOutline([(lat: 48.0, lng: 11.0), (lat: 48.0, lng: 11.01)]);
+  final o = RideOutline(
+    line ?? [(lat: 48.0, lng: 11.0), (lat: 48.0, lng: 11.01)],
+  );
   final b = o.bounds!;
   await db.outlineDao.upsert(
     RideOutlinesCompanion.insert(
@@ -85,7 +89,13 @@ void main() {
         coverage: 1,
         date: 2,
       );
-      final other = await _ride(db, date: 1);
+      // Its own line, crossing the tap: never the same route, however soon
+      // the lines are matched (#125).
+      final other = await _ride(
+        db,
+        date: 1,
+        line: [(lat: 47.995, lng: 11.005), (lat: 48.005, lng: 11.005)],
+      );
       await settle();
 
       c.read(mapSelectionProvider.notifier).tap(_tap, 14);

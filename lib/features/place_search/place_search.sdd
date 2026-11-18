@@ -27,7 +27,7 @@ Must:
     is: it searches the rider's rides by title, in the list and on the map alike.
   Typing asks Photon (`https://photon.komoot.io/api`, OpenStreetMap data, no key) for places. A request goes out
     only after the rider paused typing for `400` ms and the text has at least `3` characters; an older request
-    is dropped when a newer one starts. At most `5` suggestions show, each with its name and a second line with
+    is dropped when a newer one starts, and a changed text drops the suggestions of the old one at once (#125). At most `5` suggestions show, each with its name and a second line with
     the city and country.
   The request carries the typed text, the app language (`lang`, `de` or `en`) and the app's user agent of
     @Map (Photon refuses the default one) and nothing else: no position, no ride data, no identifier. Photon's fair-use rules are kept: no request per keystroke, no bulk use.
