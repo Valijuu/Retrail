@@ -171,6 +171,13 @@ void main() {
       expect(watch.elapsedMilliseconds, lessThan(2000));
     });
 
+    test('two short rides either side of ±180, 15 m apart, share a key '
+        '(#124)', () {
+      final west = _line(fromLng: 179.9998, toLng: 179.9999, n: 2);
+      final east = _line(fromLng: -179.9999, toLng: -179.9998, n: 2);
+      expect(RouteMatch.groups([_ride(1, west), _ride(2, east)]), {1: 1, 2: 1});
+    });
+
     test('every entry appears in the result', () {
       final entries = [
         for (var id = 1; id <= 6; id++) _ride(id, _line(offsetM: id * 1000.0)),

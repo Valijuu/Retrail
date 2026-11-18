@@ -54,6 +54,8 @@ class RouteMatch {
 
   static const _metresPerDegree = 111195.0;
   static const _degreesPerHalfTurn = 180;
+  static const _degreesPerTurn = 360;
+  static const _wholeTurnShifts = [0, -_degreesPerTurn, _degreesPerTurn];
   static const _radiansPerDegree = math.pi / _degreesPerHalfTurn;
 
   /// Whether the boxes, each grown by the tolerance, overlap. A box that
@@ -70,10 +72,23 @@ class RouteMatch {
     final latMargin = toleranceM / _metresPerDegree;
     final lngMargin =
         toleranceM / (_metresPerDegree * math.cos(maxLat * _radiansPerDegree));
-    return a.south - latMargin <= b.north &&
-        b.south - latMargin <= a.north &&
-        a.west - lngMargin <= b.east &&
-        b.west - lngMargin <= a.east;
+    if (a.south - latMargin > b.north || b.south - latMargin > a.north) {
+      return false;
+    }
+    return _longitudesNear(a, b, lngMargin);
+  }
+
+  /// Whether the longitude spans, grown by [margin], overlap when [b] is
+  /// taken as it is or a whole turn east or west, so boxes either side of
+  /// ±180 count as near (#124).
+  static bool _longitudesNear(OutlineBounds a, OutlineBounds b, double margin) {
+    for (final turn in _wholeTurnShifts) {
+      if (a.west - margin <= b.east + turn &&
+          b.west + turn - margin <= a.east) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static bool _onSameLine(RouteMatchEntry a, RouteMatchEntry b) =>

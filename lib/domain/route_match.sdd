@@ -16,7 +16,8 @@ Must:
   Two outlines lie on the same line when every point of each lies within `30` m of the other outline (the
     nearest segment, measured like @OutlineHit); the direction they were ridden in does not matter.
   An outline with fewer than two points lies on no line with any other; its ride forms a group of its own.
-  Outlines whose bounds are more than `30` m apart never match; their points are not compared.
+  Outlines whose bounds are more than `30` m apart never match; their points are not compared. Bounds either
+    side of `±180` are compared a whole turn apart, so rides across the antimeridian can match (#124).
   Groups are transitive: when A matches B and B matches C, all three form one group, even if A and C do not
     match directly.
   A follow link (a ride's followed ride id, when that ride is among the input) joins the two rides' groups
