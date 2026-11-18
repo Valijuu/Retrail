@@ -16,6 +16,8 @@ Must:
     line between its kept neighbours (Douglas-Peucker); the result never has more points than the input.
   An outline has at most `500` points: when `5` m leaves more, the tolerance doubles until it fits, so
     the stored text and the map data stay small on long rides.
+  The splits are worked out once, at `5` m, with an explicit stack instead of recursion; a doubled tolerance
+    only drops the points whose split lies within it, so the result equals a new pass at that tolerance (#99).
   Fewer than two input points give an empty outline; two or more points that are all identical give two points.
   The encoded polyline uses the standard format with `5` decimal places; @RideOutline.decode of an encoded
     outline returns every point within `1` m of the original.

@@ -51,9 +51,13 @@ class RideOutline {
     DistanceCalculator distance = const HaversineDistanceCalculator(),
   }) {
     if (points.length < _minPointsForLine) return const RideOutline([]);
+    final importance = _splitImportance(points, distance);
     var tolerance = toleranceM;
     while (true) {
-      final kept = _douglasPeuckerKeptPoints(points, tolerance, distance);
+      final kept = [
+        for (var i = 0; i < points.length; i++)
+          if (importance[i] > tolerance) points[i],
+      ];
       if (kept.length <= maxPoints) return RideOutline(kept);
       tolerance *= _toleranceGrowthFactor;
     }
@@ -125,31 +129,46 @@ class RideOutline {
     return (value, index);
   }
 
-  static List<LatLng> _douglasPeuckerKeptPoints(
+  /// For every point, the largest tolerance below which Douglas-Peucker
+  /// keeps it (#99): a split's own distance, capped by the split it lies
+  /// under, since a range is only split while its parent was. Endpoints are
+  /// always kept. One pass at [toleranceM] with an explicit stack, so the
+  /// depth does not grow with the track.
+  static List<double> _splitImportance(
     List<LatLng> points,
-    double tolerance,
     DistanceCalculator distance,
   ) {
-    final keep = List<bool>.filled(points.length, false);
-    keep[0] = true;
-    keep[points.length - 1] = true;
-    _douglasPeucker(points, 0, points.length - 1, tolerance, distance, keep);
-    return [
-      for (var i = 0; i < points.length; i++)
-        if (keep[i]) points[i],
+    final importance = List<double>.filled(points.length, 0);
+    importance[0] = double.infinity;
+    importance[points.length - 1] = double.infinity;
+    final ranges = <_SplitRange>[
+      (first: 0, last: points.length - 1, cap: double.infinity),
     ];
+    while (ranges.isNotEmpty) {
+      final (:first, :last, :cap) = ranges.removeLast();
+      final split = _farthestPoint(points, first, last, distance);
+      if (split == null) continue;
+      final (:index, distanceM: farthestM) = split;
+      final own = math.min(farthestM, cap);
+      importance[index] = own;
+      ranges
+        ..add((first: index, last: last, cap: own))
+        ..add((first: first, last: index, cap: own));
+    }
+    return importance;
   }
 
-  static void _douglasPeucker(
+  /// The point strictly between [first] and [last] farthest from the line
+  /// between them, if it lies beyond [toleranceM]. On equal distances the
+  /// first one wins.
+  static _Split? _farthestPoint(
     List<LatLng> points,
     int first,
     int last,
-    double tolerance,
     DistanceCalculator distance,
-    List<bool> keep,
   ) {
-    var farthest = -1;
-    var farthestM = tolerance;
+    _Split? farthest;
+    var farthestM = toleranceM;
     for (var i = first + 1; i < last; i++) {
       final d = segmentDistanceM(
         points[i],
@@ -158,19 +177,26 @@ class RideOutline {
         distance,
       );
       if (d > farthestM) {
-        farthest = i;
+        farthest = (index: i, distanceM: d);
         farthestM = d;
       }
     }
-    if (farthest < 0) return;
-    keep[farthest] = true;
-    _douglasPeucker(points, first, farthest, tolerance, distance, keep);
-    _douglasPeucker(points, farthest, last, tolerance, distance, keep);
+    return farthest;
   }
 }
 
+/// A stretch of a track still to be split, with the importance of the split
+/// it lies under.
+typedef _SplitRange = ({int first, int last, double cap});
+
+/// A point that splits a range, with its distance from the range's line.
+typedef _Split = ({int index, double distanceM});
+
 const _degreesPerHalfTurn = 180;
 const _degreesPerTurn = 360;
+
+/// The longitude of the prime meridian, the reference for wrapping into range.
+const _primeMeridianLng = 0.0;
 
 /// [lng] moved by whole turns so it lies within half a turn of [reference],
 /// so the way from [reference] to it is the short arc, also across ±180 (#100).
@@ -199,7 +225,7 @@ bool withinLongitudes(double lng, double west, double east) {
 /// [lng] moved by whole turns into `-180` to `180`.
 double normaliseLongitude(double lng) {
   if (lng >= -_degreesPerHalfTurn && lng <= _degreesPerHalfTurn) return lng;
-  return unwrapLongitude(lng, 0);
+  return unwrapLongitude(lng, _primeMeridianLng);
 }
 
 /// Distance in metres from [p] to the nearest point of the segment a→b,

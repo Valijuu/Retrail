@@ -29,6 +29,56 @@ class _FarCalculator implements DistanceCalculator {
       1000;
 }
 
+/// The Douglas-Peucker pass before #99, as the oracle: recursive, at one
+/// [tolerance].
+List<LatLng> _referenceKept(List<LatLng> points, double tolerance) {
+  final keep = List<bool>.filled(points.length, false)
+    ..[0] = true
+    ..[points.length - 1] = true;
+  void split(int first, int last) {
+    var farthest = -1;
+    var farthestM = tolerance;
+    for (var i = first + 1; i < last; i++) {
+      final d = segmentDistanceM(points[i], points[first], points[last], _calc);
+      if (d > farthestM) {
+        farthest = i;
+        farthestM = d;
+      }
+    }
+    if (farthest < 0) return;
+    keep[farthest] = true;
+    split(first, farthest);
+    split(farthest, last);
+  }
+
+  split(0, points.length - 1);
+  return [
+    for (var i = 0; i < points.length; i++)
+      if (keep[i]) points[i],
+  ];
+}
+
+/// [RideOutline.simplify] before #99: a new pass per doubled tolerance.
+List<LatLng> _referenceSimplify(List<LatLng> points) {
+  var tolerance = RideOutline.toleranceM;
+  while (true) {
+    final kept = _referenceKept(points, tolerance);
+    if (kept.length <= RideOutline.maxPoints) return kept;
+    tolerance *= 2;
+  }
+}
+
+/// Like [_FarCalculator], and counts how often it is asked.
+class _CountingCalculator implements DistanceCalculator {
+  int calls = 0;
+
+  @override
+  double distanceBetween(double lat1, double lon1, double lat2, double lon2) {
+    calls++;
+    return 1000;
+  }
+}
+
 void main() {
   group('RideOutline.simplify', () {
     test('no points: empty outline', () {
@@ -113,6 +163,46 @@ void main() {
         expect(outline.points.last, points.last);
       },
     );
+
+    test(
+      'a random walk of 5000 points keeps exactly the points of a Douglas-Peucker '
+      'rerun at each doubled tolerance (#99)',
+      () {
+        final random = math.Random(99);
+        var north = 0.0, east = 0.0;
+        final points = [
+          for (var i = 0; i < 5000; i++)
+            () {
+              final heading = random.nextDouble() * 2 * math.pi;
+              north += 10 * math.cos(heading);
+              east += 10 * math.sin(heading);
+              return _at(north, east);
+            }(),
+        ];
+        final outline = RideOutline.simplify(points, distance: _calc);
+        expect(outline.points, _referenceSimplify(points));
+        // The walk needs the tolerance doubled at least once.
+        expect(
+          _referenceKept(points, RideOutline.toleranceM).length,
+          greaterThan(RideOutline.maxPoints),
+        );
+      },
+    );
+
+    test('the splits are worked out once: a 1000-point track that needs eight '
+        'doublings costs about one pass, not one pass per tolerance (#99)', () {
+      // Every point is equally far off every chord (1000 m), so each split
+      // takes the point next to the start and the tolerance has to double
+      // from 5 m to 1280 m before two points remain. One pass over n points
+      // costs about n²/2 distances: 1000 points cost four times 500.
+      final fits = _CountingCalculator();
+      RideOutline.simplify(_lineEast(RideOutline.maxPoints, 1), distance: fits);
+      final doubled = _CountingCalculator();
+      final points = _lineEast(2 * RideOutline.maxPoints, 1);
+      final outline = RideOutline.simplify(points, distance: doubled);
+      expect(outline.points, [points.first, points.last]);
+      expect(doubled.calls, lessThan(6 * fits.calls));
+    });
 
     test('distances come from the injected DistanceCalculator', () {
       // A calculator that calls everything far apart keeps every point.
