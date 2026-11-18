@@ -36,7 +36,8 @@ class OutlineRepository {
   /// when this one finished. [afterRead] runs between reading and writing
   /// (a seam for the "deleted meanwhile" case).
   Future<bool> fillNext({Future<void> Function()? afterRead}) async {
-    final pending = await _outlines.rideIdsWithoutOutline();
+    // Two ids tell the one to fill and whether more wait (#112).
+    final pending = await _outlines.rideIdsWithoutOutline(limit: 2);
     if (pending.isEmpty) return false;
     final rideId = pending.first;
     final rows = await _trackpoints.getByRideId(rideId).first;

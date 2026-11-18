@@ -54,17 +54,20 @@ class OutlineDao extends DatabaseAccessor<AppDatabase> with _$OutlineDaoMixin {
   }
 
   /// Ride ids with a route but no outline yet, oldest id first: the work the
-  /// background fill still has to do.
-  Future<List<int>> rideIdsWithoutOutline() async {
-    final query = select(rides)
+  /// background fill still has to do. [limit] caps the list, so a fill step
+  /// does not list the whole backlog (#112). Reads the id column only.
+  Future<List<int>> rideIdsWithoutOutline({int? limit}) async {
+    final query = selectOnly(rides)
+      ..addColumns([rides.rideId])
       ..where(
-        (r) =>
-            r.hasRoute.equals(true) &
+        rides.hasRoute.equals(true) &
             notExistsQuery(
-              select(rideOutlines)..where((o) => o.rideId.equalsExp(r.rideId)),
+              select(rideOutlines)
+                ..where((o) => o.rideId.equalsExp(rides.rideId)),
             ),
       )
-      ..orderBy([(r) => OrderingTerm.asc(r.rideId)]);
-    return (await query.get()).map((r) => r.rideId).toList();
+      ..orderBy([OrderingTerm.asc(rides.rideId)]);
+    if (limit != null) query.limit(limit);
+    return [for (final row in await query.get()) row.read(rides.rideId)!];
   }
 }

@@ -181,4 +181,17 @@ void main() {
     await v7.outlineDao.upsert(_outline(id, polyline: 'xyz'));
     expect((await v7.outlineDao.getByRideIds([id])).single.revision, 1);
   });
+
+  test(
+    'rideIdsWithoutOutline with a limit gives only the oldest ids (#112)',
+    () async {
+      final ids = [for (var i = 0; i < 4; i++) await _ride(db)];
+      await db.outlineDao.upsert(_outline(ids[0]));
+      expect(await db.outlineDao.rideIdsWithoutOutline(limit: 2), [
+        ids[1],
+        ids[2],
+      ]);
+      expect(await db.outlineDao.rideIdsWithoutOutline(), ids.sublist(1));
+    },
+  );
 }
