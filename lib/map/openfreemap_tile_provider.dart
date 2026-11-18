@@ -21,6 +21,7 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
   OpenFreeMapTileProvider({
     http.Client? client,
     Future<String> Function(String asset)? loadAsset,
+    this.language = 'en',
     this.pixelRatio = previewPixelRatio,
     this.timeout = const Duration(seconds: 8),
     this.cacheSize = 24,
@@ -30,6 +31,10 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
   final http.Client _client;
   final Future<String> Function(String asset) _loadAsset;
   final double pixelRatio;
+
+  /// `de` or `en`: which bundled style, and so which place names, the tiles
+  /// are drawn with (#128).
+  final String language;
 
   /// Per-request deadline; a hung request must not stall the whole snapshot.
   final Duration timeout;
@@ -95,9 +100,10 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
 
   Future<vtr.Theme> _theme(ui.Brightness brightness) =>
       _themes[brightness] ??= () async {
-        final asset = brightness == ui.Brightness.dark
-            ? kRetrailDarkStyleAsset
-            : kRetrailLightStyleAsset;
+        final asset = retrailStyleAsset(
+          dark: brightness == ui.Brightness.dark,
+          language: language,
+        );
         final style =
             jsonDecode(await _loadAsset(asset)) as Map<String, dynamic>;
         return vtr.ThemeReader().read(previewStyle(style));

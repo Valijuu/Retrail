@@ -11,6 +11,7 @@ import '../domain/area_filter.dart';
 import '../domain/heading.dart' show LatLng;
 import '../domain/ride_outline.dart' show OutlineBounds;
 import 'live_map.dart' show kLiveMapMaxZoom, kLiveMapMinZoom, liveMapStyle;
+import 'map_language.dart';
 import 'map_attribution.dart';
 import 'overview_layers.dart';
 import 'overview_pin.dart';
@@ -364,7 +365,10 @@ class _OverviewMapState extends State<OverviewMap> {
             MapLibreMap(
               key: ValueKey(dark),
               options: MapOptions(
-                initStyle: liveMapStyle(dark),
+                initStyle: liveMapStyle(
+                  dark,
+                  mapLanguageFor(Localizations.localeOf(context)),
+                ),
                 initCenter: _initialCenter,
                 initZoom: widget.restoreCamera?.zoom ?? _initialZoom,
                 minZoom: kLiveMapMinZoom,

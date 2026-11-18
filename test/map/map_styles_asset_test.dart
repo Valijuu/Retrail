@@ -13,6 +13,23 @@ Map<String, dynamic> _layer(Map<String, dynamic> style, String id) =>
     );
 
 void main() {
+  test(
+    'each German style is the English one with name_de for name_en (#128)',
+    () {
+      for (final name in ['retrail_light', 'retrail_dark']) {
+        final english = File('assets/map/$name.json').readAsStringSync();
+        final german = File('assets/map/${name}_de.json').readAsStringSync();
+        expect(english, contains('"name_en"'), reason: name);
+        expect(german, isNot(contains('"name_en"')), reason: name);
+        expect(
+          german,
+          english.replaceAll('"name_en"', '"name_de"'),
+          reason: name,
+        );
+      }
+    },
+  );
+
   test('both bundled styles read OpenMapTiles from OpenFreeMap', () {
     for (final name in ['retrail_light', 'retrail_dark']) {
       final sources = _style(name)['sources'] as Map<String, dynamic>;

@@ -11,8 +11,15 @@ const String kOpenFreeMapTileJsonUrl = 'https://tiles.openfreemap.org/planet';
 /// Bundled styles (`tool/build_map_styles.dart`) for the live map and the
 /// previews: Retrail Light (OpenFreeMap Liberty in MapTiler topo-v2's
 /// colours) and Retrail Dark (OpenFreeMap Dark in MapTiler basic-v2-dark's).
-const String kRetrailLightStyleAsset = 'assets/map/retrail_light.json';
-const String kRetrailDarkStyleAsset = 'assets/map/retrail_dark.json';
+///
+/// One style per brightness and language (#128): the German one differs only in
+/// asking for `name_de` before the local name.
+String retrailStyleAsset({required bool dark, required String language}) {
+  final base = dark ? 'retrail_dark' : 'retrail_light';
+  return language == 'de'
+      ? 'assets/map/${base}_de.json'
+      : 'assets/map/$base.json';
+}
 
 /// How many zoom levels below a preview grid tile's zoom its style is
 /// evaluated: MapLibre styles assume 512 px tiles, the preview grid uses 256 dp

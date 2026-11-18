@@ -133,15 +133,24 @@ Future<Map<String, dynamic>> _fetch(String name) async {
   return jsonDecode(body) as Map<String, dynamic>;
 }
 
+/// Place labels come from OpenMapTiles' `name_en` (then the local `name`); the
+/// German style asks for `name_de` first, so a German app shows German names (#128).
+const _englishNameField = '"name_en"';
+const _germanNameField = '"name_de"';
+
 void _write(String name, Map<String, dynamic> style, String origin) {
   style['metadata'] = {
     ...?(style['metadata'] as Map<String, dynamic>?),
     'retrail:origin': '$_base/$origin',
     'retrail:licence': _licence,
   };
+  final english = const JsonEncoder.withIndent(' ').convert(style);
   File('assets/map/$name.json')
     ..createSync(recursive: true)
-    ..writeAsStringSync(const JsonEncoder.withIndent(' ').convert(style));
+    ..writeAsStringSync(english);
+  File(
+    'assets/map/${name}_de.json',
+  ).writeAsStringSync(english.replaceAll(_englishNameField, _germanNameField));
 }
 
 /// Applies [paint] to [layers] by id and fails loudly when an id no longer

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/data_providers.dart';
 import '../../data/repositories/preferences_repository.dart';
 import '../../domain/activity_type.dart';
+import '../../map/map_language.dart';
 
 /// App-interface language. `system` follows the device locale; the others force
 /// an override. Mirrors the original `AppLocale`, but Flutter applies it in-app.
@@ -62,6 +63,12 @@ final effectiveLocaleProvider = Provider<Locale>(
       // `ProviderContainer` in a non-widget test), and WidgetsBinding.instance
       // throws in that case.
       PlatformDispatcher.instance.locale,
+);
+
+/// The language of the place names on the map and in the previews: `de` or `en`
+/// (#128), from the app language, or the device's on "system".
+final mapLanguageProvider = Provider<String>(
+  (ref) => mapLanguageFor(ref.watch(effectiveLocaleProvider)),
 );
 
 /// The concrete locale tag for `intl`'s `DateFormat` (ride titles, history

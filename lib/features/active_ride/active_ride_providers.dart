@@ -10,6 +10,7 @@ import '../../map/preview_projection.dart';
 import '../../map/preview_snapshot.dart';
 import '../../map/route_preview_cache.dart';
 import '../../tracking/tracking_providers.dart';
+import '../settings/settings_providers.dart' show mapLanguageProvider;
 import '../shell/theme_mode_provider.dart';
 import 'active_ride_controller.dart';
 import 'preview_renderer.dart';
@@ -36,9 +37,13 @@ final previewCacheDirProvider = Provider<Directory>(
 /// same instance so previews are generated once and reused.
 final routePreviewCacheProvider = Provider<RoutePreviewCache>((ref) {
   final dir = ref.watch(previewCacheDirProvider);
-  final tiles = OpenFreeMapTileProvider();
+  // A language change builds a new cache, so the History shows the previews of
+  // the new language (#128).
+  final language = ref.watch(mapLanguageProvider);
+  final tiles = OpenFreeMapTileProvider(language: language);
   final cache = RoutePreviewCache(
     baseDir: dir,
+    language: language,
     render: buildPreviewRenderer(
       isOnline: () => ref.read(isOnlineProvider).asData?.value ?? true,
       online: (points, brightness) => renderPreviewPng(

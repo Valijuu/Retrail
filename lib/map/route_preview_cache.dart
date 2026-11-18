@@ -37,15 +37,16 @@ typedef PreviewRenderer =
 /// v13 — lighter Retrail Dark street names and roads; v14 — Retrail Light
 /// buildings above z14 again; v15 — MapTiler topo-v2 / basic-v2-dark colours;
 /// v16 — softer dark street-name halo; v17 — preview label halos as an even
-/// glow (vtr's diagonal copies looked jagged on the dark map).
-const int _cacheVersion = 17;
-const String _versionDir = 'ride_previews_v$_cacheVersion';
-final RegExp _versionDirPattern = RegExp(r'^ride_previews_v\d+$');
+/// glow (vtr's diagonal copies looked jagged on the dark map); v18 — place names
+/// in the app language, one directory per language (#128).
+const int _cacheVersion = 18;
+final RegExp _versionDirPattern = RegExp(r'^ride_previews_v(\d+)(?:_[a-z]+)?$');
 
 class RoutePreviewCache {
   RoutePreviewCache({
     required this.baseDir,
     required this.render,
+    this.language = 'en',
     this.maxConcurrentRenders = 3,
   }) : _renderLanes = List.generate(
          maxConcurrentRenders,
@@ -54,6 +55,13 @@ class RoutePreviewCache {
 
   final Directory baseDir;
   final PreviewRenderer render;
+
+  /// `de` or `en`: the language of the place names in the previews this cache
+  /// holds. Each language has its own directory, so a language change shows
+  /// the previews of the new language and the old ones stay for a switch back.
+  final String language;
+
+  String get _versionDir => 'ride_previews_v${_cacheVersion}_$language';
 
   /// Previews known to be final (on disk, not stale), memoized so a list card
   /// can resolve its image **synchronously** on first build — no per-scroll
@@ -94,15 +102,17 @@ class RoutePreviewCache {
   }
 
   /// Deletes preview directories left behind by earlier [_cacheVersion]s
-  /// (`ride_previews_v<N>` other than the current one) — each bump otherwise
-  /// orphans every cached PNG of the previous version on disk. Only touches
-  /// directories matching that exact pattern inside [baseDir].
+  /// (`ride_previews_v<N>` or `ride_previews_v<N>_<language>` of another
+  /// version) — each bump otherwise orphans every cached PNG of the previous
+  /// version on disk. The current version stays in every language. Only
+  /// touches directories matching that exact pattern inside [baseDir].
   Future<void> purgeOutdatedVersions() async {
     if (!await baseDir.exists()) return;
     await for (final entity in baseDir.list()) {
       if (entity is! Directory) continue;
       final name = entity.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
-      if (_versionDirPattern.hasMatch(name) && name != _versionDir) {
+      final version = _versionDirPattern.firstMatch(name)?.group(1);
+      if (version != null && int.parse(version) != _cacheVersion) {
         await entity.delete(recursive: true);
       }
     }

@@ -56,6 +56,28 @@ void main() {
     image.dispose();
   });
 
+  test('the style asset follows the language of the provider (#128)', () async {
+    final asked = <String>[];
+    Future<String> spy(String asset) {
+      asked.add(asset);
+      return _asset(asset);
+    }
+
+    for (final (language, dark, expected) in [
+      ('en', false, 'assets/map/retrail_light.json'),
+      ('de', false, 'assets/map/retrail_light_de.json'),
+      ('de', true, 'assets/map/retrail_dark_de.json'),
+    ]) {
+      final image = await OpenFreeMapTileProvider(
+        client: _Server().client,
+        loadAsset: spy,
+        language: language,
+      ).tile(14, 8675, 5426, dark ? ui.Brightness.dark : ui.Brightness.light);
+      image?.dispose();
+      expect(asked.last, expected);
+    }
+  });
+
   test('draws the tile\'s map features, not a flat background', () async {
     final s = _Server();
     final image = await provider(s).tile(14, 8675, 5426, ui.Brightness.light);
@@ -78,7 +100,8 @@ void main() {
     vtr.TextPainterProvider painter,
   ) async {
     final style = previewStyle(
-      jsonDecode(await _asset(kRetrailLightStyleAsset)) as Map<String, dynamic>,
+      jsonDecode(await _asset('assets/map/retrail_light.json'))
+          as Map<String, dynamic>,
     );
     final theme = vtr.ThemeReader().read(style);
     final tile = vtr.TileFactory(

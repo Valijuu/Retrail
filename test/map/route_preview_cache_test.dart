@@ -18,16 +18,47 @@ void main() {
 
   const points = <RoutePoint>[(lat: 1, lng: 2), (lat: 3, lng: 4)];
 
-  test('previews live in ride_previews_v17 (Spec 19: every preview re-renders '
-      'with OpenFreeMap, Retrail Light)', () {
+  test('previews live in ride_previews_v18_<language>: English by default, '
+      'German in its own directory (#128)', () {
     final cache = RoutePreviewCache(
       baseDir: tempDir,
       render: (_, _) async => _png([1]),
     );
     expect(
       cache.fileFor(1, brightness: Brightness.light).path,
-      '${tempDir.path}/ride_previews_v17/1.png',
+      '${tempDir.path}/ride_previews_v18_en/1.png',
     );
+    final german = RoutePreviewCache(
+      baseDir: tempDir,
+      language: 'de',
+      render: (_, _) async => _png([1]),
+    );
+    expect(
+      german.fileFor(1, brightness: Brightness.dark).path,
+      '${tempDir.path}/ride_previews_v18_de/1_dark.png',
+    );
+  });
+
+  test('purgeOutdatedVersions keeps the current version of every language '
+      'and removes the unsuffixed older ones (#128)', () async {
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1]),
+    );
+    final english = Directory('${tempDir.path}/ride_previews_v18_en')
+      ..createSync();
+    final german = Directory('${tempDir.path}/ride_previews_v18_de')
+      ..createSync();
+    final v17 = Directory('${tempDir.path}/ride_previews_v17')..createSync();
+    final v17de = Directory('${tempDir.path}/ride_previews_v17_de')
+      ..createSync();
+
+    await cache.purgeOutdatedVersions();
+
+    expect(english.existsSync(), isTrue);
+    expect(german.existsSync(), isTrue);
+    expect(v17.existsSync(), isFalse);
+    expect(v17de.existsSync(), isFalse);
   });
 
   test('purgeOutdatedVersions deletes older preview dirs, keeps the current '

@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/connectivity/connectivity_providers.dart';
-import '../settings/settings_providers.dart' show localeProvider;
+import '../settings/settings_providers.dart' show mapLanguageProvider;
 import 'photon_client.dart';
 
 /// How long typing pauses before Photon is asked (#106).
@@ -64,13 +63,11 @@ final placeSearchDebounceProvider = Provider<Duration>(
   (_) => placeSearchDebounce,
 );
 
-/// `de` or `en` for Photon's `lang`: the app language, or the device's when
-/// the app follows the system.
-final placeSearchLangProvider = Provider<String>((ref) {
-  final locale =
-      ref.watch(localeProvider) ?? PlatformDispatcher.instance.locale;
-  return locale.languageCode == 'de' ? 'de' : 'en';
-});
+/// `de` or `en` for Photon's `lang`: the language of the map's place names too,
+/// so the search names places as the map does (#128).
+final placeSearchLangProvider = Provider<String>(
+  (ref) => ref.watch(mapLanguageProvider),
+);
 
 /// The place search over the map (#106): opens and closes the field, asks
 /// Photon after a pause, keeps only the newest answer. Nothing is stored.

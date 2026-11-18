@@ -13,6 +13,7 @@ import '../domain/heading.dart' show HeadingState, nextHeading, splitRouteTail;
 import '../domain/route_progress.dart' show RouteTrack;
 import '../l10n/app_localizations.dart';
 import '../features/onboarding/activity_type_ui.dart';
+import 'map_language.dart';
 import 'openfreemap.dart';
 import '../domain/route_markers.dart';
 import 'preview_projection.dart';
@@ -80,8 +81,8 @@ CameraFollow? followCameraUpdate({
 /// Retrail Dark asset. MapLibre loads an asset path itself, asynchronously like
 /// a URL — not a JSON string, which it applies synchronously before
 /// `onMapCreated`, whose reset then discards it.
-String liveMapStyle(bool dark) =>
-    dark ? kRetrailDarkStyleAsset : kRetrailLightStyleAsset;
+String liveMapStyle(bool dark, String language) =>
+    retrailStyleAsset(dark: dark, language: language);
 
 /// An empty GeoJSON source payload — a valid document MapLibre accepts when
 /// there is nothing to draw yet (a 0/1-point route or an unseeded marker).
@@ -1296,7 +1297,10 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
               // Rebuild on brightness change to reload Retrail Light / Retrail Dark.
               key: ValueKey(dark),
               options: MapOptions(
-                initStyle: liveMapStyle(dark),
+                initStyle: liveMapStyle(
+                  dark,
+                  mapLanguageFor(Localizations.localeOf(context)),
+                ),
                 // The detail map starts on its whole-route framing already, so
                 // even the first native frame shows the full ride.
                 initCenter: fit != null

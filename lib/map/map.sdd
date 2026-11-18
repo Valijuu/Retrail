@@ -36,6 +36,10 @@ References:
 Must:
   The live map is native MapLibre with the bundled Retrail Light or Retrail Dark style, handed over as an
     asset path, never as a JSON string.
+  Place names follow the app language (#128): `de` shows `name_de` and `en` (also any other language) `name_en`,
+    each falling back to the local name. There is one bundled style per language and brightness
+    (`retrail_<light|dark>[_de].json`), made by `tool/build_map_styles.dart` and equal but for the name field.
+    The language is `de` when the app (or, on "system", the device) is German, else `en`.
   Android uses the texture platform-view mode so no stale native surface flashes between screens.
   The ride map follows the position heading-up from recorded points; a user gesture drops follow and the
     recenter control restores it; the compass shows while the map is not north-up.
@@ -47,13 +51,15 @@ Must:
     only into sources the current style load created.
   Every map shows the OpenMapTiles and OpenStreetMap credit through @MapAttribution, always written out.
   Start, finish and loop markers and direction arrows look the same on the live map, the sketch and the preview.
-  Ride previews are rendered once when a ride is saved, in both light and dark, cached as PNG keyed by ride id
-    and brightness, and shown with `Image.file`.
+  Ride previews are rendered once when a ride is saved, in both light and dark, cached as PNG keyed by ride id,
+    brightness and language (one directory per language), and shown with `Image.file`. A language change
+    shows the previews of the new language, rendered on demand; those of the old one stay for a switch back.
   A preview saved offline is a flat sketch, marked stale and re-rendered when back online; edit and delete evict it.
   A preview PNG is written through a unique temp file and renamed; concurrent requests for one preview share one render, and an unreadable preview or a failed render shows the flat sketch, never a broken-image icon, and is rendered again once (#88).
   Preview tiles are OpenFreeMap vector tiles drawn with `vector_tile_renderer` in the same bundled styles,
     zoom capped at `16`, sending `User-Agent: Retrail (io.github.valijuu.retrail)`.
-  The preview cache directory carries a version; bumping it re-renders every preview and purges older versions.
+  The preview cache directory carries a version and a language; bumping the version re-renders every preview and
+    purges older versions, of every language.
   Projection math stays pure and tested.
   Every instant camera jump moves first and then zooms at the new centre (#41).
   A light/dark switch rebuilds the native map and detaches the old one at once, so no update reaches a
