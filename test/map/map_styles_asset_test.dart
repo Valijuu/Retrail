@@ -13,22 +13,62 @@ Map<String, dynamic> _layer(Map<String, dynamic> style, String id) =>
     );
 
 void main() {
-  test(
-    'each German style is the English one with name_de for name_en (#128)',
-    () {
-      for (final name in ['retrail_light', 'retrail_dark']) {
-        final english = File('assets/map/$name.json').readAsStringSync();
-        final german = File('assets/map/${name}_de.json').readAsStringSync();
-        expect(english, contains('"name_en"'), reason: name);
-        expect(german, isNot(contains('"name_en"')), reason: name);
-        expect(
-          german,
-          english.replaceAll('"name_en"', '"name_de"'),
-          reason: name,
-        );
+  /// [node] with every `["get", "name:latin"]` replaced by the German name
+  /// first, then the Latin one: what the German style should do (#131).
+  Object? germanFirst(Object? node) {
+    if (node is List) {
+      if (node.length == 2 && node[0] == 'get' && node[1] == 'name:latin') {
+        return [
+          'coalesce',
+          ['get', 'name_de'],
+          ['get', 'name:latin'],
+        ];
       }
-    },
-  );
+      return [for (final item in node) germanFirst(item)];
+    }
+    if (node is Map) {
+      return {for (final e in node.entries) e.key: germanFirst(e.value)};
+    }
+    if (node is String) return node == 'name_en' ? 'name_de' : node;
+    return node;
+  }
+
+  test('each German style is the English one asking for the German name first '
+      '(name_de for name_en, and before name:latin) (#128, #131)', () {
+    for (final name in ['retrail_light', 'retrail_dark']) {
+      final english = _style(name);
+      final german = _style('${name}_de');
+      expect(german, germanFirst(english), reason: name);
+      final text = File('assets/map/${name}_de.json').readAsStringSync();
+      expect(text, isNot(contains('"name_en"')), reason: name);
+      expect(text, contains('"name_de"'), reason: name);
+    }
+  });
+
+  test('a place with a non-Latin name shows its German name above the '
+      'original script in the German style (#131)', () {
+    final german = _style('retrail_light_de');
+    final layer = _layer(german, 'water_name_point_label');
+    expect((layer['layout'] as Map)['text-field'], [
+      'case',
+      ['has', 'name:nonlatin'],
+      [
+        'concat',
+        [
+          'coalesce',
+          ['get', 'name_de'],
+          ['get', 'name:latin'],
+        ],
+        '\n',
+        ['get', 'name:nonlatin'],
+      ],
+      [
+        'coalesce',
+        ['get', 'name_de'],
+        ['get', 'name'],
+      ],
+    ]);
+  });
 
   test('both bundled styles read OpenMapTiles from OpenFreeMap', () {
     for (final name in ['retrail_light', 'retrail_dark']) {

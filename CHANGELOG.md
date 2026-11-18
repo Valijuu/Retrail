@@ -38,7 +38,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 - The map keeps rides and the pin's circle clear of the buttons on top when it frames them, frames the rides again after the pin is removed, and frames them after a filter changed in the list (#118).
 - Clearing a search on the map brings the lines back at once instead of blinking while they are drawn again (#127).
 - The History tab shows the List/Map switch and the map also before your first ride, with a note "No rides yet", so you see the map is there (#122).
-- Place names on every map and in the ride previews follow the app language: German names in the German app instead of English ones (#128). Previews are drawn again once per language.
+- Place names on every map and in the ride previews follow the app language: German names in the German app instead of English ones, also for places written in another script, which show the German name above it (#128, #131). Previews are drawn again once per language.
 - The route comparison lists the fastest follow first and shows the top speed next to the average.
 - The tabs no longer change by swiping sideways, only through the bar at the bottom, so maps can be
   panned and pinched freely.

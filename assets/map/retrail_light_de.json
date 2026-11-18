@@ -4190,8 +4190,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       " ",
       [
@@ -4251,8 +4258,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -4326,8 +4340,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       " ",
       [
@@ -4419,8 +4440,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -4524,8 +4552,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -4629,8 +4664,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -4705,8 +4747,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -4768,8 +4817,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       " ",
       [
@@ -4859,8 +4915,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       " ",
       [
@@ -4937,8 +5000,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       " ",
       [
@@ -5253,8 +5323,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5326,8 +5403,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5411,8 +5495,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5495,8 +5586,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5567,8 +5665,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5663,8 +5768,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5764,8 +5876,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5853,8 +5972,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -5934,8 +6060,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [
@@ -6015,8 +6148,15 @@
      [
       "concat",
       [
-       "get",
-       "name:latin"
+       "coalesce",
+       [
+        "get",
+        "name_de"
+       ],
+       [
+        "get",
+        "name:latin"
+       ]
       ],
       "\n",
       [

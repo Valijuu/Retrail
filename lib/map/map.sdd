@@ -37,7 +37,8 @@ Must:
   The live map is native MapLibre with the bundled Retrail Light or Retrail Dark style, handed over as an
     asset path, never as a JSON string.
   Place names follow the app language (#128): `de` shows `name_de` and `en` (also any other language) `name_en`,
-    each falling back to the local name. There is one bundled style per language and brightness
+    each falling back to the local name; a place with a non-Latin name shows its German name (or, lacking one, the Latin
+    transliteration) above the native script in the German style (#131). There is one bundled style per language and brightness
     (`retrail_<light|dark>[_de].json`), made by `tool/build_map_styles.dart` and equal but for the name field.
     The language is `de` when the app (or, on "system", the device) is German, else `en`.
   Android uses the texture platform-view mode so no stale native surface flashes between screens.

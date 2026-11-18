@@ -134,9 +134,30 @@ Future<Map<String, dynamic>> _fetch(String name) async {
 }
 
 /// Place labels come from OpenMapTiles' `name_en` (then the local `name`); the
-/// German style asks for `name_de` first, so a German app shows German names (#128).
+/// German style asks for `name_de` first, so a German app shows German names
+/// (#128). A place with a non-Latin name shows `name:latin` above its native
+/// script; there the German name goes before `name:latin` (#131).
 const _englishNameField = '"name_en"';
 const _germanNameField = '"name_de"';
+
+/// [node] with every `["get", "name:latin"]` replaced by `name_de` first, then
+/// `name:latin`.
+Object? _germanLatinName(Object? node) {
+  if (node is List) {
+    if (node.length == 2 && node[0] == 'get' && node[1] == 'name:latin') {
+      return [
+        'coalesce',
+        ['get', 'name_de'],
+        ['get', 'name:latin'],
+      ];
+    }
+    return [for (final item in node) _germanLatinName(item)];
+  }
+  if (node is Map) {
+    return {for (final e in node.entries) e.key: _germanLatinName(e.value)};
+  }
+  return node;
+}
 
 void _write(String name, Map<String, dynamic> style, String origin) {
   style['metadata'] = {
@@ -148,9 +169,12 @@ void _write(String name, Map<String, dynamic> style, String origin) {
   File('assets/map/$name.json')
     ..createSync(recursive: true)
     ..writeAsStringSync(english);
+  final german = const JsonEncoder.withIndent(
+    ' ',
+  ).convert(_germanLatinName(style));
   File(
     'assets/map/${name}_de.json',
-  ).writeAsStringSync(english.replaceAll(_englishNameField, _germanNameField));
+  ).writeAsStringSync(german.replaceAll(_englishNameField, _germanNameField));
 }
 
 /// Applies [paint] to [layers] by id and fails loudly when an id no longer
