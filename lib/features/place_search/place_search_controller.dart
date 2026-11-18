@@ -1,9 +1,9 @@
-import '../../core/connectivity/connectivity_providers.dart';
 import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/connectivity/connectivity_providers.dart';
 import '../settings/settings_providers.dart' show localeProvider;
 import 'photon_client.dart';
 
@@ -79,6 +79,10 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
   int _seq = 0;
   String _lastSent = '';
 
+  /// The answer to [_lastSent], shown again when the rider types back to it
+  /// before the pause ends (#125).
+  ({PlaceSearchStatus status, List<PlaceSuggestion> suggestions})? _lastAnswer;
+
   @override
   PlaceSearchState build() {
     ref.onDispose(() => _debounce?.cancel());
@@ -94,6 +98,7 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
     _debounce?.cancel();
     _seq++;
     _lastSent = '';
+    _lastAnswer = null;
     state = const PlaceSearchState();
   }
 
@@ -104,6 +109,7 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
       // Too short: nothing goes out, no failure hint.
       _seq++;
       _lastSent = '';
+      _lastAnswer = null;
       state = state.copyWith(
         query: text,
         status: PlaceSearchStatus.idle,
@@ -112,7 +118,14 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
       return;
     }
     if (trimmed == _lastSent) {
-      state = state.copyWith(query: text);
+      final answer = _lastAnswer;
+      state = answer == null
+          ? state.copyWith(query: text)
+          : state.copyWith(
+              query: text,
+              status: answer.status,
+              suggestions: answer.suggestions,
+            );
       return;
     }
     // The shown places belong to the old text: none can be chosen for the
@@ -130,6 +143,7 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
   Future<void> _send(String text) async {
     final seq = ++_seq;
     _lastSent = text;
+    _lastAnswer = null;
     if (ref.read(isOnlineProvider).asData?.value == false) {
       _unavailable();
       return;
@@ -140,12 +154,11 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
           .read(photonClientProvider)
           .search(text, lang: ref.read(placeSearchLangProvider));
       if (seq != _seq || !ref.mounted) return;
-      state = state.copyWith(
-        status: places.isEmpty
-            ? PlaceSearchStatus.empty
-            : PlaceSearchStatus.results,
-        suggestions: places,
-      );
+      final status = places.isEmpty
+          ? PlaceSearchStatus.empty
+          : PlaceSearchStatus.results;
+      _lastAnswer = (status: status, suggestions: places);
+      state = state.copyWith(status: status, suggestions: places);
     } on PlaceSearchUnavailable {
       if (seq != _seq || !ref.mounted) return;
       _unavailable();
@@ -155,6 +168,7 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
   /// Offline or no answer: a hint, and the same text may be sent again.
   void _unavailable() {
     _lastSent = '';
+    _lastAnswer = null;
     state = state.copyWith(
       status: PlaceSearchStatus.unavailable,
       suggestions: const [],

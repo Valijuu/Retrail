@@ -75,6 +75,22 @@ void main() {
     expect(c.read(placeSearchProvider).status, PlaceSearchStatus.loading);
   });
 
+  test('typing back to the sent text within the pause shows its places '
+      'again (#125)', () async {
+    c = make(answering(_body(['Hamburg'])));
+    final n = c.read(placeSearchProvider.notifier)
+      ..open()
+      ..setQuery('Hamburg');
+    await wait();
+    n
+      ..setQuery('Hamburgx')
+      ..setQuery('Hamburg');
+    await wait();
+    expect(sent, hasLength(1));
+    expect(c.read(placeSearchProvider).status, PlaceSearchStatus.results);
+    expect(c.read(placeSearchProvider).suggestions, hasLength(1));
+  });
+
   test('one request goes out after the pause, with the full text', () async {
     c = make(answering(_body(['Hamburg'])));
     final n = c.read(placeSearchProvider.notifier)..open();
