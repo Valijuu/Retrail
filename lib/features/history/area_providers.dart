@@ -17,6 +17,9 @@ class OutlineStore {
   final OutlineRepository _repo;
   final OutlineCache cache = OutlineCache();
 
+  /// The revisions of the newest [refresh].
+  Map<int, int> _latest = const {};
+
   /// Drops the outlines of rides that are gone and loads, in one query,
   /// those of [wanted] that are outlined ([revisions]: ride id → revision)
   /// but not cached yet or cached at an older revision (#111).
@@ -27,9 +30,16 @@ class OutlineStore {
         if (revisions[id] case final revision?)
           if (cache[id]?.row.revision != revision) id,
     ];
+    _latest = revisions;
     if (missing.isEmpty) return;
     final List<RideOutlineRow> rows = await _repo.load(missing);
-    cache.addRows(rows);
+    // A newer refresh may have run meanwhile: a ride its revisions no longer
+    // hold is gone and must not come back into the cache.
+    final latest = _latest;
+    cache.addRows([
+      for (final row in rows)
+        if (latest.containsKey(row.rideId)) row,
+    ]);
   }
 }
 

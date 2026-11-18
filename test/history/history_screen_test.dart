@@ -351,7 +351,7 @@ void main() {
   });
 
   testWidgets('empty state when there are no rides', (tester) async {
-    await pump(tester, const []);
+    await pump(tester, const [], anyRide: false);
     expect(find.text('No rides yet'), findsOneWidget);
     expect(find.text('Reset filters'), findsNothing);
   });

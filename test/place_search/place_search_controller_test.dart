@@ -91,6 +91,24 @@ void main() {
     expect(c.read(placeSearchProvider).suggestions, hasLength(1));
   });
 
+  test(
+    'a late answer to the old text does not show under the new one',
+    () async {
+      final answer = Completer<http.Response>();
+      c = make((_) => answer.future);
+      final n = c.read(placeSearchProvider.notifier)
+        ..open()
+        ..setQuery('Hamburg');
+      await wait();
+      n.setQuery('Bremen');
+      answer.complete(http.Response(_body(['Hamburg']), 200));
+      await wait(5);
+      expect(c.read(placeSearchProvider).query, 'Bremen');
+      expect(c.read(placeSearchProvider).suggestions, isEmpty);
+      expect(c.read(placeSearchProvider).status, PlaceSearchStatus.loading);
+    },
+  );
+
   test('one request goes out after the pause, with the full text', () async {
     c = make(answering(_body(['Hamburg'])));
     final n = c.read(placeSearchProvider.notifier)..open();

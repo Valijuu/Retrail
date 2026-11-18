@@ -157,13 +157,19 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
       final status = places.isEmpty
           ? PlaceSearchStatus.empty
           : PlaceSearchStatus.results;
+      // Kept for typing back to [text]; shown only while it is still the text.
       _lastAnswer = (status: status, suggestions: places);
+      if (!_isCurrent(text)) return;
       state = state.copyWith(status: status, suggestions: places);
     } on PlaceSearchUnavailable {
-      if (seq != _seq || !ref.mounted) return;
+      if (seq != _seq || !ref.mounted || !_isCurrent(text)) return;
       _unavailable();
     }
   }
+
+  /// Whether [text] is still what the field says; an answer to older text
+  /// never shows under newer text.
+  bool _isCurrent(String text) => state.query.trim() == text;
 
   /// Offline or no answer: a hint, and the same text may be sent again.
   void _unavailable() {

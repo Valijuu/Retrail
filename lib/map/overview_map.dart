@@ -133,6 +133,10 @@ class _OverviewMapState extends State<OverviewMap> {
   /// frame that would otherwise follow (#107).
   int _cameraMoves = 0;
 
+  /// [_cameraMoves] when the current map was created: any move since then,
+  /// also one before its style started loading, wins (#107).
+  int _movesAtCreate = 0;
+
   /// The camera has been put somewhere on purpose (framing, remembered
   /// camera, pin). Rides appearing later (a filter that had hidden them all)
   /// do not frame again by themselves; only a frame request does.
@@ -240,7 +244,6 @@ class _OverviewMapState extends State<OverviewMap> {
       !mounted || !identical(_style, style);
 
   Future<void> _onStyleLoaded(StyleController style) async {
-    final movesBefore = _cameraMoves;
     _style = style;
     _sourcesReady = false;
     _pushed.clear();
@@ -257,7 +260,7 @@ class _OverviewMapState extends State<OverviewMap> {
     _sourcesReady = true;
     _pushAll();
     final restore = widget.restoreCamera;
-    if (_cameraMoves != movesBefore) {
+    if (_cameraMoves != _movesAtCreate) {
       // Moved meanwhile: leave the camera where that move put it.
     } else if (restore != null) {
       await _jump(restore.center, restore.zoom);
@@ -379,6 +382,7 @@ class _OverviewMapState extends State<OverviewMap> {
               onMapCreated: (c) {
                 _detach();
                 _controller = c;
+                _movesAtCreate = _cameraMoves;
               },
               onStyleLoaded: _onStyleLoaded,
               onEvent: _onEvent,

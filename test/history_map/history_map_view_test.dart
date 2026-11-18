@@ -390,7 +390,7 @@ void main() {
     tester,
   ) async {
     await _ride(db);
-    await pump(tester, view: 'map');
+    await pump(tester, view: 'map', locator: _Locator(const LocateDenied()));
     await settle(tester);
     container.read(locationEnabledProvider.notifier).enable();
     await tester.pump();

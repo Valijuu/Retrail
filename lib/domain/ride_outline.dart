@@ -56,7 +56,9 @@ class RideOutline {
     while (true) {
       final kept = [
         for (var i = 0; i < points.length; i++)
-          if (importance[i] > tolerance) points[i],
+          // The endpoints stay at any tolerance, also an infinite one.
+          if (i == 0 || i == points.length - 1 || importance[i] > tolerance)
+            points[i],
       ];
       if (kept.length <= maxPoints) return RideOutline(kept);
       tolerance *= _toleranceGrowthFactor;
@@ -131,16 +133,14 @@ class RideOutline {
 
   /// For every point, the largest tolerance below which Douglas-Peucker
   /// keeps it (#99): a split's own distance, capped by the split it lies
-  /// under, since a range is only split while its parent was. Endpoints are
-  /// always kept. One pass at [toleranceM] with an explicit stack, so the
+  /// under, since a range is only split while its parent was. Endpoints get
+  /// none: [simplify] keeps them anyway. One pass at [toleranceM] with an explicit stack, so the
   /// depth does not grow with the track.
   static List<double> _splitImportance(
     List<LatLng> points,
     DistanceCalculator distance,
   ) {
     final importance = List<double>.filled(points.length, 0);
-    importance[0] = double.infinity;
-    importance[points.length - 1] = double.infinity;
     final ranges = <_SplitRange>[
       (first: 0, last: points.length - 1, cap: double.infinity),
     ];

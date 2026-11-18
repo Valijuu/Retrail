@@ -68,6 +68,15 @@ List<LatLng> _referenceSimplify(List<LatLng> points) {
   }
 }
 
+/// Reports every distance as infinitely far, so no tolerance drops a point.
+class _InfiniteCalculator implements DistanceCalculator {
+  const _InfiniteCalculator();
+
+  @override
+  double distanceBetween(double lat1, double lon1, double lat2, double lon2) =>
+      double.infinity;
+}
+
 /// Like [_FarCalculator], and counts how often it is asked.
 class _CountingCalculator implements DistanceCalculator {
   int calls = 0;
@@ -203,6 +212,18 @@ void main() {
       expect(outline.points, [points.first, points.last]);
       expect(doubled.calls, lessThan(6 * fits.calls));
     });
+
+    test(
+      'endpoints stay even when the tolerance grows past every distance',
+      () {
+        final points = _lineEast(RideOutline.maxPoints + 1, 1);
+        final outline = RideOutline.simplify(
+          points,
+          distance: const _InfiniteCalculator(),
+        );
+        expect(outline.points, [points.first, points.last]);
+      },
+    );
 
     test('distances come from the injected DistanceCalculator', () {
       // A calculator that calls everything far apart keeps every point.

@@ -118,12 +118,12 @@ Must:
     widest allowed zoom. The position dot has a dark edge, so it shows on a blue line.
   A jump to a ride from Home shows the list, whichever view was stored.
   Location problems (not allowed, blocked, services off, no fix) show a hint instead of a position, each with its
-    own text; services off offer the device's location settings, and a hint never covers the my-location button
+    own text; services off (also when switched off while the fix is awaited) offer the device's location settings, and a hint never covers the my-location button
     (#120). When the
     position stream fails while the map is open, the old position goes, a hint says so and the button asks
     again (#110).
   The map follows the live map rules of the map spec for the style load, disposal and light/dark switch. A camera
-    move made while the style loads (my location, a chosen place, a pan) is kept; the remembered camera or the
+    move made after the map was created and before its style is ready (my location, a chosen place, a pan) is kept; the remembered camera or the
     frame does not overwrite it (#107).
   Performance: outlines are read once into an in-memory cache by ride id and decoded on first use; a database
     emission changes only the rides that were added, changed or removed; a rewritten outline is known by its

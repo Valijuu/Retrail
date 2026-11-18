@@ -82,6 +82,9 @@ class GeolocatorMapLocator implements MapLocator {
             locationSettings: const LocationSettings(timeLimit: _fixTimeout),
           );
           return Located((lat: p.latitude, lng: p.longitude));
+        } on LocationServiceDisabledException {
+          // Switched off between the check above and the fix.
+          return const LocateServicesOff();
         } on Exception {
           // No fix in time, or the platform failed to give one (#120).
           return const LocateNoFix();

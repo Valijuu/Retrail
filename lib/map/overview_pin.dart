@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 import 'package:maplibre/maplibre.dart';
 
@@ -78,6 +79,8 @@ class _OverviewPinState extends State<OverviewPin> {
           alignment: Alignment.bottomCenter,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
+            // The grab offset comes from where the finger first touched.
+            dragStartBehavior: DragStartBehavior.down,
             onPanStart: (d) =>
                 _grab = _grabOffset(d.globalPosition, controller),
             onPanUpdate: (d) {
