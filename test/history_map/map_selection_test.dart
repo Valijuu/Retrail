@@ -8,6 +8,7 @@ import 'package:retrail/domain/heading.dart' show LatLng;
 import 'package:retrail/domain/ride_outline.dart';
 import 'package:retrail/features/history_map/history_map_providers.dart';
 import 'package:retrail/features/history_map/map_selection.dart';
+import 'package:retrail/features/history_map/route_lines.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _tap = (lat: 48.0, lng: 11.005);
@@ -61,6 +62,7 @@ void main() {
     c = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
+        routeLinesDebounceProvider.overrideWithValue(Duration.zero),
         preferencesRepositoryProvider.overrideWithValue(
           PreferencesRepository(prefs),
         ),
@@ -69,6 +71,7 @@ void main() {
     c.listen(overviewProvider, (_, _) {});
     c.listen(selectedRideProvider, (_, _) {});
     c.listen(routeBadgesProvider, (_, _) {});
+    c.listen(routeLineKeysProvider, (_, _) {});
   });
   tearDown(() async {
     c.dispose();
@@ -77,6 +80,17 @@ void main() {
 
   Future<void> settle() =>
       Future<void>.delayed(const Duration(milliseconds: 600));
+
+  /// Waits until the line matching has keyed [rides] rides: the card's group
+  /// size must not depend on how fast the isolate is (#125).
+  Future<void> linesKeyed(int rides) async {
+    for (var i = 0; i < 100; i++) {
+      final keys = c.read(routeLineKeysProvider).value;
+      if (keys != null && keys.length >= rides) return;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    fail('the lines of $rides rides were not matched in time');
+  }
 
   test(
     'tapping an overlapping stretch gives one card: the nearest route\'s best ride',
@@ -106,6 +120,36 @@ void main() {
       expect(card.groupSize, 2);
       expect(card.entry.ride.rideId, isNot(original));
       expect(card.entry.ride.rideId, isNot(other));
+    },
+  );
+
+  test(
+    'one line with two follow groups shows the fastest best ride (#124)',
+    () async {
+      // The slow group is the newer one, so a tie on the tap favours it.
+      final slowOriginal = await _ride(db, durationMs: 900, date: 3);
+      await _ride(
+        db,
+        followed: slowOriginal,
+        durationMs: 800,
+        coverage: 1,
+        date: 4,
+      );
+      final fastOriginal = await _ride(db, durationMs: 700, date: 1);
+      final fastFollow = await _ride(
+        db,
+        followed: fastOriginal,
+        durationMs: 600,
+        coverage: 1,
+        date: 2,
+      );
+      await settle();
+      await linesKeyed(4);
+
+      c.read(mapSelectionProvider.notifier).tap(_tap, 14);
+      final card = c.read(selectedRideProvider)!;
+      expect(card.groupSize, 4);
+      expect(card.entry.ride.rideId, fastFollow);
     },
   );
 

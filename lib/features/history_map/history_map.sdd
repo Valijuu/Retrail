@@ -40,7 +40,9 @@ Must:
     area hide routes from the map, "m routes" otherwise. A route is a set of rides on the same line
     (@RouteMatch: within `30` m, also without a follow link) so what is drawn once counts once; n is what the
     map draws, m what the history has. A tap on a line selects that route: the card shows its best ride and
-    the ride count of the route. Until the lines are matched the follow groups stand in. There is no separate
+    the ride count of the route. A line can hold several follow groups: the card shows the fastest of their best
+    rides, ranked as @RouteGroup ranks them (#124). The count is the rides on the line; the route sheet lists only
+    the rides linked by follow, so the two can differ for rides without a follow link (known, #124). Until the lines are matched the follow groups stand in. There is no separate
     line for it.
   Back on the map closes, one step per press, the open activity menu, the place search, then the ride card;
     only with none of them open does it leave the tab as before (#115). Opening the place search, the filter

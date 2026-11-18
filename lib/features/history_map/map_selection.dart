@@ -4,6 +4,7 @@ import '../../domain/heading.dart' show LatLng;
 import '../../domain/outline_hit.dart';
 import '../history/area_providers.dart';
 import '../history/history_items.dart';
+import '../history/route_group_providers.dart' show routeGroupRideOf;
 import 'history_map_providers.dart';
 import 'map_items.dart';
 import 'route_badges.dart';
@@ -100,10 +101,22 @@ final selectedRideProvider = Provider<SelectedRide?>((ref) {
     for (final id in hits)
       if (routeKeyOf(id, lines, badges) == key) id,
   ];
-  final id = sameRoute.firstWhere(
-    badges.bestRideIds.contains,
-    orElse: () => sameRoute.first,
-  );
+  // A line can hold several follow groups, each with its own best ride: the
+  // card shows the fastest of them, also when only one was under the tap
+  // (#124).
+  final bests =
+      [
+        for (final MapEntry(key: id, value: item) in byId.entries)
+          if (badges.bestRideIds.contains(id) &&
+              routeKeyOf(id, lines, badges) == key &&
+              (onMapIds == null || onMapIds.contains(id)))
+            item,
+      ]..sort(
+        (a, b) => routeGroupRideOf(
+          a,
+        ).durationMs.compareTo(routeGroupRideOf(b).durationMs),
+      );
+  final id = bests.isNotEmpty ? bests.first.ride.rideId : sameRoute.first;
   return SelectedRide(
     byId[id]!,
     isBest: badges.bestRideIds.contains(id),
