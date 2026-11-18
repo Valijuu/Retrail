@@ -37,16 +37,31 @@ class OverviewPin extends StatefulWidget {
 class _OverviewPinState extends State<OverviewPin> {
   LatLng? _dragged;
 
+  /// From the finger to the pin's tip, taken when the drag starts, so the
+  /// pin does not jump to the finger wherever it was grabbed (#125).
+  Offset? _grab;
+
   LatLng? get _shown => _dragged ?? widget.pin;
 
   LatLng? _under(Offset global, MapController controller) {
     final box = widget.mapKey.currentContext?.findRenderObject();
     if (box is! RenderBox) return null;
-    // The pin's tip sits at its bottom edge, below the finger.
+    // Without a grab point the tip sits half a pin below the finger.
     final local =
-        box.globalToLocal(global) + Offset(0, kOverviewPinSize.height / 2);
+        box.globalToLocal(global) +
+        (_grab ?? Offset(0, kOverviewPinSize.height / 2));
     final geo = controller.toLngLat(local);
     return (lat: geo.lat, lng: geo.lon);
+  }
+
+  Offset? _grabOffset(Offset global, MapController controller) {
+    final box = widget.mapKey.currentContext?.findRenderObject();
+    final shown = _shown;
+    if (box is! RenderBox || shown == null) return null;
+    final tip = controller.toScreenLocations([
+      Geographic(lon: shown.lng, lat: shown.lat),
+    ]).first;
+    return tip - box.globalToLocal(global);
   }
 
   @override
@@ -63,6 +78,8 @@ class _OverviewPinState extends State<OverviewPin> {
           alignment: Alignment.bottomCenter,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
+            onPanStart: (d) =>
+                _grab = _grabOffset(d.globalPosition, controller),
             onPanUpdate: (d) {
               final p = _under(d.globalPosition, controller);
               if (p == null) return;
@@ -70,11 +87,13 @@ class _OverviewPinState extends State<OverviewPin> {
               widget.onDragged(p);
             },
             onPanCancel: () {
+              _grab = null;
               setState(() => _dragged = null);
               widget.onDragged(null);
             },
             onPanEnd: (_) {
               final p = _dragged;
+              _grab = null;
               setState(() => _dragged = null);
               // The map keeps drawing the dragged point until the new pin
               // arrives, so it does not flash back to the old one.
