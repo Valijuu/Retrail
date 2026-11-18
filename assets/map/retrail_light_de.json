@@ -4190,7 +4190,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4258,7 +4276,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4340,7 +4376,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4440,7 +4494,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4552,7 +4624,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4664,7 +4754,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4747,7 +4855,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4817,7 +4943,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -4915,7 +5059,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5000,7 +5162,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5323,7 +5503,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5403,7 +5601,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5495,7 +5711,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5586,7 +5820,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5665,7 +5917,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5768,7 +6038,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5876,7 +6164,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -5972,7 +6278,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -6060,7 +6384,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"
@@ -6148,7 +6490,25 @@
      [
       "concat",
       [
-       "coalesce",
+       "case",
+       [
+        "all",
+        [
+         "has",
+         "name_de"
+        ],
+        [
+         "!=",
+         [
+          "get",
+          "name_de"
+         ],
+         [
+          "get",
+          "name"
+         ]
+        ]
+       ],
        [
         "get",
         "name_de"

@@ -136,20 +136,34 @@ Future<Map<String, dynamic>> _fetch(String name) async {
 /// Place labels come from OpenMapTiles' `name_en` (then the local `name`); the
 /// German style asks for `name_de` first, so a German app shows German names
 /// (#128). A place with a non-Latin name shows `name:latin` above its native
-/// script; there the German name goes before `name:latin` (#131).
+/// script; there the German name goes before `name:latin` when it is a real one (#131).
 const _englishNameField = '"name_en"';
 const _germanNameField = '"name_de"';
 
-/// [node] with every `["get", "name:latin"]` replaced by `name_de` first, then
-/// `name:latin`.
+/// The first line of a place with a non-Latin name in the German style: its
+/// German name, but only when that is a real one. OpenMapTiles fills `name_de`
+/// with the local name when there is no German one, which would print the
+/// native script twice.
+const _germanLatin = [
+  'case',
+  [
+    'all',
+    ['has', 'name_de'],
+    [
+      '!=',
+      ['get', 'name_de'],
+      ['get', 'name'],
+    ],
+  ],
+  ['get', 'name_de'],
+  ['get', 'name:latin'],
+];
+
+/// [node] with every `["get", "name:latin"]` replaced by [_germanLatin].
 Object? _germanLatinName(Object? node) {
   if (node is List) {
     if (node.length == 2 && node[0] == 'get' && node[1] == 'name:latin') {
-      return [
-        'coalesce',
-        ['get', 'name_de'],
-        ['get', 'name:latin'],
-      ];
+      return _germanLatin;
     }
     return [for (final item in node) _germanLatinName(item)];
   }

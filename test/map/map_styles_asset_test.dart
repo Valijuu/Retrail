@@ -13,16 +13,31 @@ Map<String, dynamic> _layer(Map<String, dynamic> style, String id) =>
     );
 
 void main() {
-  /// [node] with every `["get", "name:latin"]` replaced by the German name
-  /// first, then the Latin one: what the German style should do (#131).
+  /// The first line of a place with a non-Latin name in the German style: its
+  /// German name, but only when that is a real one: OpenMapTiles fills
+  /// `name_de` with the local name when there is no German one, which would
+  /// print the native script twice (#131).
+  const germanLatin = [
+    'case',
+    [
+      'all',
+      ['has', 'name_de'],
+      [
+        '!=',
+        ['get', 'name_de'],
+        ['get', 'name'],
+      ],
+    ],
+    ['get', 'name_de'],
+    ['get', 'name:latin'],
+  ];
+
+  /// [node] with every `["get", "name:latin"]` replaced by [germanLatin]: what
+  /// the German style should do (#131).
   Object? germanFirst(Object? node) {
     if (node is List) {
       if (node.length == 2 && node[0] == 'get' && node[1] == 'name:latin') {
-        return [
-          'coalesce',
-          ['get', 'name_de'],
-          ['get', 'name:latin'],
-        ];
+        return germanLatin;
       }
       return [for (final item in node) germanFirst(item)];
     }
@@ -54,11 +69,7 @@ void main() {
       ['has', 'name:nonlatin'],
       [
         'concat',
-        [
-          'coalesce',
-          ['get', 'name_de'],
-          ['get', 'name:latin'],
-        ],
+        germanLatin,
         '\n',
         ['get', 'name:nonlatin'],
       ],
