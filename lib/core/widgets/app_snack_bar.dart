@@ -10,6 +10,7 @@ SnackBar appSnackBar({
   required String message,
   SnackBarAction? action,
   Duration duration = const Duration(seconds: 4),
+  EdgeInsetsGeometry? margin,
 }) => SnackBar(
   content: Builder(
     builder: (context) => Row(
@@ -25,6 +26,7 @@ SnackBar appSnackBar({
   // action below once it takes a quarter of the width.
   actionOverflowThreshold: 1,
   duration: duration,
+  margin: margin,
   persist: false,
   showCloseIcon: true,
 );

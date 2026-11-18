@@ -52,7 +52,7 @@ Must:
     list was shown frames the map when it opens (#118).
   A long press on the map sets a pin; the my-location button also sets it to the current position (after the
     permission rules below). The pin can be dragged or removed, and a radius slider from `1` to `50` km
-    (default `5`) draws the circle on the map; screen readers read its value in km (#120). With a pin, only rides that match @AreaFilter remain.
+    (default `5`) draws the circle on the map in a neutral colour, so the primary-coloured heat inside it still shows; screen readers read its value in km (#120). With a pin, only rides that match @AreaFilter remain.
   The area belongs to the map alone, like the activity selection: the History list, its filters and the filter
     badge do not know it, and it is not stored across app starts. Filters set in the History header (search,
     year, months, favourites, route, sort) apply to the list and the map alike.
@@ -113,7 +113,9 @@ Must:
     stays visible.
   An empty history says so and offers no map or switch; a filter with no result shows the empty map without text.
   A jump to a ride from Home shows the list, whichever view was stored.
-  Location problems (not allowed, blocked, services off, no fix) show a hint instead of a position. When the
+  Location problems (not allowed, blocked, services off, no fix) show a hint instead of a position, each with its
+    own text; services off offer the device's location settings, and a hint never covers the my-location button
+    (#120). When the
     position stream fails while the map is open, the old position goes, a hint says so and the button asks
     again (#110).
   The map follows the live map rules of the map spec for the style load, disposal and light/dark switch.

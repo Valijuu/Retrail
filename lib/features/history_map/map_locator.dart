@@ -30,6 +30,11 @@ class LocateServicesOff extends LocateResult {
   const LocateServicesOff();
 }
 
+/// Allowed, but no position came in time (indoors, no sky) (#120).
+class LocateNoFix extends LocateResult {
+  const LocateNoFix();
+}
+
 /// The map's access to the device position. Asks for location while the app
 /// is in use only; never for Always, never for notifications.
 abstract interface class MapLocator {
@@ -40,6 +45,9 @@ abstract interface class MapLocator {
   Stream<LatLng> positions();
 
   Future<void> openAppSettings();
+
+  /// The device's location settings, to switch the services on (#120).
+  Future<void> openLocationSettings();
 }
 
 /// Production [MapLocator] over `geolocator`.
@@ -75,8 +83,8 @@ class GeolocatorMapLocator implements MapLocator {
           );
           return Located((lat: p.latitude, lng: p.longitude));
         } on Exception {
-          // No fix in time (or the platform failed): same hint as a denial.
-          return const LocateDenied();
+          // No fix in time, or the platform failed to give one (#120).
+          return const LocateNoFix();
         }
     }
   }
@@ -88,6 +96,9 @@ class GeolocatorMapLocator implements MapLocator {
 
   @override
   Future<void> openAppSettings() => Geolocator.openAppSettings();
+
+  @override
+  Future<void> openLocationSettings() => Geolocator.openLocationSettings();
 }
 
 final mapLocatorProvider = Provider<MapLocator>(

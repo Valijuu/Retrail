@@ -257,6 +257,7 @@
   "historyMapOpenSettings": "Einstellungen",
   "historyMapLocationOff": "Die Ortungsdienste sind aus.",
   "historyMapLocationLost": "Der Standort ist nicht mehr verfügbar.",
+  "historyMapLocationNoFix": "Kein Standort gefunden. Versuch es im Freien noch einmal.",
   "historyMapPreparing": "Strecken werden vorbereitet …",
   "historyMapHiddenRides": "{shown} von {total} Strecken",
   "historyMapRouteCount": "{count, plural, =1{1 Strecke} other{{count} Strecken}}",

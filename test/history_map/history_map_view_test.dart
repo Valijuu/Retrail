@@ -31,12 +31,33 @@ import 'package:retrail/features/history_map/map_selection.dart';
 import 'package:retrail/features/history_map/widgets/map_preview_card.dart';
 import 'package:retrail/l10n/app_localizations.dart';
 import 'package:retrail/domain/activity_type.dart';
+import 'package:retrail/domain/heading.dart' show LatLng;
 import 'package:retrail/map/overview_map.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _tap = (lat: 48.0, lng: 11.005);
+
+/// Answers the my-location button with [result] and records the settings
+/// it was asked to open.
+class _Locator implements MapLocator {
+  _Locator(this.result);
+  final LocateResult result;
+  final opened = <String>[];
+
+  @override
+  Future<LocateResult> locate() async => result;
+
+  @override
+  Stream<LatLng> positions() => const Stream.empty();
+
+  @override
+  Future<void> openAppSettings() async => opened.add('app');
+
+  @override
+  Future<void> openLocationSettings() async => opened.add('location');
+}
 
 Future<int> _ride(
   AppDatabase db, {
@@ -98,7 +119,12 @@ void main() {
     await db.close();
   });
 
-  Future<void> pump(WidgetTester tester, {String? view, String? own}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    String? view,
+    String? own,
+    MapLocator? locator,
+  }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -118,6 +144,7 @@ void main() {
         ),
         previewCacheDirProvider.overrideWithValue(Directory.systemTemp),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+        if (locator != null) mapLocatorProvider.overrideWithValue(locator),
         routePreviewCacheProvider.overrideWithValue(
           RoutePreviewCache(
             baseDir: Directory.systemTemp,
@@ -312,6 +339,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(mapVisibleProvider), isTrue);
     await finish(tester);
+  });
+
+  group('location hints (#120)', () {
+    Future<void> locate(WidgetTester tester, _Locator locator) async {
+      await _ride(db);
+      await pump(tester, view: 'map', locator: locator);
+      await settle(tester);
+      await tester.tap(find.byTooltip('My location'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('services off offer the location settings', (tester) async {
+      final locator = _Locator(const LocateServicesOff());
+      await locate(tester, locator);
+      expect(find.text('Location services are off.'), findsOneWidget);
+      await tester.tap(find.widgetWithText(SnackBarAction, 'Settings'));
+      expect(locator.opened, ['location']);
+      await finish(tester);
+    });
+
+    testWidgets('no fix in time says so, not "not allowed"', (tester) async {
+      await locate(tester, _Locator(const LocateNoFix()));
+      expect(
+        find.text('No position found. Try again in the open.'),
+        findsOneWidget,
+      );
+      await finish(tester);
+    });
+
+    testWidgets('the hint leaves the location button free', (tester) async {
+      await locate(tester, _Locator(const LocateDenied()));
+      final hint = tester.getRect(
+        find
+            .descendant(
+              of: find.byType(SnackBar),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      final button = tester.getRect(find.byTooltip('My location'));
+      expect(hint.bottom, lessThanOrEqualTo(button.top));
+      await finish(tester);
+    });
   });
 
   testWidgets('a lost position stream shows the location hint (#110)', (

@@ -17,6 +17,9 @@ class _FakeLocator implements MapLocator {
 
   @override
   Future<void> openAppSettings() async {}
+
+  @override
+  Future<void> openLocationSettings() async {}
 }
 
 class _Foreground extends AppForegroundNotifier {

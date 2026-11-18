@@ -52,6 +52,9 @@ const double _panelGap = 6;
 /// Height the radius panel takes under the control row.
 const double _areaPanelInset = 80;
 const double _cardInset = 8;
+
+/// Space between a location hint and the my-location button under it.
+const double _hintGap = 8;
 const double _progressHeight = 2;
 
 /// Room the search panel leaves at the bottom for the attribution line.
@@ -239,8 +242,31 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     SnackBarAction? action,
     ScaffoldMessengerState? messenger,
   }) => (messenger ?? ScaffoldMessenger.of(context)).showSnackBar(
-    appSnackBar(icon: Icons.location_off, message: message, action: action),
+    appSnackBar(
+      icon: Icons.location_off,
+      message: message,
+      action: action,
+      margin: _hintMargin(),
+    ),
   );
+
+  final _locateButton = GlobalKey();
+
+  /// Lifts a hint above the my-location button, which a hint at the bottom
+  /// would cover (#120); null (the theme's margin) when the button is gone.
+  EdgeInsets? _hintMargin() {
+    final view = context.findRenderObject() as RenderBox?;
+    final button =
+        _locateButton.currentContext?.findRenderObject() as RenderBox?;
+    if (view == null || button == null || !button.attached) return null;
+    final buttonTop = button.localToGlobal(Offset.zero, ancestor: view).dy;
+    return EdgeInsets.fromLTRB(
+      _cardInset,
+      0,
+      _cardInset,
+      view.size.height - buttonTop + _hintGap,
+    );
+  }
 
   Future<void> _locate() async {
     final l10n = AppLocalizations.of(context);
@@ -268,7 +294,15 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           ),
         );
       case LocateServicesOff():
-        hint(l10n.historyMapLocationOff);
+        hint(
+          l10n.historyMapLocationOff,
+          action: SnackBarAction(
+            label: l10n.historyMapOpenSettings,
+            onPressed: locator.openLocationSettings,
+          ),
+        );
+      case LocateNoFix():
+        hint(l10n.historyMapLocationNoFix);
     }
   }
 
@@ -413,7 +447,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
               if (shown == null)
                 Align(
                   alignment: Alignment.centerRight,
-                  child: MyLocationButton(onPressed: _locate),
+                  child: MyLocationButton(
+                    key: _locateButton,
+                    onPressed: _locate,
+                  ),
                 )
               else
                 MapPreviewCard(

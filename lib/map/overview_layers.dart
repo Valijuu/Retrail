@@ -155,7 +155,8 @@ Future<void> addOverviewLayers(
       id: 'area-fill',
       sourceId: overviewAreaSource,
       paint: {
-        'fill-color': overviewHex(colors.primary),
+        // Neutral, so the heat (primary) inside the circle still shows (#120).
+        'fill-color': overviewHex(colors.onSurface),
         'fill-opacity': _areaFillOpacity,
       },
     ),
@@ -167,7 +168,7 @@ Future<void> addOverviewLayers(
       id: 'area-line',
       sourceId: overviewAreaSource,
       paint: {
-        'line-color': overviewHex(colors.primary),
+        'line-color': overviewHex(colors.onSurface),
         'line-width': _areaLineWidth,
       },
     ),
