@@ -398,6 +398,17 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('an empty history under a search still says "No rides yet" and '
+      'offers no map (#122)', (tester) async {
+    await pump(tester, view: 'map');
+    container.read(historyFilterProvider.notifier).setQuery('loop');
+    await settle(tester);
+    expect(find.text('No rides yet'), findsOneWidget);
+    expect(find.text('native map'), findsNothing);
+    expect(find.text('Map'), findsNothing);
+    await finish(tester);
+  });
+
   testWidgets('an empty history says so and offers no map', (tester) async {
     await pump(tester, view: 'map');
     await settle(tester);

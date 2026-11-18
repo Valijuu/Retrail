@@ -81,6 +81,8 @@ const double _positionRadius = 7.0;
 const double _positionHaloRadius = 11.0;
 const double _heatRadius = 14.0;
 const double _heatIntensity = 1.2;
+const double _positionEdgeWidth = 1.0;
+const double _positionEdgeOpacity = 0.5;
 const double _heatOpacity = 0.85;
 
 /// A point as GeoJSON, or the empty document for null.
@@ -317,6 +319,11 @@ Future<void> addOverviewLayers(
       paint: {
         'circle-radius': _positionHaloRadius,
         'circle-color': overviewHex(colors.onMap),
+        // A thin dark edge sets the dot apart from a blue line under it
+        // (#122).
+        'circle-stroke-width': _positionEdgeWidth,
+        'circle-stroke-color': overviewHex(colors.onSurface),
+        'circle-stroke-opacity': _positionEdgeOpacity,
       },
     ),
   )) {

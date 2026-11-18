@@ -32,6 +32,9 @@ class RideRepository {
 
   Stream<List<Ride>> getAllRides() => _dao.getAll();
 
+  /// Whether any ride is stored at all (see [RideDao.watchHasRides]).
+  Stream<bool> watchHasRides() => _dao.watchHasRides();
+
   Stream<List<RideWithTrackpoints>> getAllRidesWithTrackpoints() =>
       _dao.getAllRidesWithTrackpoints();
 

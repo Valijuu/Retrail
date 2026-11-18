@@ -205,6 +205,7 @@ void main() {
     Locale? locale,
     RouteGroupView? routeGroup,
     Map<int, int> followCounts = const {},
+    bool anyRide = true,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -219,6 +220,9 @@ void main() {
           FakeTrackpointRepository(db, trackpoints),
         ),
         historyItemsProvider.overrideWith((ref) => Stream.value(items)),
+        historyHasRidesProvider.overrideWith(
+          (ref) => Stream.value(anyRide || items.isNotEmpty),
+        ),
         historyControllerProvider.overrideWithValue(controller),
         if (previewCache != null)
           routePreviewCacheProvider.overrideWithValue(previewCache),

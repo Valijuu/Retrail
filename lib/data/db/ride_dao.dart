@@ -15,6 +15,15 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
 
   Stream<List<Ride>> getAll() => select(rides).watch();
 
+  /// Whether any ride is stored, whatever the History filters say (#122).
+  /// Reads one id at most.
+  Stream<bool> watchHasRides() {
+    final query = selectOnly(rides)
+      ..addColumns([rides.rideId])
+      ..limit(1);
+    return query.watch().map((rows) => rows.isNotEmpty);
+  }
+
   Stream<List<RideWithTrackpoints>> getAllRidesWithTrackpoints() =>
       _joinedRides().watch().map(_group);
 

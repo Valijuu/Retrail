@@ -31,6 +31,9 @@ const double _kmPerDegreeLat = 111.195;
 const double _fallbackLat = 30;
 const double _fallbackLon = 10;
 
+/// The start zoom while the rides' frame is worked out.
+const double _framedStartZoom = 10;
+
 /// The overview map of the History map view (#96): every visible ride as
 /// lines from one GeoJSON source per activity type, or as one heatmap, plus
 /// the area circle and pin, the highlighted ride and the user position. It
@@ -419,5 +422,8 @@ class _OverviewMapState extends State<OverviewMap> {
           );
   }
 
-  double get _initialZoom => widget.bounds == null ? 2 : 10;
+  /// Nothing to frame: the widest view the map allows, never below its
+  /// minimum zoom (#122).
+  double get _initialZoom =>
+      widget.bounds == null ? kLiveMapMinZoom : _framedStartZoom;
 }

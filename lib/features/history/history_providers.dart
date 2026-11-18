@@ -97,6 +97,12 @@ final historyNarrowsRidesProvider = Provider<bool>(
   (ref) => narrowsRides(ref.watch(historyFilterProvider)),
 );
 
+/// Whether the history holds any ride at all, filters aside (#122): without
+/// one, History shows "No rides yet" and offers no map, also under a search.
+final historyHasRidesProvider = StreamProvider<bool>(
+  (ref) => ref.watch(rideRepositoryProvider).watchHasRides(),
+);
+
 /// The filtered/sorted/date-grouped history list. Recomputes when rides or the
 /// filter change. Widget tests stub this with a finite stream (Drift `.watch()`
 /// never closes — see the established test rule).

@@ -299,7 +299,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     final colors = context.colors;
     final items = ref.watch(historyItemsProvider).asData?.value ?? const [];
     final hasRides = items.any((i) => i is RideEntryItem);
-    final narrows = ref.watch(historyNarrowsRidesProvider);
+    // Until the first answer, the filtered list stands in.
+    final anyRide = ref.watch(historyHasRidesProvider).value ?? hasRides;
+    final narrows = ref.watch(historyNarrowsRidesProvider) && anyRide;
     final showMap =
         (ref.watch(historyViewProvider).value ?? HistoryView.list) ==
             HistoryView.map &&
