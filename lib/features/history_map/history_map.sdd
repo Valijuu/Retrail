@@ -107,7 +107,8 @@ Must:
     notifications. Granted: it shows the position, sets the pin there and shows the pin's whole circle, like a long
     press, north-up.
     Denied: it shows a hint; denied for good: the hint offers the app settings. The position stream runs only
-    while the map view is visible and the app is in the foreground.
+    while the map view is visible and the app is in the foreground; a page, dialog or sheet over the map
+    counts as not visible (#101).
   Without tiles (offline, style not loaded) the lines still show over a plain background, and the attribution
     stays visible.
   An empty history says so and offers no map or switch; a filter with no result shows the empty map without text.
@@ -125,8 +126,8 @@ Must:
     is redrawn.
   Tap hits reject by outline bounds first and never decode an outline whose bounds are far from the tap.
   The background fill handles one ride at a time, reads its trackpoints in one query, simplifies off the UI
-    thread, writes in one transaction and yields between rides. It runs only while the map view is visible or
-    an area is set, and stops when the app goes to the background.
+    thread, writes in one transaction and yields between rides. It runs only while the map view is visible (not
+    covered, #101) or an area is set, and stops when the app goes to the background.
   Deleting: a deleted ride (single, batch, or Discard after a ride) disappears from the lines, the heat, the
     legend counts, the list and the best-time badge with the next emission. A shown preview card whose ride is
     gone closes; a pin and radius stay. Its cached outline, heat points and preview are dropped. Deleting an

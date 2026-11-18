@@ -25,6 +25,8 @@ import 'package:retrail/features/history_map/history_map_providers.dart'
 import 'package:retrail/features/history_map/map_activities.dart';
 import 'package:retrail/features/history_map/map_area.dart';
 import 'package:retrail/features/history_map/map_locator.dart';
+import 'package:retrail/features/history_map/outline_fill.dart'
+    show mapVisibleProvider;
 import 'package:retrail/features/history_map/map_selection.dart';
 import 'package:retrail/features/history_map/widgets/map_preview_card.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -288,6 +290,27 @@ void main() {
     await pump(tester, view: 'map');
     await settle(tester);
     expect(find.text('native map'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('a page over the map makes it invisible until it closes (#101)', (
+    tester,
+  ) async {
+    await _ride(db);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    expect(container.read(mapVisibleProvider), isTrue);
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(body: Text('detail')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(container.read(mapVisibleProvider), isFalse);
+    navigator.pop();
+    await tester.pumpAndSettle();
+    expect(container.read(mapVisibleProvider), isTrue);
     await finish(tester);
   });
 

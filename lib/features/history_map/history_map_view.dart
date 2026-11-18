@@ -117,8 +117,24 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     });
     Future.microtask(() {
       if (mounted) _back.register(_handleBack);
-      _visible.set(true);
+      _visible.set(_routeCurrent);
       if (mounted) _applyDefaultActivity();
+    });
+  }
+
+  /// False while a page or dialog covers the map, so the position stream and
+  /// the background fill pause there (#101).
+  bool _routeCurrent = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final current = ModalRoute.isCurrentOf(context) ?? true;
+    if (current == _routeCurrent) return;
+    _routeCurrent = current;
+    // Not during the build: the change resumes or pauses providers.
+    Future.microtask(() {
+      if (mounted) _visible.set(_routeCurrent);
     });
   }
 
