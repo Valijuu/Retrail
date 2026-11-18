@@ -178,7 +178,8 @@ class RoutePreviewCache {
         final wasStale = await marker.exists();
         if (wasStale) await marker.delete();
         _resolved[key] = file;
-        if (wasStale) _upgrades.add(rideId);
+        // A render may outlive the cache: the PNG is written either way.
+        if (wasStale && !_upgrades.isClosed) _upgrades.add(rideId);
       } else {
         // Still degraded: keep already-written bytes (same sketch — no churn),
         // only write when there is nothing to show yet; stays marked stale.
@@ -214,15 +215,26 @@ class RoutePreviewCache {
 
   void dispose() => _upgrades.close();
 
-  /// Deletes both cached variants and their stale markers (on ride
-  /// edit/delete), so neither theme serves a stale preview.
+  /// Deletes the ride's cached variants and their stale markers (on ride
+  /// edit/delete), in every language directory of the current version, so no
+  /// theme and no language serves a stale preview after a switch back (#128).
   Future<void> evict(int rideId) async {
     for (final brightness in Brightness.values) {
       _resolved.remove(_key(rideId, brightness));
-      final file = fileFor(rideId, brightness: brightness);
-      if (await file.exists()) await file.delete();
-      final marker = staleMarkerFor(rideId, brightness: brightness);
-      if (await marker.exists()) await marker.delete();
+    }
+    final suffixes = ['', '_dark'];
+    if (!await baseDir.exists()) return;
+    await for (final entity in baseDir.list()) {
+      if (entity is! Directory) continue;
+      final name = entity.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
+      final version = _versionDirPattern.firstMatch(name)?.group(1);
+      if (version == null || int.parse(version) != _cacheVersion) continue;
+      for (final suffix in suffixes) {
+        for (final ending in const ['.png', '.png.stale']) {
+          final file = File('${entity.path}/$rideId$suffix$ending');
+          if (await file.exists()) await file.delete();
+        }
+      }
     }
   }
 }

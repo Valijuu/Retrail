@@ -51,4 +51,53 @@ void main() {
     expect(renders, 2);
     expect(find.byType(Image), findsOneWidget);
   });
+
+  testWidgets('a card shows the preview of the new cache when the language '
+      'changes (#128)', (tester) async {
+    RoutePreviewCache cacheOf(String language, int byte) => RoutePreviewCache(
+      baseDir: tempDir,
+      language: language,
+      render: (_, _) async =>
+          PreviewResult(Uint8List.fromList([byte]), complete: true),
+    );
+    final english = cacheOf('en', 1);
+    final german = cacheOf('de', 2);
+    addTearDown(english.dispose);
+    addTearDown(german.dispose);
+
+    // One RoutePreview whose cache is swapped in place: the same State sees
+    // the language change through didUpdateWidget, as a card in the list does.
+    final active = ValueNotifier<RoutePreviewCache>(english);
+    addTearDown(active.dispose);
+    final app = MaterialApp(
+      theme: buildTheme(Brightness.light),
+      home: ValueListenableBuilder<RoutePreviewCache>(
+        valueListenable: active,
+        builder: (_, cache, _) => RoutePreview(
+          rideId: 3,
+          hasRoute: true,
+          pointsLoader: () async => points,
+          cache: cache,
+        ),
+      ),
+    );
+
+    Future<void> settle() async {
+      for (var i = 0; i < 20; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+    }
+
+    await tester.pumpWidget(app);
+    await settle();
+    active.value = german;
+    await tester.pump();
+    await settle();
+
+    final shown = tester.widget<Image>(find.byType(Image)).image as FileImage;
+    expect(shown.file.path, contains('ride_previews_v18_de'));
+  });
 }

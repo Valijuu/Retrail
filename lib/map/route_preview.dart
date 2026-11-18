@@ -102,8 +102,11 @@ class _RoutePreviewState extends State<RoutePreview> {
   @override
   void didUpdateWidget(RoutePreview oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.cache != widget.cache) _listenForUpgrades();
-    if (oldWidget.rideId != widget.rideId) {
+    final cacheChanged = oldWidget.cache != widget.cache;
+    if (cacheChanged) _listenForUpgrades();
+    // A new cache (the app language changed) holds another preview of the same
+    // ride (#128).
+    if (cacheChanged || oldWidget.rideId != widget.rideId) {
       _retried = false;
       _maybeGenerate();
     }

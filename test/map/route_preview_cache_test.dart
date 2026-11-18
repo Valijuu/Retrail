@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' show Brightness;
@@ -178,6 +179,58 @@ void main() {
     expect(await dark.exists(), isTrue); // both survive
     expect(await light.readAsBytes(), [0]);
     expect(await dark.readAsBytes(), [1]);
+  });
+
+  test('evict removes the ride from every language directory (#128)', () async {
+    final english = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async => _png([1]),
+    );
+    final german = RoutePreviewCache(
+      baseDir: tempDir,
+      language: 'de',
+      render: (_, _) async => _png([2]),
+    );
+    await english.ensurePreview(5, points, brightness: Brightness.light);
+    await german.ensurePreview(5, points, brightness: Brightness.dark);
+    await german.ensurePreview(6, points, brightness: Brightness.light);
+
+    await english.evict(5);
+
+    expect(
+      english.fileFor(5, brightness: Brightness.light).existsSync(),
+      isFalse,
+    );
+    expect(
+      german.fileFor(5, brightness: Brightness.dark).existsSync(),
+      isFalse,
+    );
+    expect(
+      german.fileFor(6, brightness: Brightness.light).existsSync(),
+      isTrue,
+      reason: 'another ride stays',
+    );
+  });
+
+  test('a render finishing after dispose does not throw (#128)', () async {
+    final gate = Completer<void>();
+    final cache = RoutePreviewCache(
+      baseDir: tempDir,
+      render: (_, _) async {
+        await gate.future;
+        return PreviewResult(Uint8List.fromList([1]), complete: true);
+      },
+    );
+    // A stale preview, so finishing the render announces an upgrade.
+    final file = cache.fileFor(8, brightness: Brightness.light)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync([9]);
+    cache.staleMarkerFor(8, brightness: Brightness.light).createSync();
+    final run = cache.ensurePreview(8, points, brightness: Brightness.light);
+    cache.dispose();
+    gate.complete();
+    await run;
+    expect(file.existsSync(), isTrue);
   });
 
   test('evict deletes BOTH the light and dark cached files', () async {

@@ -421,7 +421,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                 ),
               if (!anyRide) ...[
                 const SizedBox(height: _panelGap),
-                _EmptyHistoryNote(text: l10n.historyEmpty),
+                // The note takes no touch: the map below stays draggable.
+                IgnorePointer(
+                  child: _EmptyHistoryNote(text: l10n.historyEmpty),
+                ),
               ],
               if (area != null) ...[
                 const SizedBox(height: _panelGap),
