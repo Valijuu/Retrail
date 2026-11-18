@@ -94,6 +94,20 @@ Retrail is portrait-only on purpose (#84). The lock lives in
 (`setPreferredOrientations`). Android 16+ ignores the lock on tablets and
 foldables; we accept that because the app targets phones.
 
+## Device check of the History map
+
+Before a release that touches the History map, run `tool/android_device_check.py` against a phone with the
+debug app installed (`flutter build apk --debug && adb install -r build/app/outputs/flutter-apk/app-debug.apk`,
+German UI, at least one ride with a route). It drives the app through adb, saves no screenshot and no position,
+and puts location services, Wi-Fi and mobile data back as they were. It checks: the services-off hint and its
+way to the location settings, the radius slider value, the position stream pausing under a sheet, the stream
+error hint (best effort, the system does not always send one), the offline place search and its answer after
+typing and deleting a character. Needs the phone unlocked and awake; takes about four minutes.
+
+Not covered by the script, check by hand: the pin drag keeps its grab point, a theme switch followed at once by
+"My location", the empty history (move the app's `retrail.sqlite` aside with `run-as`, start the app, move it
+back, compare the md5), the start frame after the first ride, a dialog (not only a sheet) over the map.
+
 ## Play Console state
 
 Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.

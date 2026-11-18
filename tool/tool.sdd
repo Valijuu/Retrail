@@ -14,6 +14,7 @@ Owns:
   ./build_app_icons.py
   ./render_ios_store_graphics.sh
   ./check_raw_sql.py
+  ./android_device_check.py
   ./demo_rides
 
 References:
@@ -41,6 +42,12 @@ Must:
     status-bar glyph and the iOS Live Activity mark; `dart run flutter_launcher_icons` then writes the launcher icons.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   `render_ios_store_graphics.sh` frames the Simulator shots for the App Store (1320 x 2868) the same way: caption, phone, optional second phone (light + dark) and an enlarged excerpt, listed in `store/ios/screenshots.tsv`.
+  `android_device_check.py` drives the installed debug app on one connected Android phone through adb and
+    checks the History map: services-off hint with the location settings, radius slider value, position stream
+    paused under a sheet, stream-error hint, offline place search, suggestions after type-and-delete. It saves
+    no screenshot or position (a snack bar without an action is read from a frame kept in memory only), restores
+    location services, Wi-Fi and mobile data, prints PASS, FAIL or SKIP per check and exits `1` on a FAIL.
+    A missing stream-error hint is a SKIP: the system does not always send one.
   Demo rides contain invented routes only.
   `check_raw_sql.py` fails when a Drift `custom*` call (`customSelect`, `customStatement`, `customUpdate`,
     `customInsert`, `customWriteReturning`) gets SQL that is not a plain literal (`$`, `+`, a variable).
