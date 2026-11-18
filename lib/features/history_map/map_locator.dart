@@ -84,7 +84,7 @@ class GeolocatorMapLocator implements MapLocator {
   @override
   Stream<LatLng> positions() => Geolocator.getPositionStream(
     locationSettings: const LocationSettings(distanceFilter: _distanceFilterM),
-  ).map((p) => (lat: p.latitude, lng: p.longitude)).handleError((Object _) {});
+  ).map((p) => (lat: p.latitude, lng: p.longitude));
 
   @override
   Future<void> openAppSettings() => Geolocator.openAppSettings();
@@ -113,6 +113,10 @@ class LocationEnabledNotifier extends Notifier<bool> {
   bool build() => false;
 
   void enable() => state = true;
+
+  /// The position stream failed (services off, permission withdrawn): the
+  /// button has to ask again (#110).
+  void lose() => state = false;
 }
 
 final locationEnabledProvider = NotifierProvider<LocationEnabledNotifier, bool>(
@@ -120,16 +124,27 @@ final locationEnabledProvider = NotifierProvider<LocationEnabledNotifier, bool>(
 );
 
 /// Keeps [mapPositionProvider] current while location is allowed, the map is
-/// visible and the app is in front; the stream is closed otherwise.
+/// visible and the app is in front; the stream is closed otherwise. A stream
+/// error drops the stale position and the permission of this session, so the
+/// map shows no old position and the view can show the location hint (#110).
 final positionFeedProvider = Provider<void>((ref) {
   final active =
       ref.watch(locationEnabledProvider) &&
       ref.watch(mapVisibleProvider) &&
       ref.watch(appForegroundProvider);
   if (!active) return;
+  final position = ref.read(mapPositionProvider.notifier);
+  final enabled = ref.read(locationEnabledProvider.notifier);
   final sub = ref
       .read(mapLocatorProvider)
       .positions()
-      .listen(ref.read(mapPositionProvider.notifier).set);
+      .listen(
+        position.set,
+        onError: (Object _) {
+          position.set(null);
+          enabled.lose();
+        },
+        cancelOnError: true,
+      );
   ref.onDispose(sub.cancel);
 });

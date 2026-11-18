@@ -218,6 +218,14 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
       a.length == b.length &&
       Iterable<int>.generate(a.length).every((i) => a[i] == b[i]);
 
+  void _hint(
+    String message, {
+    SnackBarAction? action,
+    ScaffoldMessengerState? messenger,
+  }) => (messenger ?? ScaffoldMessenger.of(context)).showSnackBar(
+    appSnackBar(icon: Icons.location_off, message: message, action: action),
+  );
+
   Future<void> _locate() async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -225,13 +233,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final result = await locator.locate();
     if (!mounted) return;
     void hint(String message, {SnackBarAction? action}) =>
-        messenger.showSnackBar(
-          appSnackBar(
-            icon: Icons.location_off,
-            message: message,
-            action: action,
-          ),
-        );
+        _hint(message, action: action, messenger: messenger);
     switch (result) {
       case Located(:final position):
         ref.read(locationEnabledProvider.notifier).enable();
@@ -271,6 +273,12 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     ref.listen(outlineFillProvider, (was, filling) {
       if (was == true && !filling) {
         _onOverview(null, ref.read(overviewProvider));
+      }
+    });
+    ref.listen(locationEnabledProvider, (was, now) {
+      // The position stream failed while the map was open (#110).
+      if (was == true && !now) {
+        _hint(AppLocalizations.of(context).historyMapLocationLost);
       }
     });
     ref.watch(positionFeedProvider);

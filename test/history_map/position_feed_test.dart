@@ -71,6 +71,21 @@ void main() {
     expect(locator.controller.hasListener, isFalse);
   });
 
+  test('a stream error drops the stale position and stops the stream '
+      '(#110)', () async {
+    final c = container();
+    c.read(locationEnabledProvider.notifier).enable();
+    c.read(mapVisibleProvider.notifier).set(true);
+    await pumpEventQueue();
+    locator.controller.add((lat: 1.0, lng: 2.0));
+    await pumpEventQueue();
+    locator.controller.addError(Exception('location services off'));
+    await pumpEventQueue();
+    expect(c.read(mapPositionProvider), isNull);
+    expect(c.read(locationEnabledProvider), isFalse);
+    expect(locator.controller.hasListener, isFalse);
+  });
+
   test('the stream does not run in the background', () async {
     final c = container(foreground: false);
     c.read(locationEnabledProvider.notifier).enable();

@@ -256,6 +256,7 @@
   "historyMapLocationBlocked": "Der Standort ist für Retrail gesperrt.",
   "historyMapOpenSettings": "Einstellungen",
   "historyMapLocationOff": "Die Ortungsdienste sind aus.",
+  "historyMapLocationLost": "Der Standort ist nicht mehr verfügbar.",
   "historyMapPreparing": "Strecken werden vorbereitet …",
   "historyMapHiddenRides": "{shown} von {total} Strecken",
   "historyMapRouteCount": "{count, plural, =1{1 Strecke} other{{count} Strecken}}",

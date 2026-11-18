@@ -24,6 +24,7 @@ import 'package:retrail/features/history_map/history_map_providers.dart'
     show overviewProvider;
 import 'package:retrail/features/history_map/map_activities.dart';
 import 'package:retrail/features/history_map/map_area.dart';
+import 'package:retrail/features/history_map/map_locator.dart';
 import 'package:retrail/features/history_map/map_selection.dart';
 import 'package:retrail/features/history_map/widgets/map_preview_card.dart';
 import 'package:retrail/l10n/app_localizations.dart';
@@ -287,6 +288,20 @@ void main() {
     await pump(tester, view: 'map');
     await settle(tester);
     expect(find.text('native map'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('a lost position stream shows the location hint (#110)', (
+    tester,
+  ) async {
+    await _ride(db);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    container.read(locationEnabledProvider.notifier).enable();
+    await tester.pump();
+    container.read(locationEnabledProvider.notifier).lose();
+    await tester.pump();
+    expect(find.text('Location is no longer available.'), findsOneWidget);
     await finish(tester);
   });
 

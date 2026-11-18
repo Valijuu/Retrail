@@ -266,6 +266,7 @@
   "historyMapLocationBlocked": "Location is blocked for Retrail.",
   "historyMapOpenSettings": "Settings",
   "historyMapLocationOff": "Location services are off.",
+  "historyMapLocationLost": "Location is no longer available.",
   "historyMapPreparing": "Preparing routes…",
   "historyMapHiddenRides": "{shown} of {total} routes",
   "historyMapRouteCount": "{count, plural, =1{1 route} other{{count} routes}}",
