@@ -409,6 +409,24 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('opening the map after a filter changed in the list builds '
+      'cleanly (#126)', (tester) async {
+    await _ride(db, title: 'Loop');
+    await _ride(db, title: 'Other', date: 2);
+    await pump(tester, view: 'map');
+    await settle(tester);
+    // Back to the list: the overview is paused there.
+    await tester.tap(find.text('List'));
+    await settle(tester);
+    container.read(historyFilterProvider.notifier).setQuery('Loop');
+    await settle(tester);
+    await tester.tap(find.text('Map'));
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text('native map'), findsOneWidget);
+    await finish(tester);
+  });
+
   testWidgets('an empty history says so and offers no map', (tester) async {
     await pump(tester, view: 'map');
     await settle(tester);

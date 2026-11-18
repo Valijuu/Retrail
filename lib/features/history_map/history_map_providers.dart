@@ -43,8 +43,13 @@ class HistoryMapController {
   HistoryMapController(this._ref);
   final Ref _ref;
 
-  Future<void> setView(HistoryView view) =>
-      _ref.read(preferencesRepositoryProvider).setHistoryView(view.name);
+  Future<void> setView(HistoryView view) {
+    // Wake the overview here, outside any build: when the map view first
+    // listens to it while building, a provider paused since the last visit
+    // would schedule its refresh in the middle of that build (#126).
+    if (view == HistoryView.map) _ref.read(overviewProvider);
+    return _ref.read(preferencesRepositoryProvider).setHistoryView(view.name);
+  }
 
   Future<void> setMode(HistoryMapMode mode) =>
       _ref.read(preferencesRepositoryProvider).setHistoryMapMode(mode.name);
