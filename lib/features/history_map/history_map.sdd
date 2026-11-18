@@ -120,7 +120,9 @@ Must:
     (#120). When the
     position stream fails while the map is open, the old position goes, a hint says so and the button asks
     again (#110).
-  The map follows the live map rules of the map spec for the style load, disposal and light/dark switch.
+  The map follows the live map rules of the map spec for the style load, disposal and light/dark switch. A camera
+    move made while the style loads (my location, a chosen place, a pan) is kept; the remembered camera or the
+    frame does not overwrite it (#107).
   Performance: outlines are read once into an in-memory cache by ride id and decoded on first use; a database
     emission changes only the rides that were added, changed or removed; a rewritten outline is known by its
     revision and read again (#111). The list query for the map selects

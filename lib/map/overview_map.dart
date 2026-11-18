@@ -127,6 +127,12 @@ class _OverviewMapState extends State<OverviewMap> {
   bool _styleReady = false;
   bool _userMoved = false;
 
+  /// Counts every camera move, by the code or the rider. The style setup
+  /// compares it before and after: a move made while the style loaded (the
+  /// my-location button, a chosen place, a pan) wins over the restore or
+  /// frame that would otherwise follow (#107).
+  int _cameraMoves = 0;
+
   /// The camera has been put somewhere on purpose (framing, remembered
   /// camera, pin). Rides appearing later (a filter that had hidden them all)
   /// do not frame again by themselves; only a frame request does.
@@ -234,6 +240,7 @@ class _OverviewMapState extends State<OverviewMap> {
       !mounted || !identical(_style, style);
 
   Future<void> _onStyleLoaded(StyleController style) async {
+    final movesBefore = _cameraMoves;
     _style = style;
     _sourcesReady = false;
     _pushed.clear();
@@ -250,7 +257,9 @@ class _OverviewMapState extends State<OverviewMap> {
     _sourcesReady = true;
     _pushAll();
     final restore = widget.restoreCamera;
-    if (restore != null) {
+    if (_cameraMoves != movesBefore) {
+      // Moved meanwhile: leave the camera where that move put it.
+    } else if (restore != null) {
       await _jump(restore.center, restore.zoom);
     } else {
       await _frame();
@@ -300,6 +309,7 @@ class _OverviewMapState extends State<OverviewMap> {
     if (controller == null) return;
     final center = Geographic(lon: to.lng, lat: to.lat);
     _placed = true;
+    _cameraMoves++;
     try {
       await controller.moveCamera(center: center, bearing: 0);
       await controller.moveCamera(center: center, zoom: zoom);
@@ -312,6 +322,7 @@ class _OverviewMapState extends State<OverviewMap> {
     switch (e) {
       case MapEventStartMoveCamera(reason: CameraChangeReason.apiGesture):
         _userMoved = true;
+        _cameraMoves++;
         widget.onUserMoved?.call();
       case MapEventClick(:final point):
         widget.onTap?.call((
