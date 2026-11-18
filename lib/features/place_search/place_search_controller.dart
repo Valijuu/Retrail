@@ -162,7 +162,14 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
       if (!_isCurrent(text)) return;
       state = state.copyWith(status: status, suggestions: places);
     } on PlaceSearchUnavailable {
-      if (seq != _seq || !ref.mounted || !_isCurrent(text)) return;
+      if (seq != _seq || !ref.mounted) return;
+      if (!_isCurrent(text)) {
+        // Failed for older text: nothing shows, but typing back to it must
+        // send it again.
+        _lastSent = '';
+        _lastAnswer = null;
+        return;
+      }
       _unavailable();
     }
   }

@@ -33,12 +33,13 @@ class OutlineStore {
     _latest = revisions;
     if (missing.isEmpty) return;
     final List<RideOutlineRow> rows = await _repo.load(missing);
-    // A newer refresh may have run meanwhile: a ride its revisions no longer
-    // hold is gone and must not come back into the cache.
+    // A newer refresh may have run meanwhile: only a row at the newest
+    // revision goes in, so neither a gone ride nor an older outline comes
+    // back into the cache.
     final latest = _latest;
     cache.addRows([
       for (final row in rows)
-        if (latest.containsKey(row.rideId)) row,
+        if (latest[row.rideId] == row.revision) row,
     ]);
   }
 }

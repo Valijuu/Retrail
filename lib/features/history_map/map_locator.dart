@@ -82,6 +82,9 @@ class GeolocatorMapLocator implements MapLocator {
             locationSettings: const LocationSettings(timeLimit: _fixTimeout),
           );
           return Located((lat: p.latitude, lng: p.longitude));
+        } on PermissionDeniedException {
+          // Withdrawn between the check above and the fix.
+          return const LocateDenied();
         } on LocationServiceDisabledException {
           // Switched off between the check above and the fix.
           return const LocateServicesOff();

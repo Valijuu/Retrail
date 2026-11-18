@@ -109,6 +109,29 @@ void main() {
     },
   );
 
+  test(
+    'text whose request failed while newer text was typed is sent again',
+    () async {
+      final answer = Completer<http.Response>();
+      c = make(
+        (req) => sent.length == 1
+            ? answer.future
+            : Future.value(http.Response(_body(['Hamburg']), 200)),
+      );
+      final n = c.read(placeSearchProvider.notifier)
+        ..open()
+        ..setQuery('Hamb');
+      await wait();
+      n.setQuery('Hamburg');
+      answer.complete(http.Response('', 500));
+      await wait(5);
+      n.setQuery('Hamb');
+      await wait();
+      expect(sent.map((u) => u.queryParameters['q']), ['Hamb', 'Hamb']);
+      expect(c.read(placeSearchProvider).status, PlaceSearchStatus.results);
+    },
+  );
+
   test('one request goes out after the pause, with the full text', () async {
     c = make(answering(_body(['Hamburg'])));
     final n = c.read(placeSearchProvider.notifier)..open();

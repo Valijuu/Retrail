@@ -80,9 +80,29 @@ void main() {
       expect(slow.cache[id], isNull);
     },
   );
+
+  test('a slow refresh does not put back an older revision', () async {
+    final id = await ride();
+    await write(id, 1);
+    final gate = Completer<void>();
+    final slow = OutlineStore(_GatedRepository(db, gate.future));
+    // Asked for at revision 0, but the row is at revision 1 by the time it
+    // loads: a newer refresh already holds revision 1.
+    final old = slow.refresh({id: 0}, [id]);
+    await write(id, 0.5);
+    final fresh = OutlineStore(
+      OutlineRepository(db.outlineDao, db.trackpointDao),
+    );
+    await fresh.refresh(await revisions(), [id]);
+    await slow.refresh({id: 1}, const []);
+    gate.complete();
+    await old;
+    expect(slow.cache[id]?.row.revision, isNot(0));
+  });
 }
 
-/// Loads only after [gate] opens, so a newer refresh can run in between.
+/// Reads at once but answers only after [gate] opens, so a newer refresh
+/// can run in between.
 class _GatedRepository extends OutlineRepository {
   _GatedRepository(AppDatabase db, this.gate)
     : super(db.outlineDao, db.trackpointDao);
@@ -90,7 +110,8 @@ class _GatedRepository extends OutlineRepository {
 
   @override
   Future<List<RideOutlineRow>> load(Iterable<int> rideIds) async {
+    final rows = await super.load(rideIds);
     await gate;
-    return super.load(rideIds);
+    return rows;
   }
 }
