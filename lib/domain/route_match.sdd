@@ -18,6 +18,8 @@ Must:
   An outline with fewer than two points lies on no line with any other; its ride forms a group of its own.
   Outlines whose bounds are more than `30` m apart never match; their points are not compared. Bounds either
     side of `±180` are compared a whole turn apart, so rides across the antimeridian can match (#124).
+  Decision (#124): a follow link joins its groups whatever the coverage. Revisit: only full-coverage links may
+    join, if partial follows wrongly merge lines in practice.
   Groups are transitive: when A matches B and B matches C, all three form one group, even if A and C do not
     match directly.
   A follow link (a ride's followed ride id, when that ride is among the input) joins the two rides' groups

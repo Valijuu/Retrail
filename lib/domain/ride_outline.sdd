@@ -29,6 +29,10 @@ Must:
   @unwrapLongitude, @normaliseLongitude and @withinLongitudes are the shared longitude helpers for the
     antimeridian; a box test with @withinLongitudes also accepts the longitude a whole turn east or west.
 
+  Known limit (#99): one pass is quadratic in the worst case, a zigzag track of very many points is slow to save.
+    Real tracks are fast. Above `500` points the tolerance doubles (10, 20, 40 m); the 30 m line match of
+    @RouteMatch can then fail for two long rides on one route (#124).
+
 Must not:
   Read trackpoints, the database or the clock.
 
