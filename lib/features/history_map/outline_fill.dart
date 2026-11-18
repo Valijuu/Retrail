@@ -54,11 +54,16 @@ class OutlineFillController extends Notifier<bool> {
 
   @override
   bool build() {
-    ref.watch(mapVisibleProvider);
-    ref.watch(mapAreaProvider.select((a) => a != null));
-    ref.watch(appForegroundProvider);
-    // A ride saved meanwhile without an outline starts the fill again (#125).
-    ref.watch(_outlinesPendingProvider);
+    final visible = ref.watch(mapVisibleProvider);
+    final areaSet = ref.watch(mapAreaProvider.select((a) => a != null));
+    final foreground = ref.watch(appForegroundProvider);
+    // A ride saved meanwhile without an outline starts the fill again
+    // (#125). Watched only while the fill is wanted: the History screen
+    // watches this controller all the time, and a database stream must not
+    // run behind a list nobody looks at the map of.
+    if ((visible || areaSet) && foreground) {
+      ref.watch(_outlinesPendingProvider);
+    }
     if (_wanted) Future.microtask(_run);
     return _running;
   }

@@ -222,6 +222,9 @@ homeStreamStubs({
   // The History tab is a PageView neighbor of Home, so any shell-mounting
   // test builds it; keep it off the never-closing Drift `.watch()` stream.
   historyItemsProvider.overrideWith((ref) => Stream.value(history)),
+  historyHasRidesProvider.overrideWith(
+    (ref) => Stream.value(history.any((i) => i is RideEntryItem)),
+  ),
   // Each History card reads its follow count (Spec 20).
   followCountsProvider.overrideWith((ref) => Stream.value(const {})),
 ];
