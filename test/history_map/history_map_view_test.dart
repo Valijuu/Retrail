@@ -107,6 +107,7 @@ void main() {
   late AppDatabase db;
   late ProviderContainer container;
   bool Function()? backHandler;
+  late Widget Function({bool screen}) appOf;
 
   setUp(() {
     backHandler = null;
@@ -153,25 +154,26 @@ void main() {
         ),
       ],
     );
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          theme: buildTheme(Brightness.light),
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('en'),
-          home: Scaffold(
-            body: HistoryScreen(onRegisterBackHandler: (h) => backHandler = h),
-          ),
+    appOf = ({bool screen = true}) => UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        theme: buildTheme(Brightness.light),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: screen
+              ? HistoryScreen(onRegisterBackHandler: (h) => backHandler = h)
+              : const SizedBox(),
         ),
       ),
     );
+    await tester.pumpWidget(appOf());
     await tester.pump();
   }
 
@@ -421,6 +423,23 @@ void main() {
     container.read(historyFilterProvider.notifier).setQuery('Loop');
     await settle(tester);
     await tester.tap(find.text('Map'));
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.text('native map'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('coming back to a stored map after rides changed builds '
+      'cleanly (#126)', (tester) async {
+    await _ride(db, title: 'Loop');
+    await pump(tester, view: 'map');
+    await settle(tester);
+    // Away from the History tab: the overview pauses.
+    await tester.pumpWidget(appOf(screen: false));
+    await settle(tester);
+    await _ride(db, title: 'New', date: 2);
+    await settle(tester);
+    await tester.pumpWidget(appOf());
     await settle(tester);
     expect(tester.takeException(), isNull);
     expect(find.text('native map'), findsOneWidget);
