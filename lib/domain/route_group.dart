@@ -63,7 +63,7 @@ RouteGroup buildRouteGroup(
 ) {
   final byDate = [...follows]
     ..sort((a, b) => a.timestampMs.compareTo(b.timestampMs));
-  final complete = [...byDate.where(_isComplete)]..sort(_fastestFirst);
+  final complete = [...byDate.where(_isComplete)]..sort(fastestFirst);
   return RouteGroup(
     original: original,
     complete: complete,
@@ -74,7 +74,7 @@ RouteGroup buildRouteGroup(
 
 /// Timed rides before untimed ones, shorter before longer, equal times
 /// older first (a total order: [List.sort] is not stable).
-int _fastestFirst(RouteGroupRide a, RouteGroupRide b) {
+int fastestFirst(RouteGroupRide a, RouteGroupRide b) {
   final aTimed = a.durationMs > 0, bTimed = b.durationMs > 0;
   if (aTimed != bTimed) return aTimed ? -1 : 1;
   final byTime = aTimed ? a.durationMs.compareTo(b.durationMs) : 0;

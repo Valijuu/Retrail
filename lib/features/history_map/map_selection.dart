@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/heading.dart' show LatLng;
 import '../../domain/outline_hit.dart';
+import '../../domain/route_group.dart' show fastestFirst;
 import '../history/area_providers.dart';
 import '../history/history_items.dart';
 import '../history/route_group_providers.dart' show routeGroupRideOf;
@@ -104,18 +105,13 @@ final selectedRideProvider = Provider<SelectedRide?>((ref) {
   // A line can hold several follow groups, each with its own best ride: the
   // card shows the fastest of them, also when only one was under the tap
   // (#124).
-  final bests =
-      [
-        for (final MapEntry(key: id, value: item) in byId.entries)
-          if (badges.bestRideIds.contains(id) &&
-              routeKeyOf(id, lines, badges) == key &&
-              (onMapIds == null || onMapIds.contains(id)))
-            item,
-      ]..sort(
-        (a, b) => routeGroupRideOf(
-          a,
-        ).durationMs.compareTo(routeGroupRideOf(b).durationMs),
-      );
+  final bests = [
+    for (final MapEntry(key: id, value: item) in byId.entries)
+      if (badges.bestRideIds.contains(id) &&
+          routeKeyOf(id, lines, badges) == key &&
+          (onMapIds == null || onMapIds.contains(id)))
+        item,
+  ]..sort((a, b) => fastestFirst(routeGroupRideOf(a), routeGroupRideOf(b)));
   final id = bests.isNotEmpty ? bests.first.ride.rideId : sameRoute.first;
   return SelectedRide(
     byId[id]!,

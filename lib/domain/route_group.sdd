@@ -17,3 +17,4 @@ Must:
   A follow competes with its time on the route; the original competes with its whole duration.
   The complete follows are listed fastest first, so the best time is on top; equal times and untimed rides
     (`0` ms, last) keep the older ride first. Partial follows stay oldest first.
+  @fastestFirst is that order; the History map ranks the best rides of one line with it (#124).
