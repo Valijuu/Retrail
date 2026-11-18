@@ -133,6 +133,30 @@ void main() {
     expect(c.read(outlineStoreProvider).cache[a], isNull);
   });
 
+  test(
+    'a rewritten outline reaches the map data, not a cached set (#111)',
+    () async {
+      final a = await _ride(db);
+      expect((await settle()).bounds!.south, 48);
+      final o = RideOutline([(lat: 49.0, lng: 11.0), (lat: 49.0, lng: 11.01)]);
+      final b = o.bounds!;
+      await db.outlineDao.upsert(
+        RideOutlinesCompanion.insert(
+          rideId: Value(a),
+          polyline: o.encode(),
+          south: b.south,
+          west: b.west,
+          north: b.north,
+          east: b.east,
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      final state = c.read(overviewProvider).value!;
+      expect(state.bounds!.south, 49);
+      expect(state.data!.linesByType['LONGBOARD'], contains('49'));
+    },
+  );
+
   test('equal visible sets are equal, so the map is not pushed again', () {
     const a = OverviewState(
       mode: HistoryMapMode.lines,

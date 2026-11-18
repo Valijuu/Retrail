@@ -204,9 +204,10 @@ final overviewProvider = FutureProvider<OverviewState>((ref) async {
   final bounds = _union([for (final e in entries) e.bounds]);
   final heat = mode == HistoryMapMode.heat;
   // A set the map showed a moment ago (a search typed and cleared again)
-  // comes back at once instead of being built anew: no blink (#127).
+  // comes back at once instead of being built anew: no blink (#127). The
+  // revision is part of the key, so a rewritten outline builds anew (#111).
   final cacheKey =
-      '$heat|${[for (final r in visible) '${r.rideId}:${r.typ}'].join(',')}';
+      '$heat|${[for (var i = 0; i < visible.length; i++) '${visible[i].rideId}:${visible[i].typ}:${entries[i].row.revision}'].join(',')}';
   final cache = ref.read(overviewDataCacheProvider);
   final data =
       cache.remove(cacheKey) ??
