@@ -20,6 +20,11 @@ class OutlineRepository {
   Stream<Map<int, int>> watchOutlineRevisions() =>
       _outlines.watchOutlineRevisions();
 
+  /// Whether any ride still waits for its outline (see
+  /// [OutlineDao.watchHasRidesWithoutOutline]).
+  Stream<bool> watchHasRidesWithoutOutline() =>
+      _outlines.watchHasRidesWithoutOutline();
+
   /// The stored outlines of [rideIds].
   Future<List<RideOutlineRow>> load(Iterable<int> rideIds) =>
       _outlines.getByRideIds(rideIds);

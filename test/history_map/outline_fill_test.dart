@@ -124,4 +124,15 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     expect(fake.calls, stopped);
   });
+
+  test('a ride saved without an outline while the map is shown gets one '
+      '(#125)', () async {
+    final c = container();
+    c.read(mapVisibleProvider.notifier).set(true);
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(await outlineCount(), 2);
+    await _oldRide(db);
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(await outlineCount(), 3);
+  });
 }

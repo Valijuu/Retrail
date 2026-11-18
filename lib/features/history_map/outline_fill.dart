@@ -57,6 +57,8 @@ class OutlineFillController extends Notifier<bool> {
     ref.watch(mapVisibleProvider);
     ref.watch(mapAreaProvider.select((a) => a != null));
     ref.watch(appForegroundProvider);
+    // A ride saved meanwhile without an outline starts the fill again (#125).
+    ref.watch(_outlinesPendingProvider);
     if (_wanted) Future.microtask(_run);
     return _running;
   }
@@ -81,6 +83,10 @@ class OutlineFillController extends Notifier<bool> {
     }
   }
 }
+
+final _outlinesPendingProvider = StreamProvider<bool>(
+  (ref) => ref.watch(outlineRepositoryProvider).watchHasRidesWithoutOutline(),
+);
 
 final outlineFillProvider = NotifierProvider<OutlineFillController, bool>(
   OutlineFillController.new,

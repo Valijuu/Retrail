@@ -41,6 +41,7 @@ Must:
     (`ON DELETE CASCADE`, single and batch delete, each in one transaction) and kept when the ride is edited.
   @OutlineDao.upsert writes an outline only while its ride exists, check and write in one transaction.
   @OutlineDao.watchOutlineRevisions emits ride id → revision of every outline row and never reads the polyline.
+  @OutlineDao.watchHasRidesWithoutOutline emits whether a ride with a route still has no outline row.
   @OutlineDao.rideIdsWithoutOutline lists the rides with a route and no outline row, oldest first.
   The schema version is `8`; every older version upgrades in place without losing rides.
   Every schema change raises the version and adds an upgrade step.

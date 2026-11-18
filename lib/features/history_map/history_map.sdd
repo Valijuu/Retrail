@@ -134,7 +134,7 @@ Must:
   Tap hits reject by outline bounds first and never decode an outline whose bounds are far from the tap.
   The background fill handles one ride at a time, reads its trackpoints in one query, simplifies off the UI
     thread, writes in one transaction and yields between rides. It runs only while the map view is visible (not
-    covered, #101) or an area is set, and stops when the app goes to the background.
+    covered, #101) or an area is set, and starts again when a ride without an outline appears meanwhile (#125), and stops when the app goes to the background.
   Deleting: a deleted ride (single, batch, or Discard after a ride) disappears from the lines, the heat, the
     legend counts, the list and the best-time badge with the next emission. A shown preview card whose ride is
     gone closes; a pin and radius stay. Its cached outline, heat points and preview are dropped. Deleting an
