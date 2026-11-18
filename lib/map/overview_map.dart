@@ -145,6 +145,9 @@ class _OverviewMapState extends State<OverviewMap> {
   Size _viewport = Size.zero;
   Brightness? _brightness;
 
+  /// The language the current native map's style was built for (#128).
+  String? _language;
+
   /// Where the pin is drawn while the rider drags it, until the new pin
   /// arrives through [OverviewMap.area].
   LatLng? _dragPin;
@@ -159,11 +162,17 @@ class _OverviewMapState extends State<OverviewMap> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // A light/dark switch rebuilds the native map: cut the old one off now so
-    // no update reaches a disposed map (#43).
+    // A light/dark or language switch rebuilds the native map (a style is
+    // fixed at its creation): cut the old one off now so no update reaches a
+    // disposed map (#43, #128).
     final brightness = Theme.of(context).brightness;
-    if (_brightness != null && brightness != _brightness) _detach();
+    final language = mapLanguageFor(Localizations.localeOf(context));
+    if (_brightness != null &&
+        (brightness != _brightness || language != _language)) {
+      _detach();
+    }
     _brightness = brightness;
+    _language = language;
   }
 
   void _detach() {
@@ -353,6 +362,7 @@ class _OverviewMapState extends State<OverviewMap> {
     final override = OverviewMap.debugMapBuilderOverride;
     if (override != null) return override(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final language = mapLanguageFor(Localizations.localeOf(context));
     final colors = context.colors;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -363,12 +373,9 @@ class _OverviewMapState extends State<OverviewMap> {
           fit: StackFit.expand,
           children: [
             MapLibreMap(
-              key: ValueKey(dark),
+              key: ValueKey((dark, language)),
               options: MapOptions(
-                initStyle: liveMapStyle(
-                  dark,
-                  mapLanguageFor(Localizations.localeOf(context)),
-                ),
+                initStyle: liveMapStyle(dark, language),
                 initCenter: _initialCenter,
                 initZoom: widget.restoreCamera?.zoom ?? _initialZoom,
                 minZoom: kLiveMapMinZoom,

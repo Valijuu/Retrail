@@ -1229,6 +1229,9 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   /// in [build]).
   Brightness? _mapBrightness;
 
+  /// The language the current native map's style was built for (#128).
+  String? _mapLanguage;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -1237,8 +1240,13 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
     // map's follow on a new fix, the detail map's refit) or a source update
     // would otherwise reach the already disposed map (issue #43).
     final brightness = Theme.of(context).brightness;
-    if (_mapBrightness != null && brightness != _mapBrightness) _detachMap();
+    final language = mapLanguageFor(Localizations.localeOf(context));
+    if (_mapBrightness != null &&
+        (brightness != _mapBrightness || language != _mapLanguage)) {
+      _detachMap();
+    }
     _mapBrightness = brightness;
+    _mapLanguage = language;
   }
 
   /// Forgets the native map: no controller, style or sources until the next
@@ -1266,6 +1274,7 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
     final override = LiveMap.debugMapBuilderOverride;
     if (override != null) return override(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final language = mapLanguageFor(Localizations.localeOf(context));
     final colors = context.colors;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1294,13 +1303,11 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
           fit: StackFit.expand,
           children: [
             MapLibreMap(
-              // Rebuild on brightness change to reload Retrail Light / Retrail Dark.
-              key: ValueKey(dark),
+              // Rebuild on a brightness or language change to reload the matching
+              // style: Retrail Light / Dark, English / German names.
+              key: ValueKey((dark, language)),
               options: MapOptions(
-                initStyle: liveMapStyle(
-                  dark,
-                  mapLanguageFor(Localizations.localeOf(context)),
-                ),
+                initStyle: liveMapStyle(dark, language),
                 // The detail map starts on its whole-route framing already, so
                 // even the first native frame shows the full ride.
                 initCenter: fit != null

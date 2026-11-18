@@ -62,8 +62,8 @@ Must:
     purges older versions, of every language.
   Projection math stays pure and tested.
   Every instant camera jump moves first and then zooms at the new centre (#41).
-  A light/dark switch rebuilds the native map and detaches the old one at once, so no update reaches a
-    disposed map (#43).
+  A light/dark switch, and a change of the map language, rebuilds the native map and detaches the old one at
+    once, so no update reaches a disposed map (#43, #128): a style is fixed when its map is created.
   A style load that was overtaken bails out after every await and never adds layers to a dead map (#47).
   The whole reference line is pushed only when the reference changes; a growing ridden part pushes only
     `reference-done`.
