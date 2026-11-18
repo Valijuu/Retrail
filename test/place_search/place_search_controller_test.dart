@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/features/place_search/photon_client.dart';
 import 'package:retrail/features/place_search/place_search_controller.dart';
 
@@ -15,10 +16,14 @@ void main() {
   late List<Uri> sent;
   late ProviderContainer c;
 
-  ProviderContainer make(Future<http.Response> Function(http.Request) handler) {
+  ProviderContainer make(
+    Future<http.Response> Function(http.Request) handler, {
+    bool online = true,
+  }) {
     sent = [];
     final container = ProviderContainer(
       overrides: [
+        isOnlineProvider.overrideWith((ref) => Stream.value(online)),
         placeSearchDebounceProvider.overrideWithValue(debounce),
         placeSearchLangProvider.overrideWithValue('de'),
         photonClientProvider.overrideWithValue(
@@ -46,6 +51,17 @@ void main() {
       Future<void>.delayed(Duration(milliseconds: ms));
 
   tearDown(() => c.dispose());
+
+  test('offline the search says so at once and sends nothing (#120)', () async {
+    c = make(answering(_body(['Hamburg'])), online: false);
+    await wait(5);
+    c.read(placeSearchProvider.notifier)
+      ..open()
+      ..setQuery('Hamburg');
+    await wait();
+    expect(sent, isEmpty);
+    expect(c.read(placeSearchProvider).status, PlaceSearchStatus.unavailable);
+  });
 
   test('one request goes out after the pause, with the full text', () async {
     c = make(answering(_body(['Hamburg'])));

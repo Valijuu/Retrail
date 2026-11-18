@@ -34,7 +34,8 @@ Must:
   Choosing a suggestion sets the pin there like a long press: the pin keeps a radius chosen before (default
     `5` km), the camera moves to it once and shows the whole circle, and the search field closes.
   An empty result says so ("no place found"); a failed request (offline, error, timeout of `8` s) says the search
-    is not available now. Both leave the map and the pin as they are.
+    is not available now. Both leave the map and the pin as they are. While the device is known to be offline the
+    hint comes at once and no request goes out (#120).
   Opening the search closes an open ride preview card, and no card shows while the search is open (#108).
   Queries and results are not stored on the device or logged.
   The search panel names its source: "Search by Photon · © OpenStreetMap".
@@ -71,7 +72,7 @@ Scenario: too short
 Scenario: no network
   Given the device is offline
   When the rider types `Hamburg`
-  Then the panel says the search is not available now and the map is unchanged
+  Then the panel says the search is not available now, without waiting for a timeout, and the map is unchanged
 
 Scenario: the ride search stays
   Given the History header search holds `loop`

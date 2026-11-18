@@ -1,3 +1,4 @@
+import '../../core/connectivity/connectivity_providers.dart';
 import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 
@@ -81,6 +82,9 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
   @override
   PlaceSearchState build() {
     ref.onDispose(() => _debounce?.cancel());
+    // Kept awake, so a search offline is known at once, not after the
+    // request's timeout (#120).
+    ref.listen(isOnlineProvider, (_, _) {});
     return const PlaceSearchState();
   }
 
@@ -117,6 +121,10 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
   Future<void> _send(String text) async {
     final seq = ++_seq;
     _lastSent = text;
+    if (ref.read(isOnlineProvider).asData?.value == false) {
+      _unavailable();
+      return;
+    }
     state = state.copyWith(status: PlaceSearchStatus.loading);
     try {
       final places = await ref
@@ -131,12 +139,17 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
       );
     } on PlaceSearchUnavailable {
       if (seq != _seq || !ref.mounted) return;
-      _lastSent = '';
-      state = state.copyWith(
-        status: PlaceSearchStatus.unavailable,
-        suggestions: const [],
-      );
+      _unavailable();
     }
+  }
+
+  /// Offline or no answer: a hint, and the same text may be sent again.
+  void _unavailable() {
+    _lastSent = '';
+    state = state.copyWith(
+      status: PlaceSearchStatus.unavailable,
+      suggestions: const [],
+    );
   }
 }
 

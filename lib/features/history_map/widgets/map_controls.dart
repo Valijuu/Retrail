@@ -106,6 +106,9 @@ class AreaPanel extends StatelessWidget {
                 divisions: (AreaFilter.maxRadiusKm - AreaFilter.minRadiusKm)
                     .round(),
                 value: area.radiusKm,
+                // TalkBack and VoiceOver read km, not a percentage (#120).
+                semanticFormatterCallback: (km) =>
+                    l10n.historyMapRadius(km.round()),
                 onChanged: onRadius,
               ),
             ),
