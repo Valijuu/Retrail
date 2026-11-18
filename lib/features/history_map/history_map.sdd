@@ -113,9 +113,12 @@ Must:
     counts as not visible (#101).
   Without tiles (offline, style not loaded) the lines still show over a plain background, and the attribution
     stays visible.
-  An empty history says so ("No rides yet") and offers no map or switch, also while a search or filter is set
-    (#122); a filter with no result shows the empty map without text. With nothing to frame the map starts at its
-    widest allowed zoom. The position dot has a dark edge, so it shows on a blue line.
+  The Liste/Karte switch shows also with an empty history, so the rider sees there is a map before the first ride
+    is tracked. The list then says "No rides yet"; the map shows its world view with the Lines/Heat switch, the
+    place search and my location, no activity menu (there is no activity to pick), and the note "No rides yet" under
+    the controls, also while a search or filter is set (#122). The note shows only while no ride is stored at all:
+    a filter with no result shows the empty map without text. With nothing to frame the map starts at its widest
+    allowed zoom. The position dot has a dark edge, so it shows on a blue line.
   A jump to a ride from Home shows the list, whichever view was stored.
   Location problems (not allowed, blocked, services off, no fix) show a hint instead of a position, each with its
     own text; services off (also when switched off while the fix is awaited) offer the device's location settings, and a hint never covers the my-location button

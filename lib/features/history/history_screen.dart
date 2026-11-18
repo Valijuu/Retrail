@@ -299,14 +299,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     final colors = context.colors;
     final items = ref.watch(historyItemsProvider).asData?.value ?? const [];
     final hasRides = items.any((i) => i is RideEntryItem);
-    // Until the first answer, the filtered list stands in.
-    final anyRide = ref.watch(historyHasRidesProvider).value ?? hasRides;
-    final narrows = ref.watch(historyNarrowsRidesProvider) && anyRide;
+    // The switch and the map show with an empty history too, so the rider sees
+    // there is a map before the first ride is tracked.
     final showMap =
         (ref.watch(historyViewProvider).value ?? HistoryView.list) ==
             HistoryView.map &&
-        !_selectionMode &&
-        (hasRides || narrows);
+        !_selectionMode;
 
     // The listen above only fires on *changes* — when the tab mounts with data
     // already loaded, warm the previews once from here (post-frame, so the
@@ -352,8 +350,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                     ref.read(historyFilterProvider.notifier).setQuery(q),
                 onOpenFilters: _openFilters,
               ),
-            if (!_selectionMode && (hasRides || narrows))
-              const HistoryViewSwitch(),
+            if (!_selectionMode) const HistoryViewSwitch(),
             Expanded(
               child: showMap
                   ? HistoryMapView(actions: _mapCardActions())

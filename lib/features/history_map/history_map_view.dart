@@ -13,6 +13,8 @@ import '../../map/overview_map.dart';
 import '../../map/map_attribution.dart';
 import '../history/area_providers.dart';
 import '../history/history_filter.dart';
+import '../../core/theme/app_shapes.dart';
+import '../../core/theme/theme_context.dart';
 import '../history/history_providers.dart';
 import 'history_map_providers.dart';
 import '../home/home_providers.dart' show lastActivityTypeProvider;
@@ -342,6 +344,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final shown = ref.watch(selectedRideProvider);
     final searching = ref.watch(placeSearchProvider.select((s) => s.open));
     final position = ref.watch(mapPositionProvider);
+    // No note until the answer is in, so a full history never flashes it.
+    final anyRide = ref.watch(historyHasRidesProvider).value ?? true;
     final areaNotifier = ref.read(mapAreaProvider.notifier);
     final selection = ref.read(mapSelectionProvider.notifier);
     final data = overview.data;
@@ -415,6 +419,10 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
                     PlaceSearchButton(onPressed: _openPlaceSearch),
                   ],
                 ),
+              if (!anyRide) ...[
+                const SizedBox(height: _panelGap),
+                _EmptyHistoryNote(text: l10n.historyEmpty),
+              ],
               if (area != null) ...[
                 const SizedBox(height: _panelGap),
                 AreaPanel(
@@ -493,3 +501,34 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     return linesGeoJson([fragment]);
   }
 }
+
+/// The note over an empty map: no ride is stored yet, so the map has nothing to
+/// show; it also tells the rider the map is there for later.
+class _EmptyHistoryNote extends StatelessWidget {
+  const _EmptyHistoryNote({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface.withValues(alpha: _noteAlpha),
+        borderRadius: AppShapes.card,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Text(
+          text,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+        ),
+      ),
+    );
+  }
+}
+
+/// Opacity of the note, enough to read over busy tiles.
+const double _noteAlpha = 0.92;

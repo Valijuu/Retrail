@@ -400,14 +400,14 @@ void main() {
     await finish(tester);
   });
 
-  testWidgets('an empty history under a search still says "No rides yet" and '
-      'offers no map (#122)', (tester) async {
+  testWidgets('an empty history under a search keeps the note and offers no '
+      'reset (#122)', (tester) async {
     await pump(tester, view: 'map');
     container.read(historyFilterProvider.notifier).setQuery('loop');
     await settle(tester);
     expect(find.text('No rides yet'), findsOneWidget);
-    expect(find.text('native map'), findsNothing);
-    expect(find.text('Map'), findsNothing);
+    expect(find.text('Reset filters'), findsNothing);
+    expect(find.text('No rides match your filters'), findsNothing);
     await finish(tester);
   });
 
@@ -446,11 +446,30 @@ void main() {
     await finish(tester);
   });
 
-  testWidgets('an empty history says so and offers no map', (tester) async {
+  testWidgets('an empty history still offers the switch: the map shows with '
+      'a note that there are no rides', (tester) async {
     await pump(tester, view: 'map');
     await settle(tester);
+    expect(find.text('Map'), findsOneWidget);
+    expect(find.text('List'), findsOneWidget);
+    expect(find.text('native map'), findsOneWidget);
     expect(find.text('No rides yet'), findsOneWidget);
+    // No activity to pick: no activity menu.
+    expect(find.text('All activities'), findsNothing);
+    await finish(tester);
+  });
+
+  testWidgets('an empty history lists "No rides yet" with the switch on top', (
+    tester,
+  ) async {
+    await pump(tester);
+    await settle(tester);
+    expect(find.text('No rides yet'), findsOneWidget);
+    expect(find.text('Map'), findsOneWidget);
     expect(find.text('native map'), findsNothing);
+    await tester.tap(find.text('Map'));
+    await settle(tester);
+    expect(find.text('native map'), findsOneWidget);
     await finish(tester);
   });
 
