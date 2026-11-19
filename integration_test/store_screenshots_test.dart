@@ -128,6 +128,17 @@ void main() {
     await app.close();
   }, skip: !_wanted('05_follow'));
 
+  testWidgets('09_map', (tester) async {
+    final app = await _App.start(tester, docs, demoDb);
+    await _openHistory(tester);
+    await tester.tap(find.text(_l10n.historyViewMap));
+    // Outlines are filled in the background and map tiles come over the
+    // network: give both time before the shot.
+    await _wait(tester, const Duration(seconds: 25));
+    await _shot(tester, '09_map');
+    await app.close();
+  }, skip: !_wanted('09_map'));
+
   testWidgets('08_activities', (tester) async {
     final app = await _App.start(tester, docs, demoDb, onboardingDone: false);
     app.container.read(goRouterProvider).go(AppRoutes.activityPicker);
