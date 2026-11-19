@@ -141,8 +141,10 @@ void main() {
     // Every activity, a pin on the field with its circle, and the route under
     // a tap with its card: a long press and a tap cannot reach the native map.
     app.container.read(mapActivitiesProvider.notifier).set(null);
+    // The pin lies 3 km south of the field: the circle is centred under the
+    // card, so the routes (north of the pin) stay in sight above it.
     app.container.read(mapAreaProvider.notifier).setPin((
-      lat: 52.4732,
+      lat: 52.4462,
       lng: 13.4040,
     ));
     await _wait(tester, const Duration(seconds: 15));
