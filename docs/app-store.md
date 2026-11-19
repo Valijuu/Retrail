@@ -128,7 +128,7 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   view the test cannot capture) and writes an ack file into the app's Documents. Each shot is checked
   for size and for a known text per screen (Vision OCR). The Live Activity on the lock screen is not
   automated. Framing: `tool/render_ios_store_graphics.sh` and `store/ios/screenshot_frame.html`
-  (1320 × 2868, motives and captions in `store/ios/screenshots.tsv`, 10 motives, the Play ones plus winter and the second history motive).
+  (1320 × 2868, motives and captions in `store/ios/screenshots.tsv`, 10 motives, the Play ones plus winter and the second history motive; the map motive is two phones, the circle with its pin and the same map with the route card, because the card covers the pin).
 - Support URL and marketing URL: https://getretrail.app. Support contact: retrail.app@proton.me.
 - Price: free. Paid features later need the Paid Apps agreement and the trader status (#67).
 
