@@ -148,14 +148,17 @@ void main() {
       lng: 13.4040,
     ));
     await _wait(tester, const Duration(seconds: 15));
+    // First the circle with its pin, then the same map with the route card
+    // (which covers the pin): two phones side by side in the store image.
+    await _shot(tester, '09_map');
     app.container.read(mapSelectionProvider.notifier).tap((
       lat: 52.472347,
       lng: 13.39836,
     ), 15);
     await _wait(tester, const Duration(seconds: 8));
-    await _shot(tester, '09_map');
+    await _shot(tester, '10_map_route');
     await app.close();
-  }, skip: !_wanted('09_map'));
+  }, skip: !_wanted('09_map') && !_wanted('10_map_route'));
 
   testWidgets('08_activities', (tester) async {
     final app = await _App.start(tester, docs, demoDb, onboardingDone: false);
