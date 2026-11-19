@@ -111,7 +111,7 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   field, so the keyword list replaces the Play keyword table.
 - Category: Sports (secondary: Health & Fitness).
 - Screenshots: 6.9" iPhone (1320 × 2868) is required, the rest are scaled from it. The App Store Connect upload field of
-  the version page may accept only the 6.1"/6.3" size (1206 × 2622): `store/ios/screenshots_6_3/` holds the same 16 images
+  the version page may accept only the 6.1"/6.3" size (1206 × 2622): `store/ios/screenshots_6_3/` holds the same 20 images
   resized for that field (checked 2026-11-06: 1320 × 2868 was rejected there as "invalid dimensions"). German and
   English sets. Never use real routes (see the repo rule on location data).
   There is no Mac, so the shots come from the iOS Simulator on the GitHub macOS runner:
@@ -120,7 +120,7 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   `1320 × 2868` checked). The Play shots (1080 × 1920, Android UI) cannot be reused, only their motive
   list in `store/play/screenshots.tsv` and the framing idea.
   **Motives:** the home screen comes from a plain launch with seeded prefs and database. The Play set
-  (history, detail, comparison sheet, follow route, countdown, live ride, activity picker, plus the
+  (history, the History map with pin circle and route card, detail, comparison sheet, follow route, countdown, live ride, activity picker, plus the
   ride in dark) comes from `integration_test/store_screenshots_test.dart`, run by the script with
   `flutter test -d <udid>`: it navigates the real app with provider overrides (mock prefs, a copy of
   the demo database, the newest demo ride replayed as GPS, no Live Activity, silent countdown) and
@@ -128,7 +128,7 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   view the test cannot capture) and writes an ack file into the app's Documents. Each shot is checked
   for size and for a known text per screen (Vision OCR). The Live Activity on the lock screen is not
   automated. Framing: `tool/render_ios_store_graphics.sh` and `store/ios/screenshot_frame.html`
-  (1320 × 2868, motives and captions in `store/ios/screenshots.tsv`, the same 8 as Play).
+  (1320 × 2868, motives and captions in `store/ios/screenshots.tsv`, 10 motives, the Play ones plus winter and the second history motive).
 - Support URL and marketing URL: https://getretrail.app. Support contact: retrail.app@proton.me.
 - Price: free. Paid features later need the Paid Apps agreement and the trader status (#67).
 
