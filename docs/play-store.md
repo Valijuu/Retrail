@@ -261,9 +261,9 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
-### 1.5.0+16 (production, prepared 2026-11-19)
+### 1.5.0+17 (production, prepared 2026-11-19)
 
-Source: `store/release-notes/1.5.0+16.md` (derived from `CHANGELOG.md`).
+Source: `store/release-notes/1.5.0+17.md` (derived from `CHANGELOG.md`).
 
 ```
 <de-DE>

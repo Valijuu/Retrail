@@ -9,7 +9,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 
 ## Unreleased
 
-## 1.5.0+16 — 2026-11-19
+## 1.5.0+17 — 2026-11-19
 
 ### Fixed
 - Phones without a portrait-only flag are no longer excluded from the Play Store listing; the app still runs in portrait only.
