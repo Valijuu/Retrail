@@ -128,3 +128,26 @@ Store texts, graphics, screenshots and all form answers: `docs/play-store.md`.
 
 Production access granted 2026-10-30 (closed test passed). Imprint live 2026-10-30 (#67; trader status only before paid features). Releases
 follow the global `play-release` skill (`~/.claude/skills/play-release/`).
+
+## CI secrets (Play release workflow)
+
+`.github/workflows/android-release.yml` builds the signed bundle and uploads it to a Play track. Run it
+by hand: GitHub → Actions → Android release → Run workflow (track `internal` first, upload on). These
+repository secrets are created once, by hand, in a real terminal or on GitHub, never via chat:
+
+| Secret | Content |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 ~/retrail-upload.jks` (the upload key from above) |
+| `ANDROID_KEYSTORE_PASSWORD` | the keystore password (from `android/key.properties`) |
+| `ANDROID_KEY_PASSWORD` | the key password (same value as above) |
+| `PLAY_SERVICE_ACCOUNT_JSON` | JSON key of a Play Console service account with release rights for this app |
+
+The service account is created in Play Console → Setup → API access (Google Cloud project linked, role
+"Release manager" for Retrail). Its JSON key goes into the secret, never into the repo.
+
+The workflow fails before the build if a secret is missing, and refuses a bundle that is not signed with
+the upload key. Release notes come from `store/release-notes/<version>.md` (the `## de` and `## en`
+sections) and must exist before the run.
+
+The first Play run for a new app still needs the manual steps in `docs/play-store.md`; CI is for the
+updates after that.

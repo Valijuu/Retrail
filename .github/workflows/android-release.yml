@@ -1,0 +1,128 @@
+# Signed Play App Bundle built on a Linux runner and uploaded to a Play track
+# (docs/android-release.md, docs/play-store.md). Manual trigger only. The secrets
+# below are created once by hand (docs/android-release.md → "CI secrets"); without
+# them the job stops in its first step. Release notes come from
+# store/release-notes/<version>.md. The bundle is never kept as a workflow artifact:
+# the repo is public.
+name: Android release
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "Play track to upload to"
+        type: choice
+        options: [internal, alpha, beta, production]
+        default: internal
+      upload:
+        description: "Upload the signed bundle to the track (off = build and verify only)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - name: Check the secrets
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_PASSWORD \
+                      PLAY_SERVICE_ACCOUNT_JSON; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret ${name} is missing (docs/android-release.md → CI secrets)."
+              missing=1
+            fi
+          done
+          exit "${missing}"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: 3.44.3
+          cache: true
+
+      - run: flutter pub get
+
+      # The keystore and key.properties exist only for this run; the job fails
+      # before the build if they cannot be written, so no debug-key fallback.
+      - name: Write the upload key
+        run: |
+          set -euo pipefail
+          keystore="${RUNNER_TEMP}/retrail-upload.jks"
+          echo "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${keystore}"
+          chmod 600 "${keystore}"
+          {
+            echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}"
+            echo "keyPassword=${ANDROID_KEY_PASSWORD}"
+            echo "keyAlias=upload"
+            echo "storeFile=${keystore}"
+          } > android/key.properties
+          chmod 600 android/key.properties
+
+      - name: Build the signed bundle
+        run: flutter build appbundle --release
+
+      - name: Check the signature and the version
+        run: |
+          set -euo pipefail
+          aab="build/app/outputs/bundle/release/app-release.aab"
+          owner="$(keytool -printcert -jarfile "${aab}" 2>/dev/null | grep -m1 -E 'Owner|Eigentümer' || true)"
+          if [[ "${owner}" != *"CN=Valijuu"* ]]; then
+            echo "::error::Bundle is not signed with the upload key: ${owner:-no certificate}"
+            exit 1
+          fi
+          version="$(sed -n 's/^version: *//p' pubspec.yaml)"
+          echo "AAB=${aab}" >> "${GITHUB_ENV}"
+          echo "VERSION=${version}" >> "${GITHUB_ENV}"
+
+      # Play shows these per language; the file has "## de" and "## en" sections.
+      - name: Prepare the release notes
+        run: |
+          set -euo pipefail
+          notes="store/release-notes/${VERSION}.md"
+          if [ ! -f "${notes}" ]; then
+            echo "::error::${notes} is missing: write the notes before the release."
+            exit 1
+          fi
+          mkdir -p whatsnew
+          section() { awk -v s="## $1" '$0==s{on=1;next} /^## /{on=0} on' "${notes}" | sed '/^$/d'; }
+          section de > whatsnew/whatsnew-de-DE
+          section en > whatsnew/whatsnew-en-US
+          test -s whatsnew/whatsnew-de-DE && test -s whatsnew/whatsnew-en-US \
+            || { echo "::error::Release notes are empty for de or en."; exit 1; }
+
+      - name: Upload to the Play track
+        if: ${{ inputs.upload }}
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1
+        with:
+          serviceAccountJsonPlainText: ${{ env.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.valijuu.retrail
+          releaseFiles: ${{ env.AAB }}
+          track: ${{ inputs.track }}
+          status: completed
+          whatsNewDirectory: whatsnew
+
+      - name: Remove the upload key
+        if: always()
+        run: rm -f android/key.properties "${RUNNER_TEMP}/retrail-upload.jks"
