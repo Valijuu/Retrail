@@ -261,6 +261,29 @@ shorter and positive and never says "testing" (at most a neutral contact line
 "Fragen oder Ideen? / Questions or ideas? retrail.app@proton.me"). Rules: `play-release` skill,
 `references/update.md` § 5.
 
+### 1.5.0+16 (production, prepared 2026-11-19)
+
+Source: `store/release-notes/1.5.0+16.md` (derived from `CHANGELOG.md`).
+
+```
+<de-DE>
+Neu:
+• Karte im Verlauf: alle Fahrten als Linien oder Heatmap, mit Aktivitätsmenü, Ortssuche und Radius um einen Pin
+• Höhenmeter: Anstieg und Abstieg auf dem Fahrtbildschirm, in der Karte und im Detail
+Geändert:
+• Ortsnamen auf Karten und Vorschaubildern in der App-Sprache
+• Tabs wechseln nur noch über die Leiste unten, damit die Karte frei bewegt werden kann
+</de-DE>
+<en-US>
+New:
+• Map in History: all rides as lines or a heatmap, with activity menu, place search and a radius around a pin
+• Elevation: ascent and descent on the ride screen, the map and the detail
+Changed:
+• Place names on maps and previews follow the app language
+• Tabs change only through the bar at the bottom, so the map can be moved freely
+</en-US>
+```
+
 ### 1.4.0+15 (production, prepared 2026-11-10)
 
 Source: `store/release-notes/1.4.0+15.md` (derived from `CHANGELOG.md`).
