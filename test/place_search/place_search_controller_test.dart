@@ -58,6 +58,8 @@ void main() {
     c.read(placeSearchProvider.notifier)
       ..open()
       ..setQuery('Hamburg');
+    // Before the debounce could have expired.
+    expect(c.read(placeSearchProvider).status, PlaceSearchStatus.unavailable);
     await wait();
     expect(sent, isEmpty);
     expect(c.read(placeSearchProvider).status, PlaceSearchStatus.unavailable);

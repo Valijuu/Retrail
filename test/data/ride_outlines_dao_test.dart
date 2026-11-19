@@ -167,6 +167,13 @@ void main() {
     final file = File('${dir.path}/db.sqlite');
     // A v8 file turned back into v7: the outline table without revision.
     final fresh = AppDatabase(NativeDatabase(file));
+    addTearDown(() async {
+      try {
+        await fresh.close();
+      } on Object {
+        // Already closed below.
+      }
+    });
     final id = await _ride(fresh);
     await fresh.outlineDao.upsert(_outline(id));
     await fresh.customStatement(

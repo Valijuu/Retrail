@@ -129,7 +129,10 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
     // new one (#125).
     state = state.copyWith(
       query: text,
-      status: PlaceSearchStatus.loading,
+      // Offline there is nothing to wait for (#131).
+      status: ref.read(isOnlineProvider).asData?.value == false
+          ? PlaceSearchStatus.unavailable
+          : PlaceSearchStatus.loading,
       suggestions: const [],
     );
     _debounce = Timer(ref.read(placeSearchDebounceProvider), () {

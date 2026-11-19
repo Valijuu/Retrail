@@ -76,7 +76,9 @@ class OutlineFillController extends Notifier<bool> {
       final repo = ref.read(outlineRepositoryProvider);
       while (_wanted && ref.mounted) {
         final more = await repo.fillNext();
-        if (!more) break;
+        // A ride saved during the last step leaves the pending stream at
+        // true, so build never runs again: ask the database itself (#129).
+        if (!more && !await repo.hasRidesWithoutOutline()) break;
         await Future<void>.delayed(Duration.zero);
       }
     } on Object {

@@ -19,6 +19,22 @@ class _EndlessFill extends OutlineRepository {
   }
 }
 
+/// Says "nothing more" after the first fill, though a ride was saved meanwhile.
+class _LateRide extends OutlineRepository {
+  _LateRide(AppDatabase db) : super(db.outlineDao, db.trackpointDao);
+  int calls = 0;
+  int checks = 0;
+
+  @override
+  Future<bool> fillNext({Future<void> Function()? afterRead}) async {
+    calls++;
+    return false;
+  }
+
+  @override
+  Future<bool> hasRidesWithoutOutline() async => ++checks == 1;
+}
+
 class _Foreground extends AppForegroundNotifier {
   _Foreground(this.value);
   final bool value;
@@ -134,5 +150,21 @@ void main() {
     await _oldRide(db);
     await Future<void>.delayed(const Duration(milliseconds: 300));
     expect(await outlineCount(), 3);
+  });
+
+  test('a ride saved during the last step is still filled (#129)', () async {
+    final repo = _LateRide(db);
+    final c = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        outlineRepositoryProvider.overrideWithValue(repo),
+        appForegroundProvider.overrideWith(() => _Foreground(true)),
+      ],
+    );
+    addTearDown(c.dispose);
+    c.listen(outlineFillProvider, (_, _) {});
+    c.read(mapVisibleProvider.notifier).set(true);
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(repo.calls, greaterThanOrEqualTo(2));
   });
 }

@@ -16,9 +16,11 @@ class HistoryEmptyState extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.colors;
     // With no ride at all a filter has nothing to hide (#122).
+    final hasRides = ref.watch(historyHasRidesProvider);
+    // Until the query answers, say nothing rather than guess (#131).
+    if (!hasRides.hasValue) return const SizedBox.shrink();
     final narrowed =
-        ref.watch(historyNarrowsRidesProvider) &&
-        (ref.watch(historyHasRidesProvider).value ?? true);
+        ref.watch(historyNarrowsRidesProvider) && hasRides.requireValue;
     final message = Text(
       narrowed ? l10n.historyNoMatches : l10n.historyEmpty,
       textAlign: TextAlign.center,

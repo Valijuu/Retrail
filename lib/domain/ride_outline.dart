@@ -134,8 +134,8 @@ class RideOutline {
   /// For every point, the largest tolerance below which Douglas-Peucker
   /// keeps it (#99): a split's own distance, capped by the split it lies
   /// under, since a range is only split while its parent was. Endpoints get
-  /// none: [simplify] keeps them anyway. One pass at [toleranceM] with an explicit stack, so the
-  /// depth does not grow with the track.
+  /// none: [simplify] keeps them anyway. One pass at [toleranceM]; the explicit stack keeps the
+  /// call-stack depth constant (the stack itself may hold many pending ranges).
   static List<double> _splitImportance(
     List<LatLng> points,
     DistanceCalculator distance,

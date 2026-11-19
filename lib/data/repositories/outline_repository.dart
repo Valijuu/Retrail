@@ -25,6 +25,11 @@ class OutlineRepository {
   Stream<bool> watchHasRidesWithoutOutline() =>
       _outlines.watchHasRidesWithoutOutline();
 
+  /// Whether a ride waits for its outline right now: a fresh query, unlike
+  /// the stream, which may still hold an older value (#129).
+  Future<bool> hasRidesWithoutOutline() async =>
+      (await _outlines.rideIdsWithoutOutline(limit: 1)).isNotEmpty;
+
   /// The stored outlines of [rideIds].
   Future<List<RideOutlineRow>> load(Iterable<int> rideIds) =>
       _outlines.getByRideIds(rideIds);
