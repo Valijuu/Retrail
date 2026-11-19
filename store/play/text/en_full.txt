@@ -27,6 +27,13 @@ BEAT YOUR BEST TIME
 • Only the time on the route counts – not the way there
 • Filter your history by followed route
 
+ALL YOUR RIDES ON ONE MAP
+• See every ride at once as lines in the colour of its activity, or as a heatmap
+• Tick the activities you want to see; the map opens on your own activity
+• Tap a line to see the best ride of that route and its best time
+• Set a pin by pressing and holding, or search a place, and see only the rides within 1 to 50 km
+• Place names follow the app language
+
 YOUR RIDE HISTORY
 • Every ride with a map preview, distance, time and speeds
 • Your kilometers this week, today and this year on the home screen
@@ -37,6 +44,7 @@ PRIVATE BY DESIGN
 • No account, no sign-in, no ads, no tracking
 • Your rides, routes and profile stay on your device
 • The map comes from OpenFreeMap (OpenStreetMap data)
+• The place search on the map sends only the text you type to Photon (OpenStreetMap data), and only while you search
 
 Not on wheels or snow today? Retrail also tracks any other activity – a walk, a hike or a bike ride.
 

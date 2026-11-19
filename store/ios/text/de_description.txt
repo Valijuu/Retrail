@@ -27,6 +27,13 @@ SCHLAG DEINE BESTZEIT
 • Es zählt nur die Zeit auf der Strecke – nicht der Weg dorthin
 • Den Verlauf nach nachgefahrenen Strecken filtern
 
+ALLE FAHRTEN AUF EINER KARTE
+• Sieh jede Fahrt auf einmal als Linie in der Farbe ihrer Aktivität oder als Heatmap
+• Wähle die Aktivitäten, die du sehen willst; die Karte öffnet sich auf deiner eigenen Aktivität
+• Tippe auf eine Linie und sieh die beste Fahrt dieser Strecke mit ihrer Bestzeit
+• Setze mit langem Drücken einen Pin oder suche einen Ort und sieh nur die Fahrten im Umkreis von 1 bis 50 km
+• Ortsnamen in der Sprache der App
+
 DEIN FAHRTENVERLAUF
 • Jede Fahrt mit Kartenvorschau, Distanz, Zeit und Geschwindigkeiten
 • Deine Kilometer dieser Woche, von heute und des Jahres auf dem Startbildschirm
@@ -37,6 +44,7 @@ PRIVATSPHÄRE
 • Kein Konto, keine Anmeldung, keine Werbung, kein Tracking
 • Deine Fahrten, Strecken und dein Profil bleiben auf deinem Gerät
 • Die Karte kommt von OpenFreeMap (Daten von OpenStreetMap)
+• Die Ortssuche auf der Karte sendet nur den getippten Text an Photon (Daten von OpenStreetMap), und nur während du suchst
 
 Heute weder auf Rollen noch auf Schnee unterwegs? Retrail zeichnet auch jede andere Aktivität auf – einen Spaziergang, eine Wanderung oder eine Radtour.
 

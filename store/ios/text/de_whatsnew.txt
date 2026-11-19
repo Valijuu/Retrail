@@ -1,2 +1,6 @@
 Neu:
-• Snowboard und Ski als Aktivitäten für deine Fahrten im Winter
+• Karte im Verlauf: alle Fahrten als Linien oder Heatmap, mit Aktivitätsmenü, Ortssuche und Radius um einen Pin
+• Höhenmeter: Anstieg und Abstieg auf dem Fahrtbildschirm, in der Karte und im Detail
+Geändert:
+• Ortsnamen auf Karten und Vorschaubildern in der App-Sprache
+• Tabs wechseln nur noch über die Leiste unten, damit die Karte frei bewegt werden kann

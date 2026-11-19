@@ -1,2 +1,6 @@
 New:
-• Snowboard and ski as activities for your rides in winter
+• Map in History: all rides as lines or a heatmap, with activity menu, place search and a radius around a pin
+• Elevation: ascent and descent on the ride screen, the map and the detail
+Changed:
+• Place names on maps and previews follow the app language
+• Tabs change only through the bar at the bottom, so the map can be moved freely
