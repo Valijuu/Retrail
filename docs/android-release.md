@@ -131,6 +131,12 @@ follow the global `play-release` skill (`~/.claude/skills/play-release/`).
 
 ## CI secrets (Play release workflow)
 
+**Status (2026-11-19):** the workflow is written and on `main`, but it has **never run**: the four secrets
+below are not set yet (#132). 1.5.0 was uploaded by hand. Before the first real release with it: set the
+secrets, run it once with track `internal`, and check in the Play Console that the release notes
+(`de-DE`, `en-US`, from `store/release-notes/<version>.md`) arrived on the track; the notes step
+(`whatsNewDirectory`) is untested.
+
 `.github/workflows/android-release.yml` builds the signed bundle and uploads it to a Play track. Run it
 by hand: GitHub → Actions → Android release → Run workflow (track `internal` first, upload on). These
 repository secrets are created once, by hand, in a real terminal or on GitHub, never via chat:
