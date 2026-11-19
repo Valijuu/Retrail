@@ -11,6 +11,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 
 ## 1.5.0+16 — 2026-11-19
 
+### Fixed
+- Phones without a portrait-only flag are no longer excluded from the Play Store listing; the app still runs in portrait only.
+
 ### Added
 - Rides now record the height: the ride screen shows the running ascent and descent, the history card shows the
   ascent (or the descent for snowboard and ski), and the ride detail shows both. Older rides and rides

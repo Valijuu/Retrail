@@ -9,6 +9,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <!-- Persistent recording notification + its controls (Android 13+). -->
+    <!-- The app locks to portrait on purpose (screenOrientation below and
+         SystemChrome in main.dart). The lock must not make the app
+         unavailable on devices without the portrait feature (Play warns). -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false"/>
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Countdown cue (#81): a buzz per second, also with the screen off. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
