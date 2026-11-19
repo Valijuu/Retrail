@@ -170,8 +170,8 @@ expected_text() { # <name>
     06_countdown:de) echo "FERTIG MACHEN" ;;
     07_track:en) printf '%s\n' "Distance" "Pause" ;;
     07_track:de) printf '%s\n' "Strecke" "Pause" ;;
-    09_map:en) echo "routes" ;;
-    09_map:de) echo "Strecken" ;;
+    09_map:en) printf '%s\n' "routes" "km/h" ;;
+    09_map:de) printf '%s\n' "Strecken" "km/h" ;;
     08_activities:en) echo "How do you roll" ;;
     08_activities:de) echo "Wie fährst du" ;;
   esac

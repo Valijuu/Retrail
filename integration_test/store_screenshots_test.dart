@@ -18,6 +18,9 @@ import 'package:retrail/data/repositories/data_providers.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
 import 'package:retrail/features/active_ride/active_ride_providers.dart';
 import 'package:retrail/features/history/widgets/ride_preview_thumbnail.dart';
+import 'package:retrail/features/history_map/map_activities.dart';
+import 'package:retrail/features/history_map/map_area.dart';
+import 'package:retrail/features/history_map/map_selection.dart';
 import 'package:retrail/features/shell/app_router.dart';
 import 'package:retrail/features/shell/routes.dart';
 import 'package:retrail/features/timer/countdown_providers.dart';
@@ -135,6 +138,19 @@ void main() {
     // Outlines are filled in the background and map tiles come over the
     // network: give both time before the shot.
     await _wait(tester, const Duration(seconds: 25));
+    // Every activity, a pin on the field with its circle, and the route under
+    // a tap with its card: a long press and a tap cannot reach the native map.
+    app.container.read(mapActivitiesProvider.notifier).set(null);
+    app.container.read(mapAreaProvider.notifier).setPin((
+      lat: 52.4732,
+      lng: 13.4040,
+    ));
+    await _wait(tester, const Duration(seconds: 15));
+    app.container.read(mapSelectionProvider.notifier).tap((
+      lat: 52.472347,
+      lng: 13.39836,
+    ), 15);
+    await _wait(tester, const Duration(seconds: 8));
     await _shot(tester, '09_map');
     await app.close();
   }, skip: !_wanted('09_map'));
