@@ -22,6 +22,11 @@ declared. Retrail sends exactly three kinds of request:
 
 Everything else stays on the device: rides, GPS track points, profile name
 and photo, settings, preview images (`lib/data/`, `lib/features/profile/`).
+On Android the app documents directory (ride database, previews, profile
+photos) is excluded from the Google cloud backup (`android/app/src/main/res/xml/data_extraction_rules.xml`,
+`backup_rules.xml`; decision 2026-11-22), so no GPS data goes to Google Drive
+through Auto Backup. Preferences (name, theme, language) are still backed up. A
+direct phone-to-phone transfer on Android 12+ still carries everything.
 "Navigate to start" hands the start coordinates to a maps app the user picks
 — a user-initiated transfer, which Play exempts from "sharing", and the app
 transmits nothing itself.

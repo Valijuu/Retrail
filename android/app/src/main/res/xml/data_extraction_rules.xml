@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ backup rules. The app documents directory (app_flutter) holds
+     the ride database (GPS tracks), the route previews and the profile photos,
+     so it stays out of the Google cloud backup (decision 2026-11-22). A direct
+     phone-to-phone transfer still carries it. Preferences stay in the backup. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="app_flutter" />
+    </cloud-backup>
+</data-extraction-rules>

@@ -18,6 +18,9 @@
     <!-- Countdown cue (#81): a buzz per second, also with the screen off. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
     <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
