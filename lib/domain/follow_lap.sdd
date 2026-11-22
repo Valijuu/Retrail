@@ -13,3 +13,5 @@ References:
 Must:
   A finished lap stays latched until a flip.
   A ridden range only grows while the rider is on the route.
+  Ridden parts that overlap or touch are one part, in the order of the first one, so a stretch ridden twice is
+    drawn once (#57).

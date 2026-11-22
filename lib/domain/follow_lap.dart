@@ -35,14 +35,16 @@ extension FollowLap on FollowTracker {
   /// The ridden parts of [track], in its metres; empty until decided. A
   /// part not ridden yet (a single point, as after a jump) is left out. On a
   /// loop a part crossing the start/finish is split in two, and a full lap is
-  /// the whole route.
+  /// the whole route. Parts ridden twice (a jump back onto ridden road, a lap
+  /// after a shortcut) are merged and the riding order stays, so a stretch is
+  /// drawn once (#57).
   List<(double, double)> get riddenIntervals {
     final r = range;
     if (r == null) return const [];
-    return [
+    return _merged([
       for (final ridden in [..._closed, r])
         if (ridden.hiM > ridden.loM) ..._onLap(ridden),
-    ];
+    ]);
   }
 
   /// [r] on one lap of [track]: split at the start/finish on a loop.
@@ -58,3 +60,29 @@ extension FollowLap on FollowTracker {
 /// when it is on route.
 RiddenRange _grown(RiddenRange range, RouteProgress at, double originalM) =>
     at.isOffRoute ? range : range.extend(originalM);
+
+/// Parts this close (float noise from the metre sums) count as touching.
+const double _touchToleranceM = 1e-6;
+
+/// [parts] with overlapping or touching parts joined. A joined part keeps the
+/// place of the first part it absorbed, so the riding order stays.
+List<(double, double)> _merged(List<(double, double)> parts) {
+  final merged = <(double, double)>[];
+  for (var part in parts) {
+    var at = merged.length;
+    for (var i = merged.length - 1; i >= 0; i--) {
+      final other = merged[i];
+      if (part.$1 <= other.$2 + _touchToleranceM &&
+          other.$1 <= part.$2 + _touchToleranceM) {
+        part = (
+          part.$1 < other.$1 ? part.$1 : other.$1,
+          part.$2 > other.$2 ? part.$2 : other.$2,
+        );
+        merged.removeAt(i);
+        at = i;
+      }
+    }
+    merged.insert(at, part);
+  }
+  return merged;
+}

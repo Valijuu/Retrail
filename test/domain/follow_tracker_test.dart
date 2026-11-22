@@ -433,6 +433,44 @@ void main() {
       },
     );
 
+    test('a jump back onto ridden road (#57): the overlapping parts are one '
+        'interval, 0–45 and 340–395', () {
+      final t = _ride(_loop(5), [
+        at(0, 1),
+        at(15, 0),
+        at(30, 0),
+        at(45, 0),
+        at(0, 60),
+        at(0, 50),
+        at(0, 40),
+        at(20, 0),
+        at(30, 0),
+        at(40, 0),
+      ]);
+      expect(t.riddenIntervals, hasLength(2));
+      final [(from1, to1), (from2, to2)] = t.riddenIntervals;
+      expect(from1, lessThanOrEqualTo(1));
+      expect(to1, closeTo(45, 0.5));
+      expect(from2, closeTo(340, 0.5));
+      expect(to2, closeTo(395, 0.5));
+    });
+
+    test('riddenIntervals never overlap, so a part is drawn once (#57)', () {
+      final t = _ride(_straight, [
+        for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+        for (var e = 40.0; e <= 100; e += 30) at(100, e),
+        for (var n = 140.0; n <= 240; n += 50) at(n, 100),
+        at(240, 0),
+        at(250, 0),
+        at(260, 0),
+        for (var n = 220.0; n >= 60; n -= 20) at(n, 0),
+      ]);
+      final parts = t.riddenIntervals;
+      for (var i = 1; i < parts.length; i++) {
+        expect(parts[i].$1, greaterThan(parts[i - 1].$2), reason: '$parts');
+      }
+    });
+
     test('a U-turn flip on a loop after a jump keeps both ridden parts, 0–45 '
         'and 340–360 (#51)', () {
       final t = _ride(_loop(5), [

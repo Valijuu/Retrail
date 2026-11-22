@@ -535,6 +535,67 @@ void main() {
       expect(state().coverage, 0);
     });
 
+    test(
+      'an open route ridden in two parts greys both, in map order (#57)',
+      () {
+        follow(_straight);
+        ride([
+          for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+          for (var e = 40.0; e <= 100; e += 30) at(100, e),
+          for (var n = 140.0; n <= 240; n += 50) at(n, 100),
+          at(240, 0),
+          at(250, 0),
+          at(260, 0),
+        ]);
+        final r = state().ridden;
+        expect(r, hasLength(2));
+        expect(_northM(r[0].first), closeTo(0, 0.5));
+        expect(_northM(r[0].last), closeTo(100, 0.5));
+        expect(_northM(r[1].first), closeTo(240, 0.5));
+        expect(_northM(r[1].last), closeTo(260, 0.5));
+      },
+    );
+
+    test('an open route ridden in two parts in reverse greys both, each '
+        'running backwards (#57)', () {
+      follow(_straight);
+      ride([
+        for (var n = 299.0; n >= 200; n -= 10) at(n, 0),
+        for (var e = 40.0; e <= 100; e += 30) at(200, e),
+        for (var n = 160.0; n >= 60; n -= 50) at(n, 100),
+        at(60, 0),
+        at(50, 0),
+        at(40, 0),
+      ]);
+      expect(state().direction, FollowDirection.reverse);
+      // The order of the parts does not matter for drawing; each part must run
+      // from its far end back to its near end.
+      final r = [...state().ridden]
+        ..sort((a, b) => _northM(a.first).compareTo(_northM(b.first)));
+      expect(r, hasLength(2));
+      expect(_northM(r[0].first), closeTo(60, 0.5));
+      expect(_northM(r[0].last), closeTo(40, 0.5));
+      expect(_northM(r[1].first), closeTo(299, 0.5));
+      expect(_northM(r[1].last), closeTo(209, 0.5));
+    });
+
+    test('ridden road ridden again is drawn once, not twice (#57)', () {
+      follow(_straight);
+      ride([
+        for (var n = 0.0; n <= 100; n += 10) at(n, 0),
+        for (var e = 40.0; e <= 100; e += 30) at(100, e),
+        for (var n = 140.0; n <= 240; n += 50) at(n, 100),
+        at(240, 0),
+        at(250, 0),
+        at(260, 0),
+        for (var n = 220.0; n >= 60; n -= 20) at(n, 0),
+      ]);
+      final r = state().ridden;
+      for (var i = 1; i < r.length; i++) {
+        expect(_northM(r[i].first), greaterThan(_northM(r[i - 1].last)));
+      }
+    });
+
     test('a loop ridden across its start/finish greys two segments in map '
         'order', () {
       follow(_square);

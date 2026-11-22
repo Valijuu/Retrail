@@ -9,6 +9,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 
 ## Unreleased
 
+### Fixed
+- Following a route: a stretch you ride twice is drawn once and no longer looks darker (#57).
+- The name field in the first start no longer counts leading spaces toward the 30 characters (#123).
+
 ## 1.5.0+17 — 2026-11-19
 
 ### Fixed
