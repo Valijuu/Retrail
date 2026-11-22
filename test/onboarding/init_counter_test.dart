@@ -35,4 +35,18 @@ void main() {
     await tester.pump();
     expect(find.text('30/30'), findsOneWidget);
   });
+
+  testWidgets('leading spaces are dropped while typing, so the counter counts '
+      'only what is saved (#123)', (tester) async {
+    await tester.pumpWidget(_wrap(const InitScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '   Ana');
+    await tester.pump();
+    expect(find.text('3/30'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), ' ' * 5 + 'a' * 30);
+    await tester.pump();
+    expect(find.text('30/30'), findsOneWidget);
+  });
 }

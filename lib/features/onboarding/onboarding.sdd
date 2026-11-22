@@ -14,6 +14,7 @@ References:
 Must:
   The flow is name, photo, activity, then the main shell.
   Let's go and Skip both continue; a name is saved only when non-blank, trimmed, at most `30` characters.
+  Leading spaces are dropped while typing, so they never count toward the `30` characters or the counter (#123).
   The photo step never finishes onboarding.
   Continue on the activity step saves the activity as the last activity type and marks onboarding done.
   Longboard is preselected.

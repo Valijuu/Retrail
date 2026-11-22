@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -59,6 +60,11 @@ class InitScreen extends ConsumerWidget {
               const SizedBox(height: 32),
               TextField(
                 maxLength: 30,
+                // Leading spaces are trimmed on save, so they must not count
+                // toward the limit or the N/30 counter (#123).
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'^\s+')),
+                ],
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.done,
                 onChanged: ref.read(nameInputProvider.notifier).onChange,
