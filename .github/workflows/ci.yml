@@ -1,0 +1,46 @@
+# Dart gate for every push and pull request: formatting, analyzer, tests. The
+# iOS and Android workflows only build; this one is what keeps main green when
+# a change comes from a machine or session that skipped the local checks.
+name: CI
+
+on:
+  push:
+    branches: [main, "feature/**", "fix/**", "chore/**"]
+    paths-ignore:
+      - "docs/**"
+      - "site/**"
+      - "store/**"
+      - "**/*.md"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: 3.44.3
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Format (default tall style, as the pre-commit hook)
+        run: dart format --output=none --set-exit-if-changed lib test integration_test tool
+
+      - run: flutter analyze
+
+      # The suite skips the real-ride cases when the gitignored fixture
+      # test/fixtures/real_rides.json is missing, as it is on the runner.
+      - run: flutter test
