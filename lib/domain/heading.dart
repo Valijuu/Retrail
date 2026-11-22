@@ -7,12 +7,11 @@ library;
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
+import 'geo_constants.dart';
 
 /// A point on the map (the same shape as the map's `RoutePoint`).
 typedef LatLng = ({double lat, double lng});
 
-const double _radiansPerDegree = math.pi / 180;
-const double _degreesPerRadian = 180 / math.pi;
 const double _fullCircleDegrees = 360;
 const double _halfCircleDegrees = _fullCircleDegrees / 2;
 
@@ -20,14 +19,14 @@ const double _halfCircleDegrees = _fullCircleDegrees / 2;
 /// from north, normalized to `[0, 360)` — north 0°, east 90°, south 180°,
 /// west 270° (never negative, so it can feed a map rotation directly).
 double bearingDegrees(LatLng from, LatLng to) {
-  final fromLat = from.lat * _radiansPerDegree;
-  final toLat = to.lat * _radiansPerDegree;
-  final deltaLng = (to.lng - from.lng) * _radiansPerDegree;
+  final fromLat = from.lat * radiansPerDegree;
+  final toLat = to.lat * radiansPerDegree;
+  final deltaLng = (to.lng - from.lng) * radiansPerDegree;
   final east = math.sin(deltaLng) * math.cos(toLat);
   final north =
       math.cos(fromLat) * math.sin(toLat) -
       math.sin(fromLat) * math.cos(toLat) * math.cos(deltaLng);
-  final signedDegrees = math.atan2(east, north) * _degreesPerRadian;
+  final signedDegrees = math.atan2(east, north) * degreesPerRadian;
   return (signedDegrees + _fullCircleDegrees) % _fullCircleDegrees;
 }
 

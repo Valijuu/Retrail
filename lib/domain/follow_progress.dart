@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
+import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
 import 'route_progress.dart';
 
@@ -32,9 +33,6 @@ const double _behindToleranceM = 5;
 /// Metres off the route one metre of the rider's heading against a pass
 /// weighs.
 const double _headingWeight = 1;
-
-/// Metres per degree of latitude (mean Earth radius).
-const double _metresPerDegree = 6371000 * math.pi / 180;
 
 /// Progress on [route] at [p] once the direction is decided (Spec 18),
 /// following [previous] and never going back.
@@ -114,7 +112,7 @@ RouteHit _likeliest(
 /// metres (negative: against it). Local flat-earth approximation.
 double _alongRouteM(RouteTrack route, double alongM, LatLng a, LatLng b) {
   final t = route.headingAt(alongM);
-  final dx = (b.lng - a.lng) * math.cos(a.lat * math.pi / 180);
+  final dx = (b.lng - a.lng) * math.cos(a.lat * radiansPerDegree);
   final dy = b.lat - a.lat;
-  return (dx * t.x + dy * t.y) * _metresPerDegree;
+  return (dx * t.x + dy * t.y) * metresPerDegree;
 }

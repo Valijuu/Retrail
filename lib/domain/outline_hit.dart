@@ -1,13 +1,14 @@
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
+import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
 import 'ride_outline.dart';
 
 /// Metres on the ground that one logical pixel covers (MapLibre 512 px tiles).
 double metresPerPixel({required double zoom, required double latitude}) =>
     _metresPerPixelEquatorZoom0 *
-    math.cos(_radians(latitude)) /
+    math.cos(latitude * radiansPerDegree) /
     math.pow(_scalePerZoomLevel, zoom);
 
 /// Metres per logical pixel at zoom 0 on the equator (512 px tiles).
@@ -15,10 +16,6 @@ const _metresPerPixelEquatorZoom0 = 78271.517;
 
 /// Each zoom level halves the ground one pixel covers.
 const _scalePerZoomLevel = 2;
-
-const _degreesPerHalfTurn = 180;
-
-double _radians(double degrees) => degrees * math.pi / _degreesPerHalfTurn;
 
 /// A tap hits a line within this many logical pixels.
 const double tapTolerancePx = 24;
@@ -103,9 +100,9 @@ class OutlineHit {
   /// Whether [tap] lies within [toleranceM] of [box] (with a safety margin),
   /// so far outlines are rejected before they are decoded.
   static bool _nearBox(OutlineBounds box, LatLng tap, double toleranceM) {
-    final dLat = toleranceM * _boundsMargin / _metresPerDegreeLat;
+    final dLat = toleranceM * _boundsMargin / metresPerDegree;
     final cosLat = math.max(
-      math.cos(_radians(math.min(tap.lat.abs() + dLat, _maxLatitude))),
+      math.cos(math.min(tap.lat.abs() + dLat, _maxLatitude) * radiansPerDegree),
       _minCosLatitude,
     );
     final dLng = dLat / cosLat;
@@ -113,11 +110,6 @@ class OutlineHit {
         tap.lat <= box.north + dLat &&
         withinLongitudes(tap.lng, box.west - dLng, box.east + dLng);
   }
-
-  /// Radius of the sphere the default Haversine distance uses.
-  static const _earthRadiusM = 6371000;
-  static const _metresPerDegreeLat =
-      _earthRadiusM * math.pi / _degreesPerHalfTurn;
 
   /// Safety factor on the grown bounds, so the box never rejects a ride the
   /// segment test would accept.

@@ -1,0 +1,18 @@
+Spec: Geo constants
+
+Purpose:
+  The Earth radius and the degree conversions that every distance, bearing and bounds calculation shares.
+
+Owns:
+  ./geo_constants.dart
+  /test/domain/geo_constants_test.dart
+
+References:
+  /lib/domain/distance_calculator.sdd
+
+Must:
+  The Earth radius is `6371000` m, the sphere of @HaversineDistanceCalculator, and `6371` km in kilometres.
+  Domain and map code take the radius and the degree factors from here instead of writing them out again (#98).
+
+Example:
+  one degree of latitude on that sphere: about `111195` m

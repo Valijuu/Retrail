@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:maplibre/maplibre.dart';
 
 import '../core/theme/theme_context.dart';
+import '../domain/geo_constants.dart';
 import '../domain/activity_type.dart';
 import '../domain/area_filter.dart';
 import '../domain/heading.dart' show LatLng;
@@ -301,7 +302,8 @@ class _OverviewMapState extends State<OverviewMap> {
   Future<void> _fitArea(AreaFilter area) async {
     if (_viewport.isEmpty) return;
     final dLat = area.radiusKm * _areaFitMargin / _kmPerDegreeLat;
-    final dLng = dLat / math.max(math.cos(area.pin.lat * math.pi / 180), 0.01);
+    final dLng =
+        dLat / math.max(math.cos(area.pin.lat * radiansPerDegree), 0.01);
     final fit = fitRouteCamera(
       <RoutePoint>[
         (lat: area.pin.lat - dLat, lng: area.pin.lng - dLng),

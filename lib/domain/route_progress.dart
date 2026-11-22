@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
+import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
 
 /// Farther than this from the reference route counts as off route.
@@ -169,7 +170,7 @@ class RouteTrack {
   /// east, y north); zero where it has no length.
   ({double x, double y}) headingAt(double alongM) {
     final a = pointAt(alongM - 1), b = pointAt(alongM + 1);
-    final x = (b.lng - a.lng) * math.cos(a.lat * math.pi / 180);
+    final x = (b.lng - a.lng) * math.cos(a.lat * radiansPerDegree);
     final y = b.lat - a.lat;
     final norm = math.sqrt(x * x + y * y);
     return norm == 0 ? (x: 0, y: 0) : (x: x / norm, y: y / norm);
@@ -264,7 +265,7 @@ class RouteTrack {
   /// Segment parameter of [p]'s perpendicular foot on a→b, in a local
   /// equirectangular frame (longitude scaled by cos(latitude)).
   static double _projectT(LatLng a, LatLng b, LatLng p) {
-    final k = math.cos(a.lat * math.pi / 180);
+    final k = math.cos(a.lat * radiansPerDegree);
     final bx = (b.lng - a.lng) * k, by = b.lat - a.lat;
     final px = (p.lng - a.lng) * k, py = p.lat - a.lat;
     final dd = bx * bx + by * by;

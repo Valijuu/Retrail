@@ -6,6 +6,7 @@ import 'package:maplibre/maplibre.dart';
 
 import '../core/theme/app_colors.dart';
 import '../domain/activity_type.dart';
+import '../domain/geo_constants.dart';
 import '../domain/heading.dart' show LatLng;
 import 'live_map.dart' show symbolRaster;
 import 'route_marker_painter.dart'
@@ -70,7 +71,6 @@ const String _pinImage = 'area-pin';
 
 /// Ring points of the area circle.
 const int _circleSteps = 64;
-const double _earthRadiusKm = 6371;
 const double _lineWidth = 2.2;
 const double _lineOpacity = 0.55;
 const double _highlightWidth = 5.0;
@@ -99,9 +99,9 @@ String overviewPointGeoJson(LatLng? p) => p == null
 
 /// The circle of [radiusKm] around [pin] as a GeoJSON polygon.
 String areaCircleGeoJson(LatLng pin, double radiusKm) {
-  final angular = radiusKm / _earthRadiusKm;
-  final lat = pin.lat * math.pi / 180;
-  final lng = pin.lng * math.pi / 180;
+  final angular = radiusKm / earthRadiusKm;
+  final lat = pin.lat * radiansPerDegree;
+  final lng = pin.lng * radiansPerDegree;
   final ring = <List<double>>[];
   for (var i = 0; i <= _circleSteps; i++) {
     final bearing = 2 * math.pi * i / _circleSteps;
@@ -115,7 +115,7 @@ String areaCircleGeoJson(LatLng pin, double radiusKm) {
           math.sin(bearing) * math.sin(angular) * math.cos(lat),
           math.cos(angular) - math.sin(lat) * math.sin(pLat),
         );
-    ring.add([pLng * 180 / math.pi, pLat * 180 / math.pi]);
+    ring.add([pLng * degreesPerRadian, pLat * degreesPerRadian]);
   }
   return jsonEncode({
     'type': 'Feature',

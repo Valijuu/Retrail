@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
+import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
 
 /// The box around an outline's points, in degrees.
@@ -241,7 +242,7 @@ double segmentDistanceM(
 ) {
   final bLng = unwrapLongitude(b.lng, a.lng);
   final pLng = unwrapLongitude(p.lng, a.lng);
-  final k = math.cos(a.lat * math.pi / _degreesPerHalfTurn);
+  final k = math.cos(a.lat * radiansPerDegree);
   final bx = (bLng - a.lng) * k, by = b.lat - a.lat;
   final px = (pLng - a.lng) * k, py = p.lat - a.lat;
   final dd = bx * bx + by * by;

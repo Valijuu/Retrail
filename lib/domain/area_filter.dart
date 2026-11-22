@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
+import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
 import 'ride_outline.dart';
 
@@ -41,7 +42,7 @@ class AreaFilter {
   bool couldReach(OutlineBounds box) {
     final dLat = radiusKm / _kmPerDegreeLat * _boundsMargin;
     final widest = math.max(box.south.abs(), box.north.abs()) + dLat;
-    final cosLat = math.cos(math.min(widest, _maxLatitude) * _radiansPerDegree);
+    final cosLat = math.cos(math.min(widest, _maxLatitude) * radiansPerDegree);
     final dLng = dLat / math.max(cosLat, _minCosLatitude);
     return pin.lat >= box.south - dLat &&
         pin.lat <= box.north + dLat &&
@@ -52,11 +53,8 @@ class AreaFilter {
   static const _minPointsForLine = 2;
 
   static const _metresPerKm = 1000.0;
-  static const _radiansPerDegree = math.pi / 180;
 
-  /// The sphere of the shared [HaversineDistanceCalculator].
-  static const _earthRadiusKm = 6371.0;
-  static const _kmPerDegreeLat = _earthRadiusKm * _radiansPerDegree;
+  static const _kmPerDegreeLat = earthRadiusKm * radiansPerDegree;
 
   /// Safety factor on the grown bounds, so the box never rejects a ride the
   /// segment test would accept.

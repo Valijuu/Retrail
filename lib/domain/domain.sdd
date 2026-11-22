@@ -7,6 +7,7 @@ Purpose:
 Structure:
   ./activity_type.dart: Activity types and their stored ids
   ./distance_calculator.dart: Haversine distance seam
+  ./geo_constants.dart: Earth radius and degree conversions
   ./ride_stats.dart: Per-ride duration, distance and speeds
   ./stats_aggregation.dart: Week, day and year totals
   ./time_bounds.dart: Local day, week and year bounds
