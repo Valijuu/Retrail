@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Retrail">
+  <title>Retrail – Pin auf Straße</title>
+  <defs><clipPath id="t"><rect x="4" y="4" width="56" height="56" rx="14"/></clipPath></defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#FF6A2B"/>
+  <g clip-path="url(#t)">
+    <path d="M30 40h4l22 24H8z" fill="#fff"/>
+    <path d="M32 44v20" stroke="#FF6A2B" stroke-width="2.5" stroke-dasharray="4 4"/>
+  </g>
+  <path d="M32 40C32 40 20 30 20 22a12 12 0 0 1 24 0C44 30 32 40 32 40Z" fill="#fff" stroke="#FF6A2B" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="32" cy="22" r="4.5" fill="#FF6A2B"/>
+</svg>
