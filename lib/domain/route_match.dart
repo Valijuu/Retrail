@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'distance_calculator.dart';
+import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
 import 'ride_outline.dart' show OutlineBounds, segmentDistanceM;
 
@@ -52,11 +53,8 @@ class RouteMatch {
 
   static const _minPointsForLine = 2;
 
-  static const _metresPerDegree = 111195.0;
-  static const _degreesPerHalfTurn = 180;
   static const _degreesPerTurn = 360;
   static const _wholeTurnShifts = [0, -_degreesPerTurn, _degreesPerTurn];
-  static const _radiansPerDegree = math.pi / _degreesPerHalfTurn;
 
   /// Whether the boxes, each grown by the tolerance, overlap. A box that
   /// wraps across ±180 (west beyond east) is not ruled out.
@@ -69,9 +67,9 @@ class RouteMatch {
       b.south,
       b.north,
     ].map((v) => v.abs()).reduce((x, y) => x > y ? x : y);
-    final latMargin = toleranceM / _metresPerDegree;
+    final latMargin = toleranceM / metresPerDegree;
     final lngMargin =
-        toleranceM / (_metresPerDegree * math.cos(maxLat * _radiansPerDegree));
+        toleranceM / (metresPerDegree * math.cos(maxLat * radiansPerDegree));
     if (a.south - latMargin > b.north || b.south - latMargin > a.north) {
       return false;
     }
