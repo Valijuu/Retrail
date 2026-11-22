@@ -10,6 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 ## Unreleased
 
 ### Fixed
+- The profile photo no longer turns black after an app update on iPhone; an unreadable photo shows the blank avatar (#134).
 - Following a route: a stretch you ride twice is drawn once and no longer looks darker (#57).
 - The name field in the first start no longer counts leading spaces toward the 30 characters (#123).
 

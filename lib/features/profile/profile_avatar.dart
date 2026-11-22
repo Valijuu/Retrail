@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_context.dart';
 
 /// Circular profile picture: shows [photoPath] if set, else a neutral blank
@@ -42,16 +43,11 @@ class ProfileAvatar extends StatelessWidget {
                     // GPU upload visibly janks the first Home build.
                     cacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
                         .round(),
+                    // A photo file that cannot be read shows the blank avatar,
+                    // not an empty circle (#134).
+                    errorBuilder: (_, _, _) => _blank(colors),
                   )
-                : Container(
-                    color: colors.surfaceContainer,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.person,
-                      size: size * 0.5,
-                      color: colors.subtleText,
-                    ),
-                  ),
+                : _blank(colors),
           ),
           // Ring drawn on top so it never insets/shrinks the photo.
           if (ring)
@@ -65,4 +61,10 @@ class ProfileAvatar extends StatelessWidget {
       ),
     );
   }
+
+  Widget _blank(AppColors colors) => Container(
+    color: colors.surfaceContainer,
+    alignment: Alignment.center,
+    child: Icon(Icons.person, size: size * 0.5, color: colors.subtleText),
+  );
 }

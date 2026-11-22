@@ -47,7 +47,7 @@ Future<void> main() async {
   final container = ProviderContainer(
     overrides: [
       preferencesRepositoryProvider.overrideWithValue(
-        PreferencesRepository(prefs),
+        PreferencesRepository(prefs, photoRoot: docsDir.path),
       ),
       previewCacheDirProvider.overrideWithValue(docsDir),
     ],

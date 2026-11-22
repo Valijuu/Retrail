@@ -102,4 +102,59 @@ void main() {
       expect(prefs.countdownCueEnabledNow, isFalse);
     });
   });
+
+  // Issue #134: on iOS the app container path changes with an update, so a
+  // stored absolute photo path pointed nowhere and the avatar went black.
+  group('profile photo paths (#134)', () {
+    const root = '/var/new/Documents';
+
+    Future<PreferencesRepository> withRoot([
+      Map<String, Object> initial = const {},
+    ]) async {
+      SharedPreferences.setMockInitialValues(initial);
+      return PreferencesRepository(
+        await SharedPreferences.getInstance(),
+        photoRoot: root,
+      );
+    }
+
+    test('an absolute path from an older container is re-rooted', () async {
+      final prefs = await withRoot({
+        'current_profile_photo': '/var/old/Documents/profile_photos/1.jpg',
+        'profile_photos':
+            '["/var/old/Documents/profile_photos/1.jpg",'
+            '"/var/old/Documents/profile_photos/2.jpg"]',
+      });
+      expect(prefs.currentProfilePhotoNow, '$root/profile_photos/1.jpg');
+      expect(prefs.recentProfilePhotosNow, [
+        '$root/profile_photos/1.jpg',
+        '$root/profile_photos/2.jpg',
+      ]);
+    });
+
+    test('a path inside the root is stored relative and read back '
+        'absolute', () async {
+      final prefs = await withRoot();
+      await prefs.setCurrentProfilePhoto('$root/profile_photos/3.jpg');
+      await prefs.setRecentProfilePhotos(['$root/profile_photos/3.jpg']);
+      final raw = await SharedPreferences.getInstance();
+      expect(raw.getString('current_profile_photo'), 'profile_photos/3.jpg');
+      expect(raw.getString('profile_photos'), '["profile_photos/3.jpg"]');
+      expect(prefs.currentProfilePhotoNow, '$root/profile_photos/3.jpg');
+      expect(prefs.recentProfilePhotosNow, ['$root/profile_photos/3.jpg']);
+    });
+
+    test('a path that is not a profile photo stays as it is', () async {
+      final prefs = await withRoot({
+        'current_profile_photo': '/elsewhere/a.jpg',
+      });
+      expect(prefs.currentProfilePhotoNow, '/elsewhere/a.jpg');
+    });
+
+    test('without a root the paths are unchanged', () async {
+      final prefs = await build();
+      await prefs.setCurrentProfilePhoto('/a/profile_photos/1.jpg');
+      expect(prefs.currentProfilePhotoNow, '/a/profile_photos/1.jpg');
+    });
+  });
 }

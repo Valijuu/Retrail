@@ -3,13 +3,21 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'profile_photo_paths.dart';
+
 /// Local profile/settings store backed by [SharedPreferences], replacing the
 /// original DataStore. Exposes reactive `Stream`s (seed current value, then
 /// re-emit on any write) — mirroring the Kotlin `Flow` getters.
 class PreferencesRepository {
-  PreferencesRepository(this._prefs);
+  /// [photoRoot] is the app documents directory the profile photos live in.
+  /// It is the folder of the *current* app container: on iOS that path
+  /// changes with an update, so photo paths are stored relative to it and an
+  /// absolute path from an older container is re-rooted on read (#134).
+  PreferencesRepository(this._prefs, {String? photoRoot})
+    : _photoPaths = ProfilePhotoPaths(photoRoot);
 
   final SharedPreferences _prefs;
+  final ProfilePhotoPaths _photoPaths;
   final StreamController<void> _changes = StreamController<void>.broadcast();
 
   static const _kUserName = 'user_name';
@@ -134,14 +142,17 @@ class PreferencesRepository {
 
   String? _readCurrentPhoto() {
     final path = _prefs.getString(_kCurrentPhoto);
-    return (path != null && path.isNotEmpty) ? path : null;
+    return (path != null && path.isNotEmpty) ? _photoPaths.resolve(path) : null;
   }
 
   List<String> _readRecentPhotos() {
     final raw = _prefs.getString(_kRecentPhotos);
     if (raw == null || raw.isEmpty) return const [];
     try {
-      return (jsonDecode(raw) as List).cast<String>();
+      return [
+        for (final stored in (jsonDecode(raw) as List).cast<String>())
+          _photoPaths.resolve(stored),
+      ];
     } catch (_) {
       return const [];
     }
@@ -159,13 +170,16 @@ class PreferencesRepository {
     if (path == null || path.isEmpty) {
       await _prefs.remove(_kCurrentPhoto);
     } else {
-      await _prefs.setString(_kCurrentPhoto, path);
+      await _prefs.setString(_kCurrentPhoto, _photoPaths.store(path));
     }
     _notify();
   }
 
   Future<void> setRecentProfilePhotos(List<String> paths) async {
-    await _prefs.setString(_kRecentPhotos, jsonEncode(paths));
+    await _prefs.setString(
+      _kRecentPhotos,
+      jsonEncode([for (final path in paths) _photoPaths.store(path)]),
+    );
     _notify();
   }
 
