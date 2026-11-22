@@ -49,6 +49,7 @@ Pick the test discipline by the target, before writing code:
   final Opus review is done. Use `[!]` for blocked (for example a pending device check) and `[?]` for an
   open decision.
 - When the feature is merged, remove its done tasks; the spec then describes the resulting state.
+- Issues and board items are written in English, whatever language the report came in (decision of 2026-11-22).
 
 ## New feature workflow
 
