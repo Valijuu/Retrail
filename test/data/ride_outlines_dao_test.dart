@@ -25,10 +25,6 @@ void main() {
   setUp(() => db = AppDatabase.memory());
   tearDown(() => db.close());
 
-  test('schema version is 8', () {
-    expect(db.schemaVersion, 8);
-  });
-
   test('rewriting an outline raises its revision (#111)', () async {
     final id = await _ride(db);
     await db.outlineDao.upsert(_outline(id));

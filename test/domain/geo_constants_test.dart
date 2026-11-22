@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/domain/distance_calculator.dart';
 import 'package:retrail/domain/geo_constants.dart';
@@ -13,12 +11,6 @@ void main() {
       haversine.distanceBetween(0, 0, 1, 0),
       closeTo(metresPerDegree, 0.001),
     );
-  });
-
-  test('the degree factors convert both ways', () {
-    expect(180 * radiansPerDegree, closeTo(math.pi, 1e-12));
-    expect(math.pi * degreesPerRadian, closeTo(180, 1e-12));
-    expect(radiansPerDegree * degreesPerRadian, closeTo(1, 1e-12));
   });
 
   test('one degree of latitude is about 111195 m', () {

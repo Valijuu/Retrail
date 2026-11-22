@@ -506,15 +506,6 @@ void main() {
       runTracker((fa, t) => expect(t.state.trackPoints, isEmpty));
     });
 
-    test('appends one point', () {
-      runTracker((fa, t) {
-        t.startTracking();
-        fa.flushMicrotasks();
-        t.onLocationReceived(fix(52, 13));
-        expect(t.state.trackPoints, hasLength(1));
-      });
-    });
-
     test('appends multiple points', () {
       runTracker((fa, t) {
         t.startTracking();
@@ -525,16 +516,23 @@ void main() {
         expect(t.state.trackPoints, hasLength(3));
       });
     });
+  });
 
-    test('second startTracking resets trackPoints', () {
+  group('a second startTracking', () {
+    test('resets the route, the distance and the elapsed time', () {
       runTracker((fa, t) {
         t.startTracking();
         fa.flushMicrotasks();
-        t.onLocationReceived(fix(52, 13));
+        t.onLocationReceived(fix(52.0, 13.0));
         t.onLocationReceived(fix(52.1, 13.1));
+        fa.elapse(const Duration(seconds: 3));
+        expect(t.state.trackPoints, isNotEmpty);
+        expect(t.state.distanceMetres, 100);
         t.startTracking();
         fa.flushMicrotasks();
         expect(t.state.trackPoints, isEmpty);
+        expect(t.state.distanceMetres, 0);
+        expect(t.state.elapsedSeconds, 0);
       });
     });
   });
@@ -561,18 +559,6 @@ void main() {
         t.onLocationReceived(fix(52.0, 13.0));
         t.onLocationReceived(fix(52.1, 13.1));
         expect(t.state.distanceMetres, 100);
-      });
-    });
-
-    test('second startTracking resets distance', () {
-      runTracker((fa, t) {
-        t.startTracking();
-        fa.flushMicrotasks();
-        t.onLocationReceived(fix(52.0, 13.0));
-        t.onLocationReceived(fix(52.1, 13.1));
-        t.startTracking();
-        fa.flushMicrotasks();
-        expect(t.state.distanceMetres, 0);
       });
     });
   });
@@ -670,17 +656,6 @@ void main() {
         fa.flushMicrotasks();
         fa.elapse(const Duration(seconds: 5));
         expect(t.state.elapsedSeconds, 2);
-      });
-    });
-
-    test('second startTracking resets elapsed seconds', () {
-      runTracker((fa, t) {
-        t.startTracking();
-        fa.flushMicrotasks();
-        fa.elapse(const Duration(seconds: 3));
-        t.startTracking();
-        fa.flushMicrotasks();
-        expect(t.state.elapsedSeconds, 0);
       });
     });
   });

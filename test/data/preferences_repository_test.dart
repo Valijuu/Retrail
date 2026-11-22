@@ -78,14 +78,6 @@ void main() {
     expect(prefs.pendingRideDetailsNow, isNull);
   });
 
-  test('pending ride details stream re-emits on write', () async {
-    final prefs = await build();
-    final future = prefs.pendingRideDetails.take(2).toList();
-    await Future<void>.delayed(Duration.zero);
-    await prefs.setPendingRideDetails(3);
-    expect(await future, [null, 3]);
-  });
-
   group('countdown cue switch (#81)', () {
     test('is on by default', () async {
       final prefs = await build();

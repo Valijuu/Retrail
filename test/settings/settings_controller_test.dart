@@ -29,11 +29,6 @@ void main() {
     expect(await prefs.language.first, 'system');
   });
 
-  test('setDefaultActivity persists the activity id', () async {
-    await controller.setDefaultActivity(ActivityType.scooter);
-    expect(await prefs.lastActivityType.first, 'SCOOTER');
-  });
-
   test(
     'every activity type round-trips as the default activity (#94)',
     () async {

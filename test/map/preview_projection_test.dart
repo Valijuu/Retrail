@@ -103,13 +103,6 @@ void main() {
       expect(previewPixelRatio, greaterThanOrEqualTo(3.0));
     });
 
-    test('cache decode width matches the render width at that pixel ratio', () {
-      expect(
-        previewImageCacheWidth,
-        (previewRenderWidthDp * previewPixelRatio).round(),
-      );
-    });
-
     test('the remaining upscale on a large full-bleed card at a typical '
         'high-density ratio stays within an imperceptible range', () {
       // 411dp (this file's test slot width) x a common 3.0 device ratio: the

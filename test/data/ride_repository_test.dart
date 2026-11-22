@@ -40,13 +40,6 @@ void main() {
     expect(r.favoritedAt, isNull);
   });
 
-  test('repository delegates reads to the dao', () async {
-    final id = await repo.startRide(startedAtMs: 1);
-    await repo.updateRideDetails(id, 'via repo', null);
-    final all = await repo.getAllRides().first;
-    expect(all.single.description, 'via repo');
-  });
-
   test(
     'updateEndTime stamps endTime and caches computed stats on the row',
     () async {

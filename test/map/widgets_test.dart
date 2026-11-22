@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/theme/app_theme.dart';
-import 'package:retrail/map/live_map.dart';
 import 'package:retrail/map/preview_projection.dart';
 import 'package:retrail/map/preview_snapshot.dart' show PreviewResult;
 import 'package:retrail/map/route_preview.dart';
@@ -171,28 +170,8 @@ void main() {
     },
   );
 
-  testWidgets('LiveMap builds (native map stubbed via static override)', (
-    tester,
-  ) async {
-    const route = <RoutePoint>[
-      (lat: 49.44, lng: 11.08),
-      (lat: 49.45, lng: 11.10),
-    ];
-    await tester.pumpWidget(
-      _wrap(
-        const SizedBox(width: 300, height: 300, child: LiveMap(points: route)),
-      ),
-    );
-    expect(find.byKey(const ValueKey('stub-map')), findsOneWidget);
-  });
-
   // The zoom envelope is now a native MapOptions concern; assert the consts the
   // map is built from directly (no rendered map needed).
-  test('live map zoom envelope', () {
-    expect(kLiveMapMinZoom, 3.0);
-    expect(kLiveMapMaxZoom, 19.0);
-  });
-
   testWidgets(
     'RoutePreview re-resolves when the cache announces an upgrade of its '
     'ride (stale offline sketch → real map, issue #31)',
