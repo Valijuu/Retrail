@@ -21,17 +21,18 @@ mixin HistoryRideActions on ConsumerState<HistoryScreen> {
   /// them (issue #21) — then opens the read-only detail dialog.
   Future<void> openDetail(RideEntryItem entry) async {
     final ride = entry.ride;
-    final tps = await ref
-        .read(trackpointRepositoryProvider)
-        .getForRide(ride.rideId)
-        .first;
+    // The repositories are read before the first await: History is disposed
+    // when the tab changes during the load, and `ref` is unsafe after that.
+    final trackpoints = ref.read(trackpointRepositoryProvider);
+    final rides = ref.read(rideRepositoryProvider);
+    final tps = await trackpoints.getForRide(ride.rideId).first;
     // Spec 20: a follow links to its original, an original to its group.
     final originalId = ride.followedRideId;
     final original = originalId == null
         ? null
-        : await ref.read(rideRepositoryProvider).findById(originalId);
-    final followCount = ref.read(followCountsProvider).value?[ride.rideId] ?? 0;
+        : await rides.findById(originalId);
     if (!mounted) return;
+    final followCount = ref.read(followCountsProvider).value?[ride.rideId] ?? 0;
     await showDialog<void>(
       context: context,
       // Faster than the Material default (150ms): the dialog opens from a
@@ -85,13 +86,13 @@ mixin HistoryRideActions on ConsumerState<HistoryScreen> {
   /// repeat is followed along its original (Spec 20); [trackpoints], when
   /// given, are [ride]'s own.
   Future<void> followRoute(Ride ride, [List<Trackpoint>? trackpoints]) async {
-    final source = await ref.read(historyControllerProvider).followSource(ride);
+    // `ref` is read before the first await, as in [openDetail].
+    final controller = ref.read(historyControllerProvider);
+    final trackpointRepository = ref.read(trackpointRepositoryProvider);
+    final source = await controller.followSource(ride);
     final tps = source.rideId == ride.rideId && trackpoints != null
         ? trackpoints
-        : await ref
-              .read(trackpointRepositoryProvider)
-              .getForRide(source.rideId)
-              .first;
+        : await trackpointRepository.getForRide(source.rideId).first;
     if (!mounted) return;
     await launchFollowRoute(
       context,

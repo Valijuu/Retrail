@@ -116,6 +116,19 @@ class FakeTrackpointRepository extends TrackpointRepository {
       Stream.value(_byRideId[rideId] ?? const []);
 }
 
+/// Answers a ride's trackpoints only when [release] completes — a detail load
+/// that is still running while the screen goes away.
+class GatedTrackpointRepository extends FakeTrackpointRepository {
+  GatedTrackpointRepository(AppDatabase db) : super(db, const {});
+  final release = Completer<void>();
+
+  @override
+  Stream<List<Trackpoint>> getForRide(int rideId) async* {
+    await release.future;
+    yield const [];
+  }
+}
+
 Trackpoint _tp(int rideId, double lat, double lng) => Trackpoint(
   trackpointId: 0,
   rideId: rideId,
@@ -206,6 +219,7 @@ void main() {
     RouteGroupView? routeGroup,
     Map<int, int> followCounts = const {},
     bool anyRide = true,
+    TrackpointRepository? trackpointRepository,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -217,7 +231,7 @@ void main() {
         previewCacheDirProvider.overrideWithValue(Directory.systemTemp),
         // A card fetches its own trackpoints lazily now (issue #21).
         trackpointRepositoryProvider.overrideWithValue(
-          FakeTrackpointRepository(db, trackpoints),
+          trackpointRepository ?? FakeTrackpointRepository(db, trackpoints),
         ),
         historyItemsProvider.overrideWith((ref) => Stream.value(items)),
         historyHasRidesProvider.overrideWith(
@@ -819,6 +833,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Distance'), findsOneWidget);
     expect(find.text('Avg speed'), findsOneWidget);
+  });
+
+  // Review 2026-11-22: `ref` was read after the await, and History is disposed
+  // when the tab changes while the detail loads.
+  testWidgets('leaving the screen while the detail loads does not throw', (
+    tester,
+  ) async {
+    final gated = GatedTrackpointRepository(db);
+    await pump(tester, [_entry(1)], trackpointRepository: gated);
+    await tester.tap(find.byKey(const ValueKey('ride_map_1')));
+    await tester.pump();
+
+    await tester.pumpWidget(const SizedBox());
+    gated.release.complete();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(RideDetailDialog), findsNothing);
   });
 
   testWidgets(
