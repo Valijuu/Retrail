@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -81,6 +83,69 @@ void main() {
       t.dispose();
     });
   }
+
+  // Review 2026-11-22: a failed ride insert left the tracker "tracking" with no
+  // ride behind it, so nothing was recorded while the screen showed a ride.
+  test('a ride that cannot be inserted does not stay tracking', () async {
+    when(
+      () => rideRepo.startRide(
+        activityTypeId: any(named: 'activityTypeId'),
+        startedAtMs: any(named: 'startedAtMs'),
+      ),
+    ).thenAnswer((_) async => throw StateError('disk full'));
+    final t = RideTracker(rideRepo, tpRepo, const _FixedCalc(100));
+    addTearDown(t.dispose);
+    final errors = <Object>[];
+
+    await runZonedGuarded(() async {
+      t.startTracking();
+      await Future<void>.delayed(Duration.zero);
+    }, (error, _) => errors.add(error));
+
+    expect(t.state.isTracking, isFalse);
+    expect(errors, [isA<StateError>()], reason: 'the failure is not hidden');
+    // A new start works again once the database does.
+    when(
+      () => rideRepo.startRide(
+        activityTypeId: any(named: 'activityTypeId'),
+        startedAtMs: any(named: 'startedAtMs'),
+      ),
+    ).thenAnswer((_) async => 5);
+    t.startTracking();
+    await Future<void>.delayed(Duration.zero);
+    expect(t.state.isTracking, isTrue);
+  });
+
+  // CodeRabbit 2026-11-22: a failed older insert must not reset a newer ride.
+  test('a failing older insert leaves a newer ride tracking', () async {
+    final t = RideTracker(rideRepo, tpRepo, const _FixedCalc(100));
+    addTearDown(t.dispose);
+    final errors = <Object>[];
+
+    // The completers live in the guarded zone, so the stale failure reaches
+    // its error handler.
+    await runZonedGuarded(() async {
+      final first = Completer<int>();
+      final second = Completer<int>();
+      final inserts = [first, second];
+      when(
+        () => rideRepo.startRide(
+          activityTypeId: any(named: 'activityTypeId'),
+          startedAtMs: any(named: 'startedAtMs'),
+        ),
+      ).thenAnswer((_) => inserts.removeAt(0).future);
+      t.startTracking(); // ride A, insert in flight
+      t.stopTracking();
+      t.startTracking(); // ride B
+      second.complete(7);
+      await Future<void>.delayed(Duration.zero);
+      first.completeError(StateError('disk full')); // A fails after B began
+      await Future<void>.delayed(Duration.zero);
+    }, (error, _) => errors.add(error));
+
+    expect(t.state.isTracking, isTrue, reason: 'ride B keeps tracking');
+    expect(errors, [isA<StateError>()]);
+  });
 
   // ─── Location services (issue #33) ───────────────────────────────────────
   group('location services', () {

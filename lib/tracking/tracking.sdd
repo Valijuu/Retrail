@@ -41,6 +41,8 @@ Exposes:
 Must:
   @RideTracker is a process-lifetime singleton that survives screen disposal and works fully offline.
   @RideTracker owns the ride lifecycle and persistence; @RouteRecorder builds the route from accepted fixes.
+  When the ride row cannot be inserted, @RideTracker stops reporting a ride in progress and lets the error surface, so
+    the screen never shows a ride that records nothing.
   Tracking and the location stream run in the main isolate; the foreground service only keeps the process
     alive, shows the notification and relays its buttons.
   Every fix updates the live location and speed, even while paused.

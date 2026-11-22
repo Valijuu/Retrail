@@ -65,6 +65,10 @@ class RideTracker {
   /// arrive in that window (instant back → discard) and must not be lost.
   bool _beginInFlight = false;
 
+  /// Counts the ride inserts started, so a failing older one cannot reset a
+  /// ride begun after it.
+  int _beginAttempt = 0;
+
   /// Set when [discardRide] runs before the ride id exists (insert still in
   /// flight): [_beginRide] then deletes the row on completion instead of
   /// orphaning it in the history.
@@ -140,15 +144,30 @@ class RideTracker {
     _activityType = ActivityType.fromId(_pendingActivityType);
     _emit();
     _beginInFlight = true;
-    unawaited(_beginRide());
+    unawaited(_beginRide(++_beginAttempt));
   }
 
-  Future<void> _beginRide() async {
+  Future<void> _beginRide(int attempt) async {
     final now = nowMs();
-    final rideId = await _rideRepository.startRide(
-      activityTypeId: _pendingActivityType,
-      startedAtMs: now,
-    );
+    final int rideId;
+    try {
+      rideId = await _rideRepository.startRide(
+        activityTypeId: _pendingActivityType,
+        startedAtMs: now,
+      );
+    } catch (_) {
+      // No ride row: nothing could be recorded, so the tracker must not claim
+      // to be tracking. The error still surfaces as an unhandled one. A newer
+      // ride's state is left alone.
+      if (attempt == _beginAttempt) {
+        _beginInFlight = false;
+        _isTracking = false;
+        _isPaused = false;
+        _cancelElapsedTimer();
+        _emit();
+      }
+      rethrow;
+    }
     _beginInFlight = false;
     // A stop (and possibly discard) arrived while the insert was in flight —
     // don't resurrect the ride. Honour the latched discard, else finalize it
