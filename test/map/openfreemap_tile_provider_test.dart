@@ -302,6 +302,42 @@ void main() {
     image!.dispose();
   });
 
+  test('a failed style load is not cached: the next request loads again '
+      '(#60)', () async {
+    var fail = true;
+    final p = OpenFreeMapTileProvider(
+      client: _Server().client,
+      loadAsset: (asset) async {
+        if (fail) throw const FileSystemException('asset unavailable');
+        return _asset(asset);
+      },
+    );
+    expect(await p.tile(14, 8675, 5426, ui.Brightness.dark), isNull);
+    fail = false;
+    final image = await p.tile(14, 8675, 5426, ui.Brightness.dark);
+    expect(image, isNotNull);
+    image!.dispose();
+  });
+
+  test(
+    'a style loader that throws at once is not cached either (#60)',
+    () async {
+      var fail = true;
+      final p = OpenFreeMapTileProvider(
+        client: _Server().client,
+        loadAsset: (asset) {
+          if (fail) throw const FileSystemException('asset unavailable');
+          return _asset(asset);
+        },
+      );
+      expect(await p.tile(14, 8675, 5426, ui.Brightness.dark), isNull);
+      fail = false;
+      final image = await p.tile(14, 8675, 5426, ui.Brightness.dark);
+      expect(image, isNotNull);
+      image!.dispose();
+    },
+  );
+
   test('garbage bytes give null instead of throwing', () async {
     final p = OpenFreeMapTileProvider(
       client: MockClient(

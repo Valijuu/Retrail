@@ -98,16 +98,31 @@ class OpenFreeMapTileProvider implements PreviewTileProvider {
     return loading;
   }
 
-  Future<vtr.Theme> _theme(ui.Brightness brightness) =>
-      _themes[brightness] ??= () async {
-        final asset = retrailStyleAsset(
-          dark: brightness == ui.Brightness.dark,
-          language: language,
-        );
-        final style =
-            jsonDecode(await _loadAsset(asset)) as Map<String, dynamic>;
-        return vtr.ThemeReader().read(previewStyle(style));
-      }();
+  Future<vtr.Theme> _theme(ui.Brightness brightness) {
+    final cached = _themes[brightness];
+    if (cached != null) return cached;
+    final loading = _loadTheme(brightness);
+    _themes[brightness] = loading;
+    // A failed load must not stay cached for the whole process: the next tile
+    // loads again (#60). Registered after the store, so a load that fails at
+    // once is still evicted.
+    loading.then<void>(
+      (_) {},
+      onError: (Object _) {
+        if (identical(_themes[brightness], loading)) _themes.remove(brightness);
+      },
+    );
+    return loading;
+  }
+
+  Future<vtr.Theme> _loadTheme(ui.Brightness brightness) async {
+    final asset = retrailStyleAsset(
+      dark: brightness == ui.Brightness.dark,
+      language: language,
+    );
+    final style = jsonDecode(await _loadAsset(asset)) as Map<String, dynamic>;
+    return vtr.ThemeReader().read(previewStyle(style));
+  }
 
   Future<ui.Image> _paint(
     vtr.VectorTile vectorTile,
