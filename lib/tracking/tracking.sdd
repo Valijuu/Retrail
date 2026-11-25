@@ -65,6 +65,8 @@ Must:
     iOS escalates to Always for screen-off recording.
   Pause, resume, stop and open mean the same from the notification, the Live Activity and the app,
     through @rideControlRelay.
+  Open leads to the active ride only while a ride records; with none recording it opens nothing, and a stop
+    clears an open request still pending, so a tap never starts a new ride (#152).
   The Android recording notification shows the white Retrail glyph (`ic_stat_retrail`) as its status-bar icon,
     not the full-colour launcher icon.
   Swiping the app away finalizes the active ride with an end time.

@@ -12,7 +12,11 @@ import 'tracking_providers.dart';
 void rideControlRelay(ProviderContainer container, String id) {
   if (id == RideNotificationIds.open) {
     // Body tap → route into the active ride (router redirect handles it).
-    container.read(pendingRideDeepLinkProvider.notifier).state = true;
+    // Only while one records: the ride screen starts a ride on entry, so a
+    // tap on a ride that already ended would start a new one (#152).
+    if (container.read(rideTrackerProvider).state.isTracking) {
+      container.read(pendingRideDeepLinkProvider.notifier).state = true;
+    }
     return;
   }
   final action = rideActionFromId(id);
@@ -30,6 +34,8 @@ void rideControlRelay(ProviderContainer container, String id) {
       final tracker = container.read(rideTrackerProvider);
       final wasRecording = tracker.state.isTracking;
       controller.stop(); // finalize the ride
+      // A tap that came before the stop must not reopen /ride later (#152).
+      container.read(pendingRideDeepLinkProvider.notifier).state = false;
       final rideId = tracker.lastCompletedRideId;
       if (wasRecording && rideId != null) {
         container

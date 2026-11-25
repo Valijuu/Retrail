@@ -83,6 +83,21 @@ void main() {
     verifyZeroInteractions(controller);
   });
 
+  // Issue #152: a tap on a ride that already ended must not open /ride,
+  // whose screen would start a NEW ride on entry.
+  test('open with no ride recording → no deep link', () {
+    when(() => tracker.state).thenReturn(const RideTrackingState());
+    rideControlRelay(container, RideNotificationIds.open);
+    expect(container.read(pendingRideDeepLinkProvider), isFalse);
+    verifyZeroInteractions(controller);
+  });
+
+  test('stop → clears a pending deep link to the ride', () {
+    container.read(pendingRideDeepLinkProvider.notifier).state = true;
+    rideControlRelay(container, RideNotificationIds.stop);
+    expect(container.read(pendingRideDeepLinkProvider), isFalse);
+  });
+
   test('unknown id → ignored', () {
     rideControlRelay(container, 'something_else');
     expect(container.read(pendingRideDeepLinkProvider), isFalse);
