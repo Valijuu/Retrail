@@ -11,6 +11,7 @@ Owns:
   ./ios_screenshots.sh
   ./ios_screen_text.swift
   ./render_store_graphics.sh
+  ./store_check.py
   ./build_app_icons.py
   ./render_ios_store_graphics.sh
   ./check_raw_sql.py
@@ -41,6 +42,7 @@ Must:
     shot is missing, has the wrong size or lacks its expected text in the shot's language.
   `build_app_icons.py` lifts the R off the dark tile of the logo source and writes the branding PNGs, the Android splash icon and
     status-bar glyph and the iOS Live Activity mark; `dart run flutter_launcher_icons` then writes the launcher icons.
+  `store_check.py` checks store texts, release notes (de and en) and image sizes against the store limits; `--write` rebuilds the iOS what's new files from `store/release-notes/<version>.md`. The `Store check` workflow runs it.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   `render_ios_store_graphics.sh` frames the Simulator shots for the App Store (1320 x 2868) the same way: caption, phone, optional second phone (light + dark) and an enlarged excerpt, listed in `store/ios/screenshots.tsv`.
   `android_device_check.py` drives the installed debug app on one connected Android phone through adb and

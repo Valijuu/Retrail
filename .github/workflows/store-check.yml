@@ -1,0 +1,36 @@
+# Checks the store texts, the release notes (de + en) and the image sizes against
+# the Play and App Store limits (tool/store_check.py, stdlib only). Runs on every
+# change under store/ and when the version in pubspec.yaml moves, so a missing or
+# too long text fails on the pull request, not on release day.
+name: Store check
+
+on:
+  push:
+    branches: [main, "feature/**", "fix/**", "chore/**", "ci/**"]
+    paths:
+      - "store/**"
+      - "pubspec.yaml"
+      - "tool/store_check.py"
+      - ".github/workflows/store-check.yml"
+  pull_request:
+    paths:
+      - "store/**"
+      - "pubspec.yaml"
+      - "tool/store_check.py"
+      - ".github/workflows/store-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: python3 -I tool/store_check.py
