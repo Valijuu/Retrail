@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/widgets/app_snack_bar.dart';
 import '../../domain/activity_type.dart';
+import '../../domain/heading.dart' show LatLng;
 import '../../domain/ride_outline.dart' show OutlineBounds;
 import '../../domain/route_markers.dart'
     show RouteEndpointStyle, routeEndpointStyle;
@@ -28,6 +29,7 @@ import 'map_focus.dart';
 import 'map_area.dart';
 import 'map_default_activity.dart';
 import 'map_locator.dart';
+import 'position_tap.dart';
 import 'map_selection.dart';
 import 'outline_fill.dart';
 import 'overview_geojson.dart';
@@ -135,11 +137,42 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
       final wanted = ref.read(mapFocusProvider);
       if (wanted != null) _takeFocusRequest(wanted);
     });
+    unawaited(_enableLocationIfAllowed());
     Future.microtask(() {
       if (mounted) _back.register(_handleBack);
       _visible.set(_routeCurrent);
       if (mounted) _applyDefaultActivity();
     });
+  }
+
+  /// With location already allowed (services on, permission granted) the map
+  /// shows where the rider is without the button; it never asks (#135).
+  Future<void> _enableLocationIfAllowed() async {
+    final enabled = ref.read(locationEnabledProvider.notifier);
+    final bool allowed;
+    try {
+      allowed = await ref.read(mapLocatorProvider).isAllowed();
+    } catch (_) {
+      return; // A platform failure leaves the button as the way in.
+    }
+    if (allowed && mounted) enabled.enable();
+  }
+
+  /// A tap on the position dot sets the circle there; any other tap picks the
+  /// rides under it (#135).
+  void _onMapTap(LatLng tap, double zoom) {
+    final position = ref.read(mapPositionProvider);
+    if (position != null && isTapOnPosition(tap, position, zoom: zoom)) {
+      _setPinAt(position);
+      return;
+    }
+    ref.read(mapSelectionProvider.notifier).tap(tap, zoom);
+  }
+
+  /// Like a long press: the pin and its whole circle on screen.
+  void _setPinAt(LatLng position) {
+    ref.read(mapAreaProvider.notifier).setPin(position);
+    setState(() => _areaFocusToken++);
   }
 
   /// False while a page or dialog covers the map, so the position stream and
@@ -319,9 +352,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
       case Located(:final position):
         ref.read(locationEnabledProvider.notifier).enable();
         ref.read(mapPositionProvider.notifier).set(position);
-        ref.read(mapAreaProvider.notifier).setPin(position);
-        // Like a long press: the camera shows the pin's whole circle.
-        setState(() => _areaFocusToken++);
+        _setPinAt(position);
       case LocateDenied():
         hint(l10n.historyMapLocationDenied);
       case LocateBlocked():
@@ -421,7 +452,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           areaFocusToken: _areaFocusToken,
           focusBounds: _focusBounds,
           focusToken: _focusToken,
-          onTap: selection.tap,
+          onTap: _onMapTap,
           onLongPress: areaNotifier.setPin,
           onPinMoved: areaNotifier.setPin,
           restoreCamera: _restore,

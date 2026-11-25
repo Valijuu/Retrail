@@ -10,6 +10,9 @@ class _FakeLocator implements MapLocator {
   final controller = StreamController<LatLng>.broadcast();
 
   @override
+  Future<bool> isAllowed() async => false;
+
+  @override
   Future<LocateResult> locate() async => const LocateDenied();
 
   @override

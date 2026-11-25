@@ -42,15 +42,21 @@ const _tap = (lat: 48.0, lng: 11.005);
 /// Answers the my-location button with [result] and records the settings
 /// it was asked to open.
 class _Locator implements MapLocator {
-  _Locator(this.result);
+  _Locator(this.result, {this.allowed = false, Stream<LatLng>? positions})
+    : _positions = positions ?? const Stream.empty();
   final LocateResult result;
+  final bool allowed;
+  final Stream<LatLng> _positions;
   final opened = <String>[];
+
+  @override
+  Future<bool> isAllowed() async => allowed;
 
   @override
   Future<LocateResult> locate() async => result;
 
   @override
-  Stream<LatLng> positions() => const Stream.empty();
+  Stream<LatLng> positions() => _positions;
 
   @override
   Future<void> openAppSettings() async => opened.add('app');
@@ -382,6 +388,75 @@ void main() {
       );
       final button = tester.getRect(find.byTooltip('My location'));
       expect(hint.bottom, lessThanOrEqualTo(button.top));
+      await finish(tester);
+    });
+  });
+
+  // #135: with location already allowed the map shows where the rider is, and
+  // a tap on that dot sets the circle, like the button.
+  group('own position on the map (#135)', () {
+    const here = (lat: 48.0, lng: 11.0);
+    OverviewMap map(WidgetTester tester) =>
+        tester.widget<OverviewMap>(find.byType(OverviewMap));
+
+    testWidgets('allowed location shows the position without the button', (
+      tester,
+    ) async {
+      await _ride(db);
+      final locator = _Locator(
+        const LocateDenied(),
+        allowed: true,
+        positions: Stream.value(here),
+      );
+      await pump(tester, view: 'map', locator: locator);
+      await settle(tester);
+      expect(map(tester).position, here);
+      expect(map(tester).area, isNull); // no circle, no jump until a tap
+      await finish(tester);
+    });
+
+    testWidgets('location not allowed yet shows no position', (tester) async {
+      await _ride(db);
+      final locator = _Locator(
+        const LocateDenied(),
+        positions: Stream.value(here),
+      );
+      await pump(tester, view: 'map', locator: locator);
+      await settle(tester);
+      expect(map(tester).position, isNull);
+      await finish(tester);
+    });
+
+    testWidgets('a tap on the position dot sets the circle', (tester) async {
+      await _ride(db);
+      final locator = _Locator(
+        const LocateDenied(),
+        allowed: true,
+        positions: Stream.value(here),
+      );
+      await pump(tester, view: 'map', locator: locator);
+      await settle(tester);
+      // A few metres off the dot at a city zoom: still the dot.
+      map(tester).onTap!((lat: 48.00003, lng: 11.0), 15);
+      await tester.pump();
+      expect(map(tester).area?.pin, here);
+      await finish(tester);
+    });
+
+    testWidgets('a tap far from the dot leaves the circle alone', (
+      tester,
+    ) async {
+      await _ride(db);
+      final locator = _Locator(
+        const LocateDenied(),
+        allowed: true,
+        positions: Stream.value(here),
+      );
+      await pump(tester, view: 'map', locator: locator);
+      await settle(tester);
+      map(tester).onTap!((lat: 48.01, lng: 11.0), 15);
+      await tester.pump();
+      expect(map(tester).area, isNull);
       await finish(tester);
     });
   });

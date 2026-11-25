@@ -10,6 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 ## Unreleased
 
 ### Added
+- History map: with location allowed, your position shows on the map right away, and tapping the dot draws the circle around you (#135).
 - History: "Show on map" in a ride's menu opens the map on that ride (#151).
 
 ### Changed

@@ -113,6 +113,10 @@ Must:
   The my-location button asks for location while the app is in use, never for Always and never for
     notifications. Granted: it shows the position, sets the pin there and shows the pin's whole circle, like a long
     press, north-up.
+  When the map opens with location already allowed (services on, permission granted), it shows the position at once and
+    starts the position stream, without asking for anything and without moving the camera or setting a pin. A tap on
+    the position dot sets the pin there and shows the circle, like the button; a tap elsewhere picks the rides under
+    it (#135).
     Denied: it shows a hint; denied for good: the hint offers the app settings. The position stream runs only
     while the map view is visible and the app is in the foreground; a page, dialog or sheet over the map
     counts as not visible (#101).

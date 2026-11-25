@@ -38,6 +38,10 @@ class LocateNoFix extends LocateResult {
 /// The map's access to the device position. Asks for location while the app
 /// is in use only; never for Always, never for notifications.
 abstract interface class MapLocator {
+  /// Whether the position may be read right now without asking: the services
+  /// are on and the permission is already granted (#135). Never prompts.
+  Future<bool> isAllowed();
+
   Future<LocateResult> locate();
 
   /// Positions while subscribed; the caller subscribes only while the map is
@@ -59,6 +63,14 @@ class GeolocatorMapLocator implements MapLocator {
 
   /// How long the my-location button waits for a fix.
   static const Duration _fixTimeout = Duration(seconds: 10);
+
+  @override
+  Future<bool> isAllowed() async {
+    if (!await Geolocator.isLocationServiceEnabled()) return false;
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always;
+  }
 
   @override
   Future<LocateResult> locate() async {
