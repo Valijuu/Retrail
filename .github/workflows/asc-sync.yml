@@ -6,6 +6,10 @@
 name: App Store text sync
 
 on:
+  # TEMPORARY: dry-run test from the branch (dispatch needs the file on main). Remove before the merge.
+  push:
+    branches: [ci/android]
+    paths: [".github/workflows/asc-sync.yml", "tool/asc_sync.py"]
   workflow_dispatch:
     inputs:
       apply:
