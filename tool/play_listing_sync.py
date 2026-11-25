@@ -68,7 +68,10 @@ def access_token(account):
         with urllib.request.urlopen(urllib.request.Request("https://oauth2.googleapis.com/token", data=body), timeout=60) as r:
             return json.loads(r.read())["access_token"]
     except urllib.error.HTTPError as error:
-        raise SystemExit(f"Token request -> HTTP {error.code}: {error.read().decode(errors='replace')[:400]}")
+        raise SystemExit(
+            f"Token request -> HTTP {error.code}: {error.read().decode(errors='replace')[:400]}\n"
+            f"Key used: account {account.get('client_email')}, key id {account.get('private_key_id')}"
+        )
 
 
 class Play:
