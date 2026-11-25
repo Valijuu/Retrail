@@ -63,6 +63,8 @@ Must:
   Fix age and elapsed time come from the platform capture timestamp, never from ingestion time.
   The ride starts only after the permission gate grants location; Android 13+ also asks for notifications,
     iOS escalates to Always for screen-off recording.
+  A recording service that fails to start leaves no subscription behind and the start reports the error; the notification
+    is updated at most once per elapsed second (#141).
   Pause, resume, stop and open mean the same from the notification, the Live Activity and the app,
     through @rideControlRelay.
   Open leads to the active ride only while a ride records; with none recording it opens nothing, and a stop

@@ -22,6 +22,7 @@ class _FakeSource implements LocationSource {
   Stream<LocationFix> get fixes => _controller.stream;
   @override
   Stream<bool> get serviceEnabled => _service.stream;
+  bool get hasFixListener => _controller.hasListener;
   @override
   Future<LocationFix?> lastKnown() async => null;
   void emit(LocationFix f) => _controller.add(f);
@@ -97,6 +98,9 @@ class _FakeService implements RideForegroundService {
   int updates = 0;
   bool running = false;
 
+  /// When set, [start] throws it (e.g. ForegroundServiceStartNotAllowed).
+  Object? startError;
+
   /// When set, [stop] waits for it before stopping.
   Future<void>? stopDelay;
   bool notificationGranted = true;
@@ -109,6 +113,8 @@ class _FakeService implements RideForegroundService {
   Future<void> start() async {
     final delay = startDelay;
     if (delay != null) await delay;
+    final error = startError;
+    if (error != null) throw error;
     starts++;
     running = true;
   }
@@ -198,6 +204,46 @@ void main() {
     source.emit(_fix(52.001, 13.0, 9500000000));
     await pumpEventQueue();
     expect(tracker.state.trackPoints.length, 2);
+  });
+
+  // #141: a throwing service start left the fix subscription live and the
+  // exception escaped without cleanup.
+  test('a failing service start leaves nothing running and no ride', () async {
+    service.startError = StateError('foreground service not allowed');
+    final c = controller(
+      _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.whileInUse,
+      ),
+    );
+    await expectLater(c.start(), throwsStateError);
+    expect(tracker.state.isTracking, isFalse);
+    // The fix subscription is gone: a late fix is not recorded anywhere.
+    expect(source.hasFixListener, isFalse);
+    // A later start works once the service allows it again.
+    service.startError = null;
+    expect(await c.start(), LocationStartAction.proceed);
+    expect(tracker.state.isTracking, isTrue);
+  });
+
+  test('the notification updates at most once per elapsed second', () async {
+    final c = controller(
+      _FakePermissions(
+        serviceEnabled: true,
+        permission: LocationPermission.whileInUse,
+      ),
+    );
+    await c.start();
+    await pumpEventQueue();
+    final before = service.updates;
+    // Many fixes within the same second: the state changes each time, the
+    // notification text (MM:SS, km) has no new second to show.
+    for (var i = 0; i < 5; i++) {
+      source.emit(_fix(52.0 + i * 0.0001, 13.0, 8000000000 + i * 1000000));
+    }
+    await pumpEventQueue();
+    expect(service.updates - before, lessThanOrEqualTo(1));
+    await c.stop();
   });
 
   test('start() while already tracking is a no-op — no second ride', () async {

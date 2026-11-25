@@ -211,7 +211,11 @@ class RideRecordingController {
       return;
     }
     if (action != LocationStartAction.proceed || epoch != _epoch) return;
-    if (await _startFeedAndService(epoch)) _armed = true;
+    try {
+      if (await _startFeedAndService(epoch)) _armed = true;
+    } catch (_) {
+      // Unarmed: at 0 the ride screen's own start() takes over (and reports).
+    }
   }
 
   /// The countdown reached 0 (or Start now): begins the armed ride with no
@@ -268,18 +272,36 @@ class RideRecordingController {
     );
     // Keep the ongoing notification's live stats in sync — from the ride's
     // start only: while armed the countdown would show stale or ticking-back
-    // stats (#77).
-    _stateSub = _tracker.changes
-        .where((s) => s.isTracking)
-        .listen(
-          (s) => _service.update(
-            isPaused: s.isPaused,
-            elapsedSeconds: s.elapsedSeconds,
-            distanceMetres: s.distanceMetres,
-          ),
-        );
+    // stats (#77). Pushed once per elapsed second (or pause flip): the text is
+    // MM:SS and km, so more pushes only cost platform round trips (#141).
+    int? sentSecond;
+    bool? sentPaused;
+    _stateSub = _tracker.changes.where((s) => s.isTracking).listen((s) {
+      if (s.elapsedSeconds == sentSecond && s.isPaused == sentPaused) {
+        return;
+      }
+      sentSecond = s.elapsedSeconds;
+      sentPaused = s.isPaused;
+      unawaited(
+        _service
+            .update(
+              isPaused: s.isPaused,
+              elapsedSeconds: s.elapsedSeconds,
+              distanceMetres: s.distanceMetres,
+            )
+            .catchError((Object _) {}),
+      );
+    });
 
-    await _service.start();
+    try {
+      await _service.start();
+    } catch (_) {
+      // The service could not start (e.g. not allowed from the background):
+      // undo the subscriptions so nothing keeps feeding a ride that never
+      // began, then let the caller report it (#141).
+      await _cancelSubscriptions();
+      rethrow;
+    }
     if (epoch != _epoch) {
       // A stop won the race after the service came up: undo this start
       // instead of resurrecting a ride the user already left/discarded.

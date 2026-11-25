@@ -88,7 +88,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   }
 
   Future<void> _startGated() async {
-    final action = await _recording.start();
+    final LocationStartAction action;
+    try {
+      action = await _recording.start();
+    } catch (_) {
+      // The recording service refused to start (#141): nothing records, so do
+      // not sit on a ride screen that never runs.
+      if (mounted) _goHome();
+      return;
+    }
     if (!mounted || action == LocationStartAction.proceed) return;
     setState(() => _gateBlock = action);
   }
