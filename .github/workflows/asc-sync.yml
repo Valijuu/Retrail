@@ -1,0 +1,63 @@
+# Compares store/ios/text with App Store Connect and updates the fields that differ
+# (tool/asc_sync.py): description, keywords, promotional text, what's new, name,
+# subtitle, de and en. Manual trigger only. "apply" is off by default, so a run only
+# prints the differences. It never submits for review and never creates a version.
+# Uses the App Manager key of the iOS release workflow (docs/app-store.md).
+name: App Store text sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write the differences to App Store Connect (off = dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: asc-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+    steps:
+      - name: Check the secrets
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_API_KEY_P8; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret ${name} is missing (docs/app-store.md)."
+              missing=1
+            fi
+          done
+          exit "${missing}"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check the texts first
+        run: python3 -I tool/store_check.py
+
+      - name: Compare with App Store Connect
+        env:
+          APPLY: ${{ inputs.apply }}
+        run: |
+          set -euo pipefail
+          key="${RUNNER_TEMP}/asc-key.p8"
+          umask 077
+          printf '%s' "${ASC_API_KEY_P8}" > "${key}"
+          export ASC_KEY_FILE="${key}"
+          if [ "${APPLY}" = "true" ]; then
+            python3 -I tool/asc_sync.py --apply
+          else
+            python3 -I tool/asc_sync.py
+          fi
+          rm -f "${key}"
