@@ -13,6 +13,7 @@ import 'app.dart';
 import 'data/repositories/data_providers.dart';
 import 'data/repositories/preferences_repository.dart';
 import 'features/active_ride/active_ride_providers.dart';
+import 'features/shell/startup_failure_screen.dart';
 import 'tracking/foreground_task_service.dart';
 import 'tracking/live_activity_service.dart';
 import 'tracking/ride_control_relay.dart';
@@ -58,15 +59,6 @@ Future<void> main() async {
     channelName: container.read(rideNotificationCopyProvider).channelName,
   );
 
-  // A fresh isolate can't be recording yet, so any ride still missing its end
-  // time was cut off by a killed process — close or drop it (issue #26).
-  await container.read(rideRepositoryProvider).finalizeUnfinishedRides();
-
-  // Drop preview PNGs cached by an older renderer version (each version bump
-  // leaves its predecessor's directory behind). Fire-and-forget: nothing
-  // waits on it, and the current version's directory is never touched.
-  unawaited(container.read(routePreviewCacheProvider).purgeOutdatedVersions());
-
   // Relay recording-notification interactions (which arrive on the main isolate
   // via sendDataToMain) to the recording controller / deep-link.
   FlutterForegroundTask.addTaskDataCallback(
@@ -77,6 +69,42 @@ Future<void> main() async {
     liveActivityChannel,
     (id) => rideControlRelay(container, id),
   );
+
+  if (await _openDatabase(container)) {
+    _launchApp(container);
+  } else {
+    // A failing database open or migration used to end `main` here and leave
+    // the launch screen up for good (#139): offer a retry instead.
+    runApp(
+      StartupFailureApp(
+        retry: () async {
+          // The failed open is cached in the database object: build a new one.
+          container.invalidate(appDatabaseProvider);
+          return _openDatabase(container);
+        },
+        onRecovered: () => _launchApp(container),
+      ),
+    );
+  }
+}
+
+/// The first database access, so migrations run here. A fresh isolate can't be
+/// recording yet, so any ride still missing its end time was cut off by a
+/// killed process — close or drop it (issue #26). False when that fails.
+Future<bool> _openDatabase(ProviderContainer container) async {
+  try {
+    await container.read(rideRepositoryProvider).finalizeUnfinishedRides();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+void _launchApp(ProviderContainer container) {
+  // Drop preview PNGs cached by an older renderer version (each version bump
+  // leaves its predecessor's directory behind). Fire-and-forget: nothing
+  // waits on it, and the current version's directory is never touched.
+  unawaited(container.read(routePreviewCacheProvider).purgeOutdatedVersions());
 
   runApp(
     UncontrolledProviderScope(container: container, child: const RetrailApp()),

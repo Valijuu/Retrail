@@ -20,6 +20,9 @@
   "profilePictureSubtitle": "Choose a photo, or keep it blank.",
   "profilePictureUploadCd": "Upload a photo",
   "profilePictureFailed": "Couldn't load the photo. Check photo access in your settings.",
+  "startupFailureTitle": "Retrail can’t open your rides right now",
+  "startupFailureBody": "Your rides are still stored on this device. Close other apps and try again; if it keeps failing, restart your phone.",
+  "startupFailureRetry": "Try again",
   "profilePictureDeleteCd": "Delete photo",
 
   "activityPickerTitle": "How do you roll?",

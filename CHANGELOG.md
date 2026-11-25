@@ -13,6 +13,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 - Android: your rides, route previews and profile photo are no longer part of the Google cloud backup. A new phone gets your name and settings back, but not the ride history, unless you transfer directly from the old phone (Android 12 and newer).
 
 ### Fixed
+- If your rides cannot be opened when the app starts, you now see a message with "Try again" instead of a screen that never goes away (#139).
 - If the recording service cannot start, the ride screen closes instead of sitting there without recording (#141).
 - Choosing a profile photo shows a message when photo access is denied instead of doing nothing, and no longer leaves temporary files behind (#145).
 - The place search no longer stays on "loading" after a network or certificate error; it says it is unavailable (#145).

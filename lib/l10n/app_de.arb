@@ -19,6 +19,9 @@
   "profilePictureSubtitle": "Wähle ein Foto oder lass es leer.",
   "profilePictureUploadCd": "Foto hochladen",
   "profilePictureFailed": "Das Foto konnte nicht geladen werden. Prüfe in den Einstellungen den Zugriff auf deine Fotos.",
+  "startupFailureTitle": "Retrail kann deine Fahrten gerade nicht öffnen",
+  "startupFailureBody": "Deine Fahrten sind weiterhin auf diesem Gerät gespeichert. Schließe andere Apps und versuche es erneut; hilft das nicht, starte dein Handy neu.",
+  "startupFailureRetry": "Erneut versuchen",
   "profilePictureDeleteCd": "Foto löschen",
 
   "activityPickerTitle": "Wie fährst du?",
