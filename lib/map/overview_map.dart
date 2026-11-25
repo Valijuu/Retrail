@@ -198,6 +198,14 @@ class _OverviewMapState extends State<OverviewMap> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // A focus requested before this map existed is applied once its style has
+    // loaded, like one that arrives while the style loads (#151).
+    _pendingFocus = widget.focusBounds;
+  }
+
+  @override
   void didUpdateWidget(OverviewMap old) {
     super.didUpdateWidget(old);
     final area = widget.area;
@@ -294,10 +302,10 @@ class _OverviewMapState extends State<OverviewMap> {
     final restore = widget.restoreCamera;
     final focus = _pendingFocus;
     _pendingFocus = null;
-    if (focus != null) {
-      await _fitBounds(focus, insetBottom: _focusCardInset);
-    } else if (_cameraMoves != _movesAtCreate) {
+    if (_cameraMoves != _movesAtCreate) {
       // Moved meanwhile: leave the camera where that move put it.
+    } else if (focus != null) {
+      await _fitBounds(focus, insetBottom: _focusCardInset);
     } else if (restore != null) {
       await _jump(restore.center, restore.zoom);
     } else {

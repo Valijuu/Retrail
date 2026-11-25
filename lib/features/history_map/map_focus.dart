@@ -75,7 +75,10 @@ class MapFocusFlow {
 
   void _expire() {
     if (_rideId == null) return;
-    if (_ref.read(outlineFillProvider)) {
+    // Still loading the refreshed overview (or its outline fill): the ride may
+    // yet appear, so the verdict waits for the settled data.
+    if (_ref.read(overviewProvider).isLoading ||
+        _ref.read(outlineFillProvider)) {
       _deadline = Timer(_focusPatience, _expire);
       return;
     }

@@ -224,6 +224,8 @@ void main() {
     service.startError = null;
     expect(await c.start(), LocationStartAction.proceed);
     expect(tracker.state.isTracking, isTrue);
+    // Let the ride's first insert finish before the teardown closes the database.
+    await pumpEventQueue();
   });
 
   test('the notification updates at most once per elapsed second', () async {
