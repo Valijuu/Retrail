@@ -155,5 +155,7 @@ The workflow fails before the build if a secret is missing, and refuses a bundle
 the upload key. Release notes come from `store/release-notes/<version>.md` (the `## de` and `## en`
 sections) and must exist before the run.
 
+The `Play listing sync` workflow (`tool/play_listing_sync.py`) uses the same `PLAY_SERVICE_ACCOUNT_JSON` to update the store texts, screenshots, feature graphic and icon from `store/play`. Run it as a dry run first; the service account needs the right to manage the store presence, which the "Release manager" role may not include (untested).
+
 The first Play run for a new app still needs the manual steps in `docs/play-store.md`; CI is for the
 updates after that.

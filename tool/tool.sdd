@@ -13,6 +13,7 @@ Owns:
   ./render_store_graphics.sh
   ./store_check.py
   ./asc_sync.py
+  ./play_listing_sync.py
   ./build_app_icons.py
   ./render_ios_store_graphics.sh
   ./check_raw_sql.py
@@ -45,6 +46,7 @@ Must:
     status-bar glyph and the iOS Live Activity mark; `dart run flutter_launcher_icons` then writes the launcher icons.
   `store_check.py` checks store texts, release notes (de and en) and image sizes against the store limits; `--write` rebuilds the iOS what's new files from `store/release-notes/<version>.md`. The `Store check` workflow runs it.
   `asc_sync.py` compares `store/ios/text` with App Store Connect and writes only the differing fields (dry run unless `--apply`); it never submits or creates a version. The `App Store text sync` workflow runs it by hand.
+  `play_listing_sync.py` does the same for the Play listing: short and full description, phone screenshots, feature graphic and icon, de and en; images are compared by SHA-256 with what Play holds and replaced only when they differ, dry run unless `--apply`. The `Play listing sync` workflow runs it by hand and needs `PLAY_SERVICE_ACCOUNT_JSON`.
   `render_store_graphics.sh` renders the icon, feature graphics and framed screenshots at 2x, scaled down with Lanczos.
   `render_ios_store_graphics.sh` frames the Simulator shots for the App Store (1320 x 2868) the same way: caption, phone, optional second phone (light + dark) and an enlarged excerpt, listed in `store/ios/screenshots.tsv`.
   `android_device_check.py` drives the installed debug app on one connected Android phone through adb and
