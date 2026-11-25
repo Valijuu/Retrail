@@ -19,4 +19,6 @@ Must:
   Photo paths are stored relative to the app documents directory and an absolute path saved by an older version is
     re-rooted on read, so a photo survives the iOS container path changing with an update; a photo file that cannot be
     read shows the blank avatar (#134).
+  A photo pick that fails (for example denied photo access) shows a message and changes nothing; the picker's temporary
+    files are deleted (#145).
   The profile edit sheet hugs its content, saves the name on Save and persists photo changes at once.

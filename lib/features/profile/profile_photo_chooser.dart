@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import 'profile_photo_manager.dart';
 import 'profile_providers.dart';
 import '../../core/theme/theme_context.dart';
 
@@ -36,7 +37,14 @@ class ProfilePhotoChooser extends ConsumerWidget {
               button: true,
               label: l10n.profilePictureUploadCd,
               child: GestureDetector(
-                onTap: manager.addNewPhoto,
+                onTap: () async {
+                  final outcome = await manager.addNewPhoto();
+                  if (outcome == PhotoAddOutcome.failed && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.profilePictureFailed)),
+                    );
+                  }
+                },
                 child: Container(
                   width: 64,
                   height: 64,

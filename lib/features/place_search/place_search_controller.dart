@@ -161,7 +161,9 @@ class PlaceSearchController extends Notifier<PlaceSearchState> {
       _lastAnswer = (status: status, suggestions: places);
       if (!_isCurrent(text)) return;
       state = state.copyWith(status: status, suggestions: places);
-    } on PlaceSearchUnavailable {
+    } on Object {
+      // Not only PlaceSearchUnavailable: a TLS error or an unexpected body shape
+      // must not leave the panel on "loading" (#145).
       if (seq != _seq || !ref.mounted) return;
       if (!_isCurrent(text)) {
         // Failed for older text: nothing shows, but typing back to it must

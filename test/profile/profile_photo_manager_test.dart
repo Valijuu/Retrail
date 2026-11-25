@@ -1,8 +1,15 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/repositories/preferences_repository.dart';
 import 'package:retrail/features/profile/profile_photo_manager.dart';
 import 'package:retrail/features/profile/profile_photo_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _ThrowingPicker implements ProfilePhotoPicker {
+  @override
+  Future<String?> pickAndCrop() async =>
+      throw PlatformException(code: 'photo_access_denied');
+}
 
 class _FakePicker implements ProfilePhotoPicker {
   _FakePicker(this.paths);
@@ -31,6 +38,30 @@ void main() {
     await m.addNewPhoto();
     expect(p.currentProfilePhotoNow, '/2.jpg');
     expect(p.recentProfilePhotosNow, ['/2.jpg', '/1.jpg']);
+  });
+
+  // #145: denied photo access made the picker throw and the rider saw nothing.
+  test('addNewPhoto reports a failed pick and changes nothing', () async {
+    final p = await prefs();
+    final m = ProfilePhotoManager(
+      p,
+      _ThrowingPicker(),
+      deleteFile: (_) async {},
+    );
+    expect(await m.addNewPhoto(), PhotoAddOutcome.failed);
+    expect(p.currentProfilePhotoNow, isNull);
+    expect(p.recentProfilePhotosNow, isEmpty);
+  });
+
+  test('addNewPhoto reports added and cancelled', () async {
+    final p = await prefs();
+    final m = ProfilePhotoManager(
+      p,
+      _FakePicker(['/1.jpg', null]),
+      deleteFile: (_) async {},
+    );
+    expect(await m.addNewPhoto(), PhotoAddOutcome.added);
+    expect(await m.addNewPhoto(), PhotoAddOutcome.cancelled);
   });
 
   test('a 6th photo evicts and deletes the oldest', () async {

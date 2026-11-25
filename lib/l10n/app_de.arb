@@ -18,6 +18,7 @@
   "profilePictureGreetingAnon": "Profilbild hinzufügen",
   "profilePictureSubtitle": "Wähle ein Foto oder lass es leer.",
   "profilePictureUploadCd": "Foto hochladen",
+  "profilePictureFailed": "Das Foto konnte nicht geladen werden. Prüfe in den Einstellungen den Zugriff auf deine Fotos.",
   "profilePictureDeleteCd": "Foto löschen",
 
   "activityPickerTitle": "Wie fährst du?",

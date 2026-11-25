@@ -15,8 +15,24 @@ class ImageCropperPhotoPicker implements ProfilePhotoPicker {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked == null) return null;
 
+    // The picker's and the cropper's temp files are never needed again once the
+    // result is copied (or the crop failed or was cancelled) (#145).
+    String? croppedPath;
+    try {
+      return await _cropAndSave(picked.path, (path) => croppedPath = path);
+    } finally {
+      await _deleteQuietly(picked.path);
+      final temp = croppedPath;
+      if (temp != null) await _deleteQuietly(temp);
+    }
+  }
+
+  Future<String?> _cropAndSave(
+    String sourcePath,
+    void Function(String path) onCropped,
+  ) async {
     final cropped = await ImageCropper().cropImage(
-      sourcePath: picked.path,
+      sourcePath: sourcePath,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       maxWidth: 512,
       maxHeight: 512,
@@ -38,6 +54,7 @@ class ImageCropperPhotoPicker implements ProfilePhotoPicker {
       ],
     );
     if (cropped == null) return null;
+    onCropped(cropped.path);
 
     final dir = await getApplicationDocumentsDirectory();
     final dest = File(
@@ -50,5 +67,14 @@ class ImageCropperPhotoPicker implements ProfilePhotoPicker {
     await dest.parent.create(recursive: true);
     await File(cropped.path).copy(dest.path);
     return dest.path;
+  }
+
+  static Future<void> _deleteQuietly(String path) async {
+    try {
+      final file = File(path);
+      if (await file.exists()) await file.delete();
+    } on FileSystemException {
+      // A leftover temp file is harmless; never fail the pick over it.
+    }
   }
 }

@@ -19,6 +19,7 @@
   "profilePictureGreetingAnon": "Add a profile picture",
   "profilePictureSubtitle": "Choose a photo, or keep it blank.",
   "profilePictureUploadCd": "Upload a photo",
+  "profilePictureFailed": "Couldn't load the photo. Check photo access in your settings.",
   "profilePictureDeleteCd": "Delete photo",
 
   "activityPickerTitle": "How do you roll?",

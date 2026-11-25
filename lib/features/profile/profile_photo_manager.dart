@@ -1,7 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart' show PlatformException;
+
 import '../../data/repositories/preferences_repository.dart';
 import 'profile_photo_picker.dart';
+
+/// What [ProfilePhotoManager.addNewPhoto] did, so the UI can tell the rider.
+enum PhotoAddOutcome { added, cancelled, failed }
 
 /// Deletes a file by path. Injectable so tests don't touch the filesystem.
 typedef FileDeleter = Future<void> Function(String path);
@@ -19,10 +24,17 @@ class ProfilePhotoManager {
   final FileDeleter _deleteFile;
 
   /// Picks a new photo; on success makes it current, prepends it to recents,
-  /// and deletes any file evicted past the cap. No-op if cancelled.
-  Future<void> addNewPhoto() async {
-    final path = await _picker.pickAndCrop();
-    if (path == null) return;
+  /// and deletes any file evicted past the cap. A cancelled pick changes
+  /// nothing; a platform failure (e.g. photo access denied) is reported as
+  /// [PhotoAddOutcome.failed] instead of escaping into the tap handler (#145).
+  Future<PhotoAddOutcome> addNewPhoto() async {
+    final String? path;
+    try {
+      path = await _picker.pickAndCrop();
+    } on PlatformException {
+      return PhotoAddOutcome.failed;
+    }
+    if (path == null) return PhotoAddOutcome.cancelled;
 
     final recent = [..._prefs.recentProfilePhotosNow]..remove(path);
     recent.insert(0, path);
@@ -34,6 +46,7 @@ class ProfilePhotoManager {
     for (final evictedPath in evicted) {
       await _deleteFile(evictedPath);
     }
+    return PhotoAddOutcome.added;
   }
 
   Future<void> select(String path) => _prefs.setCurrentProfilePhoto(path);

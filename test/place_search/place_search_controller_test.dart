@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show HandshakeException;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -192,6 +193,17 @@ void main() {
     gates['Berlin']!.complete(http.Response(_body(['Berlin']), 200));
     await wait(5);
     expect(c.read(placeSearchProvider).suggestions.single.name, 'Bremen');
+  });
+
+  // #145: a TLS or parsing error is no PlaceSearchUnavailable and left the
+  // panel on "loading" for good.
+  test('an unexpected error says unavailable instead of loading', () async {
+    c = make((_) async => throw const HandshakeException('bad certificate'));
+    c.read(placeSearchProvider.notifier)
+      ..open()
+      ..setQuery('Hamburg');
+    await wait();
+    expect(c.read(placeSearchProvider).status, PlaceSearchStatus.unavailable);
   });
 
   test(
