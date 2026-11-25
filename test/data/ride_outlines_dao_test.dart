@@ -185,6 +185,36 @@ void main() {
     expect((await v7.outlineDao.getByRideIds([id])).single.revision, 1);
   });
 
+  // #136: rides with a single point had an empty marker; with the new rule
+  // they are filled again, so the markers of v8 are dropped once.
+  test(
+    'migrating v8 to v9 drops the empty markers and keeps outlines',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('outline_v8');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/db.sqlite');
+      final fresh = AppDatabase(NativeDatabase(file));
+      final drawn = await _ride(fresh);
+      final marker = await _ride(fresh);
+      await fresh.outlineDao.upsert(_outline(drawn));
+      await fresh.outlineDao.upsert(_outline(marker, polyline: ''));
+      await fresh.customStatement('PRAGMA user_version = 8');
+      await fresh.close();
+
+      final v9 = AppDatabase(NativeDatabase(file));
+      addTearDown(v9.close);
+      expect(
+        (await v9.outlineDao.getByRideIds([
+          drawn,
+          marker,
+        ])).map((r) => r.rideId),
+        [drawn],
+      );
+      // The ride that had the marker waits for an outline again.
+      expect(await v9.outlineDao.rideIdsWithoutOutline(), [marker]);
+    },
+  );
+
   test(
     'rideIdsWithoutOutline with a limit gives only the oldest ids (#112)',
     () async {

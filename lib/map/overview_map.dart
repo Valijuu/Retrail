@@ -33,6 +33,10 @@ const double _kmPerDegreeLat = 111.195;
 const double _fallbackLat = 30;
 const double _fallbackLon = 10;
 
+/// Room kept free at the bottom when the camera moves to one ride: its card
+/// opens there (#151).
+const double _focusCardInset = 290;
+
 /// The start zoom while the rides' frame is worked out.
 const double _framedStartZoom = 10;
 
@@ -54,6 +58,8 @@ class OverviewMap extends StatefulWidget {
     this.area,
     this.position,
     this.areaFocusToken,
+    this.focusBounds,
+    this.focusToken,
     this.onTap,
     this.onLongPress,
     this.onPinMoved,
@@ -92,6 +98,12 @@ class OverviewMap extends StatefulWidget {
   /// changes (the my-location button, a place chosen in the search), like a
   /// long press does.
   final Object? areaFocusToken;
+
+  /// A ride the camera moves to when [focusToken] changes (#151): its bounds,
+  /// framed like the rides are. A ride that stayed in one place is a point and
+  /// gets the close-up zoom.
+  final OutlineBounds? focusBounds;
+  final Object? focusToken;
 
   /// A tap on the map, with the zoom it happened at.
   final void Function(LatLng point, double zoom)? onTap;
@@ -203,6 +215,15 @@ class _OverviewMapState extends State<OverviewMap> {
       _centerOnPin = false;
       _fitArea(area);
     }
+    if (widget.focusToken != old.focusToken && widget.focusBounds != null) {
+      _userMoved = true;
+      // Before the style is loaded the first frame would override it: wait.
+      if (_sourcesReady) {
+        _fitBounds(widget.focusBounds, insetBottom: _focusCardInset);
+      } else {
+        _pendingFocus = widget.focusBounds;
+      }
+    }
     if (widget.frameToken != old.frameToken) {
       _userMoved = false;
       _frame();
@@ -271,7 +292,11 @@ class _OverviewMapState extends State<OverviewMap> {
     _sourcesReady = true;
     _pushAll();
     final restore = widget.restoreCamera;
-    if (_cameraMoves != _movesAtCreate) {
+    final focus = _pendingFocus;
+    _pendingFocus = null;
+    if (focus != null) {
+      await _fitBounds(focus, insetBottom: _focusCardInset);
+    } else if (_cameraMoves != _movesAtCreate) {
       // Moved meanwhile: leave the camera where that move put it.
     } else if (restore != null) {
       await _jump(restore.center, restore.zoom);
@@ -282,8 +307,12 @@ class _OverviewMapState extends State<OverviewMap> {
     if (!_styleReady) setState(() => _styleReady = true);
   }
 
-  Future<void> _frame() async {
-    final box = widget.bounds;
+  /// A ride to move to once the style is loaded (#151).
+  OutlineBounds? _pendingFocus;
+
+  Future<void> _frame() => _fitBounds(widget.bounds);
+
+  Future<void> _fitBounds(OutlineBounds? box, {double insetBottom = 0}) async {
     if (box == null || _viewport.isEmpty || _controller == null) return;
     final fit = fitRouteCamera(
       <RoutePoint>[
@@ -293,6 +322,7 @@ class _OverviewMapState extends State<OverviewMap> {
       width: _viewport.width,
       height: _viewport.height,
       insetTop: widget.frameInsetTop,
+      insetBottom: insetBottom,
     );
     if (fit == null) return;
     await _jump((lat: fit.lat, lng: fit.lng), fit.zoom);

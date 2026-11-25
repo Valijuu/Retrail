@@ -27,6 +27,11 @@ Can modify:
   /lib/features/history/route_group_providers.dart
 
 Must:
+  A History card's 3-dot menu has "Show on map": the map view opens, the ride is selected with its card and the camera
+    frames it. If the filters, the map's activity selection or the area pin hide it, they are reset; a ride that still
+    does not appear after that (it has no drawable route) gets the hint that it cannot be shown (#151).
+  A ride that stayed in one place (one recorded point or all points together) is drawn as a short segment, so its dot
+    shows in Lines mode (#136).
   The History tab has a Liste/Karte switch; List is the default. The choice (`history_view`) and the map mode
     Lines or Heat (`history_map_mode`) are stored in preferences and come back after the app was closed
     and reopened or returned to from the background.

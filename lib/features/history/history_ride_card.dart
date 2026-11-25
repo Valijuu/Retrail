@@ -34,6 +34,7 @@ class HistoryRideCard extends ConsumerStatefulWidget {
     required this.onDelete,
     required this.onToggleFavorite,
     this.onFollowRoute,
+    this.onShowOnMap,
     this.onOpenRouteGroup,
     this.previewAspectScale = 1,
   });
@@ -56,6 +57,10 @@ class HistoryRideCard extends ConsumerStatefulWidget {
 
   /// Starts "Follow route"; null hides the menu entry.
   final VoidCallback? onFollowRoute;
+
+  /// Opens the History map on this ride; null hides the menu entry (the map's
+  /// own card is already on the map, #151).
+  final VoidCallback? onShowOnMap;
 
   /// Opens the comparison of this ride's route group from its Followed /
   /// "n× followed" chip (Spec 20).
@@ -199,6 +204,7 @@ class _HistoryRideCardState extends ConsumerState<HistoryRideCard>
                           onFollowRoute: canFollow
                               ? widget.onFollowRoute
                               : null,
+                          onShowOnMap: widget.onShowOnMap,
                         ),
                       ],
                     ],
@@ -413,17 +419,19 @@ class _Thumbnail extends ConsumerWidget {
   }
 }
 
-enum _MenuAction { follow, edit, delete }
+enum _MenuAction { follow, showOnMap, edit, delete }
 
 class _OverflowMenu extends StatelessWidget {
   const _OverflowMenu({
     required this.onEdit,
     required this.onDelete,
     this.onFollowRoute,
+    this.onShowOnMap,
   });
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback? onFollowRoute;
+  final VoidCallback? onShowOnMap;
 
   @override
   Widget build(BuildContext context) {
@@ -440,6 +448,7 @@ class _OverflowMenu extends StatelessWidget {
       icon: Icon(Icons.more_vert, size: 20, color: colors.onSurfaceVariant),
       onSelected: (v) => switch (v) {
         _MenuAction.follow => onFollowRoute?.call(),
+        _MenuAction.showOnMap => onShowOnMap?.call(),
         _MenuAction.edit => onEdit(),
         _MenuAction.delete => onDelete(),
       },
@@ -452,6 +461,17 @@ class _OverflowMenu extends StatelessWidget {
                 Icon(Icons.route, color: colors.onSurface, size: 20),
                 const SizedBox(width: 12),
                 Text(l10n.followRouteAction),
+              ],
+            ),
+          ),
+        if (onShowOnMap != null)
+          PopupMenuItem(
+            value: _MenuAction.showOnMap,
+            child: Row(
+              children: [
+                Icon(Icons.map_outlined, color: colors.onSurface, size: 20),
+                const SizedBox(width: 12),
+                Text(l10n.historyShowOnMap),
               ],
             ),
           ),

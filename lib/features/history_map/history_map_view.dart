@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/widgets/app_snack_bar.dart';
 import '../../domain/activity_type.dart';
+import '../../domain/ride_outline.dart' show OutlineBounds;
 import '../../domain/route_markers.dart'
     show RouteEndpointStyle, routeEndpointStyle;
 import '../../map/overview_layers.dart' show OverviewEnds;
@@ -23,6 +24,7 @@ import '../place_search/place_search_controller.dart';
 import '../place_search/widgets/place_search_button.dart';
 import '../place_search/widgets/place_search_panel.dart';
 import 'map_back.dart';
+import 'map_focus.dart';
 import 'map_area.dart';
 import 'map_default_activity.dart';
 import 'map_locator.dart';
@@ -95,6 +97,16 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   int _frameToken = 0;
   int _areaFocusToken = 0;
 
+  /// The camera target of "Show on map" (#151) and the token that moves it.
+  OutlineBounds? _focusBounds;
+  int _focusToken = 0;
+
+  late final MapFocusFlow _focus = MapFocusFlow(
+    ref,
+    show: _onFocusShown,
+    unavailable: _onFocusUnavailable,
+  );
+
   /// Where the camera was left on the last visit; null on the first one.
   late final RememberedCamera? _restore = ref.read(mapCameraMemoryProvider);
 
@@ -119,6 +131,9 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
         _reframe();
       }
       framed.remember(key);
+      // A ride the list asked for before the map existed (#151).
+      final wanted = ref.read(mapFocusProvider);
+      if (wanted != null) _takeFocusRequest(wanted);
     });
     Future.microtask(() {
       if (mounted) _back.register(_handleBack);
@@ -166,8 +181,29 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     return false;
   }
 
+  void _takeFocusRequest(int rideId) {
+    ref.read(mapFocusProvider.notifier).clear();
+    _framePending = false; // the ride's own frame wins over the rides' frame
+    _focus.start(rideId);
+  }
+
+  void _onFocusShown(int rideId, OutlineBounds? bounds) {
+    ref.read(mapSelectionProvider.notifier).showRide(rideId);
+    if (!mounted) return;
+    setState(() {
+      _framePending = false;
+      _focusBounds = bounds;
+      _focusToken++;
+    });
+  }
+
+  void _onFocusUnavailable() {
+    if (mounted) _hint(AppLocalizations.of(context).historyMapRideNotOnMap);
+  }
+
   @override
   void dispose() {
+    _focus.dispose();
     Future.microtask(() => _visible.set(false));
     Future.microtask(() => _back.register(null));
     super.dispose();
@@ -219,6 +255,7 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     final state = next.value;
     // A reload still carries the old rides: wait for the new ones. While old
     // rides are still being given their outline the set is not complete yet.
+    _focus.advance();
     if (next.isLoading || state == null || state.bounds == null) return;
     if (ref.read(outlineFillProvider)) return;
     if (!_framePending) return;
@@ -322,6 +359,9 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
     ref.listen(legendTypesProvider, (_, _) => _applyDefaultActivity());
     ref.listen(lastActivityTypeProvider, (_, _) => _applyDefaultActivity());
     ref.listen(overviewProvider, _onOverview);
+    ref.listen(mapFocusProvider, (_, id) {
+      if (id != null) _takeFocusRequest(id);
+    });
     ref.listen(outlineFillProvider, (was, filling) {
       if (was == true && !filling) {
         _onOverview(null, ref.read(overviewProvider));
@@ -379,6 +419,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
           area: area,
           position: position,
           areaFocusToken: _areaFocusToken,
+          focusBounds: _focusBounds,
+          focusToken: _focusToken,
           onTap: selection.tap,
           onLongPress: areaNotifier.setPin,
           onPinMoved: areaNotifier.setPin,

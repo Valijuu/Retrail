@@ -10,6 +10,7 @@ import '../../core/theme/app_shapes.dart';
 import '../../l10n/app_localizations.dart';
 import '../history_map/history_map_providers.dart';
 import '../history_map/map_back.dart';
+import '../history_map/map_focus.dart';
 import '../history_map/map_items.dart';
 import '../history_map/outline_fill.dart';
 import '../history_map/history_map_view.dart';
@@ -378,6 +379,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     );
   }
 
+  /// "Show on map" (#151): the map view opens on this ride.
+  void _showOnMap(int rideId) {
+    ref.read(mapFocusProvider.notifier).request(rideId);
+    unawaited(ref.read(historyMapControllerProvider).setView(HistoryView.map));
+  }
+
   /// What the map's preview card does: the same as the list's card.
   MapCardActions _mapCardActions() => MapCardActions(
     onOpenDetail: (r) => openDetail(r.entry),
@@ -439,6 +446,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
           onEdit: () => showEditRideSheet(context, ref, item.ride),
           onDelete: () => _confirmDelete(single: rideId),
           onFollowRoute: () => followRoute(item.ride),
+          onShowOnMap: () => _showOnMap(rideId),
           onOpenRouteGroup: () => openRouteGroup(item),
           onToggleFavorite: () =>
               ref.read(historyControllerProvider).toggleFavorite(item.ride),

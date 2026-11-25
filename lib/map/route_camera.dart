@@ -41,6 +41,7 @@ RouteCamera? fitRouteCamera(
   required double height,
   double padding = _defaultFitPaddingPx,
   double insetTop = 0,
+  double insetBottom = 0,
 }) {
   if (points.isEmpty) return null;
   final lats = points.map((p) => p.lat);
@@ -60,18 +61,19 @@ RouteCamera? fitRouteCamera(
     return _log2(targetPx / (_mapLibreWorldSizeAtZoom0Px * worldFrac));
   }
 
-  // [insetTop] px at the top are covered (controls over the map): the box is
-  // fitted to the free height below it.
+  // [insetTop] px at the top and [insetBottom] px at the bottom are covered
+  // (controls, a card over the map): the box is fitted to the free height
+  // between them.
   final zoom = math.min(
     zoomToFit(width, lonFrac),
-    zoomToFit(height - insetTop, latFrac),
+    zoomToFit(height - insetTop - insetBottom, latFrac),
   );
   final fitZoom = math.min(zoom, maxPreviewZoom);
   final centerLat = (north + south) / 2;
   return (
-    lat: insetTop == 0
+    lat: insetTop == insetBottom
         ? centerLat
-        : _shiftedNorth(centerLat, fitZoom, insetTop / 2),
+        : _shiftedNorth(centerLat, fitZoom, (insetTop - insetBottom) / 2),
     lng: (east + west) / 2,
     zoom: fitZoom,
   );

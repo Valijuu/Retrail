@@ -18,7 +18,8 @@ Must:
     the stored text and the map data stay small on long rides.
   The splits are worked out once, at `5` m, with an explicit stack instead of recursion; a doubled tolerance
     only drops the points whose split lies within it, so the result equals a new pass at that tolerance (#99).
-  Fewer than two input points give an empty outline; two or more points that are all identical give two points.
+  No input points give an empty outline; one point gives that point twice, so a ride that never moved can be drawn
+    (#136); two or more points that are all identical give two points.
   The encoded polyline uses the standard format with `5` decimal places; @RideOutline.decode of an encoded
     outline returns every point within `1` m of the original.
   @RideOutline.bounds is the box around all points as south, west, north and east.
@@ -48,5 +49,5 @@ Scenario: a corner larger than the tolerance
 
 Example:
   no points: empty outline
-  one point: empty outline
+  one point: that point twice
   encode then decode: each point within `1` m

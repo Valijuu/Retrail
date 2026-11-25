@@ -43,7 +43,7 @@ Must:
   @OutlineDao.watchOutlineRevisions emits ride id → revision of every outline row and never reads the polyline.
   @OutlineDao.watchHasRidesWithoutOutline emits whether a ride with a route still has no outline row.
   @OutlineDao.rideIdsWithoutOutline lists the rides with a route and no outline row, oldest first.
-  The schema version is `8`; every older version upgrades in place without losing rides.
+  The schema version is `9`; every older version upgrades in place without losing rides. Version 9 drops the empty outline markers, so rides with one point are filled again (#136).
   Every schema change raises the version and adds an upgrade step.
   Reads are reactive Drift streams; @RideWithTrackpoints is assembled in the DAO.
   Generated files come from `dart run build_runner build`.

@@ -153,6 +153,20 @@ void main() {
     },
   );
 
+  // #151: "Show on map" selects the ride without a tap on its line.
+  test('showRide opens the card of exactly that ride', () async {
+    await _ride(db, date: 1);
+    final other = await _ride(
+      db,
+      date: 2,
+      line: [(lat: 47.995, lng: 11.005), (lat: 48.005, lng: 11.005)],
+    );
+    await settle();
+
+    c.read(mapSelectionProvider.notifier).showRide(other);
+    expect(c.read(selectedRideProvider)!.entry.ride.rideId, other);
+  });
+
   test('tapping empty map clears the selection', () async {
     await _ride(db);
     await settle();

@@ -18,6 +18,28 @@ void main() {
     ]);
   });
 
+  // #136: a ride that starts and stops at the same place is a line of length
+  // zero, which the map draws as nothing at all.
+  test('a ride that stays in one place becomes a short visible dot', () {
+    final still = _poly([(48.0, 11.0), (48.0, 11.0)]);
+    final coords = jsonDecode(lineFragment(still)) as List;
+    expect(coords, hasLength(2));
+    final north = (coords[1] as List)[1] as double;
+    final south = (coords[0] as List)[1] as double;
+    // Centred on the place, a few metres long (0.00004 degrees is about 4 m).
+    expect((north + south) / 2, closeTo(48.0, 1e-9));
+    expect(north - south, closeTo(0.00004, 1e-9));
+    expect((coords[0] as List)[0], 11.0);
+  });
+
+  test('a ride with a real extent is left alone', () {
+    final short = _poly([(48.0, 11.0), (48.0, 11.0002)]); // about 15 m
+    expect(jsonDecode(lineFragment(short)), [
+      [11.0, 48.0],
+      [11.0002, 48.0],
+    ]);
+  });
+
   test('a heat fragment lists points about 30 m apart, ends included', () {
     final points = jsonDecode(heatFragment(line)) as List;
     // 0.001 degrees of longitude at 48 N is about 74 m: 0, 30, 60, end.

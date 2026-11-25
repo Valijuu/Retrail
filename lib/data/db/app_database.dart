@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -79,6 +79,11 @@ class AppDatabase extends _$AppDatabase {
         // v8: a revision per outline row (#111). A table created above at v8
         // already has the column.
         await m.addColumn(rideOutlines, rideOutlines.revision);
+      }
+      if (from < 9) {
+        // v9: a ride with one point now has an outline (#136). Rides that were
+        // marked as having none are filled again by OutlineRepository.
+        await customStatement("DELETE FROM ride_outlines WHERE polyline = ''");
       }
     },
     beforeOpen: (details) async {

@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/core/connectivity/connectivity_providers.dart';
 import 'package:retrail/core/theme/app_colors.dart';
@@ -29,6 +30,8 @@ import 'package:retrail/features/history/history_items.dart';
 import 'package:retrail/features/history/history_providers.dart';
 import 'package:retrail/features/history/history_ride_card.dart';
 import 'package:retrail/features/history/history_screen.dart';
+import 'package:retrail/features/history_map/history_map_providers.dart';
+import 'package:retrail/features/history_map/map_focus.dart';
 import 'package:retrail/features/history/ride_detail_dialog.dart';
 import 'package:retrail/features/history/route_group_providers.dart';
 import 'package:retrail/features/history/widgets/route_group_sheet.dart';
@@ -187,6 +190,8 @@ RideEntryItem _entry(int id, {String? desc, String? typ, bool fav = false}) =>
       ),
     );
 
+class _MockMapController extends Mock implements HistoryMapController {}
+
 void main() {
   late AppDatabase db;
   late FakeHistoryController controller;
@@ -220,6 +225,7 @@ void main() {
     Map<int, int> followCounts = const {},
     bool anyRide = true,
     TrackpointRepository? trackpointRepository,
+    HistoryMapController? mapController,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -238,6 +244,8 @@ void main() {
           (ref) => Stream.value(anyRide || items.isNotEmpty),
         ),
         historyControllerProvider.overrideWithValue(controller),
+        if (mapController != null)
+          historyMapControllerProvider.overrideWithValue(mapController),
         if (previewCache != null)
           routePreviewCacheProvider.overrideWithValue(previewCache),
         if (navLauncher != null)
@@ -977,10 +985,28 @@ void main() {
     final items = tester
         .widgetList(find.byWidgetPredicate((w) => w is PopupMenuItem))
         .toList();
-    expect(items.length, 3); // Follow route, Edit, Delete
+    expect(items.length, 4); // Follow route, Show on map, Edit, Delete
     await tester.tap(find.text('Follow route'));
     await tester.pumpAndSettle();
     expect(find.text('Record this ride?'), findsOneWidget);
+  });
+
+  // #151: the list's menu jumps to the ride on the map.
+  testWidgets('3-dot menu Show on map asks the map for that ride', (
+    tester,
+  ) async {
+    final mapController = _MockMapController();
+    registerFallbackValue(HistoryView.list);
+    when(() => mapController.setView(any())).thenAnswer((_) async {});
+    await pump(tester, [
+      _entry(7, desc: 'Morning roll'),
+    ], mapController: mapController);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Show on map'));
+    await tester.pumpAndSettle();
+    expect(container.read(mapFocusProvider), 7);
+    verify(() => mapController.setView(HistoryView.map)).called(1);
   });
 
   testWidgets('3-dot menu has no Follow route for a ride without a route', (

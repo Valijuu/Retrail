@@ -51,6 +51,9 @@ class MapSelectionNotifier extends Notifier<MapSelection> {
         item.ride.rideId: item.ride.date ?? item.ride.startTime ?? 0,
   };
 
+  /// Selects exactly [rideId]: the ride the list asked the map to show (#151).
+  void showRide(int rideId) => state = MapSelection(rideIds: [rideId]);
+
   void clear() => state = const MapSelection();
 }
 

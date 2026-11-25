@@ -271,6 +271,8 @@
   "historyMapOpenSettings": "Settings",
   "historyMapLocationOff": "Location services are off.",
   "historyMapLocationLost": "Location is no longer available.",
+  "historyShowOnMap": "Show on map",
+  "historyMapRideNotOnMap": "This ride has no route to show on the map.",
   "historyMapLocationNoFix": "No position found. Try again in the open.",
   "historyMapPreparing": "Preparing routes…",
   "historyMapHiddenRides": "{shown} of {total} routes",

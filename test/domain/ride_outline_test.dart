@@ -95,9 +95,11 @@ void main() {
       expect(outline.points, isEmpty);
     });
 
-    test('one point: empty outline', () {
-      final outline = RideOutline.simplify([_at(0, 0)], distance: _calc);
-      expect(outline.points, isEmpty);
+    // #136: a ride that recorded one point (it never moved) was counted but
+    // could not be drawn or found on the map.
+    test('one point: that point twice, so the ride can be drawn', () {
+      final outline = RideOutline.simplify([_at(3, 4)], distance: _calc);
+      expect(outline.points, [_at(3, 4), _at(3, 4)]);
     });
 
     test('two points stay as they are', () {

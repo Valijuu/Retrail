@@ -57,6 +57,28 @@ void main() {
       );
       expect(offsets.single.y, closeTo(300 + 50, 0.5));
     });
+    // #151: the ride's card covers the bottom of the map.
+    test('a bottom inset keeps the route above it: the box lands higher on '
+        'screen and the zoom fits the free height', () {
+      const points = [(lat: 49.0, lng: 11.0), (lat: 49.1, lng: 11.0)];
+      final plain = fitRouteCamera(points, width: 400, height: 600)!;
+      final inset = fitRouteCamera(
+        points,
+        width: 400,
+        height: 600,
+        insetBottom: 100,
+      )!;
+      expect(inset.zoom, lessThan(plain.zoom));
+      expect(inset.lat, lessThan(plain.lat));
+      final offsets = cameraOffsets(
+        [(lat: 49.05, lng: 11.0)],
+        inset,
+        width: 400,
+        height: 600,
+      );
+      // The box midpoint is drawn 50 px above the screen centre (inset / 2).
+      expect(offsets.single.y, closeTo(300 - 50, 0.5));
+    });
     test('an east-west route fits its width: 0.1° lng in 400 px − 2×24 padding '
         '→ zoom ≈ 11.273 (512-px world tiles)', () {
       final camera = fitRouteCamera(

@@ -19,9 +19,33 @@ String _coordinates(Iterable<LatLng> points) => jsonEncode([
     ],
 ]);
 
-/// The line coordinates (`[[lng,lat],…]`) of one encoded outline.
-String lineFragment(String polyline) =>
-    _coordinates(RideOutline.decode(polyline).points);
+/// An outline that spans less than this (degrees, about 1 m) in both axes is a
+/// ride that stayed in one place.
+const _stillSpanDegrees = 1e-5;
+
+/// Length of the dot drawn for such a ride (degrees of latitude, about 4 m).
+const _dotLengthDegrees = 0.00004;
+
+/// The line coordinates (`[[lng,lat],…]`) of one encoded outline. A ride that
+/// stayed in one place has a line of length zero, which the map draws as
+/// nothing: it becomes a short segment, so its round caps show a dot (#136).
+String lineFragment(String polyline) {
+  final points = RideOutline.decode(polyline).points;
+  final first = points.firstOrNull;
+  if (first != null &&
+      points.every(
+        (p) =>
+            (p.lat - first.lat).abs() < _stillSpanDegrees &&
+            (p.lng - first.lng).abs() < _stillSpanDegrees,
+      )) {
+    final half = _dotLengthDegrees / 2;
+    return _coordinates([
+      (lat: first.lat - half, lng: first.lng),
+      (lat: first.lat + half, lng: first.lng),
+    ]);
+  }
+  return _coordinates(points);
+}
 
 /// The heat coordinates (`[[lng,lat],…]`) of one encoded outline.
 String heatFragment(String polyline) =>

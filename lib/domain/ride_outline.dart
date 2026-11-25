@@ -25,7 +25,7 @@ class RideOutline {
   /// An outline never has more points than this.
   static const int maxPoints = 500;
 
-  /// Fewer points than this make no line, so there is nothing to outline.
+  /// Fewer points than this make no line.
   static const _minPointsForLine = 2;
 
   /// How much the tolerance grows each time the result still has too many
@@ -51,7 +51,12 @@ class RideOutline {
     List<LatLng> points, {
     DistanceCalculator distance = const HaversineDistanceCalculator(),
   }) {
-    if (points.length < _minPointsForLine) return const RideOutline([]);
+    if (points.isEmpty) return const RideOutline([]);
+    // A ride that recorded a single point never moved: the point twice, so it
+    // can be drawn as a dot and found on the map (#136).
+    if (points.length < _minPointsForLine) {
+      return RideOutline([points.first, points.first]);
+    }
     final importance = _splitImportance(points, distance);
     var tolerance = toleranceM;
     while (true) {
