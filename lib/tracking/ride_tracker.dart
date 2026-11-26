@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
+
 import '../data/repositories/ride_repository.dart';
 import '../data/repositories/trackpoint_repository.dart';
 import '../domain/activity_type.dart';
@@ -54,6 +56,12 @@ class RideTracker {
   double? _speedKmh;
   double _maxSpeedKmh = 0.0;
   int _elapsedSeconds = 0;
+
+  /// The live time comes from the clock, not from counting timer ticks: a
+  /// throttled timer then loses no time (#141). The finished runs of a ride
+  /// (before a pause) and the start of the current run.
+  int _elapsedBeforeMs = 0;
+  int? _runStartedMs;
   bool _isPaused = false;
   ActivityType? _activityType;
   bool _locationServiceEnabled = true;
@@ -185,7 +193,7 @@ class RideTracker {
     _activeRideId = rideId;
     _route.clear();
     _speedKmh = null;
-    _elapsedSeconds = 0;
+    _resetElapsed();
     _startElapsedTimer();
     _emit();
   }
@@ -199,6 +207,7 @@ class RideTracker {
     // Idempotent: nothing to do when not tracking and no ride is in flight.
     if (!_isTracking && _activeRideId == null) return;
     final rideId = _activeRideId;
+    _bankElapsed();
     _cancelElapsedTimer();
     _activeRideId = null;
     _isTracking = false;
@@ -220,6 +229,7 @@ class RideTracker {
   void pause() {
     if (!_isTracking || _isPaused) return;
     _isPaused = true;
+    _bankElapsed();
     _cancelElapsedTimer();
     _emit();
   }
@@ -260,7 +270,7 @@ class RideTracker {
     _isPaused = false;
     _lastCompletedRideId = null;
     _route.clear();
-    _elapsedSeconds = 0;
+    _resetElapsed();
     _emit();
     if (rideId != null) {
       unawaited(_rideRepository.deleteById(rideId));
@@ -285,7 +295,7 @@ class RideTracker {
     // deferred discard of the previous ride must not clobber an active one.
     if (!_isTracking) {
       _route.clear();
-      _elapsedSeconds = 0;
+      _resetElapsed();
       _emit();
     }
     unawaited(_rideRepository.deleteById(rideId));
@@ -377,10 +387,32 @@ class RideTracker {
 
   void _startElapsedTimer() {
     _cancelElapsedTimer();
+    _runStartedMs = clock.now().millisecondsSinceEpoch;
     _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _elapsedSeconds += 1;
+      _elapsedSeconds = _elapsedMs ~/ 1000;
       _emit();
     });
+  }
+
+  /// Elapsed time of the ride in ms: the finished runs plus the current one.
+  int get _elapsedMs {
+    final started = _runStartedMs;
+    return _elapsedBeforeMs +
+        (started == null ? 0 : clock.now().millisecondsSinceEpoch - started);
+  }
+
+  /// Ends the current run (pause, stop): its time joins the finished runs.
+  void _bankElapsed() {
+    if (_runStartedMs == null) return;
+    _elapsedBeforeMs = _elapsedMs;
+    _runStartedMs = null;
+    _elapsedSeconds = _elapsedBeforeMs ~/ 1000;
+  }
+
+  void _resetElapsed() {
+    _elapsedBeforeMs = 0;
+    _runStartedMs = null;
+    _elapsedSeconds = 0;
   }
 
   void _cancelElapsedTimer() {

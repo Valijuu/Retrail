@@ -647,6 +647,34 @@ void main() {
       });
     });
 
+    // #141: the live time counted timer ticks, so a throttled timer made it
+    // run slow while the saved duration (from the clock) was right.
+    test('the elapsed time follows the clock, not the number of ticks', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        fa.elapse(const Duration(seconds: 2));
+        // The app was throttled: 8 s went by without a single timer tick.
+        fa.elapseBlocking(const Duration(seconds: 8));
+        fa.elapse(const Duration(seconds: 1));
+        expect(t.state.elapsedSeconds, 11);
+      });
+    });
+
+    test('a pause is not counted, also when its ticks were missed', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        fa.flushMicrotasks();
+        fa.elapse(const Duration(seconds: 3));
+        t.pause();
+        fa.elapseBlocking(const Duration(seconds: 20));
+        fa.elapse(const Duration(seconds: 5));
+        t.resume();
+        fa.elapse(const Duration(seconds: 2));
+        expect(t.state.elapsedSeconds, 5);
+      });
+    });
+
     test('stopTracking stops the elapsed timer', () {
       runTracker((fa, t) {
         t.startTracking();
