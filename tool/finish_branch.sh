@@ -79,6 +79,8 @@ base_work="$(worktree_of "$base")"
 [ -z "$base_work" ] || [ -z "$(git -C "$base_work" status --porcelain)" ] \
   || die "$base has uncommitted changes in $base_work"
 main_work="$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}')"
+# Work from the main worktree: the branch's own worktree may be removed below.
+cd "$main_work"
 if [ "$work" = "$main_work" ] && [ -n "$base_work" ]; then
   die "$branch is in the main worktree and $base is checked out in $base_work; switch one of them first"
 fi
