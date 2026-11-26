@@ -59,7 +59,7 @@ Pick the test discipline by the target, before writing code:
 3. The Operator reviews the spec before implementation starts.
 4. Implement task by task with `Resolve -> Read -> Authorize -> Change -> Verify -> Report`, using the
    discipline above for `Change`.
-5. Finish with an Opus review against the spec, then `tool/finish_branch.sh <branch>`: it rebases onto
+5. Finish with an Opus review against the spec, then the `vaju:finish-branch` skill (`finish_branch.sh <branch>`): it rebases onto
    `main`, fast-forwards and pushes `main`, removes the branch's worktree and deletes the branch locally and
    on origin (#153). Then close the issue.
 
@@ -69,8 +69,8 @@ A user-visible change also adds a line under **Unreleased** in `/CHANGELOG.md` i
 ## Git
 
 - One short-lived branch per feature or fix; `main` stays green and linear. Rebase onto `main` and
-  fast-forward, never merge. Finish with `tool/finish_branch.sh <branch>`, never by hand: a hand-made
-  finish left merged branches and worktrees behind (#153). `tool/finish_branch.sh --check` lists possible leftovers
+  fast-forward, never merge. Finish with the `vaju:finish-branch` skill (`finish_branch.sh <branch>`), never by hand: a hand-made
+  finish left merged branches and worktrees behind (#153). `finish_branch.sh --check` lists possible leftovers
   (branches with no commit outside `main`, also after a rebase; a just-created branch looks the same, so check
   before deleting); run it when starting new work.
 - Run `dart format` on every changed Dart file (default tall style, no formatter config). The
