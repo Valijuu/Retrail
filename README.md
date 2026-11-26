@@ -14,9 +14,9 @@ Retrail is a Flutter app for **Android and iOS**.
 
 <p align="center">
   <img src="store/play/screenshots/en/01_track.png" width="24%" alt="Recording a ride on the live map">
-  <img src="store/play/screenshots/en/02_activities.png" width="24%" alt="Choosing an activity, from longboard to snowboard and ski">
-  <img src="store/play/screenshots/en/03_best_time.png" width="24%" alt="Comparing the runs of a followed route">
-  <img src="store/play/screenshots/en/05_history.png" width="24%" alt="Ride history with map previews">
+  <img src="store/play/screenshots/en/05_activities.png" width="24%" alt="Choosing an activity, from longboard to snowboard and ski">
+  <img src="store/play/screenshots/en/06_best_time.png" width="24%" alt="Comparing the runs of a followed route">
+  <img src="store/play/screenshots/en/03_history.png" width="24%" alt="Ride history with map previews">
 </p>
 
 ## Features

@@ -220,7 +220,7 @@ Made with `tool/render_store_graphics.sh` (sources and output in `store/play/`):
 |---|---|---|
 | App icon | `store/play/icon_512.png` | 512 × 512 PNG, 32-bit, ≤ 1 MB — from `assets/branding/app_icon.png` |
 | Feature graphic | `store/play/feature_graphic_en.png`, `…_de.png` | 1024 × 500 PNG, no alpha — source `store/play/feature_graphic.html` (tagline + chips per language, two phones: light history + dark recording) |
-| Phone screenshots | `store/play/screenshots/<lang>/01_track.png` … `08_countdown.png` (recording, activities, best time of a followed route, map, history, light + dark, detail, countdown; the map shot has the pin circle and the found route with its card, `tool/` flow in the session notes: all activities ticked, pin on the field, radius 2 km, route tapped) | 8 per language, 1080 × 1920, tag + caption + subline, background and enlarged excerpt per shot in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` (Fredoka headings, cream / peach / dark backgrounds) |
+| Phone screenshots | `store/play/screenshots/<lang>/01_track.png` … `08_countdown.png` (recording, map, history, dark, activities, best time of a followed route, detail, countdown; this is the order in the Play Console, set by hand and mirrored in the file names; the map shot has the pin circle and the found route with its card, `tool/` flow in the session notes: all activities ticked, pin on the field, radius 2 km, route tapped) | 8 per language, 1080 × 1920, tag + caption + subline, background and enlarged excerpt per shot in `store/play/screenshots.tsv`, frame `store/play/screenshot_frame.html` (Fredoka headings, cream / peach / dark backgrounds) |
 
 **How the screenshots are made** (no real location data anywhere):
 
