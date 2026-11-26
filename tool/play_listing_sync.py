@@ -135,6 +135,16 @@ def main():
                 if [i["sha256"] for i in remote] == [sha256(f) for f in files]:
                     continue
                 print(f"  {locale}: {image_type} differs (Play {len(remote)} images, files {len(files)})")
+                remote_hashes = [i["sha256"] for i in remote]
+                for index, f in enumerate(files):
+                    local = sha256(f)
+                    if index < len(remote_hashes) and remote_hashes[index] == local:
+                        state = "same"
+                    elif local in remote_hashes:
+                        state = f"same image, Play position {remote_hashes.index(local) + 1}"
+                    else:
+                        state = "not in Play"
+                    print(f"      {index + 1}. {f.name}: {state}")
                 changes += 1
                 if apply:
                     play.call("DELETE", f"{API}/edits/{edit}/listings/{locale}/{image_type}")
