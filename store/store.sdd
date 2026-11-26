@@ -23,4 +23,5 @@ Must:
   Screenshots and feature graphics are rendered by `/tool/render_store_graphics.sh` from raw shots and HTML frames.
   App Store screenshots (`./ios`, 1320 x 2868) are rendered by `/tool/render_ios_store_graphics.sh` from the Simulator shots of `/tool/ios_screenshots.sh`.
   `release-notes/<version>.md` (`## de`, `## en`, 500 characters each) is the single source for "what is new"; `ios/text/{de,en}_whatsnew.txt` are generated from it by `/tool/store_check.py --write`.
+  Screenshot file names carry the store order (Play and App Store), set by hand in the consoles; a file left out of a store stays last (`09_detail` on Play, `10_detail` on the App Store).
   A visible UI change in a screenshotted screen gets new screenshots before the next production release.

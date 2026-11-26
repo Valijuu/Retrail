@@ -1,9 +1,9 @@
-# Compares store/ios/text with App Store Connect and updates the fields that differ
-# (tool/asc_sync.py): description, keywords, promotional text, what's new, name,
-# subtitle, de and en. Manual trigger only. "apply" is off by default, so a run only
+# Compares store/ios with App Store Connect and updates what differs: the texts
+# (tool/asc_sync.py: description, keywords, promotional text, what's new, name,
+# subtitle, de and en) and the screenshot sets (tool/asc_screenshots.py, by checksum). Manual trigger only. "apply" is off by default, so a run only
 # prints the differences. It never submits for review and never creates a version.
 # Uses the App Manager key of the iOS release workflow (docs/app-store.md).
-name: App Store text sync
+name: App Store sync
 
 on:
   workflow_dispatch:
@@ -56,8 +56,7 @@ jobs:
           trap 'rm -f "${key}"' EXIT
           printf '%s' "${ASC_API_KEY_P8}" > "${key}"
           export ASC_KEY_FILE="${key}"
-          if [ "${APPLY}" = "true" ]; then
-            python3 -I tool/asc_sync.py --apply
-          else
-            python3 -I tool/asc_sync.py
-          fi
+          flag=""
+          [ "${APPLY}" = "true" ] && flag="--apply"
+          python3 -I tool/asc_sync.py ${flag}
+          python3 -I tool/asc_screenshots.py ${flag}
