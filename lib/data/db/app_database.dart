@@ -111,7 +111,7 @@ Future<void> _backfillStatsAndRoute(AppDatabase db) async {
     final points = await db
         .customSelect(
           'SELECT trackpoint_id, latitude, longitude, timestamp, speed '
-          'FROM trackpoints WHERE ride_id = ? ORDER BY timestamp',
+          'FROM trackpoints WHERE ride_id = ? ORDER BY trackpoint_id',
           variables: [Variable.withInt(rideId)],
         )
         .get();

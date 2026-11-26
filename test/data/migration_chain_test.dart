@@ -72,6 +72,19 @@ void main() {
     expect(ride.ascentM, isNull);
   });
 
+  test('a v1 ride without points gets zero stats and no route', () async {
+    final db = _open(1, [_ridesV1, _trackpointsV1], (raw) {
+      raw.execute("INSERT INTO rides (description) VALUES ('Empty')");
+    });
+    addTearDown(db.close);
+
+    final ride = (await db.rideDao.getAll().first).single;
+    expect(ride.hasRoute, isFalse);
+    expect(ride.distanceMetres, 0);
+    expect(ride.durationMs, 0);
+    expect(ride.avgSpeedKmh, 0);
+  });
+
   test('a v3 file walks every step to the current version', () async {
     final db = _open(3, [_ridesV3, _trackpointsV1], _ride);
     addTearDown(db.close);
