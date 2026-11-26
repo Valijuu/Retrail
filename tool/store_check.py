@@ -84,25 +84,36 @@ def notes_sections(path):
     return {k: "\n".join(v).strip() for k, v in sections.items()}
 
 
+def js_string(entry, key):
+    """Value of `key: '...'` or `key: "..."` in a JS object literal, with \\-escapes decoded."""
+    match = re.search(key + r"""\s*:\s*(['"])((?:\\.|(?!\1).)*)\1""", entry)
+    return re.sub(r"\\(.)", r"\1", match.group(2)) if match else None
+
+
 def check_listing_preview(problems):
     """store/play/listing_preview.html hard-codes the name, the short texts and the screenshot list
-    (a file:// page cannot read them); they must match the files that go to Play."""
+    (a file:// page cannot read them); they must match the files that go to Play, per language."""
     path = STORE / "play" / "listing_preview.html"
     if not path.is_file():
         return
     html = path.read_text(encoding="utf-8")
+    rel = path.relative_to(ROOT)
     shots = re.search(r"const shots = \[([^\]]*)\]", html)
     listed = re.findall(r"'([^']+)'", shots.group(1)) if shots else []
+    name = (STORE / "ios" / "text" / "de_name.txt").read_text(encoding="utf-8").strip()
     for lang in LANGS:
         files = [p.stem for p in sorted((STORE / "play" / "screenshots" / lang).glob("*.png"))][:8]
         if listed != files:
-            problems.append(f"{path.relative_to(ROOT)}: screenshot list {listed} differs from {lang} files {files}")
+            problems.append(f"{rel}: screenshot list {listed} differs from {lang} files {files}")
+        entry = re.search(rf"\b{lang}\s*:\s*\{{(.*?)\}}", html, re.S)
+        if not entry:
+            problems.append(f"{rel}: no '{lang}' entry")
+            continue
         short = (STORE / "play" / "text" / f"{lang}_short.txt").read_text(encoding="utf-8").strip()
-        if f"short: '{short}'" not in html:
-            problems.append(f"{path.relative_to(ROOT)}: short text for {lang} differs from play/text/{lang}_short.txt")
-    name = (STORE / "ios" / "text" / "de_name.txt").read_text(encoding="utf-8").strip()
-    if html.count(f"name: '{name}'") != len(LANGS):
-        problems.append(f"{path.relative_to(ROOT)}: app name differs from '{name}'")
+        if js_string(entry.group(1), "short") != short:
+            problems.append(f"{rel}: short text for {lang} differs from play/text/{lang}_short.txt")
+        if js_string(entry.group(1), "name") != name:
+            problems.append(f"{rel}: app name for {lang} differs from '{name}'")
 
 
 def check_length(problems, path, text, limit):
