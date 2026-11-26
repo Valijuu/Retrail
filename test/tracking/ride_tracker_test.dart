@@ -675,6 +675,19 @@ void main() {
       });
     });
 
+    test('a pause before the ride row exists holds the time at 0', () {
+      runTracker((fa, t) {
+        t.startTracking();
+        t.pause();
+        fa.flushMicrotasks();
+        fa.elapse(const Duration(seconds: 4));
+        expect(t.state.elapsedSeconds, 0);
+        t.resume();
+        fa.elapse(const Duration(seconds: 2));
+        expect(t.state.elapsedSeconds, 2);
+      });
+    });
+
     test('stopTracking stops the elapsed timer', () {
       runTracker((fa, t) {
         t.startTracking();

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max;
 
 import 'package:clock/clock.dart';
 
@@ -194,7 +195,8 @@ class RideTracker {
     _route.clear();
     _speedKmh = null;
     _resetElapsed();
-    _startElapsedTimer();
+    // A pause that came while the row was inserted holds (review #141).
+    if (!_isPaused) _startElapsedTimer();
     _emit();
   }
 
@@ -398,7 +400,10 @@ class RideTracker {
   int get _elapsedMs {
     final started = _runStartedMs;
     return _elapsedBeforeMs +
-        (started == null ? 0 : clock.now().millisecondsSinceEpoch - started);
+        // A clock set back must not make the time negative.
+        (started == null
+            ? 0
+            : max(0, clock.now().millisecondsSinceEpoch - started));
   }
 
   /// Ends the current run (pause, stop): its time joins the finished runs.
