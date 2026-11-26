@@ -29,6 +29,8 @@ PACKAGE = "io.github.valijuu.retrail"
 ROOT = Path(__file__).resolve().parent.parent
 PLAY = ROOT / "store" / "play"
 LANGS = {"de": "de-DE", "en": "en-US"}
+# Play shows at most 8 phone screenshots: files after the eighth (09_detail) stay in the repo only.
+MAX_PHONE_SCREENSHOTS = 8
 API = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PACKAGE}"
 UPLOAD = f"https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/{PACKAGE}"
 
@@ -126,7 +128,7 @@ def main():
                     play.call("PATCH", f"{API}/edits/{edit}/listings/{locale}", update)
 
             groups = {
-                "phoneScreenshots": sorted((PLAY / "screenshots" / lang).glob("*.png")),
+                "phoneScreenshots": sorted((PLAY / "screenshots" / lang).glob("*.png"))[:MAX_PHONE_SCREENSHOTS],
                 "featureGraphic": [PLAY / f"feature_graphic_{lang}.png"],
                 "icon": [PLAY / "icon_512.png"],
             }
