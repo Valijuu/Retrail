@@ -53,6 +53,7 @@ jobs:
           set -euo pipefail
           key="${RUNNER_TEMP}/asc-key.p8"
           umask 077
+          trap 'rm -f "${key}"' EXIT
           printf '%s' "${ASC_API_KEY_P8}" > "${key}"
           export ASC_KEY_FILE="${key}"
           if [ "${APPLY}" = "true" ]; then
@@ -60,4 +61,3 @@ jobs:
           else
             python3 -I tool/asc_sync.py
           fi
-          rm -f "${key}"

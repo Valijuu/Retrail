@@ -72,7 +72,7 @@ def access_token(account):
     except urllib.error.HTTPError as error:
         raise SystemExit(
             f"Token request -> HTTP {error.code}: {error.read().decode(errors='replace')[:400]}\n"
-            f"Key used: account {account.get('client_email')}, key id {account.get('private_key_id')}"
+            f"Key used: key id ending in …{str(account.get('private_key_id', ''))[-4:]}"
         )
 
 

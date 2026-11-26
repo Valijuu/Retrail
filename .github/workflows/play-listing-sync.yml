@@ -18,7 +18,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: play-listing-sync
+  # One group for every job that opens a Play edit: a commit invalidates the other open edit.
+  group: play-edits
   cancel-in-progress: false
 
 jobs:
@@ -47,6 +48,7 @@ jobs:
           set -euo pipefail
           umask 077
           file="${RUNNER_TEMP}/play-account.json"
+          trap 'rm -f "${file}"' EXIT
           printf '%s' "${PLAY_SERVICE_ACCOUNT_JSON}" > "${file}"
           export PLAY_SERVICE_ACCOUNT_FILE="${file}"
           if [ "${APPLY}" = "true" ]; then
@@ -54,4 +56,3 @@ jobs:
           else
             python3 -I tool/play_listing_sync.py
           fi
-          rm -f "${file}"

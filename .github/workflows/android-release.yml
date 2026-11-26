@@ -23,7 +23,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-release
+  # One group for every job that opens a Play edit: a commit invalidates the other open edit.
+  group: play-edits
   cancel-in-progress: false
 
 jobs:

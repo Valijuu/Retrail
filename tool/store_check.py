@@ -41,12 +41,27 @@ FEATURE_GRAPHIC_SIZE = (1024, 500)
 PLAY_ICON_SIZE = (512, 512)
 
 
-def png_size(path):
-    with open(path, "rb") as f:
-        head = f.read(24)
+def png_header(path):
+    """(width, height, colour type) of a PNG, or None when the file is missing or not a PNG."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(26)
+    except FileNotFoundError:
+        return None
     if head[:8] != b"\x89PNG\r\n\x1a\n":
         return None
-    return struct.unpack(">II", head[16:24])
+    width, height = struct.unpack(">II", head[16:24])
+    return width, height, head[25]
+
+
+def png_size(path):
+    header = png_header(path)
+    return header[:2] if header else None
+
+
+def has_alpha(path):
+    header = png_header(path)
+    return bool(header) and header[2] in (4, 6)
 
 
 def read_version():
@@ -123,6 +138,8 @@ def main():
         path = STORE / "play" / f"feature_graphic_{lang}.png"
         if png_size(path) != FEATURE_GRAPHIC_SIZE:
             problems.append(f"{path.relative_to(ROOT)}: {png_size(path)}, expected {FEATURE_GRAPHIC_SIZE}")
+        elif has_alpha(path):
+            problems.append(f"{path.relative_to(ROOT)}: has an alpha channel, Play wants none")
     icon = STORE / "play" / "icon_512.png"
     if png_size(icon) != PLAY_ICON_SIZE:
         problems.append(f"{icon.relative_to(ROOT)}: {png_size(icon)}, expected {PLAY_ICON_SIZE}")
