@@ -59,8 +59,9 @@ Pick the test discipline by the target, before writing code:
 3. The Operator reviews the spec before implementation starts.
 4. Implement task by task with `Resolve -> Read -> Authorize -> Change -> Verify -> Report`, using the
    discipline above for `Change`.
-5. Finish with an Opus review against the spec, then rebase onto `main`, fast-forward `main`, delete the
-   branch and close the issue.
+5. Finish with an Opus review against the spec, then `tool/finish_branch.sh <branch>`: it rebases onto
+   `main`, fast-forwards and pushes `main`, removes the branch's worktree and deletes the branch locally and
+   on origin (#153). Then close the issue.
 
 Every change that alters behaviour updates the governing spec in the same commit.
 A user-visible change also adds a line under **Unreleased** in `/CHANGELOG.md` in the same commit.
@@ -68,7 +69,9 @@ A user-visible change also adds a line under **Unreleased** in `/CHANGELOG.md` i
 ## Git
 
 - One short-lived branch per feature or fix; `main` stays green and linear. Rebase onto `main` and
-  fast-forward, never merge. Delete the branch afterwards.
+  fast-forward, never merge. Finish with `tool/finish_branch.sh <branch>`, never by hand: a hand-made
+  finish left merged branches and worktrees behind (#153). `tool/finish_branch.sh --check` lists leftovers
+  (branches whose commits are all in `main`, also after a rebase); run it when starting new work.
 - Run `dart format` on every changed Dart file (default tall style, no formatter config). The
   `.githooks/pre-commit` hook rejects unformatted staged Dart files (`git config core.hooksPath .githooks`);
   formatting-only commits go into `.git-blame-ignore-revs`.
