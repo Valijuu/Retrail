@@ -167,6 +167,28 @@ void main() {
     expect(c.read(selectedRideProvider)!.entry.ride.rideId, other);
   });
 
+  // Review (#151): an explicit "Show on map" keeps the requested ride even when
+  // a faster ride of the same route is the route's best.
+  test(
+    'showRide keeps the requested ride over the route\'s best ride',
+    () async {
+      final fast = await _ride(db, durationMs: 800, date: 1);
+      final slow = await _ride(
+        db,
+        durationMs: 900,
+        date: 2,
+        followed: fast,
+        coverage: 1,
+      );
+      await settle();
+
+      c.read(mapSelectionProvider.notifier).showRide(slow);
+      expect(c.read(selectedRideProvider)!.entry.ride.rideId, slow);
+      c.read(mapSelectionProvider.notifier).tap(_tap, 14);
+      expect(c.read(selectedRideProvider)!.entry.ride.rideId, fast);
+    },
+  );
+
   test('tapping empty map clears the selection', () async {
     await _ride(db);
     await settle();

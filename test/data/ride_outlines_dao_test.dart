@@ -194,11 +194,16 @@ void main() {
       addTearDown(() => dir.delete(recursive: true));
       final file = File('${dir.path}/db.sqlite');
       final fresh = AppDatabase(NativeDatabase(file));
+      var freshClosed = false;
+      addTearDown(() async {
+        if (!freshClosed) await fresh.close();
+      });
       final drawn = await _ride(fresh);
       final marker = await _ride(fresh);
       await fresh.outlineDao.upsert(_outline(drawn));
       await fresh.outlineDao.upsert(_outline(marker, polyline: ''));
       await fresh.customStatement('PRAGMA user_version = 8');
+      freshClosed = true;
       await fresh.close();
 
       final v9 = AppDatabase(NativeDatabase(file));

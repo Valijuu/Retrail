@@ -203,6 +203,7 @@ class _OverviewMapState extends State<OverviewMap> {
     // A focus requested before this map existed is applied once its style has
     // loaded, like one that arrives while the style loads (#151).
     _pendingFocus = widget.focusBounds;
+    _pendingFocusMoves = _cameraMoves;
   }
 
   @override
@@ -230,6 +231,7 @@ class _OverviewMapState extends State<OverviewMap> {
         _fitBounds(widget.focusBounds, insetBottom: _focusCardInset);
       } else {
         _pendingFocus = widget.focusBounds;
+        _pendingFocusMoves = _cameraMoves;
       }
     }
     if (widget.frameToken != old.frameToken) {
@@ -301,11 +303,15 @@ class _OverviewMapState extends State<OverviewMap> {
     _pushAll();
     final restore = widget.restoreCamera;
     final focus = _pendingFocus;
+    // Only a move made after the focus request wins over it.
+    final focusOverruled = _cameraMoves != _pendingFocusMoves;
     _pendingFocus = null;
-    if (_cameraMoves != _movesAtCreate) {
+    if (focus != null) {
+      if (!focusOverruled) {
+        await _fitBounds(focus, insetBottom: _focusCardInset);
+      }
+    } else if (_cameraMoves != _movesAtCreate) {
       // Moved meanwhile: leave the camera where that move put it.
-    } else if (focus != null) {
-      await _fitBounds(focus, insetBottom: _focusCardInset);
     } else if (restore != null) {
       await _jump(restore.center, restore.zoom);
     } else {
@@ -317,6 +323,9 @@ class _OverviewMapState extends State<OverviewMap> {
 
   /// A ride to move to once the style is loaded (#151).
   OutlineBounds? _pendingFocus;
+
+  /// [_cameraMoves] when [_pendingFocus] was requested.
+  int _pendingFocusMoves = 0;
 
   Future<void> _frame() => _fitBounds(widget.bounds);
 

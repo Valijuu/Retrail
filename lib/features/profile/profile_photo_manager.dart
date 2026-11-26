@@ -33,6 +33,9 @@ class ProfilePhotoManager {
       path = await _picker.pickAndCrop();
     } on PlatformException {
       return PhotoAddOutcome.failed;
+    } on FileSystemException {
+      // Saving the cropped photo failed (full storage, no access) (#145).
+      return PhotoAddOutcome.failed;
     }
     if (path == null) return PhotoAddOutcome.cancelled;
 

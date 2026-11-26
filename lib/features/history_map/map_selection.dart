@@ -13,9 +13,13 @@ import 'route_lines.dart';
 
 /// The rides under the last tap, nearest first (#96).
 class MapSelection {
-  const MapSelection({this.rideIds = const []});
+  const MapSelection({this.rideIds = const [], this.exact = false});
 
   final List<int> rideIds;
+
+  /// The card shows exactly the first of [rideIds], not the route's best ride
+  /// (set by "Show on map", #151).
+  final bool exact;
 }
 
 class MapSelectionNotifier extends Notifier<MapSelection> {
@@ -52,7 +56,8 @@ class MapSelectionNotifier extends Notifier<MapSelection> {
   };
 
   /// Selects exactly [rideId]: the ride the list asked the map to show (#151).
-  void showRide(int rideId) => state = MapSelection(rideIds: [rideId]);
+  void showRide(int rideId) =>
+      state = MapSelection(rideIds: [rideId], exact: true);
 
   void clear() => state = const MapSelection();
 }
@@ -115,7 +120,11 @@ final selectedRideProvider = Provider<SelectedRide?>((ref) {
           (onMapIds == null || onMapIds.contains(id)))
         item,
   ]..sort((a, b) => fastestFirst(routeGroupRideOf(a), routeGroupRideOf(b)));
-  final id = bests.isNotEmpty ? bests.first.ride.rideId : sameRoute.first;
+  final id = selection.exact
+      ? hits.first
+      : bests.isNotEmpty
+      ? bests.first.ride.rideId
+      : sameRoute.first;
   return SelectedRide(
     byId[id]!,
     isBest: badges.bestRideIds.contains(id),

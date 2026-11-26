@@ -298,8 +298,9 @@ class RideRecordingController {
     } catch (_) {
       // The service could not start (e.g. not allowed from the background):
       // undo the subscriptions so nothing keeps feeding a ride that never
-      // began, then let the caller report it (#141).
-      await _cancelSubscriptions();
+      // began, then let the caller report it (#141). A stop (or a newer start)
+      // that came meanwhile already owns the subscriptions: leave them alone.
+      if (epoch == _epoch) await _cancelSubscriptions();
       rethrow;
     }
     if (epoch != _epoch) {

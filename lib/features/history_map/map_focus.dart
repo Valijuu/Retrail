@@ -42,6 +42,9 @@ class MapFocusFlow {
 
   int? _rideId;
   bool _reset = false;
+
+  /// A ride is waiting to be shown.
+  bool get pending => _rideId != null;
   Timer? _deadline;
 
   /// A ride to show; replaces one still waiting.

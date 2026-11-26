@@ -382,7 +382,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   /// "Show on map" (#151): the map view opens on this ride.
   void _showOnMap(int rideId) {
     ref.read(mapFocusProvider.notifier).request(rideId);
-    unawaited(ref.read(historyMapControllerProvider).setView(HistoryView.map));
+    // If the view cannot be switched, the request must not wait for later.
+    unawaited(
+      ref
+          .read(historyMapControllerProvider)
+          .setView(HistoryView.map)
+          .catchError(
+            (Object _) => ref.read(mapFocusProvider.notifier).clear(),
+          ),
+    );
   }
 
   /// What the map's preview card does: the same as the list's card.

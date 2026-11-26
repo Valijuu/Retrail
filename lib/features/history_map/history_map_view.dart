@@ -272,6 +272,8 @@ class _HistoryMapViewState extends ConsumerState<HistoryMapView> {
   /// The rider's own activity as the map's start: the camera frames that set
   /// once. The rider's own ticks in the activity menu never move the camera.
   void _applyDefaultActivity() {
+    // A requested ride must not be hidden by the default activity (#151).
+    if (_focus.pending) return;
     if (applyMapDefaultActivity(ref)) _reframe();
   }
 
