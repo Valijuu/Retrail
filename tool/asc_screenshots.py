@@ -69,6 +69,9 @@ def sync_set(api, localization, display_type, files, apply):
     print(f"  {locale} {display_type}: store {len(remote)} images, repo {len(local)} files")
     for position, (shot, checksum) in enumerate(zip(shots, remote), 1):
         print(f"      {position}. {shot['attributes'].get('fileName')}: {names.get(checksum, 'not in repo')}")
+    if not files:
+        print(f"      -> no repo files for {locale}, skipped (never empties a store set)")
+        return 0
     if remote == local:
         return 0
     print(f"      -> differs{', replacing' if apply else ''}")

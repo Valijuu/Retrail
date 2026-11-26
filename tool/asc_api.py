@@ -89,7 +89,7 @@ class Api:
     def versions(self, app_id):
         """iOS versions, newest first (by creation date)."""
         versions = self.call(
-            "GET", f"/apps/{app_id}/appStoreVersions", query={"filter[platform]": "IOS", "limit": 10}
+            "GET", f"/apps/{app_id}/appStoreVersions", query={"filter[platform]": "IOS", "limit": 200}
         )["data"]
         return sorted(versions, key=lambda v: v["attributes"].get("createdDate") or "", reverse=True)
 
