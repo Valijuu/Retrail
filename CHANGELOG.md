@@ -27,6 +27,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 - The profile photo no longer turns black after an app update on iPhone; an unreadable photo shows the blank avatar (#134).
 - Following a route: a stretch you ride twice is drawn once and no longer looks darker (#57).
 - The name field in the first start no longer counts leading spaces toward the 30 characters (#123).
+- If the map's tiles fail to load once (for example offline), they come back on the next try instead of staying blank until the app restarts (#60).
+- If a ride cannot be saved when it starts, the app no longer shows it as recording; you get an error instead (#141).
+- Opening a ride from History while you switch tabs no longer risks an error.
 
 ## 1.5.0+17 — 2026-11-19
 
