@@ -10,7 +10,7 @@ on:
   # TEMPORARY: dry-run test from the branch (dispatch needs the file on main). Remove before the merge.
   push:
     branches: [ci/android]
-    paths: [".github/workflows/play-listing-sync.yml", "tool/play_listing_sync.py"]
+    paths: [".github/workflows/play-listing-sync.yml", "tool/play_listing_sync.py", "store/play/**"]
   workflow_dispatch:
     inputs:
       apply:

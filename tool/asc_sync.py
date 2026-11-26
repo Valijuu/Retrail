@@ -10,6 +10,7 @@ Only fields whose file differs from the store are written. It never submits for 
 and never creates a version or a localization: a missing one is reported and skipped.
 """
 import base64
+import hashlib
 import json
 import os
 import subprocess
@@ -137,6 +138,30 @@ def sync_localizations(api, label, items, fields, texts, resource, apply):
     return changed
 
 
+def report_screenshot_order(api, version):
+    """Read-only: lists the uploaded screenshots per language and display type in store order and
+    names the repo file with the same MD5 (sourceFileChecksum), so a reorder or a stale image shows."""
+    ios = TEXT_DIR.parent
+    local = {}
+    for folder in ("screenshots", "screenshots_6_3"):
+        for lang in LANGS:
+            for path in sorted((ios / folder / lang).glob("*.png")):
+                local[(lang, hashlib.md5(path.read_bytes()).hexdigest())] = f"{folder}/{path.name}"
+    print(f"Screenshot order in version {version['attributes']['versionString']} "
+          f"({version['attributes']['appStoreState']}), read only:")
+    items = api.call("GET", f"/appStoreVersions/{version['id']}/appStoreVersionLocalizations", query={"limit": 50})["data"]
+    for item in items:
+        lang = locale_lang(item["attributes"]["locale"])
+        sets = api.call("GET", f"/appStoreVersionLocalizations/{item['id']}/appScreenshotSets")["data"]
+        for shot_set in sets:
+            shots = api.call("GET", f"/appScreenshotSets/{shot_set['id']}/appScreenshots", query={"limit": 50})["data"]
+            print(f"  {item['attributes']['locale']} {shot_set['attributes']['screenshotDisplayType']}: {len(shots)} images")
+            for position, shot in enumerate(shots, 1):
+                checksum = (shot["attributes"].get("sourceFileChecksum") or "").lower()
+                match = local.get((lang, checksum), "not in repo")
+                print(f"      {position}. {shot['attributes'].get('fileName')}: {match}")
+
+
 def main():
     apply = "--apply" in sys.argv[1:]
     token = make_token(os.environ["ASC_KEY_ID"], os.environ["ASC_ISSUER_ID"], os.environ["ASC_KEY_FILE"])
@@ -161,6 +186,9 @@ def main():
         states = ", ".join(sorted({v["attributes"]["appStoreState"] for v in versions})) or "none"
         print(f"No editable version (states: {states}): version texts skipped. "
               "Upload a build or create the next version first.")
+
+    if not apply and versions:
+        report_screenshot_order(api, (editable or versions)[0])
 
     infos = api.call("GET", f"/apps/{app_id}/appInfos")["data"]
     editable_infos = [i for i in infos if i["attributes"].get("appStoreState") in EDITABLE_STATES]
