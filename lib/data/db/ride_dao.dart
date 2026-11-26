@@ -94,6 +94,11 @@ class RideDao extends DatabaseAccessor<AppDatabase> with _$RideDaoMixin {
   Future<List<Ride>> getUnfinished() =>
       (select(rides)..where((r) => r.endTime.isNull())).get();
 
+  /// Runs [body] as one transaction: its writes commit together and observers
+  /// see the result once, never a half-written ride (#141).
+  Future<T> inTransaction<T>(Future<T> Function() body) =>
+      attachedDatabase.transaction(body);
+
   Future<void> updateEndTime(int rideId, int endTime) =>
       (update(rides)..where((r) => r.rideId.equals(rideId))).write(
         RidesCompanion(endTime: Value(endTime)),

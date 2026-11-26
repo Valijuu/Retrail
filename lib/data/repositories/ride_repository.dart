@@ -69,23 +69,29 @@ class RideRepository {
   /// descent come from the trackpoint altitudes ([ElevationGain.of]) and stay
   /// null for a ride without altitude data (#97).
   Future<void> updateEndTime(int rideId, int endTime) async {
-    await _dao.updateEndTime(rideId, endTime);
-    final rwt = await _dao.getRideWithTrackpointsById(rideId).first;
+    // One transaction: a crash or a failing write in between must not leave a
+    // finished ride without its stats (#141).
+    final rwt = await _dao.inTransaction(() async {
+      await _dao.updateEndTime(rideId, endTime);
+      final rwt = await _dao.getRideWithTrackpointsById(rideId).first;
+      if (rwt == null) return null;
+      final stats = computeRideStats(rwt, _calc);
+      final elevation = ElevationGain.of(
+        rwt.trackpoints.map((tp) => tp.altitude),
+      );
+      await _dao.updateStats(
+        rideId,
+        distanceMetres: stats.distanceMetres,
+        durationMs: stats.durationMs,
+        avgSpeedKmh: stats.avgSpeedKmh,
+        maxSpeedKmh: stats.maxSpeedKmh,
+        hasRoute: rwt.trackpoints.isNotEmpty,
+        ascentM: elevation?.ascent,
+        descentM: elevation?.descent,
+      );
+      return rwt;
+    });
     if (rwt == null) return;
-    final stats = computeRideStats(rwt, _calc);
-    final elevation = ElevationGain.of(
-      rwt.trackpoints.map((tp) => tp.altitude),
-    );
-    await _dao.updateStats(
-      rideId,
-      distanceMetres: stats.distanceMetres,
-      durationMs: stats.durationMs,
-      avgSpeedKmh: stats.avgSpeedKmh,
-      maxSpeedKmh: stats.maxSpeedKmh,
-      hasRoute: rwt.trackpoints.isNotEmpty,
-      ascentM: elevation?.ascent,
-      descentM: elevation?.descent,
-    );
     // The outline is derived data: if it cannot be stored now, the background
     // fill (OutlineRepository.fillNext) makes it later, the ride is saved.
     try {

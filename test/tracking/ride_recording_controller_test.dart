@@ -166,6 +166,9 @@ void main() {
   });
 
   tearDown(() async {
+    // The tracker writes the ride's end unawaited; the write is a transaction
+    // now, so let it finish before the database closes (#141).
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     tracker.dispose();
     await source.close();
     await db.close();

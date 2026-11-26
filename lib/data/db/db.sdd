@@ -39,6 +39,8 @@ Must:
   `ride_outlines` holds one row per ride: encoded polyline, bounding box and a `revision` that every rewrite
     raises (#111); it is deleted with its ride
     (`ON DELETE CASCADE`, single and batch delete, each in one transaction) and kept when the ride is edited.
+  Stamping a ride's end time and its stats (RideRepository.updateEndTime) is one transaction (RideDao.inTransaction):
+    no observer sees a finished ride without its stats (#141).
   @OutlineDao.upsert writes an outline only while its ride exists, check and write in one transaction.
   @OutlineDao.watchOutlineRevisions emits ride id → revision of every outline row and never reads the polyline.
   @OutlineDao.watchHasRidesWithoutOutline emits whether a ride with a route still has no outline row.

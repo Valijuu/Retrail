@@ -1,6 +1,6 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/data/db/app_database.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:retrail/data/repositories/ride_repository.dart';
 
 import '../domain/domain_test_helpers.dart' show FixedDistanceCalculator;
@@ -78,6 +78,44 @@ void main() {
       expect(r.durationMs, 3600000);
       expect(r.avgSpeedKmh, closeTo(0.2, 1e-9)); // 0.2 km / 1 h
       expect(r.hasRoute, isTrue);
+    },
+  );
+
+  // #141: the end time and the stats are one write. An observer must never see
+  // a finished ride whose stats are still missing.
+  test(
+    'updateEndTime is seen whole: no state with an end time and no stats',
+    () async {
+      final id = await repo.startRide(startedAtMs: 0);
+      await db.trackpointDao.insert(
+        TrackpointsCompanion.insert(
+          rideId: id,
+          latitude: 52.0,
+          longitude: 13.0,
+          timestamp: 0,
+        ),
+      );
+      await db.trackpointDao.insert(
+        TrackpointsCompanion.insert(
+          rideId: id,
+          latitude: 52.001,
+          longitude: 13.0,
+          timestamp: 60000,
+        ),
+      );
+      final seen = <Ride>[];
+      final sub = repo.getById(id).listen((r) {
+        if (r != null) seen.add(r);
+      });
+      await pumpEventQueue();
+      await repo.updateEndTime(id, 60000);
+      await pumpEventQueue();
+      await sub.cancel();
+      final partial = seen.where(
+        (r) => r.endTime != null && r.distanceMetres == null,
+      );
+      expect(partial, isEmpty);
+      expect(seen.last.distanceMetres, isNotNull);
     },
   );
 
