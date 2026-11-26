@@ -90,3 +90,27 @@ for lang in en de; do
   done < "$out/screenshots.tsv"
 done
 ls -l "$out"/screenshots/*/*.png
+
+# The store takes the 6.3-inch set (1206 x 2622, store/ios/screenshots_6_3): resized from the
+# images above with Lanczos. A file is rewritten only when its pixels change, so an unchanged
+# image keeps its bytes and the App Store sync (MD5 per image) sees no difference.
+python3 - "$out/screenshots" "$out/screenshots_6_3" <<'PY'
+import sys
+from pathlib import Path
+from PIL import Image, ImageChops
+src, dst = Path(sys.argv[1]), Path(sys.argv[2])
+for lang in ("de", "en"):
+    (dst / lang).mkdir(parents=True, exist_ok=True)
+    wanted = {p.name for p in (src / lang).glob("*.png")}
+    for old in (dst / lang).glob("*.png"):
+        if old.name not in wanted:
+            old.unlink()
+            print(f"removed {old}")
+    for png in sorted((src / lang).glob("*.png")):
+        small = Image.open(png).convert("RGB").resize((1206, 2622), Image.LANCZOS)
+        target = dst / lang / png.name
+        if target.exists() and ImageChops.difference(small, Image.open(target).convert("RGB")).getbbox() is None:
+            continue
+        small.save(target)
+        print(f"wrote {target}")
+PY

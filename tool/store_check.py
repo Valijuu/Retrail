@@ -84,6 +84,27 @@ def notes_sections(path):
     return {k: "\n".join(v).strip() for k, v in sections.items()}
 
 
+def check_listing_preview(problems):
+    """store/play/listing_preview.html hard-codes the name, the short texts and the screenshot list
+    (a file:// page cannot read them); they must match the files that go to Play."""
+    path = STORE / "play" / "listing_preview.html"
+    if not path.is_file():
+        return
+    html = path.read_text(encoding="utf-8")
+    shots = re.search(r"const shots = \[([^\]]*)\]", html)
+    listed = re.findall(r"'([^']+)'", shots.group(1)) if shots else []
+    for lang in LANGS:
+        files = [p.stem for p in sorted((STORE / "play" / "screenshots" / lang).glob("*.png"))][:8]
+        if listed != files:
+            problems.append(f"{path.relative_to(ROOT)}: screenshot list {listed} differs from {lang} files {files}")
+        short = (STORE / "play" / "text" / f"{lang}_short.txt").read_text(encoding="utf-8").strip()
+        if f"short: '{short}'" not in html:
+            problems.append(f"{path.relative_to(ROOT)}: short text for {lang} differs from play/text/{lang}_short.txt")
+    name = (STORE / "ios" / "text" / "de_name.txt").read_text(encoding="utf-8").strip()
+    if html.count(f"name: '{name}'") != len(LANGS):
+        problems.append(f"{path.relative_to(ROOT)}: app name differs from '{name}'")
+
+
 def check_length(problems, path, text, limit):
     if len(text) > limit:
         problems.append(f"{path.relative_to(ROOT)}: {len(text)} characters, limit {limit}")
@@ -143,6 +164,8 @@ def main():
     icon = STORE / "play" / "icon_512.png"
     if png_size(icon) != PLAY_ICON_SIZE:
         problems.append(f"{icon.relative_to(ROOT)}: {png_size(icon)}, expected {PLAY_ICON_SIZE}")
+
+    check_listing_preview(problems)
 
     if problems:
         print("Store check failed:")

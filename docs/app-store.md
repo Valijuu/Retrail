@@ -111,7 +111,7 @@ expected **4+**. Fill the questionnaire in App Store Connect with "None" everywh
   field, so the keyword list replaces the Play keyword table.
 - Category: Sports (secondary: Health & Fitness).
 - Screenshots: 6.9" iPhone (1320 × 2868) is required, the rest are scaled from it. The App Store Connect upload field of
-  the version page may accept only the 6.1"/6.3" size (1206 × 2622): `store/ios/screenshots_6_3/` holds the same 20 images
+  the version page may accept only the 6.1"/6.3" size (1206 × 2622): `store/ios/screenshots_6_3/` holds the same 20 images (written by `tool/render_ios_store_graphics.sh`)
   resized for that field (checked 2026-11-06: 1320 × 2868 was rejected there as "invalid dimensions"). German and
   English sets. Never use real routes (see the repo rule on location data).
   There is no Mac, so the shots come from the iOS Simulator on the GitHub macOS runner:
