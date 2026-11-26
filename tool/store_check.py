@@ -87,7 +87,19 @@ def notes_sections(path):
 def js_string(entry, key):
     """Value of `key: '...'` or `key: "..."` in a JS object literal, with \\-escapes decoded."""
     match = re.search(key + r"""\s*:\s*(['"])((?:\\.|(?!\1).)*)\1""", entry)
-    return re.sub(r"\\(.)", r"\1", match.group(2)) if match else None
+    if not match:
+        return None
+    simple = {"n": "\n", "t": "\t", "r": "\r"}
+
+    def decode(escape):
+        code = escape.group(1)
+        if code.startswith("u"):
+            return chr(int(code[1:], 16))
+        if code.startswith("x"):
+            return chr(int(code[1:], 16))
+        return simple.get(code, code)
+
+    return re.sub(r"\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)", decode, match.group(2))
 
 
 def check_listing_preview(problems):
@@ -100,7 +112,8 @@ def check_listing_preview(problems):
     rel = path.relative_to(ROOT)
     shots = re.search(r"const shots = \[([^\]]*)\]", html)
     listed = re.findall(r"'([^']+)'", shots.group(1)) if shots else []
-    name = (STORE / "ios" / "text" / "de_name.txt").read_text(encoding="utf-8").strip()
+    name_file = STORE / "ios" / "text" / "de_name.txt"
+    name = name_file.read_text(encoding="utf-8").strip() if name_file.is_file() else None
     for lang in LANGS:
         files = [p.stem for p in sorted((STORE / "play" / "screenshots" / lang).glob("*.png"))][:8]
         if listed != files:
@@ -109,10 +122,11 @@ def check_listing_preview(problems):
         if not entry:
             problems.append(f"{rel}: no '{lang}' entry")
             continue
-        short = (STORE / "play" / "text" / f"{lang}_short.txt").read_text(encoding="utf-8").strip()
-        if js_string(entry.group(1), "short") != short:
+        short_file = STORE / "play" / "text" / f"{lang}_short.txt"
+        # A missing source file is already reported by main(); compare only what exists.
+        if short_file.is_file() and js_string(entry.group(1), "short") != short_file.read_text(encoding="utf-8").strip():
             problems.append(f"{rel}: short text for {lang} differs from play/text/{lang}_short.txt")
-        if js_string(entry.group(1), "name") != name:
+        if name is not None and js_string(entry.group(1), "name") != name:
             problems.append(f"{rel}: app name for {lang} differs from '{name}'")
 
 
