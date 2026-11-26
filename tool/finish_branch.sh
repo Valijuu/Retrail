@@ -4,8 +4,9 @@
 #   delete the branch locally and on origin, prune.
 #
 #   tool/finish_branch.sh <branch> [base]   finish <branch> (base: main)
-#   tool/finish_branch.sh --check [base]    only list leftovers: branches whose commits are all in
-#                                           <base> (also after a rebase), and worktrees on them
+#   tool/finish_branch.sh --check [base]    only list possible leftovers: branches with no commit outside
+#                                           <base> (also after a rebase), and worktrees on them. A branch
+#                                           that was just created looks the same: check before deleting.
 #
 # Run it from any worktree of the repo. It stops before pushing if the branch has uncommitted
 # changes, if the rebase conflicts, or if <base> cannot be fast-forwarded.
@@ -29,14 +30,14 @@ check() {
     [ "$branch" = "$base" ] && continue
     if fully_in "$branch" "origin/$base"; then
       path="$(worktree_of "$branch")"
-      echo "leftover: local branch $branch is already in $base${path:+ (worktree $path)}"
+      echo "leftover? local branch $branch has no commits outside $base (merged, or started and still empty)${path:+, worktree $path}"
       found=1
     fi
   done < <(git for-each-ref --format='%(refname:short)' refs/heads)
   while read -r branch; do
     case "$branch" in origin/HEAD|origin/"$base"|origin) continue ;; esac
     if fully_in "$branch" "origin/$base"; then
-      echo "leftover: remote branch ${branch#origin/} is already in $base"
+      echo "leftover? remote branch ${branch#origin/} has no commits outside $base (merged, or pushed while empty)"
       found=1
     fi
   done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin)

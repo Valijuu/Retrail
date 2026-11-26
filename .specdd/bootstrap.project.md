@@ -70,8 +70,9 @@ A user-visible change also adds a line under **Unreleased** in `/CHANGELOG.md` i
 
 - One short-lived branch per feature or fix; `main` stays green and linear. Rebase onto `main` and
   fast-forward, never merge. Finish with `tool/finish_branch.sh <branch>`, never by hand: a hand-made
-  finish left merged branches and worktrees behind (#153). `tool/finish_branch.sh --check` lists leftovers
-  (branches whose commits are all in `main`, also after a rebase); run it when starting new work.
+  finish left merged branches and worktrees behind (#153). `tool/finish_branch.sh --check` lists possible leftovers
+  (branches with no commit outside `main`, also after a rebase; a just-created branch looks the same, so check
+  before deleting); run it when starting new work.
 - Run `dart format` on every changed Dart file (default tall style, no formatter config). The
   `.githooks/pre-commit` hook rejects unformatted staged Dart files (`git config core.hooksPath .githooks`);
   formatting-only commits go into `.git-blame-ignore-revs`.
