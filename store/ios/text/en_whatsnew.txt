@@ -1,6 +1,10 @@
 New:
-• Map in History: all rides as lines or a heatmap, with activity menu, place search and a radius around a pin
-• Elevation: ascent and descent on the ride screen, the map and the detail
-Changed:
-• Place names on maps and previews follow the app language
-• Tabs change only through the bar at the bottom, so the map can be moved freely
+• History map shows your location right away; tap the dot to draw the circle around you
+• Ride menu: "Show on map"
+Fixed:
+• The ride timer no longer runs slow in the background
+• Ending a ride from the lock screen no longer starts a new one on opening
+• Rides at the same place show as a dot on the map
+• Profile photo survives the update on iPhone
+• Error messages instead of endless loading
+Android: rides and profile photo are no longer in the Google backup.

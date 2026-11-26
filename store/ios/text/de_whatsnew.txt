@@ -1,6 +1,10 @@
 Neu:
-• Karte im Verlauf: alle Fahrten als Linien oder Heatmap, mit Aktivitätsmenü, Ortssuche und Radius um einen Pin
-• Höhenmeter: Anstieg und Abstieg auf dem Fahrtbildschirm, in der Karte und im Detail
-Geändert:
-• Ortsnamen auf Karten und Vorschaubildern in der App-Sprache
-• Tabs wechseln nur noch über die Leiste unten, damit die Karte frei bewegt werden kann
+• Verlaufskarte zeigt sofort deinen Standort; Tipp auf den Punkt zeichnet den Kreis um dich
+• Im Fahrtmenü: „Auf Karte zeigen“
+Behoben:
+• Fahrtzeit läuft im Hintergrund nicht mehr zu langsam
+• Fahrt per Sperrbildschirm beenden startet beim Öffnen keine neue mehr
+• Fahrten am selben Ort erscheinen als Punkt auf der Karte
+• Profilfoto bleibt nach dem Update auf dem iPhone erhalten
+• Fehlermeldungen statt endlosem Laden
+Android: Fahrten und Profilfoto liegen nicht mehr im Google-Backup.
