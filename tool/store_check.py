@@ -86,7 +86,7 @@ def notes_sections(path):
 
 def js_string(entry, key):
     """Value of `key: '...'` or `key: "..."` in a JS object literal, with \\-escapes decoded."""
-    match = re.search(key + r"""\s*:\s*(['"])((?:\\.|(?!\1).)*)\1""", entry)
+    match = re.search(r"\b" + key + r"""\s*:\s*(['"])((?:\\.|(?!\1).)*)\1""", entry)
     if not match:
         return None
     simple = {"n": "\n", "t": "\t", "r": "\r"}
