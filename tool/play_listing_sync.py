@@ -145,6 +145,11 @@ def main():
                     else:
                         state = "not in Play"
                     print(f"      {index + 1}. {f.name}: {state}")
+                local_hashes = {sha256(f) for f in files}
+                for position, image in enumerate(remote, 1):
+                    if image["sha256"] not in local_hashes:
+                        print(f"      Play position {position} is not in the repo: "
+                              f"sha256 {image['sha256']} url {image['url']}")
                 changes += 1
                 if apply:
                     play.call("DELETE", f"{API}/edits/{edit}/listings/{locale}/{image_type}")
