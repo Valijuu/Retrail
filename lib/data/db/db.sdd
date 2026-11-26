@@ -22,6 +22,7 @@ Owns:
   /test/data/ride_range_query_test.dart
   /test/data/followed_rides_dao_test.dart
   /test/data/elevation_schema_test.dart
+  /test/data/migration_chain_test.dart
   /test/data/ride_outlines_dao_test.dart
 
 References:
@@ -47,6 +48,8 @@ Must:
   @OutlineDao.rideIdsWithoutOutline lists the rides with a route and no outline row, oldest first.
   The schema version is `9`; every older version upgrades in place without losing rides. Version 9 drops the empty outline markers, so rides with one point are filled again (#136).
   Every schema change raises the version and adds an upgrade step.
+  An upgrade step reads and writes only the columns that exist at its version (fixed SQL, not the DAOs), and
+    `/test/data/migration_chain_test.dart` walks the chain from v1 and from v3 to the current version (#139).
   Reads are reactive Drift streams; @RideWithTrackpoints is assembled in the DAO.
   Generated files come from `dart run build_runner build`.
 

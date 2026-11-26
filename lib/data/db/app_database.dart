@@ -5,6 +5,7 @@ import '../../domain/distance_calculator.dart';
 import '../../domain/ride_stats.dart';
 import 'outline_dao.dart';
 import 'ride_dao.dart';
+import 'ride_with_trackpoints.dart';
 import 'tables.dart';
 import 'trackpoint_dao.dart';
 
@@ -95,20 +96,57 @@ class AppDatabase extends _$AppDatabase {
 
 /// Computes and stores [RideStats] + [hasRoute] for every existing ride,
 /// once, as part of the v3 migration. Reuses [computeRideStats] so the
-/// backfilled values are byte-for-byte what the app already displayed — this
-/// only changes *when* they're computed, not the math.
+/// backfilled values are what the app already displayed.
+///
+/// It runs inside the upgrade, so it reads and writes with fixed SQL over the
+/// columns that exist at v3 only: the DAOs select today's columns, which an old
+/// file does not have yet (#139).
 Future<void> _backfillStatsAndRoute(AppDatabase db) async {
   const calc = HaversineDistanceCalculator();
-  final rides = await db.rideDao.getAllRidesWithTrackpoints().first;
-  for (final rwt in rides) {
+  final rides = await db
+      .customSelect('SELECT ride_id, start_time, end_time FROM rides')
+      .get();
+  for (final row in rides) {
+    final rideId = row.read<int>('ride_id');
+    final points = await db
+        .customSelect(
+          'SELECT trackpoint_id, latitude, longitude, timestamp, speed '
+          'FROM trackpoints WHERE ride_id = ? ORDER BY timestamp',
+          variables: [Variable.withInt(rideId)],
+        )
+        .get();
+    final rwt = RideWithTrackpoints(
+      ride: Ride(
+        rideId: rideId,
+        startTime: row.readNullable<int>('start_time'),
+        endTime: row.readNullable<int>('end_time'),
+        isFavorite: false,
+        hasRoute: false,
+      ),
+      trackpoints: [
+        for (final p in points)
+          Trackpoint(
+            trackpointId: p.read<int>('trackpoint_id'),
+            rideId: rideId,
+            latitude: p.read<double>('latitude'),
+            longitude: p.read<double>('longitude'),
+            timestamp: p.read<int>('timestamp'),
+            speed: p.readNullable<double>('speed'),
+          ),
+      ],
+    );
     final stats = computeRideStats(rwt, calc);
-    await db.rideDao.updateStats(
-      rwt.ride.rideId,
-      distanceMetres: stats.distanceMetres,
-      durationMs: stats.durationMs,
-      avgSpeedKmh: stats.avgSpeedKmh,
-      maxSpeedKmh: stats.maxSpeedKmh,
-      hasRoute: rwt.trackpoints.isNotEmpty,
+    await db.customUpdate(
+      'UPDATE rides SET distance_metres = ?, duration_ms = ?, '
+      'avg_speed_kmh = ?, max_speed_kmh = ?, has_route = ? WHERE ride_id = ?',
+      variables: [
+        Variable.withReal(stats.distanceMetres),
+        Variable.withInt(stats.durationMs),
+        Variable.withReal(stats.avgSpeedKmh),
+        Variable.withReal(stats.maxSpeedKmh),
+        Variable.withBool(points.isNotEmpty),
+        Variable.withInt(rideId),
+      ],
     );
   }
 }
