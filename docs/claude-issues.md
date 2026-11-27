@@ -18,6 +18,11 @@ not deleted), which had no Flutter and pushed with the owner's admin token.
    - or a **question** in the issue.
 5. Review the PR, approve it and merge. CI (`dart-check`) must be green.
 
+Partly done: when the agent reports the issue as not fully done, the PR says `Refs #N` instead of
+`Closes #N`, the issue stays open (with `claude-pr`), and what is left becomes follow-up issues. The
+agent lists them in its hand-over; `publish` opens them without the `claude` label and links them in
+a PR comment. Put them on the board yourself.
+
 Answering a question: reply in the issue, then remove `claude-rueckfrage`. The next run picks the
 issue up again. After a failure: read the linked run, delete a left-over branch `claude/issue-<N>`
 if there is one, remove `claude-fehler`.
