@@ -260,7 +260,7 @@ void main() {
     // Simulate Home parking a jump target *before* the History screen mounts
     // (the PageView builds it lazily on navigation).
     if (presetTarget != null) {
-      container.read(historyTargetRideProvider.notifier).state = presetTarget;
+      container.read(historyTargetRideProvider.notifier).set(presetTarget);
     }
 
     await tester.pumpWidget(
@@ -897,7 +897,7 @@ void main() {
     tester,
   ) async {
     await pump(tester, [_entry(1, desc: 'A'), _entry(2, desc: 'B')]);
-    container.read(historyTargetRideProvider.notifier).state = 2;
+    container.read(historyTargetRideProvider.notifier).set(2);
     await tester.pump();
     await tester.pump();
 

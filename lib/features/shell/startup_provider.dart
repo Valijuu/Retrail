@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../data/repositories/data_providers.dart';
 
@@ -12,4 +11,14 @@ final onboardingDoneProvider = StreamProvider<bool>(
 /// Set to drive a deep-link into the active-ride screen (the ongoing-ride
 /// notification on Android, Live Activity on iOS). The router redirects to
 /// `/ride` while true; the ride screen clears it. Mirrors `openRideSignal`.
-final pendingRideDeepLinkProvider = StateProvider<bool>((ref) => false);
+final pendingRideDeepLinkProvider = NotifierProvider<PendingRideDeepLink, bool>(
+  PendingRideDeepLink.new,
+);
+
+class PendingRideDeepLink extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Sets whether a deep link into the active ride is pending.
+  void set(bool pending) => state = pending;
+}
