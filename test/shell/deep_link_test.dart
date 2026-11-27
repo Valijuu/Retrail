@@ -54,7 +54,7 @@ void main() {
     // Onboarding done → main shell.
     expect(find.text('Home'), findsOneWidget);
 
-    container.read(pendingRideDeepLinkProvider.notifier).state = true;
+    container.read(pendingRideDeepLinkProvider.notifier).set(true);
     await tester.pump(); // redirect
     await tester.pump(const Duration(milliseconds: 200)); // fade transition
     await tester.pump(); // active-ride post-frame: clear the flag
@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
 
     // Open the ride via deep-link; the screen clears the latch on mount.
-    container.read(pendingRideDeepLinkProvider.notifier).state = true;
+    container.read(pendingRideDeepLinkProvider.notifier).set(true);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pump();
@@ -79,7 +79,7 @@ void main() {
 
     // Tapping the ride notification body again, while we're *already* on the
     // ride screen, re-sets the latch — and initState's clear never re-runs.
-    container.read(pendingRideDeepLinkProvider.notifier).state = true;
+    container.read(pendingRideDeepLinkProvider.notifier).set(true);
     await tester.pump();
     expect(find.text('Retrail ride'), findsOneWidget); // redirect no-ops here
 

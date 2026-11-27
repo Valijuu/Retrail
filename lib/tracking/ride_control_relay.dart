@@ -15,7 +15,7 @@ void rideControlRelay(ProviderContainer container, String id) {
     // Only while one records: the ride screen starts a ride on entry, so a
     // tap on a ride that already ended would start a new one (#152).
     if (container.read(rideTrackerProvider).state.isTracking) {
-      container.read(pendingRideDeepLinkProvider.notifier).state = true;
+      container.read(pendingRideDeepLinkProvider.notifier).set(true);
     }
     return;
   }
@@ -35,7 +35,7 @@ void rideControlRelay(ProviderContainer container, String id) {
       final wasRecording = tracker.state.isTracking;
       controller.stop(); // finalize the ride
       // A tap that came before the stop must not reopen /ride later (#152).
-      container.read(pendingRideDeepLinkProvider.notifier).state = false;
+      container.read(pendingRideDeepLinkProvider.notifier).set(false);
       final rideId = tracker.lastCompletedRideId;
       if (wasRecording && rideId != null) {
         container

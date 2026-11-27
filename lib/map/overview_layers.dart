@@ -9,6 +9,7 @@ import '../domain/activity_type.dart';
 import '../domain/geo_constants.dart';
 import '../domain/heading.dart' show LatLng;
 import 'live_map.dart' show symbolRaster;
+import 'live_map_geojson.dart' show emptyGeoJson;
 import 'route_marker_painter.dart'
     show
         RouteMarkerImage,
@@ -16,10 +17,6 @@ import 'route_marker_painter.dart'
         mapEndpointMarkerScale,
         routeArrowImagePng,
         routeMarkerImagePng;
-
-/// An empty GeoJSON document MapLibre accepts when there is nothing to draw.
-const String emptyOverviewGeoJson =
-    '{"type":"FeatureCollection","features":[]}';
 
 /// Source id of the lines of [type]: one source per activity type, never one
 /// layer per ride.
@@ -87,7 +84,7 @@ const double _heatOpacity = 0.85;
 
 /// A point as GeoJSON, or the empty document for null.
 String overviewPointGeoJson(LatLng? p) => p == null
-    ? emptyOverviewGeoJson
+    ? emptyGeoJson
     : jsonEncode({
         'type': 'Feature',
         'properties': <String, Object>{},
@@ -141,7 +138,7 @@ Future<void> addOverviewLayers(
   required bool Function() stale,
 }) async {
   Future<bool> source(String id) async {
-    await style.addSource(GeoJsonSource(id: id, data: emptyOverviewGeoJson));
+    await style.addSource(GeoJsonSource(id: id, data: emptyGeoJson));
     return !stale();
   }
 

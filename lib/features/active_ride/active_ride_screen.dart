@@ -76,7 +76,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     _recording = ref.read(rideRecordingControllerProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // A pending deep-link is now consumed (mirrors the old RidePlaceholder).
-      ref.read(pendingRideDeepLinkProvider.notifier).state = false;
+      ref.read(pendingRideDeepLinkProvider.notifier).set(false);
       // Start the ride once per screen session, gated on location permission +
       // services (Spec 5B). A non-proceed outcome surfaces a prompt instead of a
       // silent no-GPS ride. The gate guards an already-active ride (reopen).
@@ -120,7 +120,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     // router's `pendingRide → /ride` redirect would bounce us straight back here
     // (starting a new ride → stuck on the ride screen). Clearing it first lets
     // the navigation home actually take.
-    ref.read(pendingRideDeepLinkProvider.notifier).state = false;
+    ref.read(pendingRideDeepLinkProvider.notifier).set(false);
     // Spec 17: the reference ends with the ride (save, skip, discard, gate).
     // The screen keeps drawing the last state through the exit transition.
     _followingAtExit = _liveFollowing();

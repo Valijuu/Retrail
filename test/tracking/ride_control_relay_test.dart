@@ -93,7 +93,7 @@ void main() {
   });
 
   test('stop → clears a pending deep link to the ride', () {
-    container.read(pendingRideDeepLinkProvider.notifier).state = true;
+    container.read(pendingRideDeepLinkProvider.notifier).set(true);
     rideControlRelay(container, RideNotificationIds.stop);
     expect(container.read(pendingRideDeepLinkProvider), isFalse);
   });

@@ -6,6 +6,10 @@ Purpose:
 
 Owns:
   ./live_map.dart
+  ./live_map_geojson.dart
+  ./live_map_layers.dart
+  ./live_map_sources.dart
+  ./marker_glide.dart
   ./map_attribution.dart
   ./map_config.dart
   ./openfreemap.dart

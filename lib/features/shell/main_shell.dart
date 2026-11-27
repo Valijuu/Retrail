@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
@@ -17,11 +16,28 @@ import 'ride_saved_notice.dart';
 
 /// When a ride is tapped on Home, its id is parked here; the shell switches to
 /// the History tab and the History screen scrolls to it, then clears this.
-final historyTargetRideProvider = StateProvider<int?>((ref) => null);
+final historyTargetRideProvider = NotifierProvider<HistoryTargetRide, int?>(
+  HistoryTargetRide.new,
+);
 
-/// Top-level swipeable tab shell: a [PageView] (Home / History / Settings) plus
-/// a Material 3 bottom bar driven by one source-of-truth tab list. Placeholder
-/// tab bodies are replaced by the real screens in their phases.
+/// The ride id the History tab should scroll to and highlight, or null. Set by
+/// Home; History clears it once it has revealed the card.
+class HistoryTargetRide extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  /// Parks [rideId] as the ride History should scroll to; null clears it.
+  void set(int? rideId) => state = rideId;
+}
+
+/// How long the shell takes to slide to another tab.
+const Duration _tabSwitchDuration = Duration(milliseconds: 250);
+
+/// Top-level tab shell: a [PageView] of Home, History and Settings plus a
+/// bottom bar. Tabs change through the bar only (a sideways swipe got in the
+/// way of the maps); back retraces the visited tabs towards Home, after the
+/// History tab had its turn (#32). It also shows the "Ride saved" hint (#75)
+/// on whichever tab the rider is on.
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
@@ -72,7 +88,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   void _goToTab(int index) => _controller.animateToPage(
     index,
-    duration: const Duration(milliseconds: 250),
+    duration: _tabSwitchDuration,
     curve: Curves.easeOut,
   );
 
@@ -141,7 +157,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 builder: (_, greetingIndex, _) => HomeScreen(
                   greetingIndex: greetingIndex,
                   onOpenRide: (rideId) {
-                    ref.read(historyTargetRideProvider.notifier).state = rideId;
+                    ref.read(historyTargetRideProvider.notifier).set(rideId);
                     _goToTab(1);
                   },
                   onAvatarTap: () => showAppBottomSheet<void>(

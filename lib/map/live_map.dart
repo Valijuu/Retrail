@@ -1,29 +1,48 @@
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maplibre/maplibre.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/theme_context.dart';
 import '../domain/activity_type.dart';
-import '../domain/distance_calculator.dart';
-import '../domain/heading.dart' show HeadingState, nextHeading, splitRouteTail;
+import '../domain/heading.dart' show HeadingState, nextHeading;
+import '../domain/route_markers.dart';
 import '../domain/route_progress.dart' show RouteTrack;
 import '../l10n/app_localizations.dart';
-import '../features/onboarding/activity_type_ui.dart';
+import 'live_map_layers.dart';
+import 'live_map_sources.dart';
 import 'map_language.dart';
 import 'openfreemap.dart';
-import '../domain/route_markers.dart';
+import 'marker_glide.dart';
 import 'preview_projection.dart';
 import 'route_camera.dart';
-import 'route_marker_painter.dart';
 import 'route_sketch.dart';
-import '../core/theme/theme_context.dart';
 
-/// What the camera should do on a [LiveMap] update. Pure, so the follow /
-/// recenter rules are unit-tested without pumping the map.
+// The pure helpers of the live map live in their own files; this one stays the
+// import point for the widget and everything tests and screens used from it.
+// Names that tests and other screens use; everything else stays internal to
+// lib/map (narrowed from a bare export, see #160).
+export 'live_map_geojson.dart'
+    show
+        emptyGeoJson,
+        kReferenceRouteOpacity,
+        mapHex,
+        pointGeoJson,
+        referenceGeoJson,
+        referenceMarkerPoints,
+        referencePushTarget,
+        referenceUpdateGeoJson,
+        routeLineGeoJson;
+export 'live_map_layers.dart'
+    show
+        activityBadgePngFromLoader,
+        arrowIconSize,
+        arrowImageId,
+        arrowSpacingPx,
+        rideMarkerIsBadge,
+        symbolRaster;
+export 'marker_glide.dart'
+    show kFollowAnimationDuration, lerpPoint, markerShouldSnap;
+
 class CameraFollow {
   const CameraFollow({required this.resetBearing, this.instant = false});
 
@@ -39,9 +58,6 @@ class CameraFollow {
   /// passive follow then keeps. Always paired with [resetBearing].
   final bool instant;
 }
-
-/// How long an animated follow / recenter camera move takes.
-const Duration _followAnimationDuration = Duration(milliseconds: 600);
 
 /// Decides whether to move the camera to the current position on a widget
 /// update. Every move lands at ride zoom: any zoom gesture drops follow, so
@@ -77,211 +93,6 @@ CameraFollow? followCameraUpdate({
   return null;
 }
 
-/// The live map's MapLibre style (Spec 19 §A): the bundled Retrail Light /
-/// Retrail Dark asset. MapLibre loads an asset path itself, asynchronously like
-/// a URL — not a JSON string, which it applies synchronously before
-/// `onMapCreated`, whose reset then discards it.
-String liveMapStyle(bool dark, String language) =>
-    retrailStyleAsset(dark: dark, language: language);
-
-/// An empty GeoJSON source payload — a valid document MapLibre accepts when
-/// there is nothing to draw yet (a 0/1-point route or an unseeded marker).
-const String _emptyGeoJson = '{"type":"FeatureCollection","features":[]}';
-
-/// GeoJSON source data for the recorded route (lng,lat order). Pure, so the
-/// geometry that feeds the MapLibre source is unit-tested without a map. A
-/// LineString needs ≥2 points — MapLibre rejects fewer ("A line string must
-/// have two or more coordinate points") — so a 0/1-point route yields the empty
-/// document instead.
-String routeLineGeoJson(List<RoutePoint> points) {
-  if (points.length < 2) return _emptyGeoJson;
-  return jsonEncode({
-    'type': 'Feature',
-    'geometry': {
-      'type': 'LineString',
-      'coordinates': [
-        for (final p in points) [p.lng, p.lat],
-      ],
-    },
-    'properties': <String, Object?>{},
-  });
-}
-
-/// Opacity of the reference route being followed (Spec 17): clearly behind
-/// the live line, still readable on both basemaps.
-const double kReferenceRouteOpacity = 0.45;
-
-/// GeoJSON for the ridden parts of a followed reference: one MultiLineString
-/// of the [segments] with at least two points (a LineString needs two), or
-/// the empty document when none has.
-String _multiLineGeoJson(List<List<RoutePoint>> segments) {
-  final lines = [
-    for (final s in segments)
-      if (s.length >= 2)
-        [
-          for (final p in s) [p.lng, p.lat],
-        ],
-  ];
-  if (lines.isEmpty) return _emptyGeoJson;
-  return jsonEncode({
-    'type': 'Feature',
-    'geometry': {'type': 'MultiLineString', 'coordinates': lines},
-    'properties': <String, Object?>{},
-  });
-}
-
-/// GeoJSON for the followed reference (Spec 18): the whole [track] as
-/// [ahead] (the line with arrows) and the ridden parts [done] (up to two on a
-/// loop ridden across its start/finish; null = nothing ridden yet), greyed on
-/// top of it.
-({String done, String ahead}) referenceGeoJson(
-  RouteTrack track,
-  List<List<RoutePoint>>? done,
-) => (
-  done: _multiLineGeoJson(done ?? const []),
-  ahead: routeLineGeoJson(track.points),
-);
-
-/// What a reference update pushes: the ridden parts ([done]) always, the
-/// whole line ([ahead]) only when [track] is not the one [lastPushed] into
-/// the existing sources (a flip), else null — so a fix that only grows the
-/// ridden part doesn't re-encode and re-upload the whole route.
-({String done, String? ahead}) referenceUpdateGeoJson(
-  RouteTrack track,
-  List<List<RoutePoint>>? done, {
-  required RouteTrack? lastPushed,
-}) => (
-  done: _multiLineGeoJson(done ?? const []),
-  ahead: identical(track, lastPushed) ? null : routeLineGeoJson(track.points),
-);
-
-/// Where the followed reference's markers go for the endpoint [style] drawn
-/// at style load: the start (or combined loop) marker on the first of
-/// [points], the finish on the last — only for an [RouteEndpointStyle.open]
-/// route. [points] must not be empty (a [RouteEndpointStyle.none] route has
-/// no markers to move). After a flip [points] is the reversed route, so both
-/// markers swap ends.
-({RoutePoint start, RoutePoint? end}) referenceMarkerPoints(
-  RouteEndpointStyle style,
-  List<RoutePoint> points,
-) => (
-  start: points.first,
-  end: style == RouteEndpointStyle.open ? points.last : null,
-);
-
-/// Which reference to push into the `reference` sources, or null to push
-/// nothing. [drawn] is the reference whose sources the current style load
-/// created (null = none exist, so any push would hit a missing source — a
-/// native crash on Android, see `_sourcesReady`); [current] is the widget's
-/// reference now. A replaced reference (a flip) redraws the existing sources;
-/// one that went away pushes nothing (the screen is leaving).
-RouteTrack? referencePushTarget({
-  required RouteTrack? drawn,
-  required RouteTrack? current,
-}) => drawn == null ? null : current;
-
-/// Linear interpolation between two coordinates. Safe for the short per-fix
-/// distances the marker glide covers (metres — curvature is irrelevant).
-RoutePoint lerpPoint(RoutePoint a, RoutePoint b, double t) =>
-    (lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t);
-
-/// Above this jump the current-position marker snaps instead of gliding: a GPS
-/// recovery / teleport animated over 600 ms would be a distracting slow slide
-/// across the screen. Normal 1 Hz fixes move a few metres.
-const double _markerSnapThresholdM = 150;
-
-/// Whether the marker should snap straight to [to] (true) or glide from [from]
-/// (false). Pure, so the decision is unit-tested without pumping the map.
-bool markerShouldSnap(RoutePoint from, RoutePoint to) =>
-    const HaversineDistanceCalculator().distanceBetween(
-      from.lat,
-      from.lng,
-      to.lat,
-      to.lng,
-    ) >
-    _markerSnapThresholdM;
-
-String _pointGeoJson(RoutePoint p) => jsonEncode({
-  'type': 'Feature',
-  'geometry': {
-    'type': 'Point',
-    'coordinates': [p.lng, p.lat],
-  },
-  'properties': <String, Object?>{},
-});
-
-/// MapLibre image id of the direction arrowhead.
-const _arrowImage = 'route-arrow';
-
-/// Screen distance between direction arrowheads on the map's route line.
-const double _arrowSpacingPx = 60;
-
-/// The arrowhead PNG is sized for the 3.5dp preview line; the map's line is
-/// 4.5dp wide, so its arrowheads scale by the same ratio.
-const double _arrowIconSize = 4.5 / 3.5;
-
-/// How to rasterise a dp-sized symbol image shown [scale]× on a
-/// [pixelRatio] device: MapLibre sizes a registered image by its raw pixel
-/// count in dp (see the 0.19 note on the activity badge). Rasterised at
-/// `pixelRatio × scale` and shown at `icon-size` `1 / pixelRatio`, one image
-/// pixel lands on one device pixel. Rasterising at `pixelRatio` and scaling
-/// up by `icon-size` blurred the start/finish markers and arrows.
-({double rasterRatio, double iconSize}) symbolRaster(
-  double scale,
-  double pixelRatio,
-) => (rasterRatio: pixelRatio * scale, iconSize: 1 / pixelRatio);
-
-/// `#RRGGBB` for a token [Color], the form MapLibre paint properties expect.
-/// `toARGB32()` is the non-deprecated 32-bit accessor (replaces `Color.value`).
-String _hex(Color c) =>
-    '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
-
-/// Whether the current-position marker is the activity icon badge (true) or the
-/// plain blue dot (false). Mirrors Android `MovingMarkerMap`: null/OTHER → dot,
-/// every other activity → an amber badge with the white activity glyph.
-bool rideMarkerIsBadge(ActivityType? type) =>
-    type != null && type != ActivityType.other;
-
-/// Renders the activity badge (Android `makeIconBitmap` parity): a 96px circle
-/// in the brand primary with the activity glyph tinted white, drawn with 18px
-/// padding so the 960-unit glyph fills the centre 60×60. [loader] supplies the
-/// glyph; `_activityBadgePng` passes an [SvgAssetLoader], tests an
-/// [SvgStringLoader]. The viewBox transform is proven by `activity_badge_test`:
-/// vector_graphics bakes the viewBox origin, so there is NO `translate(0,960)`.
-@visibleForTesting
-Future<Uint8List> activityBadgePngFromLoader(BytesLoader loader) async {
-  const size = 96.0, pad = 18.0, inner = size - 2 * pad; // 60
-  final recorder = ui.PictureRecorder();
-  final canvas = Canvas(recorder);
-  // The badge is rendered to a PNG without a BuildContext, so it reads the
-  // light palette's token directly rather than duplicating its hex.
-  canvas.drawCircle(
-    const Offset(size / 2, size / 2),
-    size / 2,
-    Paint()..color = AppColors.light.primary,
-  );
-  final info = await vg.loadPicture(loader, null);
-  canvas.saveLayer(
-    const Rect.fromLTWH(0, 0, size, size),
-    Paint()
-      ..colorFilter = ColorFilter.mode(AppColors.light.onMap, BlendMode.srcIn),
-  );
-  canvas.save();
-  canvas.translate(pad, pad);
-  canvas.scale(inner / 960);
-  canvas.drawPicture(info.picture); // NO translate(0,960) — origin pre-baked.
-  canvas.restore();
-  canvas.restore();
-  info.picture.dispose();
-  final img = await recorder.endRecording().toImage(size.toInt(), size.toInt());
-  final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
-  img.dispose();
-  return bytes!.buffer.asUint8List();
-}
-
-Future<Uint8List> _activityBadgePng(ActivityType type) =>
-    activityBadgePngFromLoader(SvgAssetLoader(type.iconAsset));
-
 /// Interactive-map zoom bounds. Without a floor, you could pinch out without
 /// limit to a tiny repeated-world speck that janks the frame and makes the ride
 /// controls hard to hit; the ceiling caps it at useful street detail. Low enough
@@ -302,6 +113,13 @@ const double kLiveMapMaxZoom = 19.0;
 /// While following, the camera is heading-up (rotated to the travel
 /// direction); the line's tip follows the gliding marker via a `route-tail`
 /// segment. Follow feel is tuned/verified on-device.
+/// The live map's MapLibre style (Spec 19 §A): the bundled Retrail Light /
+/// Retrail Dark asset. MapLibre loads an asset path itself, asynchronously like
+/// a URL — not a JSON string, which it applies synchronously before
+/// `onMapCreated`, whose reset then discards it.
+String liveMapStyle(bool dark, String language) =>
+    retrailStyleAsset(dark: dark, language: language);
+
 class LiveMap extends StatefulWidget {
   const LiveMap({
     super.key,
@@ -383,68 +201,22 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   MapController? _controller;
   StyleController? _style;
 
-  /// Glides the current-position marker between fixes (600 ms — matching the
-  /// camera's animateCamera — and linear, so constant motion between ~1 Hz
-  /// fixes doesn't pulse). Without it the dot teleports while the camera glides.
-  /// Created in [initState]: a lazy `late final` would first run in [dispose],
-  /// where the TickerMode ancestor lookup throws on the deactivated element.
-  late final AnimationController _glide;
+  /// The current-position marker's glide and the live line's tail. Created in
+  /// [initState]: a lazy `late final` would first run in [dispose], where the
+  /// TickerMode ancestor lookup throws on the deactivated element.
+  late final MarkerGlide _glide;
 
-  /// Where the marker is currently drawn (the glide's moving position). A fix
-  /// arriving mid-glide first lands the marker on the previous target (a small
-  /// hop forward, see [_landGlide]) — otherwise the line, which already runs
-  /// to that target, would sit ahead of the marker for the rest of the glide.
-  RoutePoint? _renderedCurrent;
-  RoutePoint? _glideFrom;
-  RoutePoint? _glideTo;
+  /// Pushes route and reference geometry into this style load's sources.
+  late final LiveMapSources _sources;
 
-  /// Last time a glide frame was pushed to the source, for throttling the
-  /// platform-channel updates to ~25 fps instead of display rate.
-  int _lastGlidePushMs = 0;
-
-  /// Where the live line's `route-tail` segment starts (see [splitRouteTail]):
-  /// the route source stops one fix short and the tail runs from here to the
-  /// gliding marker, so the line's tip follows the marker instead of leading
-  /// it. Null when there is no tail to draw.
-  RoutePoint? _tailStart;
+  /// Adds layers to the loaded style; null until a style has loaded.
+  LiveMapLayers? _layers;
 
   /// Heading-up follow: the travel direction the camera turns to, advanced by
   /// [nextHeading] from RECORDED points only (already GPS-filtered — the seed
   /// fix and rejected outliers never rotate the map). Its bearing is null
   /// until the rider has really moved.
   HeadingState _heading = (anchor: null, bearing: null);
-
-  /// The `points` list last pushed into the `route` source, so a fix that
-  /// adds no point only redraws the short tail, not the whole line.
-  List<RoutePoint>? _pushedPoints;
-
-  /// The reference whose `reference` / `reference-done` sources this style
-  /// load created, or null when it created none (see [referencePushTarget]).
-  RouteTrack? _drawnReference;
-
-  /// The reference whose whole line the `reference` source holds now (its
-  /// lifecycle is [_drawnReference]'s), so a fix that only grows the ridden
-  /// part doesn't push the whole line again.
-  RouteTrack? _lastPushedReference;
-
-  /// The `ref-start` / `ref-end` marker sources this style load created: the
-  /// endpoint [RouteEndpointStyle] drawn then (which marker sources exist)
-  /// and the reference whose endpoints they show now. Null when it created
-  /// none — then a flip moves nothing (a push would hit a missing source).
-  ({RouteEndpointStyle style, RouteTrack shows})? _drawnReferenceMarkers;
-
-  @override
-  void initState() {
-    super.initState();
-    _glide = AnimationController(
-      vsync: this,
-      duration: _followAnimationDuration,
-    )..addListener(_onGlideTick);
-  }
-
-  /// Badge images already registered on the style (`addImage` would throw on a
-  /// duplicate id), so a live activity swap only rasterizes each type once.
-  final Set<String> _markerImages = {};
 
   /// True once the live `current-dot` marker has been added in [_onStyleLoaded]
   /// — gates the live activity-marker swap so it never tries to remove a layer
@@ -471,6 +243,26 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   /// the placeholder.
   bool _styleReady = false;
 
+  /// True while the detail map is being re-framed for a new size (dialog ↔
+  /// fullscreen): the placeholder sketch — already at the new framing —
+  /// covers the native view's resize and camera jump, then fades out.
+  bool _resizeCovered = false;
+
+  /// The map's laid-out size, captured in [build] so the detail map can fit
+  /// the route to the real viewport (see [_fitCamera]).
+  Size _viewportSize = Size.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _glide = MarkerGlide(
+      vsync: this,
+      style: () => _style,
+      sourcesReady: () => _sourcesReady,
+    );
+    _sources = LiveMapSources(style: () => _style, glide: _glide);
+  }
+
   /// Centre target: the current fix if any, else the last recorded point.
   Geographic get _centerPosition {
     final c =
@@ -481,15 +273,6 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
         : Geographic(lon: 0, lat: 0);
   }
 
-  /// True while the detail map is being re-framed for a new size (dialog ↔
-  /// fullscreen): the placeholder sketch — already at the new framing —
-  /// covers the native view's resize and camera jump, then fades out.
-  bool _resizeCovered = false;
-
-  /// The map's laid-out size, captured in [build] so the detail map can fit
-  /// the route to the real viewport (see [_fitCamera]).
-  Size _viewportSize = Size.zero;
-
   /// The whole-route framing for the read-only detail / fullscreen map, or
   /// null before layout / for an empty route.
   RouteCamera? get _fitCamera => _viewportSize.isEmpty
@@ -499,6 +282,15 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
           width: _viewportSize.width,
           height: _viewportSize.height,
         );
+
+  void _pushRoute() => _sources.pushRoute(
+    points: widget.points,
+    current: widget.current,
+    fitBounds: widget.fitBounds,
+  );
+
+  void _pushReference() =>
+      _sources.pushReference(widget.reference, widget.referenceDone);
 
   @override
   void didUpdateWidget(LiveMap oldWidget) {
@@ -511,7 +303,7 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
     // _sourcesReady's doc comment for why that's a native crash, not just a
     // no-op.
     final currentChanged = widget.current != oldWidget.current;
-    if (_sourcesReady && !widget.fitBounds && currentChanged) _landGlide();
+    if (_sourcesReady && !widget.fitBounds && currentChanged) _glide.land();
     if (_sourcesReady &&
         (widget.points != oldWidget.points ||
             (!widget.fitBounds && currentChanged))) {
@@ -531,7 +323,7 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
         !widget.fitBounds &&
         widget.current != oldWidget.current &&
         widget.current != null) {
-      _glideMarkerTo(widget.current!);
+      _glide.moveTo(widget.current!);
     }
     // The ride's activity is committed in RideTracker.startTracking() — which
     // runs after this map's style has already loaded — so activityType arrives
@@ -577,140 +369,10 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
               : (decision.resetBearing
                     ? (_heading.bearing ?? 0)
                     : _heading.bearing),
-          nativeDuration: _followAnimationDuration,
+          nativeDuration: kFollowAnimationDuration,
         ),
       );
     }
-  }
-
-  /// Ends an in-flight glide at its target before the next one starts, so the
-  /// marker is never behind the point the line already reaches.
-  void _landGlide() {
-    final target = _glideTo;
-    if (!_glide.isAnimating || target == null) return;
-    _glide.stop();
-    _renderedCurrent = target;
-    _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(target));
-  }
-
-  /// Pushes [LiveMap.points] into the `route` source. Shared by
-  /// [didUpdateWidget] and [_onStyleLoaded]'s catch-up push, both gated on
-  /// [_sourcesReady]. The live map holds the newest fix back for the
-  /// `route-tail` segment, which [_pushTail] keeps attached to the marker.
-  void _pushRoute() {
-    if (widget.fitBounds) {
-      _style?.updateGeoJsonSource(
-        id: 'route',
-        data: routeLineGeoJson(widget.points),
-      );
-      return;
-    }
-    final split = splitRouteTail(widget.points, widget.current);
-    if (!identical(widget.points, _pushedPoints) ||
-        split.tailStart != _tailStart) {
-      _pushedPoints = widget.points;
-      _tailStart = split.tailStart;
-      _style?.updateGeoJsonSource(
-        id: 'route',
-        data: routeLineGeoJson(split.body),
-      );
-    }
-    _pushTail(_renderedCurrent);
-  }
-
-  /// Redraws the reference line and its ridden parts, and — when the
-  /// reference was replaced (a flip) — moves its start/finish markers. Callers
-  /// gate on [_sourcesReady] (see its doc comment); [referencePushTarget]
-  /// additionally skips it when this style load created no reference sources.
-  void _pushReference() {
-    final reference = referencePushTarget(
-      drawn: _drawnReference,
-      current: widget.reference,
-    );
-    if (reference == null) return;
-    final g = referenceUpdateGeoJson(
-      reference,
-      widget.referenceDone,
-      lastPushed: _lastPushedReference,
-    );
-    final ahead = g.ahead;
-    if (ahead != null) {
-      _style?.updateGeoJsonSource(id: 'reference', data: ahead);
-      _lastPushedReference = reference;
-    }
-    _style?.updateGeoJsonSource(id: 'reference-done', data: g.done);
-    _pushReferenceMarkers(reference);
-  }
-
-  /// Moves the `ref-start` / `ref-end` points to [reference]'s ends, only
-  /// those marker sources this style load created ([_drawnReferenceMarkers])
-  /// and only when they show another reference (a flip, possibly one that
-  /// landed while the style was loading).
-  void _pushReferenceMarkers(RouteTrack reference) {
-    final drawn = _drawnReferenceMarkers;
-    if (drawn == null ||
-        identical(drawn.shows, reference) ||
-        reference.points.isEmpty) {
-      return;
-    }
-    _drawnReferenceMarkers = (style: drawn.style, shows: reference);
-    final m = referenceMarkerPoints(drawn.style, reference.points);
-    _style?.updateGeoJsonSource(id: 'ref-start', data: _pointGeoJson(m.start));
-    final end = m.end;
-    if (end != null) {
-      _style?.updateGeoJsonSource(id: 'ref-end', data: _pointGeoJson(end));
-    }
-  }
-
-  /// Draws the `route-tail` segment from [_tailStart] to [tip] (the marker's
-  /// drawn position), or clears it when there is no tail.
-  void _pushTail(RoutePoint? tip) {
-    final start = _tailStart;
-    _style?.updateGeoJsonSource(
-      id: 'route-tail',
-      data: start != null && tip != null
-          ? routeLineGeoJson([start, tip])
-          : _emptyGeoJson,
-    );
-  }
-
-  /// Moves the `current` marker to [next]: a glide from where it is drawn now,
-  /// or a direct snap when there is no previous position, or the jump is big
-  /// enough (GPS recovery) that a 600 ms slide would look wrong.
-  void _glideMarkerTo(RoutePoint next) {
-    // Defense in depth: every call site already checks _sourcesReady, but
-    // guard here too so a future call site can't reintroduce the race this
-    // gate exists to close (see _sourcesReady's doc comment).
-    if (!_sourcesReady) return;
-    final from = _renderedCurrent;
-    if (from == null || markerShouldSnap(from, next)) {
-      _glide.stop();
-      _renderedCurrent = next;
-      _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(next));
-      _pushTail(next);
-      return;
-    }
-    _glideFrom = from; // mid-glide restart begins at the interpolated position
-    _glideTo = next;
-    _glide
-      ..stop()
-      ..forward(from: 0);
-  }
-
-  /// Per-frame glide tick: pushes the interpolated position into the `current`
-  /// source, throttled to ≥40 ms between pushes (~25 fps) so the platform
-  /// channel isn't spammed at display rate. The final frame always lands.
-  void _onGlideTick() {
-    if (!_sourcesReady) return; // see _glideMarkerTo's matching guard
-    final from = _glideFrom, to = _glideTo;
-    if (from == null || to == null) return;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (!_glide.isCompleted && now - _lastGlidePushMs < 40) return;
-    _lastGlidePushMs = now;
-    final p = lerpPoint(from, to, _glide.value);
-    _renderedCurrent = p;
-    _style?.updateGeoJsonSource(id: 'current', data: _pointGeoJson(p));
-    _pushTail(p);
   }
 
   /// A camera move can be superseded by the next one (every fix recenters),
@@ -761,8 +423,8 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   /// (`_style` nulled) or a newer style loaded meanwhile (brightness rebuild).
   /// [_onStyleLoaded] and its helpers check this after every await, so an
   /// old load can't add layers to a dead map or set the ready flags
-  /// (`_sourcesReady`, `_markerReady`, `_drawnReference`,
-  /// `_lastPushedReference`, `_drawnReferenceMarkers`, `_styleReady`)
+  /// (`_sourcesReady`, `_markerReady`, `_styleReady`, and the reference
+  /// sources of [LiveMapSources])
   /// against the new style before its sources exist.
   bool _superseded(StyleController style) =>
       !mounted || !identical(_style, style);
@@ -770,174 +432,34 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   Future<void> _onStyleLoaded(StyleController style) async {
     _style = style;
     // A fresh style (e.g. a brightness rebuild) carries none of the previously
-    // registered images/layers, so re-rasterize badges from scratch — and stop
-    // any in-flight marker glide so its ticks can't touch the `current` source
+    // registered images/layers, so rebuild them from scratch — and stop any
+    // in-flight marker glide so its ticks can't touch the `current` source
     // before this load recreates it.
-    _glide.stop();
-    _glideFrom = null;
-    _glideTo = null;
+    _glide.reset();
     _markerReady = false;
     _sourcesReady = false;
-    _pushedPoints = null; // the fresh style's `route` source starts over
-    _drawnReference = null; // nor has it any reference sources yet
-    _lastPushedReference = null;
-    _drawnReferenceMarkers = null;
-    _markerImages.clear();
-    final colors = context.colors;
-    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-    final halo = _hex(colors.routeLineHalo);
-    final blue = _hex(colors.routeLineBlue);
+    _sources.reset(); // the fresh style's sources start over
+    bool superseded() => _superseded(style);
+    final layers = _layers = LiveMapLayers(
+      style: style,
+      colors: context.colors,
+      pixelRatio: MediaQuery.devicePixelRatioOf(context),
+      superseded: superseded,
+    );
 
     // The followed reference (Spec 17) goes in first, so every live layer
     // added below draws on top of it.
     final reference = widget.reference;
     if (reference != null) {
-      final g = referenceGeoJson(reference, widget.referenceDone);
-      await style.addSource(GeoJsonSource(id: 'reference', data: g.ahead));
-      if (_superseded(style)) return;
-      await style.addSource(GeoJsonSource(id: 'reference-done', data: g.done));
-      if (_superseded(style)) return;
-      _drawnReference = reference;
-      _lastPushedReference = reference;
-      await style.addLayer(
-        LineStyleLayer(
-          id: 'reference-halo',
-          sourceId: 'reference',
-          layout: const {'line-cap': 'round', 'line-join': 'round'},
-          paint: {
-            'line-color': halo,
-            'line-width': 8.0,
-            'line-opacity': kReferenceRouteOpacity,
-          },
-        ),
-      );
-      if (_superseded(style)) return;
-      await style.addLayer(
-        LineStyleLayer(
-          id: 'reference-line',
-          sourceId: 'reference',
-          layout: const {'line-cap': 'round', 'line-join': 'round'},
-          paint: {
-            'line-color': blue,
-            'line-width': 4.5,
-            'line-opacity': kReferenceRouteOpacity,
-          },
-        ),
-      );
-      if (_superseded(style)) return;
-      // The ridden parts on top of the whole reference line (Spec 18), still
-      // below every live layer added next.
-      await style.addLayer(
-        LineStyleLayer(
-          id: 'reference-done-line',
-          sourceId: 'reference-done',
-          layout: const {'line-cap': 'round', 'line-join': 'round'},
-          paint: {
-            'line-color': _hex(colors.onSurfaceVariant),
-            'line-width': 4.5,
-            'line-opacity': kReferenceRouteOpacity,
-          },
-        ),
-      );
-      if (_superseded(style)) return;
+      await layers.addReference(reference, widget.referenceDone);
+      if (superseded()) return;
+      _sources.referenceDrawn(reference);
     }
-
-    await style.addSource(
-      GeoJsonSource(id: 'route', data: routeLineGeoJson(widget.points)),
-    );
-    if (_superseded(style)) return;
-    await style.addLayer(
-      LineStyleLayer(
-        id: 'route-halo',
-        sourceId: 'route',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {'line-color': halo, 'line-width': 8.0},
-      ),
-    );
-    if (_superseded(style)) return;
-    await style.addLayer(
-      LineStyleLayer(
-        id: 'route-line',
-        sourceId: 'route',
-        layout: const {'line-cap': 'round', 'line-join': 'round'},
-        paint: {'line-color': blue, 'line-width': 4.5},
-      ),
-    );
-    if (_superseded(style)) return;
-    // Direction arrowheads, placed and rotated along the line by MapLibre.
-    final arrow = symbolRaster(_arrowIconSize, pixelRatio);
-    final arrowPng = await routeArrowImagePng(colors, arrow.rasterRatio);
-    if (_superseded(style)) return;
-    await style.addImage(_arrowImage, arrowPng);
-    if (_superseded(style)) return;
-    await style.addLayer(
-      SymbolStyleLayer(
-        id: 'route-arrows',
-        sourceId: 'route',
-        layout: {
-          'symbol-placement': 'line',
-          'symbol-spacing': _arrowSpacingPx,
-          'icon-image': _arrowImage,
-          'icon-size': arrow.iconSize,
-          'icon-rotation-alignment': 'map',
-          'icon-keep-upright': false,
-          'icon-allow-overlap': true,
-          'icon-ignore-placement': true,
-        },
-      ),
-    );
-    if (_superseded(style)) return;
-    if (reference != null) {
-      // The reference's own arrowheads reuse the image registered just above
-      // (a second addImage of the same id throws), below the live route.
-      await style.addLayer(
-        SymbolStyleLayer(
-          id: 'reference-arrows',
-          sourceId: 'reference',
-          layout: {
-            'symbol-placement': 'line',
-            'symbol-spacing': _arrowSpacingPx,
-            'icon-image': _arrowImage,
-            'icon-size': arrow.iconSize,
-            'icon-rotation-alignment': 'map',
-            'icon-keep-upright': false,
-            'icon-allow-overlap': true,
-            'icon-ignore-placement': true,
-          },
-          paint: const {'icon-opacity': kReferenceRouteOpacity},
-        ),
-        belowLayerId: 'route-halo',
-      );
-      if (_superseded(style)) return;
-    }
+    await layers.addRoute(widget.points, reference: reference);
+    if (superseded()) return;
     if (!widget.fitBounds) {
-      // The live line's last stretch, drawn up to the gliding marker (see
-      // _pushTail) in the route's own halo + blue.
-      await style.addSource(
-        const GeoJsonSource(id: 'route-tail', data: _emptyGeoJson),
-      );
-      if (_superseded(style)) return;
-      // Halo BELOW the route's blue line: on top, its wider white cap would
-      // cut a white crescent into the blue where body and tail meet.
-      await style.addLayer(
-        LineStyleLayer(
-          id: 'route-tail-halo',
-          sourceId: 'route-tail',
-          layout: const {'line-cap': 'round', 'line-join': 'round'},
-          paint: {'line-color': halo, 'line-width': 8.0},
-        ),
-        belowLayerId: 'route-line',
-      );
-      if (_superseded(style)) return;
-      await style.addLayer(
-        LineStyleLayer(
-          id: 'route-tail-line',
-          sourceId: 'route-tail',
-          layout: const {'line-cap': 'round', 'line-join': 'round'},
-          paint: {'line-color': blue, 'line-width': 4.5},
-        ),
-      );
-      if (_superseded(style)) return;
+      await layers.addTail();
+      if (superseded()) return;
     }
 
     // Marker mode mirrors the two original composables: the detail / fullscreen
@@ -945,138 +467,49 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
     // marker) and NO current marker; the live / active-ride map draws ONLY
     // the current-position marker.
     if (widget.fitBounds) {
-      final points = widget.points;
-      switch (routeEndpointStyle(points)) {
-        case RouteEndpointStyle.none:
-          break;
-        case RouteEndpointStyle.startOnly:
-          await _addEndpointMarker(
-            style,
-            'start',
-            points.first,
-            RouteMarkerImage.start,
-            colors,
-            pixelRatio,
-          );
-          if (_superseded(style)) return;
-        case RouteEndpointStyle.open:
-          await _addEndpointMarker(
-            style,
-            'start',
-            points.first,
-            RouteMarkerImage.start,
-            colors,
-            pixelRatio,
-          );
-          if (_superseded(style)) return;
-          await _addEndpointMarker(
-            style,
-            'end',
-            points.last,
-            RouteMarkerImage.finish,
-            colors,
-            pixelRatio,
-          );
-          if (_superseded(style)) return;
-        case RouteEndpointStyle.loop:
-          await _addEndpointMarker(
-            style,
-            'start',
-            points.first,
-            RouteMarkerImage.loop,
-            colors,
-            pixelRatio,
-          );
-          if (_superseded(style)) return;
-      }
+      await layers.addEndpoints('start', 'end', widget.points);
+      if (superseded()) return;
     } else {
       // The followed reference's start/finish (or loop) marker, added before
       // the current-position marker so that one stays on top.
       if (reference != null) {
-        final rp = reference.points;
-        final drawnStyle = routeEndpointStyle(rp);
-        switch (drawnStyle) {
-          case RouteEndpointStyle.none:
-            break;
-          case RouteEndpointStyle.startOnly:
-            await _addEndpointMarker(
-              style,
-              'ref-start',
-              rp.first,
-              RouteMarkerImage.start,
-              colors,
-              pixelRatio,
-            );
-            if (_superseded(style)) return;
-          case RouteEndpointStyle.open:
-            await _addEndpointMarker(
-              style,
-              'ref-start',
-              rp.first,
-              RouteMarkerImage.start,
-              colors,
-              pixelRatio,
-            );
-            if (_superseded(style)) return;
-            await _addEndpointMarker(
-              style,
-              'ref-end',
-              rp.last,
-              RouteMarkerImage.finish,
-              colors,
-              pixelRatio,
-            );
-            if (_superseded(style)) return;
-          case RouteEndpointStyle.loop:
-            await _addEndpointMarker(
-              style,
-              'ref-start',
-              rp.first,
-              RouteMarkerImage.loop,
-              colors,
-              pixelRatio,
-            );
-            if (_superseded(style)) return;
-        }
+        final drawnStyle = await layers.addEndpoints(
+          'ref-start',
+          'ref-end',
+          reference.points,
+        );
+        if (superseded()) return;
         // Only now do the marker sources exist; a flip moves them from here
-        // on (see _pushReferenceMarkers).
+        // on (see LiveMapSources.pushReference).
         if (drawnStyle != RouteEndpointStyle.none) {
-          _drawnReferenceMarkers = (style: drawnStyle, shows: reference);
+          _sources.referenceMarkersDrawn(style: drawnStyle, shows: reference);
         }
       }
       // Current-position marker, updated per fix via updateGeoJsonSource (see
       // didUpdateWidget). Seeded empty until there is a fix.
-      final cur = widget.current;
-      _renderedCurrent = cur; // glide baseline = the seeded marker position
-      await style.addSource(
-        GeoJsonSource(
-          id: 'current',
-          data: cur != null ? _pointGeoJson(cur) : _emptyGeoJson,
-        ),
-      );
-      if (_superseded(style)) return;
+      _glide.seedPosition(widget.current); // glide baseline
       final markerType = widget.activityType;
-      await _addCurrentMarker(style, markerType, blue);
-      if (_superseded(style)) return;
+      await layers.addCurrent(widget.current, markerType);
+      if (superseded()) return;
       _markerReady = true;
       // An activity change landing while the badge rendered was skipped by
       // didUpdateWidget's _markerReady gate — catch up now.
       if (widget.activityType != markerType) {
         await _swapCurrentMarker();
-        if (_superseded(style)) return;
+        if (superseded()) return;
       }
     }
 
     _sourcesReady = true;
     // A fresh points/current prop may have arrived via didUpdateWidget while
     // the awaited addSource/addLayer calls above were still in flight — that
-    // update was silently dropped by the _sourcesReady gate below (the
-    // sources didn't exist yet to receive it). Catch up now that they do,
-    // instead of waiting for the next GPS fix to self-heal it.
+    // update was silently dropped by the _sourcesReady gate (the sources
+    // didn't exist yet to receive it). Catch up now that they do, instead of
+    // waiting for the next GPS fix to self-heal it.
     _pushRoute();
     _pushReference();
     if (!widget.fitBounds && widget.current != null) {
-      _glideMarkerTo(widget.current!);
+      _glide.moveTo(widget.current!);
     }
 
     final fit = widget.fitBounds ? _fitCamera : null;
@@ -1095,7 +528,7 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
         // A failed move still reveals the map below — a slightly off camera
         // beats a placeholder stuck on screen forever.
       }
-      if (_superseded(style)) return;
+      if (superseded()) return;
     } else if (!widget.fitBounds && widget.isFollowing) {
       // Recenter once the style is ready. The map is created with initCenter
       // (0,0) when the ride starts with no fix yet; the follow update in
@@ -1127,102 +560,11 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
     }
   }
 
-  /// A start/finish/loop marker (see route_marker_painter.dart) as a symbol on
-  /// its own point source [id].
-  Future<void> _addEndpointMarker(
-    StyleController style,
-    String id,
-    RoutePoint at,
-    RouteMarkerImage kind,
-    AppColors colors,
-    double pixelRatio,
-  ) async {
-    final imageId = 'endpoint-${kind.name}';
-    final raster = symbolRaster(mapEndpointMarkerScale, pixelRatio);
-    final png = await routeMarkerImagePng(kind, colors, raster.rasterRatio);
-    if (_superseded(style)) return;
-    await style.addImage(imageId, png);
-    if (_superseded(style)) return;
-    await style.addSource(GeoJsonSource(id: id, data: _pointGeoJson(at)));
-    if (_superseded(style)) return;
-    await style.addLayer(
-      SymbolStyleLayer(
-        id: '$id-marker',
-        sourceId: id,
-        layout: {
-          'icon-image': imageId,
-          'icon-size': raster.iconSize,
-          'icon-allow-overlap': true,
-          'icon-ignore-placement': true,
-        },
-      ),
-    );
-  }
-
-  /// Adds the live `current-dot` marker layer for [type]: the amber activity
-  /// badge (Android `makeIconBitmap` parity) for known types, or the plain blue
-  /// dot ([blue]) for null/OTHER. Each badge image is rasterized once.
-  Future<void> _addCurrentMarker(
-    StyleController style,
-    ActivityType? type,
-    String blue,
-  ) async {
-    final ring = _hex(context.colors.onMap);
-    if (rideMarkerIsBadge(type)) {
-      final imageId = 'marker-${type!.name}';
-      if (_markerImages.add(imageId)) {
-        final png = await _activityBadgePng(type);
-        if (_superseded(style)) return;
-        await style.addImage(imageId, png);
-        if (_superseded(style)) return;
-      }
-      await style.addLayer(
-        SymbolStyleLayer(
-          id: 'current-dot',
-          sourceId: 'current',
-          layout: {
-            'icon-image': imageId,
-            // maplibre 0.3.5 fixed Android's addImage() to respect
-            // devicePixelRatio (it previously registered bitmaps at raw-pixel
-            // size, rendering symbols ~pixelRatio× too small there). That made
-            // this 96px badge render correctly-sized but much larger than the
-            // pre-upgrade appearance this value was tuned against. 0.19 (~18dp
-            // on a 420dpi/2.625x device) restores that footprint, now
-            // consistently across every device rather than shrinking on
-            // higher-density screens as before.
-            'icon-size': 0.19,
-            'icon-allow-overlap': true,
-            'icon-ignore-placement': true,
-          },
-        ),
-      );
-      if (_superseded(style)) return;
-    } else {
-      await style.addLayer(
-        CircleStyleLayer(
-          id: 'current-dot',
-          sourceId: 'current',
-          paint: {
-            'circle-radius': 7.0,
-            'circle-color': blue,
-            'circle-stroke-width': 3.0,
-            'circle-stroke-color': ring,
-          },
-        ),
-      );
-    }
-  }
-
-  /// Replaces the live `current-dot` marker after [LiveMap.activityType] changes
-  /// (the ride's activity is committed only when tracking starts, so it lands as
-  /// a prop change after the style has loaded).
+  /// Replaces the live `current-dot` marker after [LiveMap.activityType] changes.
   Future<void> _swapCurrentMarker() async {
-    final style = _style;
-    if (style == null || !mounted) return;
-    final blue = _hex(context.colors.routeLineBlue);
-    await style.removeLayer('current-dot');
-    if (_superseded(style)) return;
-    await _addCurrentMarker(style, widget.activityType, blue);
+    final layers = _layers;
+    if (layers == null || !mounted) return;
+    await layers.swapCurrentMarker(widget.activityType);
   }
 
   /// The brightness the current native map was built for (see `ValueKey(dark)`
@@ -1255,11 +597,10 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   void _detachMap() {
     _controller = null;
     _style = null;
+    _layers = null;
     _sourcesReady = false;
     _markerReady = false;
-    _drawnReference = null;
-    _lastPushedReference = null;
-    _drawnReferenceMarkers = null;
+    _sources.detachReference();
     _glide.stop();
   }
 

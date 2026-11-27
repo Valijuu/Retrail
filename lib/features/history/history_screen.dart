@@ -51,7 +51,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     with HistoryRideActions {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
-  GlobalKey _targetKey = GlobalKey();
   bool _showSearch = false;
   Set<int> _selectedIds = {};
   bool _selectionModeActive = false;
@@ -140,16 +139,34 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
       ref.read(historyFilterProvider.notifier).reset();
       return; // re-runs on the next items emission
     }
-    ref.read(historyTargetRideProvider.notifier).state = null;
-    _targetKey = GlobalKey();
+    ref.read(historyTargetRideProvider.notifier).set(null);
     setState(() => _highlightRideId = target);
     SchedulerBinding.instance.addPostFrameCallback(
       (_) => _revealTarget(items, target),
     );
     _highlightTimer?.cancel();
-    _highlightTimer = Timer(const Duration(milliseconds: 1500), () {
+    _highlightTimer = Timer(_highlightDuration, () {
       if (mounted) setState(() => _highlightRideId = null);
     });
+  }
+
+  /// The context of ride [rideId]'s card, or null while the lazy list has not
+  /// built it. Found by its stable key, so the highlighted card keeps its
+  /// state instead of swapping to a `GlobalKey` (which recreated it).
+  BuildContext? _builtCardContext(int rideId) {
+    final key = ValueKey('ride_$rideId');
+    Element? found;
+    void visit(Element element) {
+      if (found != null) return;
+      if (element.widget.key == key) {
+        found = element;
+        return;
+      }
+      element.visitChildren(visit);
+    }
+
+    (context as Element).visitChildren(visit);
+    return found;
   }
 
   /// Scrolls the target card into view. `ensureVisible` only works when the
@@ -159,7 +176,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   /// fine-tune; bounded retries cover estimate error.
   void _revealTarget(List<HistoryItem> items, int target, {int attempt = 0}) {
     if (!mounted) return;
-    final ctx = _targetKey.currentContext;
+    final ctx = _builtCardContext(target);
     if (ctx != null) {
       Scrollable.ensureVisible(ctx, alignment: 0.2);
       return;
@@ -185,6 +202,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   /// ImageCache's 100 MB default; beyond that the enlarged cache extent
   /// decode-ahead covers it.
   static const _precacheDecodes = 60;
+
+  /// How long a ride opened from Home stays highlighted.
+  static const _highlightDuration = Duration(milliseconds: 1500);
 
   static Brightness _other(Brightness b) =>
       b == Brightness.light ? Brightness.dark : Brightness.light;
@@ -441,9 +461,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
       case RideEntryItem():
         final rideId = item.ride.rideId;
         return HistoryRideCard(
-          key: rideId == _highlightRideId
-              ? _targetKey
-              : ValueKey('ride_$rideId'),
+          key: ValueKey('ride_$rideId'),
           entry: item,
           selectionMode: _selectionMode,
           selected: _selectedIds.contains(rideId),
