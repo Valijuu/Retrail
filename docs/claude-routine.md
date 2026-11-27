@@ -21,9 +21,11 @@ How issues are handed to the Claude cloud routine (`retrail-claude-issues`).
 
 ## Review order
 
-1. CodeRabbit reviews the PR first.
-2. If CodeRabbit is rate limited, or silent for 10 minutes, an Opus subagent reviews features
-   (a small bugfix relies on the tests). The PR description says so.
+1. CodeRabbit reviews the PR first. The repository has fewer than 10 stars, so CodeRabbit does not
+   review on its own: the routine asks for it with a PR comment `@coderabbitai review`.
+2. If CodeRabbit reports its review limit, the routine does not wait: an Opus subagent reviews
+   features right away. The same happens when CodeRabbit stays silent for 10 minutes. A small bugfix
+   or a docs-only change relies on the tests. A PR comment says which reviewer was used and why.
 
 ## Limits
 
