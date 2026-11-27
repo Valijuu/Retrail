@@ -397,8 +397,8 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
   /// (`_style` nulled) or a newer style loaded meanwhile (brightness rebuild).
   /// [_onStyleLoaded] and its helpers check this after every await, so an
   /// old load can't add layers to a dead map or set the ready flags
-  /// (`_sourcesReady`, `_markerReady`, `_drawnReference`,
-  /// `_lastPushedReference`, `_drawnReferenceMarkers`, `_styleReady`)
+  /// (`_sourcesReady`, `_markerReady`, `_styleReady`, and the reference
+  /// sources of [LiveMapSources])
   /// against the new style before its sources exist.
   bool _superseded(StyleController style) =>
       !mounted || !identical(_style, style);
@@ -427,8 +427,7 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
     if (reference != null) {
       await layers.addReference(reference, widget.referenceDone);
       if (superseded()) return;
-      _sources.drawnReference = reference;
-      _sources.lastPushedReference = reference;
+      _sources.referenceDrawn(reference);
     }
     await layers.addRoute(widget.points, reference: reference);
     if (superseded()) return;
@@ -457,15 +456,12 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
         // Only now do the marker sources exist; a flip moves them from here
         // on (see LiveMapSources.pushReference).
         if (drawnStyle != RouteEndpointStyle.none) {
-          _sources.drawnReferenceMarkers = (
-            style: drawnStyle,
-            shows: reference,
-          );
+          _sources.referenceMarkersDrawn(style: drawnStyle, shows: reference);
         }
       }
       // Current-position marker, updated per fix via updateGeoJsonSource (see
       // didUpdateWidget). Seeded empty until there is a fix.
-      _glide.renderedCurrent = widget.current; // glide baseline
+      _glide.seedPosition(widget.current); // glide baseline
       final markerType = widget.activityType;
       await layers.addCurrent(widget.current, markerType);
       if (superseded()) return;
@@ -578,9 +574,7 @@ class _LiveMapState extends State<LiveMap> with SingleTickerProviderStateMixin {
     _layers = null;
     _sourcesReady = false;
     _markerReady = false;
-    _sources.drawnReference = null;
-    _sources.lastPushedReference = null;
-    _sources.drawnReferenceMarkers = null;
+    _sources.detachReference();
     _glide.stop();
   }
 

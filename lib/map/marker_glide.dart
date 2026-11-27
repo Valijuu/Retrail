@@ -39,7 +39,7 @@ class MarkerGlide {
   /// arriving mid-glide first lands the marker on the previous target (a small
   /// hop forward, see [land]) — otherwise the line, which already runs to that
   /// target, would sit ahead of the marker for the rest of the glide.
-  RoutePoint? renderedCurrent;
+  RoutePoint? _renderedCurrent;
   RoutePoint? _from;
   RoutePoint? _to;
 
@@ -51,7 +51,21 @@ class MarkerGlide {
   /// the route source stops one fix short and the tail runs from here to the
   /// gliding marker, so the line's tip follows the marker instead of leading
   /// it. Null when there is no tail to draw.
-  RoutePoint? tailStart;
+  RoutePoint? _tailStart;
+
+  /// The tail's start, as set by the route push (see [setTailStart]).
+  RoutePoint? get tailStart => _tailStart;
+
+  /// Where the drawn marker is right now (the glide's moving position).
+  RoutePoint? get renderedCurrent => _renderedCurrent;
+
+  /// Sets the tail's start. Only the route push ([LiveMapSources.pushRoute])
+  /// writes it, so the route source and the tail always agree.
+  void setTailStart(RoutePoint? start) => _tailStart = start;
+
+  /// Sets the position the marker is drawn at before any glide: the baseline
+  /// a new style load starts from.
+  void seedPosition(RoutePoint? position) => _renderedCurrent = position;
 
   /// Stops the glide and forgets its endpoints (a new style load or a detached
   /// map: its ticks must not touch a `current` source that does not exist).
@@ -70,7 +84,7 @@ class MarkerGlide {
     final target = _to;
     if (!_controller.isAnimating || target == null) return;
     _controller.stop();
-    renderedCurrent = target;
+    _renderedCurrent = target;
     style()?.updateGeoJsonSource(id: 'current', data: pointGeoJson(target));
   }
 
@@ -84,7 +98,7 @@ class MarkerGlide {
     final from = renderedCurrent;
     if (from == null || markerShouldSnap(from, next)) {
       _controller.stop();
-      renderedCurrent = next;
+      _renderedCurrent = next;
       style()?.updateGeoJsonSource(id: 'current', data: pointGeoJson(next));
       pushTail(next);
       return;
@@ -119,7 +133,7 @@ class MarkerGlide {
     if (!_controller.isCompleted && now - _lastPushMs < 40) return;
     _lastPushMs = now;
     final p = lerpPoint(from, to, _controller.value);
-    renderedCurrent = p;
+    _renderedCurrent = p;
     style()?.updateGeoJsonSource(id: 'current', data: pointGeoJson(p));
     pushTail(p);
   }

@@ -22,29 +22,50 @@ class LiveMapSources {
 
   /// The `points` list last pushed into the `route` source, so a fix that
   /// adds no point only redraws the short tail, not the whole line.
-  List<RoutePoint>? pushedPoints;
+  List<RoutePoint>? _pushedPoints;
 
   /// The reference whose `reference` / `reference-done` sources this style
   /// load created, or null when it created none (see [referencePushTarget]).
-  RouteTrack? drawnReference;
+  RouteTrack? _drawnReference;
 
   /// The reference whose whole line the `reference` source holds now (its
   /// lifecycle is [drawnReference]'s), so a fix that only grows the ridden
   /// part doesn't push the whole line again.
-  RouteTrack? lastPushedReference;
+  RouteTrack? _lastPushedReference;
 
   /// The `ref-start` / `ref-end` marker sources this style load created: the
   /// endpoint [RouteEndpointStyle] drawn then (which marker sources exist)
   /// and the reference whose endpoints they show now. Null when it created
   /// none — then a flip moves nothing (a push would hit a missing source).
-  ({RouteEndpointStyle style, RouteTrack shows})? drawnReferenceMarkers;
+  ({RouteEndpointStyle style, RouteTrack shows})? _drawnReferenceMarkers;
+
+  /// Records that this style load created the reference sources for
+  /// [reference]. Only the style load calls it.
+  void referenceDrawn(RouteTrack reference) {
+    _drawnReference = reference;
+    _lastPushedReference = reference;
+  }
+
+  /// Records that this style load created the `ref-start` / `ref-end` sources,
+  /// which show [shows]'s endpoints in [style].
+  void referenceMarkersDrawn({
+    required RouteEndpointStyle style,
+    required RouteTrack shows,
+  }) {
+    _drawnReferenceMarkers = (style: style, shows: shows);
+  }
+
+  /// Forgets the reference after the map detached: its sources are gone.
+  void detachReference() {
+    _drawnReference = null;
+    _lastPushedReference = null;
+    _drawnReferenceMarkers = null;
+  }
 
   /// Forgets what the (now dead or replaced) style's sources held.
   void reset() {
-    pushedPoints = null;
-    drawnReference = null;
-    lastPushedReference = null;
-    drawnReferenceMarkers = null;
+    _pushedPoints = null;
+    detachReference();
   }
 
   /// Pushes [points] into the `route` source. The live map holds the newest
@@ -60,10 +81,10 @@ class LiveMapSources {
       return;
     }
     final split = splitRouteTail(points, current);
-    if (!identical(points, pushedPoints) ||
+    if (!identical(points, _pushedPoints) ||
         split.tailStart != glide.tailStart) {
-      pushedPoints = points;
-      glide.tailStart = split.tailStart;
+      _pushedPoints = points;
+      glide.setTailStart(split.tailStart);
       style()?.updateGeoJsonSource(
         id: 'route',
         data: routeLineGeoJson(split.body),
@@ -78,19 +99,19 @@ class LiveMapSources {
   /// sources.
   void pushReference(RouteTrack? current, List<List<RoutePoint>>? done) {
     final reference = referencePushTarget(
-      drawn: drawnReference,
+      drawn: _drawnReference,
       current: current,
     );
     if (reference == null) return;
     final g = referenceUpdateGeoJson(
       reference,
       done,
-      lastPushed: lastPushedReference,
+      lastPushed: _lastPushedReference,
     );
     final ahead = g.ahead;
     if (ahead != null) {
       style()?.updateGeoJsonSource(id: 'reference', data: ahead);
-      lastPushedReference = reference;
+      _lastPushedReference = reference;
     }
     style()?.updateGeoJsonSource(id: 'reference-done', data: g.done);
     _pushReferenceMarkers(reference);
@@ -101,13 +122,13 @@ class LiveMapSources {
   /// and only when they show another reference (a flip, possibly one that
   /// landed while the style was loading).
   void _pushReferenceMarkers(RouteTrack reference) {
-    final drawn = drawnReferenceMarkers;
+    final drawn = _drawnReferenceMarkers;
     if (drawn == null ||
         identical(drawn.shows, reference) ||
         reference.points.isEmpty) {
       return;
     }
-    drawnReferenceMarkers = (style: drawn.style, shows: reference);
+    _drawnReferenceMarkers = (style: drawn.style, shows: reference);
     final m = referenceMarkerPoints(drawn.style, reference.points);
     style()?.updateGeoJsonSource(id: 'ref-start', data: pointGeoJson(m.start));
     final end = m.end;
