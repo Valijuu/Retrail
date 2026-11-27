@@ -404,7 +404,10 @@ jobs:
         issue: ${{ fromJSON(needs.pick.outputs.issues) }}
     permissions:
       contents: read
+      pull-requests: read
     env:
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
       ISSUE: ${{ matrix.issue }}
       RUN_DIR: .claude-run
     steps:
@@ -422,14 +425,25 @@ jobs:
           f="$RUNNER_TEMP/state/review-state"
           pr=$(grep -E '^PR=[0-9]+$' "$f" 2>/dev/null | cut -d= -f2 || true)
           status=$(grep -E '^STATUS=(review|limit|none)$' "$f" 2>/dev/null | cut -d= -f2 || true)
-          kind=$(grep -E '^KIND=(feature|bugfix|docs)$' "$f" 2>/dev/null | cut -d= -f2 || true)
+          # The agent's own "kind" does not decide the review: it was once set to
+          # bugfix for a 946-line refactor. GitHub's list of changed files does.
+          docs_only=no
+          if [ -n "$pr" ]; then
+            files=$(gh api --paginate "repos/$REPO/pulls/$pr/files" --jq '.[].filename')
+            if [ -n "$files" ]; then
+              docs_only=yes
+              while IFS= read -r f; do
+                case "$f" in *.md|docs/*) ;; *) docs_only=no ;; esac
+              done <<< "$files"
+            fi
+          fi
           mode=skip
           if [ -n "$pr" ]; then
             if [ "$status" = review ]; then mode=fix
-            elif [ "$kind" = feature ]; then mode=opus
+            elif [ "$docs_only" = no ]; then mode=opus
             fi
           fi
-          echo "mode=$mode pr=$pr status=$status kind=$kind"
+          echo "mode=$mode pr=$pr status=$status docs_only=$docs_only"
           { echo "mode=$mode"; echo "pr=$pr"; echo "status=$status"; } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
