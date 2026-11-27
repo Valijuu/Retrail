@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retrail/domain/activity_type.dart';
 import 'package:retrail/domain/distance_calculator.dart';
+import 'package:retrail/map/live_map.dart' show emptyGeoJson;
 import 'package:retrail/map/overview_layers.dart';
 
 void main() {
@@ -12,7 +13,7 @@ void main() {
   });
 
   test('no point is the empty collection', () {
-    expect(overviewPointGeoJson(null), emptyOverviewGeoJson);
+    expect(overviewPointGeoJson(null), emptyGeoJson);
   });
 
   test('a point is written as longitude, latitude', () {

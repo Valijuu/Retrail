@@ -11,7 +11,8 @@ import '../domain/activity_type.dart';
 import '../domain/area_filter.dart';
 import '../domain/heading.dart' show LatLng;
 import '../domain/ride_outline.dart' show OutlineBounds;
-import 'live_map.dart' show kLiveMapMaxZoom, kLiveMapMinZoom, liveMapStyle;
+import 'live_map.dart'
+    show emptyGeoJson, kLiveMapMaxZoom, kLiveMapMinZoom, liveMapStyle;
 import 'map_language.dart';
 import 'map_attribution.dart';
 import 'overview_layers.dart';
@@ -260,13 +261,11 @@ class _OverviewMapState extends State<OverviewMap> {
     for (final type in ActivityType.values) {
       _push(
         overviewSourceId(type),
-        heat == null
-            ? widget.linesByType[type] ?? emptyOverviewGeoJson
-            : emptyOverviewGeoJson,
+        heat == null ? widget.linesByType[type] ?? emptyGeoJson : emptyGeoJson,
       );
     }
-    _push(overviewHeatSource, heat ?? emptyOverviewGeoJson);
-    _push(overviewHighlightSource, widget.highlight ?? emptyOverviewGeoJson);
+    _push(overviewHeatSource, heat ?? emptyGeoJson);
+    _push(overviewHighlightSource, widget.highlight ?? emptyGeoJson);
     final ends = widget.highlightEnds;
     _push(overviewStartSource, overviewPointGeoJson(ends?.start));
     _push(overviewFinishSource, overviewPointGeoJson(ends?.finish));
@@ -274,9 +273,7 @@ class _OverviewMapState extends State<OverviewMap> {
     final area = widget.area;
     _push(
       overviewAreaSource,
-      area == null
-          ? emptyOverviewGeoJson
-          : areaCircleGeoJson(area.pin, area.radiusKm),
+      area == null ? emptyGeoJson : areaCircleGeoJson(area.pin, area.radiusKm),
     );
     _push(overviewPositionSource, overviewPointGeoJson(widget.position));
     _push(overviewPinSource, overviewPointGeoJson(_dragPin ?? area?.pin));
