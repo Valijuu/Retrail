@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  dart-check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

@@ -1,19 +1,26 @@
-# Claude issues (GitHub Actions)
+# Claude issues: the full workflow
 
-The workflow `.github/workflows/claude-issues.yml` hands issues to Claude Code and opens a PR per
-issue. It replaces the earlier cloud routine, which had no Flutter and pushed with the owner's admin
-token.
+Issues that the owner labels `claude` are worked by Claude Code in GitHub Actions. Each one ends as
+a pull request or as a question in the issue. Nothing reaches `main` without the owner's approval.
 
-## Handing over an issue
+Workflow file: `.github/workflows/claude-issues.yml`. It replaces an earlier cloud routine (paused,
+not deleted), which had no Flutter and pushed with the owner's admin token.
 
-- Only the owner sets the label `claude`. Nothing starts at once: every 3 hours (and on a manual
-  "Run workflow") the workflow picks up to 3 issues.
-- It takes the oldest open issues with `claude` that the owner wrote and labelled, and that have
-  none of `claude-pr`, `claude-rueckfrage`, `claude-laeuft`, `claude-fehler`.
-- The picked issues are worked one after the other, oldest first. Before each one the workflow
-  checks again that it is still open and still labelled `claude`.
-- Do not paste text from third parties into a `claude` issue or into an owner comment on it: owner
-  text is the only issue text the agent reads, and it trusts it.
+## Day to day
+
+1. Write the issue yourself. Describe the task fully. Do not paste text from other people, web
+   pages or logs into it; paraphrase instead, because owner text is trusted.
+2. Set the label `claude`.
+3. Wait. Every 3 hours (minute 52, UTC) the workflow takes up to 3 issues, oldest first. To start at
+   once: Actions → "Claude issues" → "Run workflow" on `main`, or `gh workflow run claude-issues.yml`.
+4. Look at the result:
+   - a **PR** (draft when a check failed) with a summary, test result and review comment;
+   - or a **question** in the issue.
+5. Review the PR, approve it and merge. CI (`dart-check`) must be green.
+
+Answering a question: reply in the issue, then remove `claude-rueckfrage`. The next run picks the
+issue up again. After a failure: read the linked run, delete a left-over branch `claude/issue-<N>`
+if there is one, remove `claude-fehler`.
 
 ## Labels
 
@@ -21,51 +28,60 @@ token.
 |---|---|---|
 | `claude` | owner | hand the issue to Claude |
 | `claude-laeuft` | workflow | a run works on it now |
-| `claude-pr` | agent | PR is open; `claude` is removed |
-| `claude-rueckfrage` | agent | question in a comment; `claude` stays. Answer in the issue, then remove `claude-rueckfrage` |
-| `claude-fehler` | workflow | the run failed (link in a comment). Remove it to try again |
+| `claude-pr` | workflow | PR is open; `claude` is removed |
+| `claude-rueckfrage` | workflow | question in a comment; `claude` stays |
+| `claude-fehler` | workflow | the run ended without a PR or a question (link in a comment) |
 
-If a runner dies, `claude-laeuft` can stay behind: remove it by hand.
+Filters: `gh issue list --label claude-rueckfrage`, `gh pr list --search "head:claude/"`.
 
-## Review order
+## What a run does
 
-1. CodeRabbit first. The repository has fewer than 10 stars, so CodeRabbit does not review by itself:
-   a workflow step (no agent) posts `@coderabbitai review` and waits up to 10 minutes. If a review
-   comes, a second agent step fixes the findings and comments what it did.
-2. If CodeRabbit reports its limit, or stays silent, an Opus step reviews features at once and fixes
-   critical and major findings. Docs and bugfixes rely on the tests. A PR comment names the reviewer.
-3. A last job without an agent starts `ci.yml` on each branch with an open PR, because a PR opened
-   with the job token does not start the CI by itself. Only `ci.yml` runs there; the Android, iOS and
-   store workflows do not.
+| Job | Agent | Token | Does |
+|---|---|---|---|
+| `pick` | no | issues: write | picks up to 3 issues the owner wrote and labelled, sets `claude-laeuft` (only on `main`) |
+| `implement` | Sonnet (Opus subagent for big tasks) | read-only | works one issue after the other on a local branch, runs format, analyze, test, `specdd lint`, hands over patches, PR title and text, or a question |
+| `publish` | no | contents, PRs, issues: write | checks the hand-over, refuses changes under `.github/`, pushes `claude/issue-<N>`, opens the PR (draft if not green), sets labels or posts the question, asks CodeRabbit and waits up to 10 minutes |
+| `review` | Sonnet or Opus | read-only | CodeRabbit reviewed: fixes its findings. CodeRabbit hit its limit or stayed silent: Opus reviews features and fixes critical and major findings. Docs and bugfixes: no extra review |
+| `publish-fix` | no | contents, PRs: write | pushes the review commits (fast-forward only), posts the review comment |
+| `finish` | no | issues, actions: write | removes `claude-laeuft`, sets `claude-fehler` where nothing came out, starts `ci.yml` on each open PR branch |
+
+CodeRabbit: the repository has fewer than 10 stars, so CodeRabbit never reviews by itself. The
+workflow posts `@coderabbitai review`. Its free review limit runs out quickly; then Opus takes over.
 
 ## Safety model
 
-What is enforced by GitHub:
+Enforced by GitHub:
 
-- `main` needs a PR with 1 approval and a green `check`. The job token cannot approve its own PR,
-  so the agent cannot merge. The owner keeps the admin bypass for their own pushes.
-- The job token is not an admin and cannot change files under `.github/workflows`.
+- `main` needs a PR with 1 approval and a green `dart-check`. The job token cannot approve its own
+  PR and cannot change workflow files. The owner keeps the admin bypass for their own pushes.
+- Agent jobs have a read-only job token: they cannot push, comment, label or merge, whatever they
+  run. Writing jobs run no agent and no repository code.
 - The Claude token (`CLAUDE_CODE_OAUTH_TOKEN`) is a secret of the environment `claude`, which only
-  accepts runs from `main`. Scheduled runs always use the workflow file from `main`; a manual run
-  from another branch is refused by the environment.
-- Release secrets are not in this workflow.
+  accepts runs from `main`. Release secrets are not used in this workflow.
 
-What depends on the agent and the inputs:
+Depends on inputs and on the agent:
 
-- The agent can run code (`flutter test`), so anything in its job (job token, Claude token) must be
-  treated as readable by it. That is why it only gets text by the owner and by CodeRabbit: the issue
-  text and owner comments come from a file the workflow prepares; it has no `gh issue view`,
-  `gh pr view`, `gh api` or web tools.
-- The shell list (exact git, gh, flutter, dart and specdd commands) narrows mistakes; it is not a
-  sandbox. "Never merge, never push to main" is enforced by GitHub, not by the prompt.
+- The agent can run code (`flutter test`), so it can read everything in its job, including the
+  Claude token. Therefore it only reads owner text (issue and owner comments, prepared as a file)
+  and CodeRabbit's own review comments (no replies in threads started by others). It has no `gh`,
+  no `git push`, no `curl` and no web tools.
+- The allowed shell commands narrow mistakes; they are not a sandbox.
+- An owner issue that quotes untrusted text is the remaining way in. Keep issues in your own words.
+
+Known limits:
+
+- Only `ci.yml` runs on `claude/` branches; Android, iOS and store workflows do not.
+- Matrix jobs run in list order in practice; GitHub does not promise it.
+- Scheduled workflows of public repositories stop after 60 days without activity; enable it again
+  under Actions.
+- Runs count against the same Claude plan limit as interactive use.
 
 ## One-time setup
 
-1. In a terminal: `claude setup-token`, then store it yourself:
-   `gh secret set CLAUDE_CODE_OAUTH_TOKEN --env claude`.
-2. Repository setting "Allow GitHub Actions to create and approve pull requests" is on.
-3. Environment `claude` accepts the branch `main` only.
-
-Runs count against the same Claude plan limit as interactive use. If the token leaks, revoke it and
-create a new one. Scheduled workflows of public repositories stop after 60 days without activity in
-the repository; enable it again under Actions.
+1. In a terminal: `claude setup-token`, then store the token yourself:
+   `gh secret set CLAUDE_CODE_OAUTH_TOKEN --env claude`. If it leaks, revoke it and make a new one.
+2. Repository setting "Allow GitHub Actions to create and approve pull requests": on.
+3. Environment `claude`: deployment branch `main` only.
+4. Branch protection of `main`: PR with 1 approval, required check `dart-check`, no force push, no
+   deletion, admins not enforced.
+5. Labels: `claude`, `claude-laeuft`, `claude-pr`, `claude-rueckfrage`, `claude-fehler`.
