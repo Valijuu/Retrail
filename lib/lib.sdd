@@ -33,7 +33,12 @@ Must:
   State logic lives in Riverpod providers written by hand; widgets only read state and send intents.
   Each feature has one provider set (`*_providers.dart`) exposing read-only state and intent methods.
   Repositories return Drift streams; providers transform them.
-  A class stays at or below 400 lines of code and has one responsibility.
+  A class has one responsibility: one reason to change. Size is a trigger for review, not a verdict.
+  Lines are counted per class without blank and comment-only lines (`tool/class_sizes.py` lists them).
+  At 300 lines the class is noted in review; at 400 the PR names the class's responsibilities or
+  splits it, or opens a follow-up issue; at 500 it is split before merge, unless this spec records
+  an exception with its reason. A widget `build` that is long only because of layout is split into
+  widgets, not into artificial logic classes.
   Magic numbers are intent-named constants, and there is no dead code.
   State classes are immutable with `copyWith`.
   Explicit `abstract interface class` seams exist only where a real alternate or platform implementation exists;
