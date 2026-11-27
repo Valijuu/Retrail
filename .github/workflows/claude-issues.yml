@@ -275,8 +275,10 @@ jobs:
           # Commits from the agent: author claude[bot] only, nothing under .github/,
           # no closing keyword for another issue.
           check_commits() {
-            authors=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u)
-            [ "$authors" = "claude[bot] <noreply@anthropic.com>" ] || { echo "unexpected author: $authors"; exit 1; }
+            # The action commits as the GitHub App bot; anything else is refused.
+            bad=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u \
+              | grep -vE '^claude\[bot\] <(41898282\+claude\[bot\]@users\.noreply\.github\.com|noreply@anthropic\.com)>$' || true)
+            [ -z "$bad" ] || { echo "unexpected author: $bad"; exit 1; }
             if git diff --no-renames --name-only origin/main...HEAD | grep -q '^\.github/'; then
               echo "the patch changes .github/: refused"; exit 1
             fi
@@ -308,8 +310,10 @@ jobs:
           # Commits from the agent: author claude[bot] only, nothing under .github/,
           # no closing keyword for another issue.
           check_commits() {
-            authors=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u)
-            [ "$authors" = "claude[bot] <noreply@anthropic.com>" ] || { echo "unexpected author: $authors"; exit 1; }
+            # The action commits as the GitHub App bot; anything else is refused.
+            bad=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u \
+              | grep -vE '^claude\[bot\] <(41898282\+claude\[bot\]@users\.noreply\.github\.com|noreply@anthropic\.com)>$' || true)
+            [ -z "$bad" ] || { echo "unexpected author: $bad"; exit 1; }
             if git diff --no-renames --name-only origin/main...HEAD | grep -q '^\.github/'; then
               echo "the patch changes .github/: refused"; exit 1
             fi
@@ -578,8 +582,10 @@ jobs:
           # Commits from the agent: author claude[bot] only, nothing under .github/,
           # no closing keyword for another issue.
           check_commits() {
-            authors=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u)
-            [ "$authors" = "claude[bot] <noreply@anthropic.com>" ] || { echo "unexpected author: $authors"; exit 1; }
+            # The action commits as the GitHub App bot; anything else is refused.
+            bad=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u \
+              | grep -vE '^claude\[bot\] <(41898282\+claude\[bot\]@users\.noreply\.github\.com|noreply@anthropic\.com)>$' || true)
+            [ -z "$bad" ] || { echo "unexpected author: $bad"; exit 1; }
             if git diff --no-renames --name-only origin/main...HEAD | grep -q '^\.github/'; then
               echo "the patch changes .github/: refused"; exit 1
             fi
