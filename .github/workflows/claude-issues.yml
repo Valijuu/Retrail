@@ -241,7 +241,6 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       ISSUE: ${{ matrix.issue }}
-      IN: ${{ runner.temp }}/in
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         continue-on-error: true
@@ -253,7 +252,7 @@ jobs:
         id: in
         run: |
           set -euo pipefail
-          f="$IN/result"
+          f="$RUNNER_TEMP/in/result"
           outcome=$(grep -E '^OUTCOME=(pr|question|skip|error)$' "$f" 2>/dev/null | head -n1 | cut -d= -f2 || true)
           kind=$(grep -E '^KIND=(feature|bugfix|docs)$' "$f" 2>/dev/null | head -n1 | cut -d= -f2 || true)
           green=$(grep -E '^GREEN=(yes|no)$' "$f" 2>/dev/null | head -n1 | cut -d= -f2 || true)
@@ -282,8 +281,8 @@ jobs:
               echo "a commit message closes another issue: refused"; exit 1
             fi
           }
-          [ -s "$IN/question.md" ] || { echo "no question text"; exit 1; }
-          clean "$IN/question.md" 20000 > "$RUNNER_TEMP/q.md"
+          [ -s "$RUNNER_TEMP/in/question.md" ] || { echo "no question text"; exit 1; }
+          clean "$RUNNER_TEMP/in/question.md" 20000 > "$RUNNER_TEMP/q.md"
           gh issue comment "$ISSUE" --repo "$REPO" --body-file "$RUNNER_TEMP/q.md"
           gh api -X POST "repos/$REPO/issues/$ISSUE/labels" -f "labels[]=claude-rueckfrage" --silent
 
@@ -316,16 +315,16 @@ jobs:
             fi
           }
           branch="claude/issue-$ISSUE"
-          ls "$IN"/patches/*.patch >/dev/null 2>&1 || { echo "no patches"; exit 1; }
+          ls "$RUNNER_TEMP/in"/patches/*.patch >/dev/null 2>&1 || { echo "no patches"; exit 1; }
           git config user.name "claude[bot]"
           git config user.email "noreply@anthropic.com"
           git switch -c "$branch" origin/main
-          git am --3way "$IN"/patches/*.patch
+          git am --3way "$RUNNER_TEMP/in"/patches/*.patch
           check_commits
           git push origin "HEAD:refs/heads/$branch"
-          title=$(head -n1 "$IN/pr-title" 2>/dev/null | tr -d '\r' | tr -cd '[:print:]' | cut -c1-120)
+          title=$(head -n1 "$RUNNER_TEMP/in/pr-title" 2>/dev/null | tr -d '\r' | tr -cd '[:print:]' | cut -c1-120)
           [ -n "$title" ] || title="Claude: issue #$ISSUE"
-          { [ -f "$IN/pr-body.md" ] && clean "$IN/pr-body.md" 60000; printf '\n\nCloses #%s\n' "$ISSUE"; } > "$RUNNER_TEMP/body.md"
+          { [ -f "$RUNNER_TEMP/in/pr-body.md" ] && clean "$RUNNER_TEMP/in/pr-body.md" 60000; printf '\n\nCloses #%s\n' "$ISSUE"; } > "$RUNNER_TEMP/body.md"
           draft=()
           [ "$GREEN" = yes ] || draft=(--draft)
           url=$(gh pr create --repo "$REPO" --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md" "${draft[@]}")
@@ -534,7 +533,6 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       ISSUE: ${{ matrix.issue }}
-      IN: ${{ runner.temp }}/in
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         id: dl
@@ -546,8 +544,8 @@ jobs:
       - name: Read the hand-over
         id: in
         run: |
-          pr=$(grep -E '^PR=[0-9]+$' "$IN/fix-state" 2>/dev/null | cut -d= -f2 || true)
-          result=$(grep -E '^RESULT=(success|failure|cancelled)$' "$IN/fix-state" 2>/dev/null | cut -d= -f2 || true)
+          pr=$(grep -E '^PR=[0-9]+$' "$RUNNER_TEMP/in/fix-state" 2>/dev/null | cut -d= -f2 || true)
+          result=$(grep -E '^RESULT=(success|failure|cancelled)$' "$RUNNER_TEMP/in/fix-state" 2>/dev/null | cut -d= -f2 || true)
           echo "pr=$pr" >> "$GITHUB_OUTPUT"
           echo "result=${result:-failure}" >> "$GITHUB_OUTPUT"
 
@@ -584,13 +582,13 @@ jobs:
           [ "$head" = "claude/issue-$ISSUE" ] || { echo "PR #$PR is not claude/issue-$ISSUE"; exit 1; }
           git config user.name "claude[bot]"
           git config user.email "noreply@anthropic.com"
-          if ls "$IN"/patches/*.patch >/dev/null 2>&1; then
-            git am --3way "$IN"/patches/*.patch
+          if ls "$RUNNER_TEMP/in"/patches/*.patch >/dev/null 2>&1; then
+            git am --3way "$RUNNER_TEMP/in"/patches/*.patch
             check_commits
             git push origin "HEAD:refs/heads/claude/issue-$ISSUE"
           fi
-          if [ -s "$IN/comment.md" ]; then
-            clean "$IN/comment.md" 60000 > "$RUNNER_TEMP/c.md"
+          if [ -s "$RUNNER_TEMP/in/comment.md" ]; then
+            clean "$RUNNER_TEMP/in/comment.md" 60000 > "$RUNNER_TEMP/c.md"
             gh pr comment "$PR" --repo "$REPO" --body-file "$RUNNER_TEMP/c.md"
           fi
           if [ "$RESULT" != success ]; then
