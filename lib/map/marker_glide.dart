@@ -53,9 +53,6 @@ class MarkerGlide {
   /// it. Null when there is no tail to draw.
   RoutePoint? tailStart;
 
-  /// Whether a glide is running.
-  bool get isAnimating => _controller.isAnimating;
-
   /// Stops the glide and forgets its endpoints (a new style load or a detached
   /// map: its ticks must not touch a `current` source that does not exist).
   void reset() {

@@ -909,6 +909,28 @@ void main() {
     await tester.pump(const Duration(seconds: 2)); // drain the highlight timer
   });
 
+  testWidgets('the highlighted card keeps its state when the highlight ends', (
+    tester,
+  ) async {
+    // The card used to swap to a GlobalKey while highlighted, which recreated
+    // it (and its pulse controller) twice per jump.
+    await pump(tester, [_entry(1, desc: 'A'), _entry(2, desc: 'B')]);
+    final card2 = find.byWidgetPredicate(
+      (w) => w is HistoryRideCard && w.entry.ride.rideId == 2,
+    );
+    final before = tester.state(card2);
+
+    container.read(historyTargetRideProvider.notifier).set(2);
+    await tester.pump();
+    await tester.pump();
+    final highlighted = tester.state(card2);
+    await tester.pump(const Duration(seconds: 2)); // the highlight ends
+    final after = tester.state(card2);
+
+    expect(identical(before, highlighted), isTrue);
+    expect(identical(highlighted, after), isTrue);
+  });
+
   testWidgets('honours a jump target parked before the screen mounts', (
     tester,
   ) async {
