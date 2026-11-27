@@ -40,13 +40,15 @@ Filters: `gh issue list --label claude-rueckfrage`, `gh pr list --search "head:c
 |---|---|---|---|
 | `pick` | no | issues: write | picks up to 3 issues the owner wrote and labelled, sets `claude-laeuft` (only on `main`) |
 | `implement` | Sonnet (Opus subagent for big tasks) | read-only | works one issue after the other on a local branch, runs format, analyze, test, `specdd lint`, hands over patches, PR title and text, or a question |
-| `publish` | no | contents, PRs, issues: write | checks the hand-over, refuses changes under `.github/`, pushes `claude/issue-<N>`, opens the PR (draft if not green), sets labels or posts the question, asks CodeRabbit and waits up to 10 minutes |
-| `review` | Sonnet or Opus | read-only | CodeRabbit reviewed: fixes its findings. CodeRabbit hit its limit or stayed silent: Opus reviews features and fixes critical and major findings. Docs and bugfixes: no extra review |
+| `publish` | no | contents, PRs, issues: write | checks the hand-over, refuses changes under `.github/`, pushes `claude/issue-<N>`, opens the PR (draft if not green), sets labels or posts the question |
+| `review` | Opus | read-only | reviews every change that is not docs-only (decided from the changed files, not by the agent) and fixes critical and major findings |
 | `publish-fix` | no | contents, PRs: write | pushes the review commits (fast-forward only), posts the review comment |
 | `finish` | no | issues, actions: write | removes `claude-laeuft`, sets `claude-fehler` where nothing came out, starts `ci.yml` on each open PR branch |
 
-CodeRabbit: the repository has fewer than 10 stars, so CodeRabbit never reviews by itself. The
-workflow posts `@coderabbitai review`. Its free review limit runs out quickly; then Opus takes over.
+CodeRabbit does not review these PRs: they are opened by the Actions bot, and on the free plan
+CodeRabbit skips bot PRs ("Bot user detected"), also when the owner asks with `@coderabbitai review`
+and after a new commit. Opus is the only reviewer of the workflow. CodeRabbit stays in use for the
+owner's own PRs and the local CLI.
 
 ## Safety model
 
@@ -62,9 +64,8 @@ Enforced by GitHub:
 Depends on inputs and on the agent:
 
 - The agent can run code (`flutter test`), so it can read everything in its job, including the
-  Claude token. Therefore it only reads owner text (issue and owner comments, prepared as a file)
-  and CodeRabbit's own review comments (no replies in threads started by others). It has no `gh`,
-  no `git push`, no `curl` and no web tools.
+  Claude token. Therefore it only reads owner text (issue and owner comments, prepared as a file).
+  It has no `gh`, no `git push`, no `curl` and no web tools.
 - The allowed shell commands narrow mistakes; they are not a sandbox.
 - An owner issue that quotes untrusted text is the remaining way in. Keep issues in your own words.
 
