@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: de-DE
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: true
+    base_branches:
+      - main
+  path_filters:
+    - "!build/**"
+    - "!release/**"
+    - "!store/**/screens/**"
+    - "!ios/Runner/Assets.xcassets/**"
+    - "!**/*.g.dart"
+    - "!pubspec.lock"
+    - "!.trail/**"
+  path_instructions:
+    - path: "lib/domain/**"
+      instructions: >-
+        Reine Domaenenlogik. Verhalten ist durch die .sdd-Specs und die EXACT-Tests
+        gebunden. Pruefe, dass Verhaltensaenderungen eine passende .sdd- und Testaenderung haben.
+    - path: "**/*.sdd"
+      instructions: >-
+        SpecDD-Vertraege. Einrueckung genau zwei Leerzeichen. Eine Spec darf nicht
+        im Widerspruch zum Code oder zu einer uebergeordneten Spec stehen.
+    - path: "lib/l10n/**"
+      instructions: >-
+        Deutsche Texte nach lib/l10n/glossary_de.md. Jeder neue Schluessel gehoert in alle Sprachen.
+    - path: "CHANGELOG.md"
+      instructions: >-
+        Nutzer-sichtbare Aenderungen brauchen eine Zeile unter Unreleased in einfacher Nutzersprache.
+    - path: ".github/workflows/**"
+      instructions: >-
+        Keine Secrets im Klartext, Aktionen auf feste Versionen pinnen, keine
+        unnoetig breiten Berechtigungen.
+  tools:
+    gitleaks:
+      enabled: true
+chat:
+  auto_reply: true
