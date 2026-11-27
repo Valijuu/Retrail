@@ -1,12 +1,34 @@
 import 'package:flutter/animation.dart';
 import 'package:maplibre/maplibre.dart';
 
+import '../domain/distance_calculator.dart';
 import 'live_map_geojson.dart';
 import 'preview_projection.dart';
 
 /// How long an animated follow / recenter camera move takes. The marker glide
 /// lasts as long, so the dot and the camera arrive together.
 const Duration kFollowAnimationDuration = Duration(milliseconds: 600);
+
+/// Linear interpolation between two coordinates. Safe for the short per-fix
+/// distances the marker glide covers (metres — curvature is irrelevant).
+RoutePoint lerpPoint(RoutePoint a, RoutePoint b, double t) =>
+    (lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t);
+
+/// Above this jump the current-position marker snaps instead of gliding: a GPS
+/// recovery / teleport animated over 600 ms would be a distracting slow slide
+/// across the screen. Normal 1 Hz fixes move a few metres.
+const double _markerSnapThresholdM = 150;
+
+/// Whether the marker should snap straight to [to] (true) or glide from [from]
+/// (false). Pure, so the decision is unit-tested without pumping the map.
+bool markerShouldSnap(RoutePoint from, RoutePoint to) =>
+    const HaversineDistanceCalculator().distanceBetween(
+      from.lat,
+      from.lng,
+      to.lat,
+      to.lng,
+    ) >
+    _markerSnapThresholdM;
 
 /// Glides the live map's `current` marker between fixes and keeps the live
 /// line's `route-tail` segment attached to it.

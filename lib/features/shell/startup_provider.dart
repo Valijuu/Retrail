@@ -15,6 +15,8 @@ final pendingRideDeepLinkProvider = NotifierProvider<PendingRideDeepLink, bool>(
   PendingRideDeepLink.new,
 );
 
+/// Whether a deep link into the active ride is pending (the ongoing-ride
+/// notification or Live Activity was tapped). Cleared once the ride screen takes it.
 class PendingRideDeepLink extends Notifier<bool> {
   @override
   bool build() => false;

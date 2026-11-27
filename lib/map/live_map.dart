@@ -8,10 +8,10 @@ import '../domain/heading.dart' show HeadingState, nextHeading;
 import '../domain/route_markers.dart';
 import '../domain/route_progress.dart' show RouteTrack;
 import '../l10n/app_localizations.dart';
-import 'live_map_geojson.dart';
 import 'live_map_layers.dart';
 import 'live_map_sources.dart';
 import 'map_language.dart';
+import 'openfreemap.dart';
 import 'marker_glide.dart';
 import 'preview_projection.dart';
 import 'route_camera.dart';
@@ -19,10 +19,29 @@ import 'route_sketch.dart';
 
 // The pure helpers of the live map live in their own files; this one stays the
 // import point for the widget and everything tests and screens used from it.
-export 'live_map_geojson.dart';
+// Names that tests and other screens use; everything else stays internal to
+// lib/map (narrowed from a bare export, see #160).
+export 'live_map_geojson.dart'
+    show
+        emptyGeoJson,
+        kReferenceRouteOpacity,
+        mapHex,
+        pointGeoJson,
+        referenceGeoJson,
+        referenceMarkerPoints,
+        referencePushTarget,
+        referenceUpdateGeoJson,
+        routeLineGeoJson;
 export 'live_map_layers.dart'
-    show activityBadgePngFromLoader, rideMarkerIsBadge;
-export 'marker_glide.dart' show kFollowAnimationDuration;
+    show
+        activityBadgePngFromLoader,
+        arrowIconSize,
+        arrowImageId,
+        arrowSpacingPx,
+        rideMarkerIsBadge,
+        symbolRaster;
+export 'marker_glide.dart'
+    show kFollowAnimationDuration, lerpPoint, markerShouldSnap;
 
 class CameraFollow {
   const CameraFollow({required this.resetBearing, this.instant = false});
@@ -94,6 +113,13 @@ const double kLiveMapMaxZoom = 19.0;
 /// While following, the camera is heading-up (rotated to the travel
 /// direction); the line's tip follows the gliding marker via a `route-tail`
 /// segment. Follow feel is tuned/verified on-device.
+/// The live map's MapLibre style (Spec 19 §A): the bundled Retrail Light /
+/// Retrail Dark asset. MapLibre loads an asset path itself, asynchronously like
+/// a URL — not a JSON string, which it applies synchronously before
+/// `onMapCreated`, whose reset then discards it.
+String liveMapStyle(bool dark, String language) =>
+    retrailStyleAsset(dark: dark, language: language);
+
 class LiveMap extends StatefulWidget {
   const LiveMap({
     super.key,

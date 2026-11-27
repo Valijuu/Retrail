@@ -65,6 +65,27 @@ Future<Uint8List> _activityBadgePng(ActivityType type) =>
 /// Every method returns early once the load was [superseded] (issue #47: the
 /// map was detached or a newer style loaded), so an old load never adds
 /// layers to a dead map; the caller checks [superseded] after each call.
+/// MapLibre image id of the direction arrowhead.
+const arrowImageId = 'route-arrow';
+
+/// Screen distance between direction arrowheads on the map's route line.
+const double arrowSpacingPx = 60;
+
+/// The arrowhead PNG is sized for the 3.5dp preview line; the map's line is
+/// 4.5dp wide, so its arrowheads scale by the same ratio.
+const double arrowIconSize = 4.5 / 3.5;
+
+/// How to rasterise a dp-sized symbol image shown [scale]× on a
+/// [pixelRatio] device: MapLibre sizes a registered image by its raw pixel
+/// count in dp (see the 0.19 note on the activity badge). Rasterised at
+/// `pixelRatio × scale` and shown at `icon-size` `1 / pixelRatio`, one image
+/// pixel lands on one device pixel. Rasterising at `pixelRatio` and scaling
+/// up by `icon-size` blurred the start/finish markers and arrows.
+({double rasterRatio, double iconSize}) symbolRaster(
+  double scale,
+  double pixelRatio,
+) => (rasterRatio: pixelRatio * scale, iconSize: 1 / pixelRatio);
+
 class LiveMapLayers {
   LiveMapLayers({
     required this.style,

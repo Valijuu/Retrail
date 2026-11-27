@@ -20,6 +20,8 @@ final historyTargetRideProvider = NotifierProvider<HistoryTargetRide, int?>(
   HistoryTargetRide.new,
 );
 
+/// The ride id the History tab should scroll to and highlight, or null. Set by
+/// Home; History clears it once it has revealed the card.
 class HistoryTargetRide extends Notifier<int?> {
   @override
   int? build() => null;
