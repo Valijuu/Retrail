@@ -175,7 +175,7 @@ jobs:
           claude_args: |
             --model claude-sonnet-5-5
             --max-turns 120
-            --allowedTools "Read,Write,Edit,Glob,Grep,Task,Agent,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout -b claude/issue-${{ matrix.issue }}),Bash(flutter analyze:*),Bash(flutter test:*),Bash(dart format:*),Bash(specdd:*),Bash(mkdir:*)"
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout -b claude/issue-${{ matrix.issue }}),Bash(flutter analyze:*),Bash(flutter test:*),Bash(dart format:*),Bash(specdd:*),Bash(mkdir:*)"
             --disallowedTools "WebFetch,WebSearch,Bash(gh:*),Bash(git push:*),Bash(curl:*)"
           prompt: |
             Du bearbeitest Issue #${{ matrix.issue }} im Repo ${{ github.repository }} (GPS-Routen-Tracker, Flutter). Schreibe Texte fuer den Owner auf Deutsch, Commit-Messages auf Englisch (Conventional Commits: type(scope): summary).
@@ -187,7 +187,7 @@ jobs:
             Lies .claude-run/issue.md, CLAUDE.md, AGENTS.md, .specdd/bootstrap.md und .specdd/bootstrap.project.md und halte dich daran. Aenderungen am Verhalten aktualisieren die zustaendige .sdd im selben Commit (specdd resolve <pfad>, specdd lint). Nutzer-sichtbare Aenderungen bekommen eine Zeile unter Unreleased in CHANGELOG.md. Keine echten GPS-Daten, keine Secrets, keine Token ins Repo.
 
             SCHRITT 2 - Groesse einschaetzen
-            Klein (Bugfix, wenige Dateien, klare Loesung): setze es selbst um. Gross (viele Dateien, Architekturfragen, Aenderungen in lib/domain, mehrere moegliche Loesungen): delegiere die Umsetzung an einen Subagenten mit model "opus". Ist die Aufgabe unklar, braucht sie eine Entscheidung des Owners oder gibt es nichts zu aendern: schreibe die konkrete Rueckfrage nach .claude-run/question.md, schreibe `OUTCOME=question` nach .claude-run/result und hoere auf.
+            Setze die Aufgabe selbst um, auch wenn sie gross ist: du hast dafuer bis zu 120 Schritte. Delegiere NICHT an Subagenten: ein Subagent im Hintergrund wird nicht abgewartet, und der Lauf endet dann ohne Ergebnis. Ist die Aufgabe unklar, braucht sie eine Entscheidung des Owners oder gibt es nichts zu aendern: schreibe die konkrete Rueckfrage nach .claude-run/question.md, schreibe `OUTCOME=question` nach .claude-run/result und hoere auf.
 
             SCHRITT 3 - Umsetzen
             `git checkout -b claude/issue-${{ matrix.issue }}`. Test-first wo es passt. Committe in kleinen Commits. Fuehre aus: `dart format --output=none --set-exit-if-changed lib test integration_test tool`, `flutter analyze`, `flutter test`, `specdd lint`. Aendere nichts unter .github/ und keine Signing-, Store- oder Release-Dateien, ausser das Issue verlangt es ausdruecklich (dann im PR-Text nennen). Committe nichts aus .claude-run/.
