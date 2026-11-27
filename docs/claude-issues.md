@@ -71,6 +71,14 @@ Depends on inputs and on the agent:
 Known limits:
 
 - Only `ci.yml` runs on `claude/` branches; Android, iOS and store workflows do not.
+- Jobs wait for each other across the matrix: `publish` starts when every `implement` entry is done,
+  so the first PR of a run can come up to about 3 hours after the start.
+- Artifacts of a public repository are public for 7 days. The workflow uploads only a fixed list
+  (result, question, PR title and text, patches).
+- Writing jobs check what they publish: commits only by `claude[bot]`, nothing under `.github/`, no
+  closing keyword for another issue; PR and comment texts lose such keywords and `@`-mentions. An
+  agent that breaks out could still hand over a wrong artifact for another picked issue; the damage
+  stays on that issue's branch and PR, which the owner reviews.
 - Matrix jobs run in list order in practice; GitHub does not promise it.
 - Scheduled workflows of public repositories stop after 60 days without activity; enable it again
   under Actions.

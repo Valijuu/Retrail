@@ -28,7 +28,6 @@ concurrency:
 env:
   OWNER: ${{ github.repository_owner }}
   MAX_ISSUES: "3"
-  ACTION_PIN: v1.0.290
 
 jobs:
   pick:
@@ -124,7 +123,6 @@ jobs:
                 echo "OUTCOME=skip" > "$RUN_DIR/result"
               elif gh api "repos/$REPO/branches/$branch" --silent 2>/dev/null; then
                 echo "OUTCOME=error" > "$RUN_DIR/result"
-                echo "branch $branch exists without a PR: delete it to retry" > "$RUN_DIR/error.txt"
               fi ;;
             *) echo "OUTCOME=skip" > "$RUN_DIR/result" ;;
           esac
@@ -212,8 +210,15 @@ jobs:
         if: always()
         with:
           name: implement-${{ matrix.issue }}
-          path: .claude-run/
+          # A fixed list: artifacts of a public repository are public.
+          path: |
+            .claude-run/result
+            .claude-run/question.md
+            .claude-run/pr-title
+            .claude-run/pr-body.md
+            .claude-run/patches/*.patch
           include-hidden-files: true
+          if-no-files-found: ignore
           retention-days: 7
 
   publish:
@@ -261,8 +266,24 @@ jobs:
         if: steps.in.outputs.outcome == 'question'
         run: |
           set -euo pipefail
+          # Texts from the agent: no closing keywords for other issues, no @-mentions.
+          clean() {
+            sed -E 's/(close[sd]?|fix(e[sd])?|resolve[sd]?)([: ]+)#([0-9]+)/\1\3issue \4/Ig; s/@([A-Za-z0-9_-])/@\xe2\x80\x8b\1/g' "$1" | head -c "$2"
+          }
+          # Commits from the agent: author claude[bot] only, nothing under .github/,
+          # no closing keyword for another issue.
+          check_commits() {
+            authors=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u)
+            [ "$authors" = "claude[bot] <noreply@anthropic.com>" ] || { echo "unexpected author: $authors"; exit 1; }
+            if git diff --no-renames --name-only origin/main...HEAD | grep -q '^\.github/'; then
+              echo "the patch changes .github/: refused"; exit 1
+            fi
+            if git log --format=%B origin/main..HEAD | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?)[: ]+#[0-9]+' | grep -vE "#$ISSUE\$" | grep -q .; then
+              echo "a commit message closes another issue: refused"; exit 1
+            fi
+          }
           [ -s "$IN/question.md" ] || { echo "no question text"; exit 1; }
-          head -c 20000 "$IN/question.md" > "$RUNNER_TEMP/q.md"
+          clean "$IN/question.md" 20000 > "$RUNNER_TEMP/q.md"
           gh issue comment "$ISSUE" --repo "$REPO" --body-file "$RUNNER_TEMP/q.md"
           gh api -X POST "repos/$REPO/issues/$ISSUE/labels" -f "labels[]=claude-rueckfrage" --silent
 
@@ -278,20 +299,33 @@ jobs:
           GREEN: ${{ steps.in.outputs.green }}
         run: |
           set -euo pipefail
+          # Texts from the agent: no closing keywords for other issues, no @-mentions.
+          clean() {
+            sed -E 's/(close[sd]?|fix(e[sd])?|resolve[sd]?)([: ]+)#([0-9]+)/\1\3issue \4/Ig; s/@([A-Za-z0-9_-])/@\xe2\x80\x8b\1/g' "$1" | head -c "$2"
+          }
+          # Commits from the agent: author claude[bot] only, nothing under .github/,
+          # no closing keyword for another issue.
+          check_commits() {
+            authors=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u)
+            [ "$authors" = "claude[bot] <noreply@anthropic.com>" ] || { echo "unexpected author: $authors"; exit 1; }
+            if git diff --no-renames --name-only origin/main...HEAD | grep -q '^\.github/'; then
+              echo "the patch changes .github/: refused"; exit 1
+            fi
+            if git log --format=%B origin/main..HEAD | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?)[: ]+#[0-9]+' | grep -vE "#$ISSUE\$" | grep -q .; then
+              echo "a commit message closes another issue: refused"; exit 1
+            fi
+          }
           branch="claude/issue-$ISSUE"
           ls "$IN"/patches/*.patch >/dev/null 2>&1 || { echo "no patches"; exit 1; }
           git config user.name "claude[bot]"
           git config user.email "noreply@anthropic.com"
           git switch -c "$branch" origin/main
           git am --3way "$IN"/patches/*.patch
-          # The agent must not touch workflows; the job token would refuse it anyway.
-          if git diff --name-only origin/main...HEAD | grep -q '^\.github/'; then
-            echo "the patch changes .github/: refused"; exit 1
-          fi
+          check_commits
           git push origin "HEAD:refs/heads/$branch"
           title=$(head -n1 "$IN/pr-title" 2>/dev/null | tr -d '\r' | tr -cd '[:print:]' | cut -c1-120)
           [ -n "$title" ] || title="Claude: issue #$ISSUE"
-          { head -c 60000 "$IN/pr-body.md" 2>/dev/null || true; printf '\n\nCloses #%s\n' "$ISSUE"; } > "$RUNNER_TEMP/body.md"
+          { [ -f "$IN/pr-body.md" ] && clean "$IN/pr-body.md" 60000; printf '\n\nCloses #%s\n' "$ISSUE"; } > "$RUNNER_TEMP/body.md"
           draft=()
           [ "$GREEN" = yes ] || draft=(--draft)
           url=$(gh pr create --repo "$REPO" --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md" "${draft[@]}")
@@ -468,14 +502,14 @@ jobs:
           mkdir -p "$RUN_DIR/patches"
           base=$(cat "$RUN_DIR/base")
           git format-patch "$base..HEAD" -o "$RUN_DIR/patches" >/dev/null || true
-          printf 'PR=%s\n' "${{ steps.mode.outputs.pr }}" > "$RUN_DIR/fix-state"
+          printf 'PR=%s\nRESULT=%s\n' "${{ steps.mode.outputs.pr }}" "${{ job.status }}" > "$RUN_DIR/fix-state"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always() && steps.mode.outputs.mode != 'skip'
         with:
           name: fix-${{ matrix.issue }}
           path: |
-            .claude-run/patches/
+            .claude-run/patches/*.patch
             .claude-run/comment.md
             .claude-run/fix-state
           include-hidden-files: true
@@ -513,7 +547,9 @@ jobs:
         id: in
         run: |
           pr=$(grep -E '^PR=[0-9]+$' "$IN/fix-state" 2>/dev/null | cut -d= -f2 || true)
+          result=$(grep -E '^RESULT=(success|failure|cancelled)$' "$IN/fix-state" 2>/dev/null | cut -d= -f2 || true)
           echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          echo "result=${result:-failure}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         if: steps.in.outputs.pr != ''
@@ -525,22 +561,40 @@ jobs:
         if: steps.in.outputs.pr != ''
         env:
           PR: ${{ steps.in.outputs.pr }}
+          RESULT: ${{ steps.in.outputs.result }}
         run: |
           set -euo pipefail
+          # Texts from the agent: no closing keywords for other issues, no @-mentions.
+          clean() {
+            sed -E 's/(close[sd]?|fix(e[sd])?|resolve[sd]?)([: ]+)#([0-9]+)/\1\3issue \4/Ig; s/@([A-Za-z0-9_-])/@\xe2\x80\x8b\1/g' "$1" | head -c "$2"
+          }
+          # Commits from the agent: author claude[bot] only, nothing under .github/,
+          # no closing keyword for another issue.
+          check_commits() {
+            authors=$(git log --format='%an <%ae>' origin/main..HEAD | sort -u)
+            [ "$authors" = "claude[bot] <noreply@anthropic.com>" ] || { echo "unexpected author: $authors"; exit 1; }
+            if git diff --no-renames --name-only origin/main...HEAD | grep -q '^\.github/'; then
+              echo "the patch changes .github/: refused"; exit 1
+            fi
+            if git log --format=%B origin/main..HEAD | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?)[: ]+#[0-9]+' | grep -vE "#$ISSUE\$" | grep -q .; then
+              echo "a commit message closes another issue: refused"; exit 1
+            fi
+          }
           head=$(gh api "repos/$REPO/pulls/$PR" --jq '.head.ref')
           [ "$head" = "claude/issue-$ISSUE" ] || { echo "PR #$PR is not claude/issue-$ISSUE"; exit 1; }
           git config user.name "claude[bot]"
           git config user.email "noreply@anthropic.com"
           if ls "$IN"/patches/*.patch >/dev/null 2>&1; then
             git am --3way "$IN"/patches/*.patch
-            if git diff --name-only origin/main...HEAD | grep -q '^\.github/'; then
-              echo "the patch changes .github/: refused"; exit 1
-            fi
+            check_commits
             git push origin "HEAD:refs/heads/claude/issue-$ISSUE"
           fi
           if [ -s "$IN/comment.md" ]; then
-            head -c 60000 "$IN/comment.md" > "$RUNNER_TEMP/c.md"
+            clean "$IN/comment.md" 60000 > "$RUNNER_TEMP/c.md"
             gh pr comment "$PR" --repo "$REPO" --body-file "$RUNNER_TEMP/c.md"
+          fi
+          if [ "$RESULT" != success ]; then
+            gh pr comment "$PR" --repo "$REPO" --body "Der Review-Schritt ist fehlgeschlagen: $GITHUB_SERVER_URL/$REPO/actions/runs/$GITHUB_RUN_ID"
           fi
 
   finish:
@@ -561,8 +615,6 @@ jobs:
           REPO: ${{ github.repository }}
           ISSUES: ${{ needs.pick.outputs.issues }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          REVIEW_RESULT: ${{ needs.review.result }}
-          FIX_RESULT: ${{ needs.publish-fix.result }}
         run: |
           set -uo pipefail
           for n in $(printf '%s' "$ISSUES" | jq -r '.[]'); do
@@ -571,10 +623,9 @@ jobs:
             labels=$(gh api "repos/$REPO/issues/$n" --jq '[.state] + [.labels[].name] | join(",")')
             pr=$(gh api -X GET "repos/$REPO/pulls" -f state=open -f "head=$OWNER:claude/issue-$n" --jq '.[0].number // empty')
             if [ -n "$pr" ]; then
+              gh api -X POST "repos/$REPO/issues/$n/labels" -f "labels[]=claude-pr" --silent || true
+              gh api -X DELETE "repos/$REPO/issues/$n/labels/claude" --silent || true
               gh workflow run ci.yml --repo "$REPO" --ref "claude/issue-$n" && echo "CI started for #$n (PR #$pr)"
-              if [ "$REVIEW_RESULT" = failure ] || [ "$FIX_RESULT" = failure ]; then
-                gh pr comment "$pr" --repo "$REPO" --body "Der Review-Schritt ist fehlgeschlagen: $RUN_URL" || true
-              fi
               continue
             fi
             case ",$labels," in
