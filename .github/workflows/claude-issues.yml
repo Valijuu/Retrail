@@ -196,7 +196,8 @@ jobs:
             Schreibe:
             - .claude-run/pr-title: eine Zeile, Conventional Commit, Englisch.
             - .claude-run/pr-body.md: Zusammenfassung (was, warum), Vorgehen, Testergebnis (ehrlich, auch Fehler), offene Punkte.
-            - .claude-run/result mit den Zeilen `OUTCOME=pr`, `KIND=feature`, `KIND=bugfix` oder `KIND=docs` (Feature = neue Funktion) und `GREEN=yes` oder `GREEN=no` (alle Pruefungen gruen?).
+            - .claude-run/result mit den Zeilen `OUTCOME=pr`, `KIND=feature`, `KIND=bugfix` oder `KIND=docs` (Feature = neue Funktion), `GREEN=yes` oder `GREEN=no` (alle Pruefungen gruen?) und `COMPLETE=yes` oder `COMPLETE=no` (ist das Issue damit ganz erledigt?).
+            - Bleibt etwas offen (ein Teil des Issues, ein Befund, ein Geraetecheck), schreibe .claude-run/followups.md: pro Punkt eine Zeile `## <Titel, Englisch, Conventional Commit>` und darunter der Text (Englisch, was und warum). Hoechstens 5 Punkte. Du kannst keine Issues anlegen; der Workflow legt sie aus dieser Datei an. Behaupte im PR-Text nichts, was du nicht geprueft hast.
 
       - name: Pack the hand-over
         if: always()
@@ -219,6 +220,7 @@ jobs:
             .claude-run/question.md
             .claude-run/pr-title
             .claude-run/pr-body.md
+            .claude-run/followups.md
             .claude-run/patches/*.patch
           include-hidden-files: true
           if-no-files-found: ignore
@@ -259,6 +261,8 @@ jobs:
           outcome=$(grep -E '^OUTCOME=(pr|question|skip|error)$' "$f" 2>/dev/null | head -n1 | cut -d= -f2 || true)
           kind=$(grep -E '^KIND=(feature|bugfix|docs)$' "$f" 2>/dev/null | head -n1 | cut -d= -f2 || true)
           green=$(grep -E '^GREEN=(yes|no)$' "$f" 2>/dev/null | head -n1 | cut -d= -f2 || true)
+          complete=$(grep -E '^COMPLETE=(yes|no)$' "$f" 2>/dev/null | head -n1 | cut -d= -f2 || true)
+          echo "complete=${complete:-no}" >> "$GITHUB_OUTPUT"
           echo "outcome=${outcome:-error}" >> "$GITHUB_OUTPUT"
           echo "kind=${kind:-feature}" >> "$GITHUB_OUTPUT"
           echo "green=${green:-no}" >> "$GITHUB_OUTPUT"
@@ -301,6 +305,7 @@ jobs:
         if: steps.in.outputs.outcome == 'pr'
         env:
           GREEN: ${{ steps.in.outputs.green }}
+          COMPLETE: ${{ steps.in.outputs.complete }}
         run: |
           set -euo pipefail
           # Texts from the agent: no closing keywords for other issues, no @-mentions.
@@ -331,7 +336,11 @@ jobs:
           git push origin "HEAD:refs/heads/$branch"
           title=$(head -n1 "$RUNNER_TEMP/in/pr-title" 2>/dev/null | tr -d '\r' | tr -cd '[:print:]' | cut -c1-120)
           [ -n "$title" ] || title="Claude: issue #$ISSUE"
-          { [ -f "$RUNNER_TEMP/in/pr-body.md" ] && clean "$RUNNER_TEMP/in/pr-body.md" 60000; printf '\n\nCloses #%s\n' "$ISSUE"; } > "$RUNNER_TEMP/body.md"
+          { [ -f "$RUNNER_TEMP/in/pr-body.md" ] && clean "$RUNNER_TEMP/in/pr-body.md" 60000
+            # Close the issue only when the agent says it is fully done; otherwise
+            # link it and keep it open (it keeps claude-pr, so it is not picked again).
+            if [ "$COMPLETE" = yes ]; then printf '\n\nCloses #%s\n' "$ISSUE"; else printf '\n\nRefs #%s (not fully done, see follow-ups)\n' "$ISSUE"; fi
+          } > "$RUNNER_TEMP/body.md"
           draft=()
           [ "$GREEN" = yes ] || draft=(--draft)
           url=$(gh pr create --repo "$REPO" --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md" "${draft[@]}")
@@ -340,6 +349,38 @@ jobs:
           gh api -X POST "repos/$REPO/issues/$ISSUE/labels" -f "labels[]=claude-pr" --silent
           gh api -X DELETE "repos/$REPO/issues/$ISSUE/labels/claude" --silent || true
           echo "pr=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Open the follow-up issues
+        # The agent cannot open issues; it lists what stays open in followups.md.
+        # New issues get no `claude` label, so they never start a run by themselves.
+        if: steps.pr.outputs.pr != ''
+        env:
+          PR: ${{ steps.pr.outputs.pr }}
+        run: |
+          set -euo pipefail
+          f="$RUNNER_TEMP/in/followups.md"
+          [ -s "$f" ] || { echo "no follow-ups"; exit 0; }
+          dir="$RUNNER_TEMP/followups"
+          mkdir -p "$dir"
+          # Split at "## " headings, at most 5 issues, sizes capped.
+          awk -v d="$dir" '/^## /{n++; if (n>5) exit; t=substr($0,4); print t > (d "/" n ".title"); next} n>0 && n<=5 {print > (d "/" n ".body")}' "$f"
+          for t in "$dir"/*.title; do
+            [ -e "$t" ] || continue
+            n="${t%.title}"
+            title=$(head -n1 "$t" | tr -d '\r' | tr -cd '[:print:]' | sed -E 's/@/@\xe2\x80\x8b/g' | cut -c1-120)
+            [ -n "$title" ] || continue
+            {
+              [ -f "$n.body" ] && sed -E 's/(close[sd]?|fix(e[sd])?|resolve[sd]?)([: ]+)#([0-9]+)/\1\3issue \4/Ig; s/@([A-Za-z0-9_-])/@\xe2\x80\x8b\1/g' "$n.body" | head -c 20000
+              printf '\n\nFollow-up of #%s, listed by the Claude workflow in PR #%s. Not labelled `claude`: add it to the board and label it when it should be worked.\n' "$ISSUE" "$PR"
+            } > "$n.md"
+            url=$(gh issue create --repo "$REPO" --title "$title" --body-file "$n.md")
+            echo "opened $url"
+            printf -- '- %s\n' "$url" >> "$dir/list.md"
+          done
+          if [ -s "$dir/list.md" ]; then
+            { echo "Folge-Issues aus diesem Lauf:"; cat "$dir/list.md"; } > "$dir/comment.md"
+            gh pr comment "$PR" --repo "$REPO" --body-file "$dir/comment.md"
+          fi
 
       - name: Hand over for the review job
         if: steps.pr.outputs.pr != ''
