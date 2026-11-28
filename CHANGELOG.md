@@ -9,6 +9,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions as in
 
 ## Unreleased
 
+### Fixed
+
+- Following a route that crosses the 180° meridian no longer shows you as off route.
+
 ## 1.6.0+18 — 2026-11-26
 
 ### Added

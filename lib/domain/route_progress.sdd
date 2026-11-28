@@ -12,6 +12,8 @@ References:
   /docs/specs/history/18-follow-reverse.md
 
 Must:
+  Projection, interpolation and heading unwrap the longitudes around the segment start, so a route across `±180`
+    keeps the rider on it (#140).
   Off route means more than `30` m from the route.
   The finish counts within `30` m of the last point once at least `90` % of the route is behind the rider.
   The first fix takes the first pass of the route through the position, so a loop start never reads as its finish.

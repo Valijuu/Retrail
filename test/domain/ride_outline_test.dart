@@ -359,6 +359,13 @@ void main() {
       expect(unwrapLongitude(12, 11), 12);
     });
 
+    test('unwrapLongitude ends on far and non-finite input (#140)', () {
+      expect(unwrapLongitude(360e9 + 5, 0), closeTo(5, 1e-3));
+      expect(unwrapLongitude(double.infinity, 0), double.infinity);
+      expect(unwrapLongitude(0, double.negativeInfinity), 0);
+      expect(unwrapLongitude(double.nan, 0).isNaN, isTrue);
+    });
+
     test('normaliseLongitude keeps -180 to 180 and wraps the rest', () {
       expect(normaliseLongitude(181), -179);
       expect(normaliseLongitude(-181), 179);

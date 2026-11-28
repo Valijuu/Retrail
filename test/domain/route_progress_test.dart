@@ -35,7 +35,51 @@ class _OneMetreLegs implements DistanceCalculator {
       1;
 }
 
+/// A point [northM] metres north of 10°N and [eastM] metres east of 180°.
+LatLng across(double northM, double eastM) {
+  final lng = 180.0 + eastM / (_mPerDeg * math.cos(10.0 * math.pi / 180));
+  return (lat: 10.0 + northM / _mPerDeg, lng: lng > 180 ? lng - 360 : lng);
+}
+
 void main() {
+  group('across ±180 (#140)', () {
+    // 400 m due east in three legs, the middle one across the antimeridian.
+    final route = RouteTrack([
+      across(0, -200),
+      across(0, -100),
+      across(0, 100),
+      across(0, 200),
+    ]);
+
+    test('a fix beside the route is on it, at the right distance along', () {
+      final p = route.locate(across(20, 50))!;
+      expect(p.isOffRoute, isFalse);
+      expect(p.offsetM, closeTo(20, 1));
+      expect(p.alongM, closeTo(250, 2));
+    });
+
+    test('a fix on the western side of the route is on it too', () {
+      final p = route.locate(across(10, -150))!;
+      expect(p.isOffRoute, isFalse);
+      expect(p.alongM, closeTo(50, 2));
+    });
+
+    test('pointAt and segmentBetween stay across the antimeridian', () {
+      final mid = route.pointAt(200);
+      expect(mid.lat, closeTo(10, 1e-6));
+      expect(mid.lng.abs(), closeTo(180, 1e-3));
+      final cut = route.segmentBetween(50, 350);
+      expect(cut.first.lng, closeTo(across(0, -150).lng, 1e-6));
+      expect(cut.last.lng, closeTo(across(0, 150).lng, 1e-6));
+    });
+
+    test('headingAt points east', () {
+      final h = route.headingAt(200);
+      expect(h.x, closeTo(1, 1e-6));
+      expect(h.y, closeTo(0, 1e-6));
+    });
+  });
+
   group('RouteTrack.locate', () {
     test('an empty or single-point reference yields no progress', () {
       expect(RouteTrack(const []).locate(at(0, 0)), isNull);

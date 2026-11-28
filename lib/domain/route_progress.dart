@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'distance_calculator.dart';
 import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
+import 'ride_outline.dart' show normaliseLongitude, unwrapLongitude;
 
 /// Farther than this from the reference route counts as off route.
 const double followOffRouteThresholdM = 30;
@@ -170,7 +171,9 @@ class RouteTrack {
   /// east, y north); zero where it has no length.
   ({double x, double y}) headingAt(double alongM) {
     final a = pointAt(alongM - 1), b = pointAt(alongM + 1);
-    final x = (b.lng - a.lng) * math.cos(a.lat * radiansPerDegree);
+    final x =
+        (unwrapLongitude(b.lng, a.lng) - a.lng) *
+        math.cos(a.lat * radiansPerDegree);
     final y = b.lat - a.lat;
     final norm = math.sqrt(x * x + y * y);
     return norm == 0 ? (x: 0, y: 0) : (x: x / norm, y: y / norm);
@@ -263,17 +266,25 @@ class RouteTrack {
   }
 
   /// Segment parameter of [p]'s perpendicular foot on a→b, in a local
-  /// equirectangular frame (longitude scaled by cos(latitude)).
+  /// equirectangular frame (longitude scaled by cos(latitude)), with the
+  /// longitudes of [b] and [p] unwrapped around [a] (#140).
   static double _projectT(LatLng a, LatLng b, LatLng p) {
     final k = math.cos(a.lat * radiansPerDegree);
-    final bx = (b.lng - a.lng) * k, by = b.lat - a.lat;
-    final px = (p.lng - a.lng) * k, py = p.lat - a.lat;
+    final bx = (unwrapLongitude(b.lng, a.lng) - a.lng) * k, by = b.lat - a.lat;
+    final px = (unwrapLongitude(p.lng, a.lng) - a.lng) * k, py = p.lat - a.lat;
     final dd = bx * bx + by * by;
     return dd == 0 ? 0 : (px * bx + py * by) / dd;
   }
 
-  static LatLng _lerp(LatLng a, LatLng b, double t) =>
-      (lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t);
+  /// The point [t] of the way from [a] to [b] along the short arc, so a leg
+  /// across ±180 stays across it (#140).
+  static LatLng _lerp(LatLng a, LatLng b, double t) {
+    final bLng = unwrapLongitude(b.lng, a.lng);
+    return (
+      lat: a.lat + (b.lat - a.lat) * t,
+      lng: normaliseLongitude(a.lng + (bLng - a.lng) * t),
+    );
+  }
 
   /// The hit of [cs] closest to the route; within [_offsetTieM] the one
   /// less far along wins. Null for none.
