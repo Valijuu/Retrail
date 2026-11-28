@@ -13,3 +13,4 @@ References:
 Must:
   Progress never goes back.
   Per fix it advances at most the recent pace plus `2` m, then a quarter of the rest.
+  The heading of the rider against the route unwraps the longitude, so progress keeps up across `±180` (#140).

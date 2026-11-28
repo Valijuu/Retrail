@@ -15,6 +15,13 @@ LatLng at(double northM, double eastM) => (
   lng: 11.0 + eastM / (_mPerDeg * math.cos(48.0 * math.pi / 180)),
 );
 
+/// A point [northM] metres north of 10°N and [eastM] metres east of 180°,
+/// wrapped into -180..180.
+LatLng across(double northM, double eastM) {
+  final lng = 180.0 + eastM / (_mPerDeg * math.cos(10.0 * math.pi / 180));
+  return (lat: 10.0 + northM / _mPerDeg, lng: lng > 180 ? lng - 360 : lng);
+}
+
 /// 300 m due north in three 100 m segments.
 final _straight = [at(0, 0), at(100, 0), at(200, 0), at(300, 0)];
 
@@ -263,6 +270,20 @@ void main() {
       );
       expect(t.direction, FollowDirection.forward);
       expect(t.range!.loM, greaterThanOrEqualTo(189));
+    });
+
+    test('out-and-back turning 10 m past ±180, ridden out and back across '
+        'it: progress keeps up through the turn, along 380 (#140)', () {
+      final t = _ride(
+        [across(0, -300), across(0, 10), across(3, -300)],
+        [
+          for (var e = -280.0; e <= 10; e += 10) across(0, e),
+          for (var e = 0.0; e >= -60; e -= 10) across(3 * (10 - e) / 310, e),
+        ],
+      );
+      expect(t.direction, FollowDirection.forward);
+      expect(t.progress!.isOffRoute, isFalse);
+      expect(t.progress!.alongM, closeTo(380, 1));
     });
 
     test('decided forward: a jump to another pass extends nothing', () {
