@@ -206,15 +206,15 @@ const _primeMeridianLng = 0.0;
 
 /// [lng] moved by whole turns so it lies within half a turn of [reference],
 /// so the way from [reference] to it is the short arc, also across ±180 (#100).
+/// A non-finite [lng] or [reference] is returned as [lng] (#140).
 double unwrapLongitude(double lng, double reference) {
-  var delta = lng - reference;
-  while (delta > _degreesPerHalfTurn) {
-    delta -= _degreesPerTurn;
-  }
-  while (delta < -_degreesPerHalfTurn) {
-    delta += _degreesPerTurn;
-  }
-  return reference + delta;
+  final delta = lng - reference;
+  // Infinity or NaN has no short arc, and a loop would never end on it.
+  if (!delta.isFinite) return lng;
+  var turned = delta.remainder(_degreesPerTurn);
+  if (turned > _degreesPerHalfTurn) turned -= _degreesPerTurn;
+  if (turned < -_degreesPerHalfTurn) turned += _degreesPerTurn;
+  return reference + turned;
 }
 
 /// Whether [lng], or the same longitude a whole turn east or west, lies

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'distance_calculator.dart';
 import 'geo_constants.dart';
 import 'heading.dart' show LatLng;
+import 'ride_outline.dart' show unwrapLongitude;
 import 'route_progress.dart';
 
 /// Progress is first looked for no farther ahead than the rider is from the
@@ -112,7 +113,9 @@ RouteHit _likeliest(
 /// metres (negative: against it). Local flat-earth approximation.
 double _alongRouteM(RouteTrack route, double alongM, LatLng a, LatLng b) {
   final t = route.headingAt(alongM);
-  final dx = (b.lng - a.lng) * math.cos(a.lat * radiansPerDegree);
+  final dx =
+      (unwrapLongitude(b.lng, a.lng) - a.lng) *
+      math.cos(a.lat * radiansPerDegree);
   final dy = b.lat - a.lat;
   return (dx * t.x + dy * t.y) * metresPerDegree;
 }
